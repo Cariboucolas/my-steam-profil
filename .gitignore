@@ -1,0 +1,29 @@
+# Dépendances
+node_modules/
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+
+# Expo
+.expo/
+.expo-shared/
+
+# Secrets & env
+.env
+.env.*
+!.env.example
+
+# Specs & plans (ne pas pousser sur le remote)
+docs/superpowers/
+
+# Données brutes du spike (peuvent contenir des infos de profil)
+fixtures/steam-raw/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
