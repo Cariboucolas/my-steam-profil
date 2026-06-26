@@ -1,0 +1,13 @@
+{
+  "name": "@steam/spike",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "spike": "tsx spike.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.16.0",
+    "dotenv": "^16.4.0"
+  }
+}
