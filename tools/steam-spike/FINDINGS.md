@@ -8,6 +8,8 @@ SteamID de test : `76561197979269357` — jeu : Halls of Torment (`2218750`), la
   `avatarhash`, `profileurl`, `communityvisibilitystate` (**3 = public**), `profilestate`,
   `timecreated` (epoch s), `lastlogoff` (epoch s), `loccountrycode`, `locstatecode`.
 - Pour le domaine `Profile` (MVP) : `steamid`, `personaname`, `avatarfull`, `profileurl`.
+- ⚠️ **`communityvisibilitystate` n'indique PAS l'accès aux succès** : un profil aux détails de jeu privés
+  renvoie quand même `communityvisibilitystate: 3` ici. La seule vérité = la réponse de `GetPlayerAchievements` (403).
 
 ## GetOwnedGames (jeux)
 - Chemin : `response.games[]` ; total dans `response.game_count` (367 ici).
@@ -40,7 +42,8 @@ SteamID de test : `76561197979269357` — jeu : Halls of Torment (`2218750`), la
 - **Jamais lancé (978520)** : HTTP 200, `success: true`, tous `achieved: 0` (24/24). **Indistinguable** du cas
   précédent via cette API → côté domaine c'est juste une complétion `0/N` (croiser `playtime_forever` si distinction voulue).
 - **Jeu sans succès (2694490)** : **HTTP 400** + corps `{ "playerstats": { "error": "Requested app has no stats", "success": false } }`.
-- Profil privé : **non capturé** (profil public). Hypothèse : `success: false` avec un autre message. À synthétiser en test.
+- **Profil privé (détails de jeu)** : **HTTP 403** + corps `{ "playerstats": { "error": "Profile is not public", "success": false } }`.
+  → À distinguer du « jeu sans succès » : **403 privé** vs **400 sans-stats**, messages différents.
 
 ## Décisions de modélisation qui en découlent
 1. **Clé de jointure schéma ↔ déblocage** : `schema.name === player.apiname` (noms de champ différents !).
@@ -62,4 +65,4 @@ SteamID de test : `76561197979269357` — jeu : Halls of Torment (`2218750`), la
 - [x] Jeu **lancé sans déblocage** — King's Bounty (25900), 0/64.
 - [x] Jeu **jamais lancé** — Legend of Keepers (978520), 0/24.
 - [x] Jeu **sans succès** — (2694490), schéma `{ "game": {} }` + HTTP 400 `"Requested app has no stats"`.
-- [ ] Réponse **profil privé** : non capturée (profil public) → à synthétiser en test.
+- [x] Réponse **profil privé** — HTTP 403 `"Profile is not public"` (capturée via un profil tiers privé).
