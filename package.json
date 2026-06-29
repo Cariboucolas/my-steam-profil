@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "packageManager": "pnpm@10.8.1",
   "scripts": {
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "test:domain": "pnpm --filter @steam/domain test",
+    "tdd": "pnpm --filter @steam/domain test:watch"
   },
   "devDependencies": {
     "typescript": "^5.5.0"
