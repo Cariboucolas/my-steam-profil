@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "spike": "tsx spike.ts"
+    "spike": "tsx spike.ts",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
+    "@types/node": "^22.0.0",
     "tsx": "^4.16.0",
     "dotenv": "^16.4.0"
   }
