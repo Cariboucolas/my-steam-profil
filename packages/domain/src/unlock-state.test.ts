@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { unlockStateFromSteam } from "./unlock-state";
 
 describe("unlockStateFromSteam", () => {
-  it("traduit un succès débloqué (achieved=1, unlocktime en secondes)", () => {
+  it("translates an unlocked achievement (achieved=1, unlocktime in seconds)", () => {
     const state = unlockStateFromSteam(1, 1697568656);
     expect(state.unlocked).toBe(true);
     if (state.unlocked) {
@@ -10,11 +10,11 @@ describe("unlockStateFromSteam", () => {
     }
   });
 
-  it("traduit un succès verrouillé (achieved=0, unlocktime=0)", () => {
+  it("translates a locked achievement (achieved=0, unlocktime=0)", () => {
     expect(unlockStateFromSteam(0, 0)).toEqual({ unlocked: false });
   });
 
-  it("considère verrouillé si achieved=1 mais unlocktime=0 (cas dégénéré)", () => {
+  it("treats as locked when achieved=1 but unlocktime=0 (degenerate case)", () => {
     expect(unlockStateFromSteam(1, 0)).toEqual({ unlocked: false });
   });
 });

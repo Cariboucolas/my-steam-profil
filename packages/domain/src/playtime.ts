@@ -3,7 +3,7 @@ export class Playtime {
 
   static fromMinutes(minutes: number): Playtime {
     if (!Number.isFinite(minutes) || minutes < 0) {
-      throw new RangeError(`Playtime invalide : ${minutes}`);
+      throw new RangeError(`Invalid playtime: ${minutes}`);
     }
     return new Playtime(Math.round(minutes));
   }

@@ -15,7 +15,7 @@ const make = (apiName: string, unlocked: boolean): Achievement => ({
 });
 
 describe("computeGameCompletion", () => {
-  it("compte les débloqués sur le total (complétion partielle)", () => {
+  it("counts unlocked over total (partial completion)", () => {
     const achievements = [
       make("a", true),
       make("b", true),
@@ -29,13 +29,13 @@ describe("computeGameCompletion", () => {
     expect(completion.rate.percentage).toBe(60);
   });
 
-  it("gère une liste vide (0/0, taux 0)", () => {
+  it("handles an empty list (0/0, rate 0)", () => {
     const completion = computeGameCompletion([]);
     expect(completion).toMatchObject({ unlocked: 0, total: 0 });
     expect(completion.rate.percentage).toBe(0);
   });
 
-  it("gère un jeu sans aucun déblocage (0/N)", () => {
+  it("handles a game with nothing unlocked (0/N)", () => {
     const completion = computeGameCompletion([make("a", false), make("b", false)]);
     expect(completion.unlocked).toBe(0);
     expect(completion.total).toBe(2);

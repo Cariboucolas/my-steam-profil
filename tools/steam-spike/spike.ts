@@ -7,7 +7,7 @@ const STEAM_ID = process.env.STEAM_ID;
 const APPID = process.env.STEAM_APPID;
 
 if (!KEY || !STEAM_ID || !APPID) {
-  console.error("Variables manquantes. Copie .env.example vers .env et remplis-le.");
+  console.error("Missing variables. Copy .env.example to .env and fill it in.");
   process.exit(1);
 }
 
@@ -36,7 +36,7 @@ async function run(): Promise<void> {
     try {
       pretty = JSON.stringify(JSON.parse(text), null, 2);
     } catch {
-      // réponse non-JSON (ex. profil privé renvoie parfois du HTML/erreur) : on garde le brut
+      // non-JSON response (e.g. a private profile sometimes returns HTML/error): keep it raw
     }
 
     const file = resolve(OUT_DIR, `${name}.json`);
@@ -46,6 +46,6 @@ async function run(): Promise<void> {
 }
 
 run().catch((err) => {
-  console.error("Échec du spike :", err);
+  console.error("Spike failed:", err);
   process.exit(1);
 });

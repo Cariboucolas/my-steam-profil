@@ -7,8 +7,8 @@ export const locked: UnlockState = { unlocked: false };
 export const unlockedAt = (at: Date): UnlockState => ({ unlocked: true, at });
 
 /**
- * Traduit la paire Steam (achieved 0/1, unlocktime en secondes) en UnlockState.
- * Règle (cf. FINDINGS.md) : débloqué ssi achieved === 1 ET unlocktime > 0.
+ * Translates the Steam pair (achieved 0/1, unlocktime in seconds) into an UnlockState.
+ * Rule (see FINDINGS.md): unlocked iff achieved === 1 AND unlocktime > 0.
  */
 export const unlockStateFromSteam = (
   achieved: number,

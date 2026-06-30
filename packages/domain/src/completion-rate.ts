@@ -3,13 +3,13 @@ export class CompletionRate {
 
   static from(unlocked: number, total: number): CompletionRate {
     if (!Number.isInteger(unlocked) || !Number.isInteger(total)) {
-      throw new RangeError("unlocked et total doivent être des entiers");
+      throw new RangeError("unlocked and total must be integers");
     }
     if (unlocked < 0 || total < 0) {
-      throw new RangeError("unlocked et total doivent être positifs");
+      throw new RangeError("unlocked and total must be non-negative");
     }
     if (unlocked > total) {
-      throw new RangeError("unlocked ne peut pas dépasser total");
+      throw new RangeError("unlocked cannot exceed total");
     }
     const percentage = total === 0 ? 0 : (unlocked / total) * 100;
     return new CompletionRate(percentage);
