@@ -27,4 +27,8 @@ describe("CompletionRate", () => {
   it("rejects negative values", () => {
     expect(() => CompletionRate.from(-1, 10)).toThrow(RangeError);
   });
+
+  it("rejects non-integer values", () => {
+    expect(() => CompletionRate.from(1.5, 10)).toThrow(RangeError);
+  });
 });
