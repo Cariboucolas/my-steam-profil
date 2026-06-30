@@ -6,6 +6,9 @@ dist/
 build/
 *.tsbuildinfo
 
+# Coverage
+coverage/
+
 # Expo
 .expo/
 .expo-shared/
