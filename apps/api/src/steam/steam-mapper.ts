@@ -64,6 +64,13 @@ export const mapGameAchievements = (
   schema: SteamSchemaResponse,
   player: SteamPlayerAchievementsResponse,
 ): Result<GameAchievements, AchievementsError> => {
+  // Private profile / no stats are signalled by playerstats.success === false.
+  if (!player.playerstats.success) {
+    const message = player.playerstats.error ?? "";
+    if (message.includes("not public")) return err("PRIVATE_PROFILE");
+    return err("NO_ACHIEVEMENTS");
+  }
+
   const schemaAchievements = schema.game.availableGameStats?.achievements ?? [];
   if (schemaAchievements.length === 0) return err("NO_ACHIEVEMENTS");
 

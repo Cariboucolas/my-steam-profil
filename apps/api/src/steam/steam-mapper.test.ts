@@ -124,3 +124,46 @@ describe("mapGameAchievements (nominal)", () => {
     expect(result.value.timeline[0]?.achievement.apiName).toBe("BOSS_1");
   });
 });
+
+describe("mapGameAchievements (errors)", () => {
+  const emptySchema: SteamSchemaResponse = { game: {} };
+  const validSchema: SteamSchemaResponse = {
+    game: {
+      availableGameStats: {
+        achievements: [
+          { name: "A", displayName: "A", hidden: 0, icon: "i", icongray: "g" },
+        ],
+      },
+    },
+  };
+
+  it("returns PRIVATE_PROFILE when the player stats are not public", () => {
+    const player: SteamPlayerAchievementsResponse = {
+      playerstats: { success: false, error: "Profile is not public" },
+    };
+    expect(mapGameAchievements(validSchema, player)).toEqual({
+      ok: false,
+      error: "PRIVATE_PROFILE",
+    });
+  });
+
+  it("returns NO_ACHIEVEMENTS when the app has no stats", () => {
+    const player: SteamPlayerAchievementsResponse = {
+      playerstats: { success: false, error: "Requested app has no stats" },
+    };
+    expect(mapGameAchievements(emptySchema, player)).toEqual({
+      ok: false,
+      error: "NO_ACHIEVEMENTS",
+    });
+  });
+
+  it("returns NO_ACHIEVEMENTS when the schema has no achievements", () => {
+    const player: SteamPlayerAchievementsResponse = {
+      playerstats: { success: true, achievements: [] },
+    };
+    expect(mapGameAchievements(emptySchema, player)).toEqual({
+      ok: false,
+      error: "NO_ACHIEVEMENTS",
+    });
+  });
+});
