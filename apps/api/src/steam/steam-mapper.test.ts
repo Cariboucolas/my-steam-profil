@@ -1,8 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { mapProfile, mapGames } from "./steam-mapper";
+import { mapProfile, mapGames, mapGameAchievements } from "./steam-mapper";
 import {
   type SteamPlayerSummariesResponse,
   type SteamOwnedGamesResponse,
+  type SteamSchemaResponse,
+  type SteamPlayerAchievementsResponse,
 } from "./steam-types";
 
 const summaries = (
@@ -60,5 +62,65 @@ describe("mapGames", () => {
 
   it("returns an empty list when the account owns no games", () => {
     expect(mapGames({ response: {} })).toEqual([]);
+  });
+});
+
+describe("mapGameAchievements (nominal)", () => {
+  const schema: SteamSchemaResponse = {
+    game: {
+      gameName: "Demo",
+      availableGameStats: {
+        achievements: [
+          {
+            name: "BOSS_1",
+            displayName: "First boss",
+            description: "Beat the first boss.",
+            hidden: 0,
+            icon: "icon1.jpg",
+            icongray: "gray1.jpg",
+          },
+          {
+            name: "SECRET_1",
+            displayName: "Secret",
+            hidden: 1,
+            icon: "icon2.jpg",
+            icongray: "gray2.jpg",
+          },
+        ],
+      },
+    },
+  };
+
+  const player: SteamPlayerAchievementsResponse = {
+    playerstats: {
+      success: true,
+      achievements: [
+        { apiname: "BOSS_1", achieved: 1, unlocktime: 1697568656 },
+        { apiname: "SECRET_1", achieved: 0, unlocktime: 0 },
+      ],
+    },
+  };
+
+  it("joins schema and player data into domain achievements", () => {
+    const result = mapGameAchievements(schema, player);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value.achievements).toHaveLength(2);
+    expect(result.value.completion.unlocked).toBe(1);
+    expect(result.value.completion.total).toBe(2);
+    expect(result.value.completion.rate.percentage).toBe(50);
+
+    const secret = result.value.achievements.find((a) => a.apiName === "SECRET_1");
+    expect(secret?.hidden).toBe(true);
+    expect(secret?.description).toBe(""); // description absente → chaîne vide
+    expect(secret?.unlockState.unlocked).toBe(false);
+  });
+
+  it("builds a timeline with only the unlocked achievement", () => {
+    const result = mapGameAchievements(schema, player);
+    if (!result.ok) throw new Error("expected ok");
+    expect(result.value.timeline).toHaveLength(1);
+    expect(result.value.timeline[0]?.achievement.apiName).toBe("BOSS_1");
   });
 });
