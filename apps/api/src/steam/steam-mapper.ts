@@ -52,7 +52,7 @@ export const mapGames = (raw: SteamOwnedGamesResponse): Game[] => {
   }));
 };
 
-export interface GameAchievements {
+export interface GameProgress {
   readonly completion: GameCompletion;
   readonly achievements: Achievement[];
   readonly timeline: TimelineEntry[];
@@ -60,10 +60,10 @@ export interface GameAchievements {
 
 export type AchievementsError = "PRIVATE_PROFILE" | "NO_ACHIEVEMENTS";
 
-export const mapGameAchievements = (
+export const mapGameProgress = (
   schema: SteamSchemaResponse,
   player: SteamPlayerAchievementsResponse,
-): Result<GameAchievements, AchievementsError> => {
+): Result<GameProgress, AchievementsError> => {
   // Private profile / no stats are signalled by playerstats.success === false.
   if (!player.playerstats.success) {
     const message = player.playerstats.error ?? "";

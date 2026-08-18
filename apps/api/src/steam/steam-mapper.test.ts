@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { mapProfile, mapGames, mapGameAchievements } from "./steam-mapper";
+import { mapProfile, mapGames, mapGameProgress } from "./steam-mapper";
 import {
   type SteamPlayerSummariesResponse,
   type SteamOwnedGamesResponse,
@@ -65,7 +65,7 @@ describe("mapGames", () => {
   });
 });
 
-describe("mapGameAchievements (nominal)", () => {
+describe("mapGameProgress (nominal)", () => {
   const schema: SteamSchemaResponse = {
     game: {
       gameName: "Demo",
@@ -102,7 +102,7 @@ describe("mapGameAchievements (nominal)", () => {
   };
 
   it("joins schema and player data into domain achievements", () => {
-    const result = mapGameAchievements(schema, player);
+    const result = mapGameProgress(schema, player);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
@@ -118,14 +118,14 @@ describe("mapGameAchievements (nominal)", () => {
   });
 
   it("builds a timeline with only the unlocked achievement", () => {
-    const result = mapGameAchievements(schema, player);
+    const result = mapGameProgress(schema, player);
     if (!result.ok) throw new Error("expected ok");
     expect(result.value.timeline).toHaveLength(1);
     expect(result.value.timeline[0]?.achievement.apiName).toBe("BOSS_1");
   });
 });
 
-describe("mapGameAchievements (errors)", () => {
+describe("mapGameProgress (errors)", () => {
   const emptySchema: SteamSchemaResponse = { game: {} };
   const validSchema: SteamSchemaResponse = {
     game: {
@@ -141,7 +141,7 @@ describe("mapGameAchievements (errors)", () => {
     const player: SteamPlayerAchievementsResponse = {
       playerstats: { success: false, error: "Profile is not public" },
     };
-    expect(mapGameAchievements(validSchema, player)).toEqual({
+    expect(mapGameProgress(validSchema, player)).toEqual({
       ok: false,
       error: "PRIVATE_PROFILE",
     });
@@ -151,7 +151,7 @@ describe("mapGameAchievements (errors)", () => {
     const player: SteamPlayerAchievementsResponse = {
       playerstats: { success: false, error: "Requested app has no stats" },
     };
-    expect(mapGameAchievements(emptySchema, player)).toEqual({
+    expect(mapGameProgress(emptySchema, player)).toEqual({
       ok: false,
       error: "NO_ACHIEVEMENTS",
     });
@@ -161,7 +161,7 @@ describe("mapGameAchievements (errors)", () => {
     const player: SteamPlayerAchievementsResponse = {
       playerstats: { success: true, achievements: [] },
     };
-    expect(mapGameAchievements(emptySchema, player)).toEqual({
+    expect(mapGameProgress(emptySchema, player)).toEqual({
       ok: false,
       error: "NO_ACHIEVEMENTS",
     });
