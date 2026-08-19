@@ -9,6 +9,19 @@ const MALFORMED_STEAM_ID = "not-a-steam-id";
 /** Steam counts in seconds; JavaScript dates in milliseconds. */
 const SECONDS_TO_MS = 1000;
 
+/**
+ * Every failure the app answers is logged with its cause, which would print a
+ * stack trace per test. Spying keeps the output readable, and lets the logging
+ * itself be asserted.
+ */
+let logged: ReturnType<typeof vi.spyOn>;
+beforeEach(() => {
+  logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+});
+afterEach(() => {
+  logged.mockRestore();
+});
+
 const unreachableSteam: typeof fetch = () => {
   throw new Error("this test should not have called Steam");
 };
@@ -420,16 +433,6 @@ describe("GET /api/profile/:steamId/games/:appId/achievements", () => {
 
 describe("when something fails on the way", () => {
   const STEAM_SERVER_ERROR = 503;
-
-  // The handler logs every cause, which would otherwise print a stack trace per
-  // test. Spying keeps the output readable and lets us assert the logging.
-  let logged: ReturnType<typeof vi.spyOn>;
-  beforeEach(() => {
-    logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
-  });
-  afterEach(() => {
-    logged.mockRestore();
-  });
 
   it("logs the cause an operator would need, even though the body hides it", async () => {
     const app = appReaching(
