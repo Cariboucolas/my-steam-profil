@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createApp } from "./app";
 import { createSteamClient } from "../steam/steam-client";
 
@@ -120,6 +120,32 @@ describe("GET /api/profile/:steamId", () => {
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: "INVALID_STEAM_ID" });
+  });
+
+  /**
+   * Steam echoing an id the domain refuses is Steam misbehaving, not a player
+   * who does not exist. Reporting it as a missing profile would send the caller
+   * looking in the wrong place.
+   */
+  it("is a 502, not a 404, when Steam answers with an unusable id", async () => {
+    const nonsense = {
+      response: {
+        players: [
+          {
+            steamid: "not-a-steam-id",
+            personaname: "cariboucolas",
+            avatarfull: "https://avatars/full.jpg",
+            profileurl: "https://steamcommunity.com/profiles/x/",
+          },
+        ],
+      },
+    };
+    const app = appReaching(steamAnswering({ playerSummaries: [nonsense] }));
+
+    const response = await app.request(`/api/profile/${STEAM_ID}`);
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: "STEAM_UNAVAILABLE" });
   });
 
   it("rejects a malformed steam id without calling Steam at all", async () => {
@@ -392,6 +418,26 @@ describe("GET /api/profile/:steamId/games/:appId/achievements", () => {
 
 describe("when something fails on the way", () => {
   const STEAM_SERVER_ERROR = 503;
+
+  // The handler logs every cause, which would otherwise print a stack trace per
+  // test. Spying keeps the output readable and lets us assert the logging.
+  let logged: ReturnType<typeof vi.spyOn>;
+  beforeEach(() => {
+    logged = vi.spyOn(console, "error").mockImplementation(() => undefined);
+  });
+  afterEach(() => {
+    logged.mockRestore();
+  });
+
+  it("logs the cause an operator would need, even though the body hides it", async () => {
+    const app = appReaching(
+      steamAnswering({ playerSummaries: [{}, STEAM_SERVER_ERROR] }),
+    );
+
+    await app.request(`/api/profile/${STEAM_ID}`);
+
+    expect(logged).toHaveBeenCalledTimes(1);
+  });
 
   it("is a 502 when Steam is unavailable", async () => {
     const app = appReaching(
