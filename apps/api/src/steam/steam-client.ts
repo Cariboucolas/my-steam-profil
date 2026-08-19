@@ -81,6 +81,9 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
         steamid: steamId,
         // Without this the answer carries app ids and nothing else.
         include_appinfo: "1",
+        // Steam leaves free-to-play titles out by default, even ones the player
+        // has put hours into. They are part of the library as a player sees it.
+        include_played_free_games: "1",
         format: "json",
       }),
 
