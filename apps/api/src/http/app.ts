@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { SteamId } from "@steam/domain";
 
-import type { SteamGateway } from "../steam/steam-gateway";
+import { SteamGatewayError, type SteamGateway } from "../steam/steam-gateway";
 import { mapProfile, mapGames, mapGameProgress } from "../steam/steam-mapper";
 import {
   toProfileDto,
@@ -13,6 +13,8 @@ import {
 const BAD_REQUEST = 400;
 const FORBIDDEN = 403;
 const NOT_FOUND = 404;
+const INTERNAL_SERVER_ERROR = 500;
+const BAD_GATEWAY = 502;
 
 /** Every reason a steam id can be rejected reads the same to a caller. */
 const INVALID_STEAM_ID = { error: "INVALID_STEAM_ID" } as const;
@@ -92,6 +94,17 @@ export const createApp = (gateway: SteamGateway): Hono => {
     // A game with nothing to earn is a normal answer, shaped like any other.
     return context.json(emptyGameProgressDto());
   });
+
+  /**
+   * Two failures, told apart on purpose: Steam let us down, or we did. Bodies
+   * carry a name and nothing else — no message, no stack — so neither the API
+   * key nor our internals can reach a caller.
+   */
+  app.onError((error, context) =>
+    error instanceof SteamGatewayError
+      ? context.json({ error: "STEAM_UNAVAILABLE" }, BAD_GATEWAY)
+      : context.json({ error: "INTERNAL_ERROR" }, INTERNAL_SERVER_ERROR),
+  );
 
   return app;
 };
