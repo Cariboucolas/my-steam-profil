@@ -24,6 +24,9 @@ docs/superpowers/
 # Données brutes du spike (peuvent contenir des infos de profil)
 fixtures/steam-raw/
 
+# Fixtures DTO générées depuis les données brutes (mêmes infos de profil)
+apps/mobile/src/fixtures/
+
 # IDE
 .idea/
 .vscode/
