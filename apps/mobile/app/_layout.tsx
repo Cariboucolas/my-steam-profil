@@ -13,6 +13,7 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
 import { View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
 
 import { colors } from "../src/theme/tokens";
@@ -42,7 +43,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -50,6 +51,6 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: colors.bg },
         }}
       />
-    </>
+    </SafeAreaProvider>
   );
 }

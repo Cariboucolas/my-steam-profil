@@ -16,6 +16,7 @@ const games: readonly GameDto[] = [
     playtimeMinutes: 4977,
     playtimeLabel: "83 h 57",
     iconUrl: "https://icon/2066020.jpg",
+    lastPlayedAt: "2026-06-25T12:16:14.000Z",
   },
   {
     appId: 440,
@@ -23,6 +24,7 @@ const games: readonly GameDto[] = [
     playtimeMinutes: 405,
     playtimeLabel: "6 h 45",
     iconUrl: "https://icon/440.jpg",
+    lastPlayedAt: null,
   },
 ];
 
