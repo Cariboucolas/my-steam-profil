@@ -24,7 +24,10 @@
     "scheme": "steam-achievements",
     "backgroundColor": "#0b0f14",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-image",
+      "expo-font",
+      "expo-splash-screen"
     ]
   }
 }
