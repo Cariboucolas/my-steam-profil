@@ -43,13 +43,14 @@ export const formatHours = (minutes: number): string => {
 };
 
 /**
- * "25 Jun 2026". Built by hand rather than with Intl so the same date reads
- * the same on every device, whatever locale it is set to.
+ * "25 Jun 2026", in the device's own time zone. Built by hand rather than with
+ * Intl so the wording stays the same whatever locale the device is set to.
+ * Tests pin TZ=UTC so they do not depend on where they run.
  */
 export const formatDay = (iso: string): string => {
   const date = new Date(iso);
-  const month = MONTHS[date.getUTCMonth()] ?? "";
-  return `${date.getUTCDate()} ${month} ${date.getUTCFullYear()}`;
+  const month = MONTHS[date.getMonth()] ?? "";
+  return `${date.getDate()} ${month} ${date.getFullYear()}`;
 };
 
 /**
