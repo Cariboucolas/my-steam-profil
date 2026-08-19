@@ -7,7 +7,8 @@
   "exports": {
     "./steam-mapper": "./src/steam/steam-mapper.ts",
     "./steam-types": "./src/steam/steam-types.ts",
-    "./presenters": "./src/http/presenters.ts"
+    "./presenters": "./src/http/presenters.ts",
+    "./steam-gateway": "./src/steam/steam-gateway.ts"
   },
   "scripts": {
     "test": "vitest run",
@@ -16,7 +17,8 @@
   },
   "dependencies": {
     "@steam/contracts": "workspace:*",
-    "@steam/domain": "workspace:*"
+    "@steam/domain": "workspace:*",
+    "hono": "^4.13.3"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
