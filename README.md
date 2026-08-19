@@ -9,15 +9,35 @@ Architecture hexagonale, monorepo pnpm. Voir `docs/superpowers/` (local) pour le
 |---|---|
 | `packages/domain` | Le domaine : SteamId, Playtime, CompletionRate, Timeline… Aucune I/O. |
 | `packages/contracts` | Les DTO « fil » partagés entre le backend et l'app. |
-| `apps/api` | Proxy Steam (ADR-0001). Mappers et presenters faits, serveur HTTP à venir. |
+| `apps/api` | Proxy Steam (ADR-0001) : trois endpoints, mappers et presenters. |
 | `apps/mobile` | L'app Expo : écrans Library et Game. |
 | `tools/steam-spike` | Récupère les réponses brutes de Steam dans `fixtures/steam-raw/`. |
 | `tools/fixtures-dto` | Transforme ces réponses brutes en DTO pour l'app. |
 
+## Démarrer le backend
+
+```bash
+cp apps/api/.env.example apps/api/.env   # puis renseigner STEAM_API_KEY
+pnpm dev:api                             # http://localhost:3000
+```
+
+Trois endpoints, les seuls que l'app appelle :
+
+| Endpoint | Réponse |
+|---|---|
+| `GET /api/profile/:steamId` | `ProfileDto` — 404 si le profil est introuvable |
+| `GET /api/profile/:steamId/games` | `GameDto[]` — liste vide si le compte ne possède rien |
+| `GET /api/profile/:steamId/games/:appId/achievements` | `GameProgressDto` — 403 si le profil est privé, 200 vide si le jeu n'a pas de succès |
+
+Plus `GET /health`. Un SteamID mal formé donne 400 sans qu'aucun appel ne parte
+vers Steam ; une panne Steam donne 502, un bug de notre côté donne 500.
+
+La clé API ne quitte jamais le serveur (ADR-0001) et n'apparaît ni dans une
+réponse ni dans un message d'erreur.
+
 ## Démarrer l'app
 
-Le backend HTTP n'existe pas encore : l'app lit des fixtures locales, au format
-exact que le backend servira.
+L'app lit encore des fixtures locales, au format exact que le backend sert.
 
 ```bash
 pnpm install
