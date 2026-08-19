@@ -63,6 +63,56 @@ describe("mapGames", () => {
   it("returns an empty list when the account owns no games", () => {
     expect(mapGames({ response: {} })).toEqual([]);
   });
+
+  it("maps the last played timestamp, which Steam sends in seconds", () => {
+    const games = mapGames({
+      response: {
+        games: [
+          {
+            appid: 440,
+            name: "Team Fortress 2",
+            playtime_forever: 405,
+            img_icon_url: "abc123",
+            rtime_last_played: 1782389774,
+          },
+        ],
+      },
+    });
+    expect(games[0]?.lastPlayed).toEqual(new Date(1782389774 * 1000));
+  });
+
+  it("has no last played date for a game that was never launched", () => {
+    const games = mapGames({
+      response: {
+        games: [
+          {
+            appid: 978520,
+            name: "Legend of Keepers",
+            playtime_forever: 0,
+            img_icon_url: "abc123",
+            rtime_last_played: 0,
+          },
+        ],
+      },
+    });
+    expect(games[0]?.lastPlayed).toBeNull();
+  });
+
+  it("has no last played date when Steam omits the field", () => {
+    const games = mapGames({
+      response: {
+        games: [
+          {
+            appid: 440,
+            name: "Team Fortress 2",
+            playtime_forever: 405,
+            img_icon_url: "abc123",
+          },
+        ],
+      },
+    });
+    expect(games[0]?.lastPlayed).toBeNull();
+  });
 });
 
 describe("mapGameProgress (nominal)", () => {

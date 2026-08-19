@@ -5,4 +5,6 @@ export interface Game {
   readonly name: string;
   readonly playtime: Playtime;
   readonly iconUrl: string;
+  /** When the player last launched it, or null if they never have. */
+  readonly lastPlayed: Date | null;
 }

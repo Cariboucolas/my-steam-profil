@@ -17,6 +17,8 @@ export interface SteamOwnedGame {
   name: string;
   playtime_forever: number;
   img_icon_url: string;
+  /** Epoch seconds; 0 when the player never launched the game. */
+  rtime_last_played?: number;
 }
 
 export interface SteamOwnedGamesResponse {

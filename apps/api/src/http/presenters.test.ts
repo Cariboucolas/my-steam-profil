@@ -44,20 +44,29 @@ describe("toProfileDto", () => {
 });
 
 describe("toGameDto", () => {
+  const LAST_PLAYED_SECONDS = 1782389774;
+
+  const game: Game = {
+    appId: 440,
+    name: "Team Fortress 2",
+    playtime: Playtime.fromMinutes(405),
+    iconUrl: "https://icon/440.jpg",
+    lastPlayed: new Date(LAST_PLAYED_SECONDS * SECONDS_TO_MS),
+  };
+
   it("exposes both raw minutes and a human label for playtime", () => {
-    const game: Game = {
-      appId: 440,
-      name: "Team Fortress 2",
-      playtime: Playtime.fromMinutes(405),
-      iconUrl: "https://icon/440.jpg",
-    };
     expect(toGameDto(game)).toEqual({
       appId: 440,
       name: "Team Fortress 2",
       playtimeMinutes: 405,
       playtimeLabel: "6 h 45",
       iconUrl: "https://icon/440.jpg",
+      lastPlayedAt: new Date(LAST_PLAYED_SECONDS * SECONDS_TO_MS).toISOString(),
     });
+  });
+
+  it("carries a null last played date for a game that was never launched", () => {
+    expect(toGameDto({ ...game, lastPlayed: null }).lastPlayedAt).toBeNull();
   });
 });
 
