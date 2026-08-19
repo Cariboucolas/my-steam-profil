@@ -8,7 +8,8 @@
     "./steam-mapper": "./src/steam/steam-mapper.ts",
     "./steam-types": "./src/steam/steam-types.ts",
     "./presenters": "./src/http/presenters.ts",
-    "./steam-gateway": "./src/steam/steam-gateway.ts"
+    "./steam-gateway": "./src/steam/steam-gateway.ts",
+    "./steam-client": "./src/steam/steam-client.ts"
   },
   "scripts": {
     "test": "vitest run",
