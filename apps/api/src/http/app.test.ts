@@ -6,6 +6,9 @@ const API_KEY = "TEST_KEY";
 const STEAM_ID = "76561197979269357";
 const MALFORMED_STEAM_ID = "not-a-steam-id";
 
+/** Steam counts in seconds; JavaScript dates in milliseconds. */
+const SECONDS_TO_MS = 1000;
+
 const unreachableSteam: typeof fetch = () => {
   throw new Error("this test should not have called Steam");
 };
@@ -196,7 +199,7 @@ describe("GET /api/profile/:steamId/games", () => {
         playtimeLabel: "82 h 57",
         iconUrl:
           "https://media.steampowered.com/steamcommunity/public/images/apps/2066020/abc123.jpg",
-        lastPlayedAt: new Date(LAST_PLAYED_SECONDS * 1000).toISOString(),
+        lastPlayedAt: new Date(LAST_PLAYED_SECONDS * SECONDS_TO_MS).toISOString(),
       },
       {
         appId: 978520,
@@ -232,7 +235,6 @@ describe("GET /api/profile/:steamId/games", () => {
 describe("GET /api/profile/:steamId/games/:appId/achievements", () => {
   const APP_ID = 2066020;
   const UNLOCK_SECONDS = 1697568656;
-  const SECONDS_TO_MS = 1000;
 
   const BAD_REQUEST_FROM_STEAM = 400;
   const FORBIDDEN_FROM_STEAM = 403;

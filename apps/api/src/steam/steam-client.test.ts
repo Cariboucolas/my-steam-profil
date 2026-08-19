@@ -19,14 +19,10 @@ const jsonResponse = (body: unknown, status = 200): Response =>
 
 /** A fetch that always answers the same way, and records how it was called. */
 const stubFetch = (response: () => Response | Promise<Response>) =>
-  vi.fn((input: string | URL | Request, init?: RequestInit) => {
-    void input;
-    void init;
-    return Promise.resolve(response());
-  });
+  vi.fn<typeof fetch>(() => Promise.resolve(response()));
 
 const clientWith = (fetchImpl: ReturnType<typeof stubFetch>) =>
-  createSteamClient({ apiKey: API_KEY, fetch: fetchImpl as unknown as typeof fetch });
+  createSteamClient({ apiKey: API_KEY, fetch: fetchImpl });
 
 const urlOf = (fetchImpl: ReturnType<typeof stubFetch>): string =>
   String(fetchImpl.mock.calls[0]?.[0]);
