@@ -389,3 +389,75 @@ describe("GET /api/profile/:steamId/games/:appId/achievements", () => {
     expect(response.status).toBe(400);
   });
 });
+
+describe("when something fails on the way", () => {
+  const STEAM_SERVER_ERROR = 503;
+
+  it("is a 502 when Steam is unavailable", async () => {
+    const app = appReaching(
+      steamAnswering({ playerSummaries: [{}, STEAM_SERVER_ERROR] }),
+    );
+
+    const response = await app.request(`/api/profile/${STEAM_ID}`);
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: "STEAM_UNAVAILABLE" });
+  });
+
+  it("is a 502 when Steam rate-limits us", async () => {
+    const TOO_MANY_REQUESTS = 429;
+    const app = appReaching(
+      steamAnswering({ ownedGames: [{}, TOO_MANY_REQUESTS] }),
+    );
+
+    const response = await app.request(`/api/profile/${STEAM_ID}/games`);
+
+    expect(response.status).toBe(502);
+  });
+
+  /**
+   * A negative playtime breaks a domain invariant, so Playtime throws rather
+   * than returning a Result (ADR-0002). Nothing should turn that into a lie
+   * about Steam being down.
+   */
+  it("is a 500, not a 502, when our own invariants break", async () => {
+    const impossible = {
+      response: {
+        games: [
+          {
+            appid: 440,
+            name: "Team Fortress 2",
+            playtime_forever: -1,
+            img_icon_url: "abc123",
+          },
+        ],
+      },
+    };
+    const app = appReaching(steamAnswering({ ownedGames: [impossible] }));
+
+    const response = await app.request(`/api/profile/${STEAM_ID}/games`);
+
+    expect(response.status).toBe(500);
+    expect(await response.json()).toEqual({ error: "INTERNAL_ERROR" });
+  });
+
+  it("never lets an error body carry the api key", async () => {
+    const app = appReaching(
+      steamAnswering({ playerSummaries: [{}, STEAM_SERVER_ERROR] }),
+    );
+
+    const body = await (await app.request(`/api/profile/${STEAM_ID}`)).text();
+
+    expect(body).not.toContain(API_KEY);
+  });
+
+  it("never lets an error body carry a stack trace", async () => {
+    const app = appReaching(
+      steamAnswering({ playerSummaries: [{}, STEAM_SERVER_ERROR] }),
+    );
+
+    const body = await (await app.request(`/api/profile/${STEAM_ID}`)).text();
+
+    expect(body).not.toMatch(/at .*\.ts:/);
+  });
+});
