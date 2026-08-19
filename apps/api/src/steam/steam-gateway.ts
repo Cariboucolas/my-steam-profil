@@ -33,8 +33,10 @@ export class SteamGatewayError extends Error {
   constructor(
     message: string,
     readonly status?: number,
+    /** Keeps the original failure, so a log says more than "Steam failed". */
+    options?: ErrorOptions,
   ) {
-    super(message);
+    super(message, options);
     this.name = "SteamGatewayError";
   }
 }
