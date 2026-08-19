@@ -6,7 +6,7 @@ import type {
   SteamPlayerAchievementsResponse,
 } from "./steam-types";
 
-const DEFAULT_BASE_URL = "https://api.steampowered.com";
+const STEAM_BASE_URL = "https://api.steampowered.com";
 
 const BAD_REQUEST = 400;
 const FORBIDDEN = 403;
@@ -26,14 +26,12 @@ export interface SteamClientConfig {
   readonly apiKey: string;
   /** Injectable so the whole backend can be tested without a network. */
   readonly fetch?: typeof fetch;
-  readonly baseUrl?: string;
 }
 
 
 
 export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
   const request = config.fetch ?? globalThis.fetch;
-  const baseUrl = config.baseUrl ?? DEFAULT_BASE_URL;
 
   /**
    * Error messages name the path, never the URL: the URL carries the API key
@@ -49,7 +47,7 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
      */
     carriesAnAnswer: readonly number[] = [],
   ): Promise<T> => {
-    const url = new URL(path, baseUrl);
+    const url = new URL(path, STEAM_BASE_URL);
     url.searchParams.set("key", config.apiKey);
     for (const [name, value] of Object.entries(params)) {
       url.searchParams.set(name, value);
@@ -58,8 +56,10 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
     let response: Response;
     try {
       response = await request(url);
-    } catch {
-      throw new SteamGatewayError(`Could not reach Steam at ${path}`);
+    } catch (cause) {
+      throw new SteamGatewayError(`Could not reach Steam at ${path}`, undefined, {
+        cause,
+      });
     }
 
     if (!response.ok && !carriesAnAnswer.includes(response.status)) {
@@ -71,10 +71,11 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
 
     try {
       return (await response.json()) as T;
-    } catch {
+    } catch (cause) {
       throw new SteamGatewayError(
         `Steam answered something that is not JSON at ${path}`,
         response.status,
+        { cause },
       );
     }
   };
