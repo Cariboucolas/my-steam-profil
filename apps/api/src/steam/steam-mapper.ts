@@ -39,8 +39,14 @@ export const mapProfile = (
   });
 };
 
+const SECONDS_TO_MS = 1000;
+
 const ICON_BASE =
   "https://media.steampowered.com/steamcommunity/public/images/apps";
+
+/** Steam sends epoch seconds, and 0 for a game that was never launched. */
+const lastPlayedFromSteam = (seconds: number | undefined): Date | null =>
+  seconds ? new Date(seconds * SECONDS_TO_MS) : null;
 
 export const mapGames = (raw: SteamOwnedGamesResponse): Game[] => {
   const ownedGames = raw.response.games ?? [];
@@ -49,6 +55,7 @@ export const mapGames = (raw: SteamOwnedGamesResponse): Game[] => {
     name: ownedGame.name,
     playtime: Playtime.fromMinutes(ownedGame.playtime_forever),
     iconUrl: `${ICON_BASE}/${ownedGame.appid}/${ownedGame.img_icon_url}.jpg`,
+    lastPlayed: lastPlayedFromSteam(ownedGame.rtime_last_played),
   }));
 };
 

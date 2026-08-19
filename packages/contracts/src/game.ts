@@ -9,4 +9,6 @@ export interface GameDto {
   readonly playtimeMinutes: number;
   readonly playtimeLabel: string;
   readonly iconUrl: string;
+  /** ISO 8601, or null when the player never launched the game. */
+  readonly lastPlayedAt: string | null;
 }

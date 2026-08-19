@@ -13,7 +13,7 @@ A player as Steam presents them publicly — persona name, avatar, profile page.
 _Avoid_: User, Account, Player (Steam's wire word, boundary only)
 
 **Game**:
-A title in a player's owned library, identified by its Steam appId, carrying the playtime that player has accumulated on it.
+A title in a player's owned library, identified by its Steam appId, carrying the playtime that player has accumulated on it and when they last launched it.
 _Avoid_: App, Title, Product
 
 **Playtime**:

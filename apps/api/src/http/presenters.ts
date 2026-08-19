@@ -20,6 +20,7 @@ export const toGameDto = (game: Game): GameDto => ({
   playtimeMinutes: game.playtime.minutes,
   playtimeLabel: game.playtime.format(),
   iconUrl: game.iconUrl,
+  lastPlayedAt: game.lastPlayed ? game.lastPlayed.toISOString() : null,
 });
 
 export const toAchievementDto = (achievement: Achievement): AchievementDto => ({
