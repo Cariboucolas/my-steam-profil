@@ -14,6 +14,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@steam/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@steam/domain':
         specifier: workspace:*
         version: link:../../packages/domain
