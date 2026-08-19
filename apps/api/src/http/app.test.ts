@@ -130,3 +130,75 @@ describe("GET /api/profile/:steamId", () => {
     expect(response.status).toBe(400);
   });
 });
+
+describe("GET /api/profile/:steamId/games", () => {
+  const LAST_PLAYED_SECONDS = 1782389774;
+
+  const library = {
+    response: {
+      game_count: 2,
+      games: [
+        {
+          appid: 2066020,
+          name: "Soulstone Survivors",
+          playtime_forever: 4977,
+          img_icon_url: "abc123",
+          rtime_last_played: LAST_PLAYED_SECONDS,
+        },
+        {
+          appid: 978520,
+          name: "Legend of Keepers",
+          playtime_forever: 0,
+          img_icon_url: "def456",
+          rtime_last_played: 0,
+        },
+      ],
+    },
+  };
+
+  it("answers with every game the player owns", async () => {
+    const app = appReaching(steamAnswering({ ownedGames: [library] }));
+
+    const response = await app.request(`/api/profile/${STEAM_ID}/games`);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([
+      {
+        appId: 2066020,
+        name: "Soulstone Survivors",
+        playtimeMinutes: 4977,
+        playtimeLabel: "82 h 57",
+        iconUrl:
+          "https://media.steampowered.com/steamcommunity/public/images/apps/2066020/abc123.jpg",
+        lastPlayedAt: new Date(LAST_PLAYED_SECONDS * 1000).toISOString(),
+      },
+      {
+        appId: 978520,
+        name: "Legend of Keepers",
+        playtimeMinutes: 0,
+        playtimeLabel: "0 min",
+        iconUrl:
+          "https://media.steampowered.com/steamcommunity/public/images/apps/978520/def456.jpg",
+        lastPlayedAt: null,
+      },
+    ]);
+  });
+
+  it("answers with an empty library rather than an error when nothing is owned", async () => {
+    const app = appReaching(steamAnswering({ ownedGames: [{ response: {} }] }));
+
+    const response = await app.request(`/api/profile/${STEAM_ID}/games`);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([]);
+  });
+
+  it("is a 400 when the steam id is malformed", async () => {
+    const response = await appReaching(unreachableSteam).request(
+      `/api/profile/${MALFORMED_STEAM_ID}/games`,
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "INVALID_STEAM_ID" });
+  });
+});
