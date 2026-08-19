@@ -154,6 +154,19 @@ describe("buildGameSummary", () => {
     const none = buildGameSummary(GAME, EMPTY);
     expect(none.percentage).toBeNull();
     expect(none.rateLabel).toBe("—");
+    expect(none.fraction).toBe("no achievements");
     expect(none.remaining).toBe("");
+  });
+
+  it("tells apart a game with nothing to earn from one never fetched", () => {
+    const unfetched = buildGameSummary(GAME, null);
+    expect(unfetched.percentage).toBeNull();
+    expect(unfetched.fraction).toBe("not loaded");
+  });
+
+  it("still describes playtime for a game never fetched", () => {
+    expect(buildGameSummary(GAME, null).meta).toBe(
+      "82 h 57 played · last played 25 Jun 2026",
+    );
   });
 });

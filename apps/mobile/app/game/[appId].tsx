@@ -88,10 +88,7 @@ export default function GameScreen() {
   const summary = useMemo(
     () =>
       state.status === "ready"
-        ? buildGameSummary(
-            state.data.game,
-            progress ?? { completion: { unlocked: 0, total: 0, percentage: 0 }, achievements: [], timeline: [] },
-          )
+        ? buildGameSummary(state.data.game, progress)
         : null,
     [state, progress],
   );
