@@ -1,0 +1,96 @@
+/**
+ * Turns the raw Steam fixtures into wire DTOs the mobile app can consume.
+ *
+ * ADR-0001 says the app never translates Steam shapes. This script runs the
+ * same pipeline the backend will run — steam-mapper then presenters — so the
+ * app sees exactly what an HTTP response will look like, long before the
+ * backend exists.
+ */
+import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+import { mapProfile, mapGames, mapGameProgress } from "@steam/api/steam-mapper";
+import type {
+  SteamPlayerSummariesResponse,
+  SteamOwnedGamesResponse,
+  SteamSchemaResponse,
+  SteamPlayerAchievementsResponse,
+} from "@steam/api/steam-types";
+import {
+  toProfileDto,
+  toGameDto,
+  toGameProgressDto,
+  emptyGameProgressDto,
+} from "@steam/api/presenters";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const RAW_DIR = resolve(here, "../../fixtures/steam-raw");
+const OUT_DIR = resolve(here, "../../apps/mobile/src/fixtures");
+
+/**
+ * The two unsuffixed files date from the first spike run; they hold Halls of
+ * Torment. Mapping them explicitly beats guessing an appId from a game name.
+ */
+const GAMES_WITH_PROGRESS = [
+  { appId: 2218750, schema: "schema-for-game.json", player: "player-achievements.json" },
+  { appId: 2066020, schema: "schema-for-game-2066020.json", player: "player-achievements-2066020.json" },
+  { appId: 25900, schema: "schema-for-game-25900.json", player: "player-achievements-25900.json" },
+  { appId: 978520, schema: "schema-for-game-978520.json", player: "player-achievements-978520.json" },
+  { appId: 2694490, schema: "schema-for-game-2694490.json", player: "player-achievements-2694490.json" },
+] as const;
+
+const readRaw = async <T>(name: string): Promise<T> =>
+  JSON.parse(await readFile(resolve(RAW_DIR, name), "utf8")) as T;
+
+const writeDto = async (name: string, value: unknown): Promise<void> => {
+  await writeFile(resolve(OUT_DIR, name), `${JSON.stringify(value, null, 2)}\n`, "utf8");
+  console.log(`  wrote ${name}`);
+};
+
+const buildProfile = async (): Promise<void> => {
+  const raw = await readRaw<SteamPlayerSummariesResponse>("player-summaries.json");
+  const profile = mapProfile(raw);
+  if (!profile.ok) {
+    throw new Error(`player-summaries.json did not map to a profile: ${profile.error}`);
+  }
+  await writeDto("profile.json", toProfileDto(profile.value));
+};
+
+const buildGames = async (): Promise<void> => {
+  const raw = await readRaw<SteamOwnedGamesResponse>("owned-games.json");
+  await writeDto("games.json", mapGames(raw).map(toGameDto));
+};
+
+const buildProgress = async (): Promise<void> => {
+  for (const { appId, schema, player } of GAMES_WITH_PROGRESS) {
+    const progress = mapGameProgress(
+      await readRaw<SteamSchemaResponse>(schema),
+      await readRaw<SteamPlayerAchievementsResponse>(player),
+    );
+    if (progress.ok) {
+      await writeDto(`progress-${appId}.json`, toGameProgressDto(progress.value));
+      continue;
+    }
+    if (progress.error === "NO_ACHIEVEMENTS") {
+      // A real game with nothing to earn: a valid, empty answer, not a failure.
+      await writeDto(`progress-${appId}.json`, emptyGameProgressDto());
+      continue;
+    }
+    console.warn(`  skipped ${appId}: ${progress.error}`);
+  }
+};
+
+const run = async (): Promise<void> => {
+  await mkdir(OUT_DIR, { recursive: true });
+  console.log(`Reading ${RAW_DIR}`);
+  await buildProfile();
+  await buildGames();
+  await buildProgress();
+  console.log(`Done. Fixtures written to ${OUT_DIR}`);
+};
+
+run().catch((error: unknown) => {
+  console.error(error);
+  process.exit(1);
+});

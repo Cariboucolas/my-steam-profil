@@ -1,0 +1,20 @@
+{
+  "name": "@steam/fixtures-dto",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsx build.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@steam/api": "workspace:*",
+    "@steam/contracts": "workspace:*",
+    "@steam/domain": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.16.0",
+    "typescript": "^5.5.0"
+  }
+}

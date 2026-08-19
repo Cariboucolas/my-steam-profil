@@ -8,6 +8,7 @@
     "test:domain": "pnpm --filter @steam/domain test",
     "test:api": "pnpm --filter @steam/api test",
     "coverage:domain": "pnpm --filter @steam/domain coverage",
+    "fixtures:build": "pnpm --filter @steam/fixtures-dto build",
     "tdd": "pnpm --filter @steam/domain test:watch"
   },
   "devDependencies": {
