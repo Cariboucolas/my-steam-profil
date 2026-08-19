@@ -8,8 +8,16 @@ import type {
 
 const DEFAULT_BASE_URL = "https://api.steampowered.com";
 
-const TOO_MANY_REQUESTS = 429;
-const SERVER_ERROR_FLOOR = 500;
+const BAD_REQUEST = 400;
+const FORBIDDEN = 403;
+
+/**
+ * The only statuses Steam uses to say something true about a game or a player
+ * rather than to report a failure, and only on the two calls listed below: 400
+ * for a game that defines no stats, 403 for a private profile. Both carry a
+ * body the mapper reads.
+ */
+const CARRIES_AN_ANSWER = [BAD_REQUEST, FORBIDDEN] as const;
 
 /** Steam localises achievement names; the domain speaks English. */
 const LANGUAGE = "english";
@@ -21,12 +29,7 @@ export interface SteamClientConfig {
   readonly baseUrl?: string;
 }
 
-/**
- * Only a failure that says nothing about the player. Steam also answers 400 and
- * 403 with bodies the mapper reads — see the note on getPlayerAchievements.
- */
-const saysNothingAboutThePlayer = (status: number): boolean =>
-  status === TOO_MANY_REQUESTS || status >= SERVER_ERROR_FLOOR;
+
 
 export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
   const request = config.fetch ?? globalThis.fetch;
@@ -39,6 +42,12 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
   const call = async <T>(
     path: string,
     params: Readonly<Record<string, string>>,
+    /**
+     * Statuses this particular call should read rather than raise on. Empty for
+     * most calls: a 4xx there means our key is wrong, and answering with the
+     * error body would turn an outage into an empty library.
+     */
+    carriesAnAnswer: readonly number[] = [],
   ): Promise<T> => {
     const url = new URL(path, baseUrl);
     url.searchParams.set("key", config.apiKey);
@@ -53,7 +62,7 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
       throw new SteamGatewayError(`Could not reach Steam at ${path}`);
     }
 
-    if (saysNothingAboutThePlayer(response.status)) {
+    if (!response.ok && !carriesAnAnswer.includes(response.status)) {
       throw new SteamGatewayError(
         `Steam answered ${response.status} at ${path}`,
         response.status,
@@ -88,10 +97,11 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
       }),
 
     getSchemaForGame: (appId) =>
-      call<SteamSchemaResponse>("/ISteamUserStats/GetSchemaForGame/v2/", {
-        appid: String(appId),
-        l: LANGUAGE,
-      }),
+      call<SteamSchemaResponse>(
+        "/ISteamUserStats/GetSchemaForGame/v2/",
+        { appid: String(appId), l: LANGUAGE },
+        CARRIES_AN_ANSWER,
+      ),
 
     /**
      * Steam answers 400 here when the game defines no stats and 403 when the
@@ -102,6 +112,7 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
       call<SteamPlayerAchievementsResponse>(
         "/ISteamUserStats/GetPlayerAchievements/v1/",
         { steamid: steamId, appid: String(appId), l: LANGUAGE },
+        CARRIES_AN_ANSWER,
       ),
   };
 };
