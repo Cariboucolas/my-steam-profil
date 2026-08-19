@@ -18,6 +18,9 @@ import * as SplashScreen from "expo-splash-screen";
 
 import { colors } from "../src/theme/tokens";
 
+/** The width the design was drawn at. */
+const PHONE_WIDTH = 402;
+
 void SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
@@ -48,7 +51,14 @@ export default function RootLayout() {
       <Stack
         screenOptions={{
           headerShown: false,
-          contentStyle: { backgroundColor: colors.bg },
+          contentStyle: {
+            backgroundColor: colors.bg,
+            // A phone-width column, centred. No effect on a phone, where the
+            // screen is narrower; it keeps the web preview honest.
+            width: "100%",
+            maxWidth: PHONE_WIDTH,
+            alignSelf: "center",
+          },
         }}
       />
     </SafeAreaProvider>

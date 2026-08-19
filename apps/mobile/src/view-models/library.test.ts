@@ -84,6 +84,13 @@ describe("buildLibraryRows", () => {
     expect(rows.find((r) => r.appId === 8930)?.meta).toContain("no achievements");
   });
 
+  it("shows a dash, not 0 %, for a game that defines no achievements", () => {
+    const rows = buildLibraryRows(GAMES, { 8930: progress(0, 0) }, "closest");
+    const row = rows.find((r) => r.appId === 8930);
+    expect(row?.rateLabel).toBe("—");
+    expect(row?.percentage).toBeNull();
+  });
+
   it("says so when a game was never launched", () => {
     const rows = buildLibraryRows(GAMES, PROGRESS, "closest");
     expect(rows.find((r) => r.appId === 978520)?.meta).toContain("never played");

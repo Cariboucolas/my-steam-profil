@@ -52,8 +52,15 @@ export const formatDay = (iso: string): string => {
   return `${date.getUTCDate()} ${month} ${date.getUTCFullYear()}`;
 };
 
+/**
+ * Null covers two cases the list draws the same way: progress was never
+ * fetched, and the game defines no achievements. Neither has a rate worth
+ * showing, and 0 % would read as failure rather than absence.
+ */
 const percentageOf = (progress: GameProgressDto | undefined): number | null =>
-  progress ? Math.round(progress.completion.percentage) : null;
+  progress && progress.completion.total > 0
+    ? Math.round(progress.completion.percentage)
+    : null;
 
 const metaFor = (game: GameDto, progress: GameProgressDto | undefined): string => {
   const played = formatHours(game.playtimeMinutes);
