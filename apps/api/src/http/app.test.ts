@@ -202,3 +202,190 @@ describe("GET /api/profile/:steamId/games", () => {
     expect(await response.json()).toEqual({ error: "INVALID_STEAM_ID" });
   });
 });
+
+describe("GET /api/profile/:steamId/games/:appId/achievements", () => {
+  const APP_ID = 2066020;
+  const UNLOCK_SECONDS = 1697568656;
+  const SECONDS_TO_MS = 1000;
+
+  const BAD_REQUEST_FROM_STEAM = 400;
+  const FORBIDDEN_FROM_STEAM = 403;
+
+  const schema = {
+    game: {
+      gameName: "Demo",
+      availableGameStats: {
+        achievements: [
+          {
+            name: "BOSS_1",
+            displayName: "First boss",
+            description: "Beat the first boss.",
+            hidden: 0,
+            icon: "icon1.jpg",
+            icongray: "gray1.jpg",
+          },
+          {
+            name: "SECRET_1",
+            displayName: "Secret",
+            hidden: 1,
+            icon: "icon2.jpg",
+            icongray: "gray2.jpg",
+          },
+        ],
+      },
+    },
+  };
+
+  const halfDone = {
+    playerstats: {
+      success: true,
+      achievements: [
+        { apiname: "BOSS_1", achieved: 1, unlocktime: UNLOCK_SECONDS },
+        { apiname: "SECRET_1", achieved: 0, unlocktime: 0 },
+      ],
+    },
+  };
+
+  const url = `/api/profile/${STEAM_ID}/games/${APP_ID}/achievements`;
+
+  it("answers with completion, achievements and timeline", async () => {
+    const app = appReaching(
+      steamAnswering({ schemaForGame: [schema], playerAchievements: [halfDone] }),
+    );
+
+    const response = await app.request(url);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      completion: { unlocked: 1, total: 2, percentage: 50 },
+      achievements: [
+        {
+          apiName: "BOSS_1",
+          displayName: "First boss",
+          description: "Beat the first boss.",
+          hidden: false,
+          icon: "icon1.jpg",
+          iconGray: "gray1.jpg",
+          unlocked: true,
+          unlockedAt: new Date(UNLOCK_SECONDS * SECONDS_TO_MS).toISOString(),
+        },
+        {
+          apiName: "SECRET_1",
+          displayName: "Secret",
+          description: "",
+          hidden: true,
+          icon: "icon2.jpg",
+          iconGray: "gray2.jpg",
+          unlocked: false,
+          unlockedAt: null,
+        },
+      ],
+      timeline: [
+        {
+          apiName: "BOSS_1",
+          unlockedAt: new Date(UNLOCK_SECONDS * SECONDS_TO_MS).toISOString(),
+        },
+      ],
+    });
+  });
+
+  it("counts a game owned but never launched as zero of its real total", async () => {
+    const untouched = {
+      playerstats: {
+        success: true,
+        achievements: [
+          { apiname: "BOSS_1", achieved: 0, unlocktime: 0 },
+          { apiname: "SECRET_1", achieved: 0, unlocktime: 0 },
+        ],
+      },
+    };
+    const app = appReaching(
+      steamAnswering({ schemaForGame: [schema], playerAchievements: [untouched] }),
+    );
+
+    const response = await app.request(url);
+    const body = (await response.json()) as { completion: unknown };
+
+    expect(response.status).toBe(200);
+    expect(body.completion).toEqual({ unlocked: 0, total: 2, percentage: 0 });
+  });
+
+  /**
+   * Steam reports a game with nothing to earn as HTTP 400 with a body saying
+   * so. That is a normal answer, and it has to survive the whole chain as a
+   * 200 carrying an empty progress.
+   */
+  it("is a 200 with an empty progress when the game defines no achievements", async () => {
+    const app = appReaching(
+      steamAnswering({
+        schemaForGame: [{ game: {} }, BAD_REQUEST_FROM_STEAM],
+        playerAchievements: [
+          { playerstats: { success: false, error: "Requested app has no stats" } },
+          BAD_REQUEST_FROM_STEAM,
+        ],
+      }),
+    );
+
+    const response = await app.request(url);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      completion: { unlocked: 0, total: 0, percentage: 0 },
+      achievements: [],
+      timeline: [],
+    });
+  });
+
+  /** Steam reports a private profile as HTTP 403, again with a body. */
+  it("is a 403 when the profile is private", async () => {
+    const app = appReaching(
+      steamAnswering({
+        schemaForGame: [schema],
+        playerAchievements: [
+          { playerstats: { success: false, error: "Profile is not public" } },
+          FORBIDDEN_FROM_STEAM,
+        ],
+      }),
+    );
+
+    const response = await app.request(url);
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: "PRIVATE_PROFILE" });
+  });
+
+  it("is a 400 when the steam id is malformed", async () => {
+    const response = await appReaching(unreachableSteam).request(
+      `/api/profile/${MALFORMED_STEAM_ID}/games/${APP_ID}/achievements`,
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "INVALID_STEAM_ID" });
+  });
+
+  it("is a 400 when the app id is not a number", async () => {
+    const response = await appReaching(unreachableSteam).request(
+      `/api/profile/${STEAM_ID}/games/not-an-app/achievements`,
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "INVALID_APP_ID" });
+  });
+
+  it("is a 400 when the app id is zero or negative", async () => {
+    const response = await appReaching(unreachableSteam).request(
+      `/api/profile/${STEAM_ID}/games/0/achievements`,
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "INVALID_APP_ID" });
+  });
+
+  it("rejects a malformed app id without calling Steam at all", async () => {
+    // unreachableSteam throws if called, so a clean 400 is the assertion.
+    const response = await appReaching(unreachableSteam).request(
+      `/api/profile/${STEAM_ID}/games/-3/achievements`,
+    );
+    expect(response.status).toBe(400);
+  });
+});
