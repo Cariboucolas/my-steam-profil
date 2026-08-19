@@ -127,10 +127,30 @@ export const buildTimelineDays = (
   });
 };
 
+/**
+ * Progress is nullable here on purpose: null means the achievements were never
+ * fetched, which is not the same as a game that defines none. The mock words
+ * those two states differently.
+ */
 export const buildGameSummary = (
   game: GameDto,
-  progress: GameProgressDto,
+  progress: GameProgressDto | null,
 ): GameSummary => {
+  const meta = `${game.playtimeLabel} played · last played ${
+    game.lastPlayedAt ? formatDay(game.lastPlayedAt) : "never"
+  }`;
+
+  if (progress === null) {
+    return {
+      percentage: null,
+      rateLabel: "—",
+      fraction: "not loaded",
+      remaining: "",
+      lastUnlock: "",
+      meta,
+    };
+  }
+
   const { unlocked, total, percentage } = progress.completion;
   const known = total > 0;
   const left = Math.max(0, total - unlocked);
@@ -150,8 +170,6 @@ export const buildGameSummary = (
       ? `${left} ${left === 1 ? "achievement" : "achievements"} remaining`
       : "",
     lastUnlock: lastUnlockAt ? `last unlock ${formatDay(lastUnlockAt)}` : "",
-    meta: `${game.playtimeLabel} played · last played ${
-      game.lastPlayedAt ? formatDay(game.lastPlayedAt) : "never"
-    }`,
+    meta,
   };
 };
