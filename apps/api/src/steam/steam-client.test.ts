@@ -175,3 +175,34 @@ describe("createSteamClient (Steam's meaningful 4xx)", () => {
     expect(await client.getSchemaForGame(APP_ID)).toEqual({ game: {} });
   });
 });
+
+/**
+ * The tolerance above is scoped to the one call Steam uses those statuses for.
+ * Everywhere else a 4xx means something is wrong with us — a revoked key, most
+ * likely — and answering with the error body would turn that into an empty
+ * library rather than an outage.
+ */
+describe("createSteamClient (4xx everywhere else)", () => {
+  it("raises when the library call is refused", async () => {
+    const client = clientWith(
+      stubFetch(() => jsonResponse({ response: {} }, FORBIDDEN)),
+    );
+    await expect(client.getOwnedGames(STEAM_ID)).rejects.toBeInstanceOf(
+      SteamGatewayError,
+    );
+  });
+
+  it("raises when the profile call is refused", async () => {
+    const client = clientWith(stubFetch(() => jsonResponse({}, FORBIDDEN)));
+    await expect(client.getPlayerSummaries(STEAM_ID)).rejects.toBeInstanceOf(
+      SteamGatewayError,
+    );
+  });
+
+  it("raises when the profile call is rejected as a bad request", async () => {
+    const client = clientWith(stubFetch(() => jsonResponse({}, BAD_REQUEST)));
+    await expect(client.getPlayerSummaries(STEAM_ID)).rejects.toBeInstanceOf(
+      SteamGatewayError,
+    );
+  });
+});
