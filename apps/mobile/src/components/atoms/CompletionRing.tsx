@@ -83,9 +83,10 @@ export function CompletionRing({
           strokeDasharray={circumference}
           strokeDashoffset={dashOffset}
           strokeLinecap="butt"
-          originX={centre}
-          originY={centre}
-          rotation={START_AT_TOP}
+          // A plain SVG transform string rather than the rotation/originX
+          // props: those compile to a transform-origin attribute the DOM
+          // rejects when the same component renders on web.
+          transform={`rotate(${START_AT_TOP} ${centre} ${centre})`}
         />
       </Svg>
       <View style={styles.centre} pointerEvents="none">
