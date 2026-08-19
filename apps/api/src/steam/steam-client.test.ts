@@ -52,6 +52,13 @@ describe("createSteamClient (URLs)", () => {
     expect(url).toContain("include_appinfo=1");
   });
 
+  it("asks GetOwnedGames for played free games, which Steam otherwise omits", async () => {
+    const fetchImpl = stubFetch(() => jsonResponse({ response: {} }));
+    await clientWith(fetchImpl).getOwnedGames(STEAM_ID);
+
+    expect(urlOf(fetchImpl)).toContain("include_played_free_games=1");
+  });
+
   it("asks GetSchemaForGame for one app", async () => {
     const fetchImpl = stubFetch(() => jsonResponse({ game: {} }));
     await clientWith(fetchImpl).getSchemaForGame(APP_ID);
