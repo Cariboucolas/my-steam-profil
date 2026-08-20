@@ -12,6 +12,7 @@ import { TimelineDayRow } from "../../src/components/molecules/TimelineDayRow";
 import { CompletionSummary } from "../../src/components/organisms/CompletionSummary";
 import { GameHero } from "../../src/components/organisms/GameHero";
 import { colors, fonts, spacing } from "../../src/theme/tokens";
+import { messageFor } from "../../src/view-models/api-errors";
 import {
   buildAchievementRows,
   buildFilterCounts,
@@ -52,7 +53,7 @@ export default function GameScreen() {
       const games = await apiClient.getGames();
       if (cancelled) return;
       if (!games.ok) {
-        setState({ status: "error", message: `Could not load the library (${games.error}).` });
+        setState({ status: "error", message: messageFor(games.error) });
         return;
       }
 
@@ -74,7 +75,7 @@ export default function GameScreen() {
         setState({ status: "ready", data: { game, progress: null } });
         return;
       }
-      setState({ status: "error", message: `Could not load progress (${progress.error}).` });
+      setState({ status: "error", message: messageFor(progress.error) });
     };
 
     void load();

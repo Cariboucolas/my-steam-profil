@@ -5,17 +5,25 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-nativ
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { apiClient } from "../src/api-client";
+import { loadLibraryProgress } from "../src/api-client/library-progress";
 import { GameListItem } from "../src/components/molecules/GameListItem";
 import { SortChips } from "../src/components/molecules/SortChips";
 import { LibraryStatsCard } from "../src/components/organisms/LibraryStatsCard";
 import { ProfileHeader } from "../src/components/organisms/ProfileHeader";
-import { fixtures } from "../src/fixtures";
 import { colors, fonts, spacing } from "../src/theme/tokens";
+import { messageFor } from "../src/view-models/api-errors";
 import {
   buildLibraryRows,
   buildLibrarySummary,
   type LibrarySort,
+  type ProgressByAppId,
 } from "../src/view-models/library";
+
+/**
+ * Completion costs one backend call per game, so the screen loads it for the
+ * handful played most recently. Everything else shows a dash until opened.
+ */
+const GAMES_TO_LOAD_PROGRESS_FOR = 12;
 
 type Loaded = { readonly profile: ProfileDto; readonly games: readonly GameDto[] };
 type State =
@@ -27,6 +35,7 @@ export default function LibraryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const [state, setState] = useState<State>({ status: "loading" });
+  const [progress, setProgress] = useState<ProgressByAppId>({});
   const [sort, setSort] = useState<LibrarySort>("closest");
 
   useEffect(() => {
@@ -40,14 +49,26 @@ export default function LibraryScreen() {
       if (cancelled) return;
 
       if (!profile.ok) {
-        setState({ status: "error", message: `Could not load the profile (${profile.error}).` });
+        setState({ status: "error", message: messageFor(profile.error) });
         return;
       }
       if (!games.ok) {
-        setState({ status: "error", message: `Could not load the library (${games.error}).` });
+        setState({ status: "error", message: messageFor(games.error) });
         return;
       }
+
+      // The library shows as soon as it arrives; completion fills in after,
+      // rather than holding the whole screen back for it.
       setState({ status: "ready", data: { profile: profile.value, games: games.value } });
+
+      const loaded = await loadLibraryProgress(
+        apiClient,
+        games.value,
+        GAMES_TO_LOAD_PROGRESS_FOR,
+      );
+      if (!cancelled) {
+        setProgress(loaded);
+      }
     };
 
     void load();
@@ -60,12 +81,12 @@ export default function LibraryScreen() {
   const games = state.status === "ready" ? state.data.games : [];
 
   const rows = useMemo(
-    () => buildLibraryRows(games, fixtures.progress, sort),
-    [games, sort],
+    () => buildLibraryRows(games, progress, sort),
+    [games, progress, sort],
   );
   const summary = useMemo(
-    () => buildLibrarySummary(games, fixtures.progress),
-    [games],
+    () => buildLibrarySummary(games, progress),
+    [games, progress],
   );
 
   const openGame = useCallback(
@@ -103,7 +124,7 @@ export default function LibraryScreen() {
           <SortChips active={sort} onSelect={setSort} />
         </>
       }
-      // 367 rows: only what is on screen gets mounted.
+      // Hundreds of rows: only what is on screen gets mounted.
       initialNumToRender={12}
       windowSize={7}
       removeClippedSubviews
@@ -128,5 +149,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textMuted,
     textAlign: "center",
+    lineHeight: 21,
   },
 });
