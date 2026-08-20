@@ -21,6 +21,10 @@ cp apps/api/.env.example apps/api/.env   # puis renseigner STEAM_API_KEY
 pnpm dev:api                             # http://localhost:3000
 ```
 
+Le serveur lit `apps/api/.env` s'il existe, sinon l'environnement du processus —
+ce qui laisse un déploiement fournir ses variables à sa façon. Il écoute sur
+toutes les interfaces, donc un téléphone du même réseau peut le joindre.
+
 Trois endpoints, les seuls que l'app appelle :
 
 | Endpoint | Réponse |
