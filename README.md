@@ -48,7 +48,16 @@ Puis `w` pour ouvrir dans un navigateur, ou scanner le QR code avec Expo Go.
 
 Sur téléphone, `localhost` désigne le téléphone lui-même : mettez l'adresse LAN
 de votre machine dans `EXPO_PUBLIC_API_URL` (par exemple
-`http://192.168.1.10:3000`).
+`http://192.168.1.10:3000`). Le backend écoute déjà sur toutes les interfaces.
+
+Expo charge `apps/mobile/.env` tout seul, mais **substitue les `EXPO_PUBLIC_*` au
+moment du bundle** : après avoir modifié le fichier, redémarrez le serveur de
+développement. Au démarrage, il affiche `env: export EXPO_PUBLIC_...` — si une
+variable n'y figure pas, elle n'atteindra pas l'app.
+
+Si l'écran affiche « No Steam profile to show », c'est que `EXPO_PUBLIC_STEAM_ID`
+ne contient pas un SteamID64 (dix-sept chiffres) — et non que le backend est
+injoignable.
 
 **Expo Go** : le Play Store sert une version figée au SDK 54 et ne se mettra pas
 à jour. Installez le client courant depuis les releases officielles —
