@@ -27,7 +27,7 @@ Trois endpoints, les seuls que l'app appelle :
 |---|---|
 | `GET /api/profile/:steamId` | `ProfileDto` — 404 si le profil est introuvable |
 | `GET /api/profile/:steamId/games` | `GameDto[]` — liste vide si le compte ne possède rien |
-| `GET /api/profile/:steamId/games/:appId/achievements` | `GameProgressDto` — 403 si le profil est privé, 200 vide si le jeu n'a pas de succès |
+| `GET /api/profile/:steamId/games/:appId/progress` | `GameProgressDto` — 403 si le profil est privé, 200 vide si le jeu n'a pas de succès |
 
 Plus `GET /health`. Un SteamID mal formé donne 400 sans qu'aucun appel ne parte
 vers Steam ; une panne Steam donne 502, un bug de notre côté donne 500.

@@ -107,7 +107,7 @@ export const createApp = (gateway: SteamGateway): Hono => {
   app.get("/api/profile/:steamId", serveProfile(gateway));
   app.get("/api/profile/:steamId/games", serveGames(gateway));
   app.get(
-    "/api/profile/:steamId/games/:appId/achievements",
+    "/api/profile/:steamId/games/:appId/progress",
     serveGameProgress(gateway),
   );
 
