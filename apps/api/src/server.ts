@@ -19,6 +19,21 @@ if (!config.ok) {
 
 const app = createApp(createSteamClient({ apiKey: config.value.steamApiKey }));
 
-serve({ fetch: app.fetch, port: config.value.port }, ({ port }) => {
+const server = serve({ fetch: app.fetch, port: config.value.port }, ({ port }) => {
   console.log(`API listening on http://localhost:${port}`);
+});
+
+/**
+ * A port already taken is an ordinary thing to hit while developing - usually
+ * an earlier run of this same server. It deserves the same one-line answer as a
+ * missing key, not a stack trace.
+ */
+server.on("error", (error: NodeJS.ErrnoException) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(
+      `Port ${config.value.port} is already in use. Stop what is listening there, or set PORT to something else.`,
+    );
+    process.exit(1);
+  }
+  throw error;
 });
