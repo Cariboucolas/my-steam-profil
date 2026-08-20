@@ -25,6 +25,10 @@ describe("messageFor", () => {
     expect(messageFor("NOT_CONFIGURED")).toContain("EXPO_PUBLIC_STEAM_ID");
   });
 
+  it("says what a steam id looks like, since a wrong value looks like a network problem", () => {
+    expect(messageFor("NOT_CONFIGURED")).toContain("17 digits");
+  });
+
   it("points at the backend when it cannot be reached", () => {
     const error: ApiError = "UNAVAILABLE";
     expect(messageFor(error).toLowerCase()).toContain("backend");
