@@ -37,20 +37,36 @@ réponse ni dans un message d'erreur.
 
 ## Démarrer l'app
 
-L'app lit encore des fixtures locales, au format exact que le backend sert.
+L'app parle au backend. Lancez-le d'abord, puis :
 
 ```bash
-pnpm install
-pnpm fixtures:build          # requis une fois — génère apps/mobile/src/fixtures/
+cp apps/mobile/.env.example apps/mobile/.env   # puis renseigner EXPO_PUBLIC_STEAM_ID
 pnpm --filter @steam/mobile start
 ```
 
 Puis `w` pour ouvrir dans un navigateur, ou scanner le QR code avec Expo Go.
 
+Sur téléphone, `localhost` désigne le téléphone lui-même : mettez l'adresse LAN
+de votre machine dans `EXPO_PUBLIC_API_URL` (par exemple
+`http://192.168.1.10:3000`).
+
+**Expo Go** : le Play Store sert une version figée au SDK 54 et ne se mettra pas
+à jour. Installez le client courant depuis les releases officielles —
+`api.expo.dev/v2/versions/latest` pointe vers `github.com/expo/expo-go-releases`.
+
+### Travailler sans backend
+
+`tools/fixtures-dto` génère des fixtures au format DTO, et
+`createFixtureApiClient` les sert. L'app ne s'en sert plus par défaut, mais le
+chemin reste ouvert :
+
+```bash
+pnpm fixtures:build          # génère apps/mobile/src/fixtures/
+```
+
 `fixtures/steam-raw/` et `apps/mobile/src/fixtures/` sont hors du dépôt : ils
-contiennent des données de profil personnelles. Sans eux, l'app ne compile pas —
-lancez `pnpm fixtures:build`, ou `pnpm --filter @steam/spike spike` pour
-récupérer d'abord les données brutes (voir `tools/steam-spike/.env.example`).
+contiennent des données de profil personnelles. `pnpm --filter @steam/spike spike`
+récupère les données brutes (voir `tools/steam-spike/.env.example`).
 
 ## Vérifier
 
