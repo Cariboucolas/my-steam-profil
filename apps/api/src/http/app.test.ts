@@ -512,3 +512,42 @@ describe("when something fails on the way", () => {
     expect(body).not.toMatch(/at .*\.ts:/);
   });
 });
+
+/**
+ * The app runs in a browser while it is being built, on a different port to
+ * this service. Without these headers the browser refuses every answer, and the
+ * app cannot tell that apart from the backend being down.
+ *
+ * This is a permission, not a protection: the service has no authentication, so
+ * anything that is not a browser can call it regardless.
+ */
+describe("cross-origin requests", () => {
+  const ORIGIN = "http://localhost:8081";
+
+  it("lets a browser on another port read the answer", async () => {
+    const app = appReaching(
+      steamAnswering({ playerSummaries: [profileOf(STEAM_ID)] }),
+    );
+
+    const response = await app.request(`/api/profile/${STEAM_ID}`, {
+      headers: { Origin: ORIGIN },
+    });
+
+    expect(response.headers.get("access-control-allow-origin")).toBeTruthy();
+  });
+
+  it("answers the preflight a browser sends first", async () => {
+    const app = appReaching(unreachableSteam);
+
+    const response = await app.request(`/api/profile/${STEAM_ID}`, {
+      method: "OPTIONS",
+      headers: {
+        Origin: ORIGIN,
+        "Access-Control-Request-Method": "GET",
+      },
+    });
+
+    expect(response.status).toBeLessThan(300);
+    expect(response.headers.get("access-control-allow-origin")).toBeTruthy();
+  });
+});
