@@ -245,7 +245,7 @@ describe("GET /api/profile/:steamId/games", () => {
   });
 });
 
-describe("GET /api/profile/:steamId/games/:appId/achievements", () => {
+describe("GET /api/profile/:steamId/games/:appId/progress", () => {
   const APP_ID = 2066020;
   const UNLOCK_SECONDS = 1697568656;
 
@@ -287,7 +287,7 @@ describe("GET /api/profile/:steamId/games/:appId/achievements", () => {
     },
   };
 
-  const url = `/api/profile/${STEAM_ID}/games/${APP_ID}/achievements`;
+  const url = `/api/profile/${STEAM_ID}/games/${APP_ID}/progress`;
 
   it("answers with completion, achievements and timeline", async () => {
     const app = appReaching(
@@ -397,7 +397,7 @@ describe("GET /api/profile/:steamId/games/:appId/achievements", () => {
 
   it("is a 400 when the steam id is malformed", async () => {
     const response = await appReaching(unreachableSteam).request(
-      `/api/profile/${MALFORMED_STEAM_ID}/games/${APP_ID}/achievements`,
+      `/api/profile/${MALFORMED_STEAM_ID}/games/${APP_ID}/progress`,
     );
 
     expect(response.status).toBe(400);
@@ -406,7 +406,7 @@ describe("GET /api/profile/:steamId/games/:appId/achievements", () => {
 
   it("is a 400 when the app id is not a number", async () => {
     const response = await appReaching(unreachableSteam).request(
-      `/api/profile/${STEAM_ID}/games/not-an-app/achievements`,
+      `/api/profile/${STEAM_ID}/games/not-an-app/progress`,
     );
 
     expect(response.status).toBe(400);
@@ -415,7 +415,7 @@ describe("GET /api/profile/:steamId/games/:appId/achievements", () => {
 
   it("is a 400 when the app id is zero or negative", async () => {
     const response = await appReaching(unreachableSteam).request(
-      `/api/profile/${STEAM_ID}/games/0/achievements`,
+      `/api/profile/${STEAM_ID}/games/0/progress`,
     );
 
     expect(response.status).toBe(400);
@@ -425,7 +425,7 @@ describe("GET /api/profile/:steamId/games/:appId/achievements", () => {
   it("rejects a malformed app id without calling Steam at all", async () => {
     // unreachableSteam throws if called, so a clean 400 is the assertion.
     const response = await appReaching(unreachableSteam).request(
-      `/api/profile/${STEAM_ID}/games/-3/achievements`,
+      `/api/profile/${STEAM_ID}/games/-3/progress`,
     );
     expect(response.status).toBe(400);
   });
