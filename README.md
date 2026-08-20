@@ -79,6 +79,31 @@ réseaux différents (bande 2,4 GHz contre 5 GHz avec des SSID distincts, résea
 invité), ou isolation client activée sur la box. Testez en ouvrant
 `http://<ip-du-mac>:8081` dans le navigateur du téléphone.
 
+**Le plus fiable : le câble USB.** Supprime la question du réseau entièrement.
+Le téléphone appelle `localhost`, la connexion ressort sur le Mac.
+
+1. Sur le téléphone : Paramètres → À propos → taper 7 fois sur « Numéro de
+   build » pour débloquer les options développeur, puis Options pour les
+   développeurs → activer **Débogage USB**.
+2. Brancher le téléphone, accepter la demande d'autorisation qui s'affiche.
+3. Sur le Mac :
+
+```bash
+export PATH="$HOME/Library/Android/sdk/platform-tools:$PATH"
+adb devices                     # l'appareil doit apparaître en "device"
+adb reverse tcp:8081 tcp:8081   # Metro
+adb reverse tcp:3000 tcp:3000   # le backend
+```
+
+4. Avec `EXPO_PUBLIC_API_URL=http://localhost:3000` dans `apps/mobile/.env` :
+
+```bash
+pnpm --filter @steam/mobile start --android
+```
+
+Expo ouvre Expo Go sur l'appareil branché. Les redirections `adb reverse` sont à
+refaire après chaque débranchement.
+
 **Cas particulier : le téléphone n'a pas d'IPv4.** Expo annonce une adresse IPv4
 dans son manifeste ; un téléphone qui n'en a pas ne peut pas la joindre, quel
 que soit l'état du Wi-Fi. Si les deux appareils ont une IPv6 sur le même
