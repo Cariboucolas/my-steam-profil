@@ -67,6 +67,28 @@ injoignable.
 à jour. Installez le client courant depuis les releases officielles —
 `api.expo.dev/v2/versions/latest` pointe vers `github.com/expo/expo-go-releases`.
 
+**« Failed to download remote update »** : le téléphone ne joint pas Metro. Le
+Mac sert bien le bundle — vérifiable en local :
+
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" "http://<ip-du-mac>:8081/"
+```
+
+C'est donc le réseau entre les deux. Le plus souvent : téléphone et Mac sur des
+réseaux différents (bande 2,4 GHz contre 5 GHz avec des SSID distincts, réseau
+invité), ou isolation client activée sur la box. Testez en ouvrant
+`http://<ip-du-mac>:8081` dans le navigateur du téléphone.
+
+Contournement immédiat, insensible à la topologie du réseau :
+
+```bash
+pnpm --filter @steam/mobile start --tunnel
+```
+
+Le trafic passe par un tunnel externe. Pensez alors à mettre la même adresse
+publique dans `EXPO_PUBLIC_API_URL`, sinon l'app joindra Metro mais pas le
+backend.
+
 ### Travailler sans backend
 
 `tools/fixtures-dto` génère des fixtures au format DTO, et
