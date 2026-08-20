@@ -79,7 +79,23 @@ réseaux différents (bande 2,4 GHz contre 5 GHz avec des SSID distincts, résea
 invité), ou isolation client activée sur la box. Testez en ouvrant
 `http://<ip-du-mac>:8081` dans le navigateur du téléphone.
 
-Contournement immédiat, insensible à la topologie du réseau :
+**Cas particulier : le téléphone n'a pas d'IPv4.** Expo annonce une adresse IPv4
+dans son manifeste ; un téléphone qui n'en a pas ne peut pas la joindre, quel
+que soit l'état du Wi-Fi. Si les deux appareils ont une IPv6 sur le même
+préfixe, on peut tout basculer dessus :
+
+```bash
+IP6=$(ifconfig en0 | awk '/inet6 2001/ && !/deprecated|temporary/ {print $2; exit}')
+EXPO_PACKAGER_HOSTNAME="$IP6" EXPO_PUBLIC_API_URL="http://[$IP6]:3000" \
+  pnpm --filter @steam/mobile start
+```
+
+Les crochets sont obligatoires autour d'une IPv6 dans une URL. Metro et le
+backend écoutent déjà sur les deux familles d'adresses, il n'y a que l'adresse
+*annoncée* à changer. Attention, une IPv6 en autoconfiguration peut changer :
+si l'app ne joint plus rien après quelques jours, relancez la commande.
+
+**Sinon, contournement insensible à la topologie du réseau :**
 
 ```bash
 pnpm --filter @steam/mobile start --tunnel
