@@ -1,4 +1,5 @@
 import { Hono, type Context } from "hono";
+import { cors } from "hono/cors";
 import { SteamId } from "@steam/domain";
 
 import { SteamGatewayError, type SteamGateway } from "../steam/steam-gateway";
@@ -102,6 +103,16 @@ const serveGameProgress = (
  */
 export const createApp = (gateway: SteamGateway): Hono => {
   const app = new Hono();
+
+  /**
+   * The app runs in a browser on another port while it is being built, and a
+   * browser discards an answer that does not say it may read it.
+   *
+   * This is a permission, not a protection. The service has no authentication,
+   * so anything that is not a browser reaches it regardless; narrowing the
+   * origin would not change that.
+   */
+  app.use("/api/*", cors());
 
   app.get("/health", (context) => context.json({ status: "ok" }));
   app.get("/api/profile/:steamId", serveProfile(gateway));
