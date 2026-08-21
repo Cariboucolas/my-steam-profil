@@ -8,5 +8,3 @@ export * from "./game-completion";
 export * from "./timeline";
 export * from "./profile";
 export * from "./game";
-
-const deliberatelyBroken: number = "not a number";
