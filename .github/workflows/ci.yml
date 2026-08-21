@@ -1,0 +1,48 @@
+name: CI
+
+# Every branch is checked through its pull request; main is checked again after
+# merge, because a rebase can produce a combination no pull request ever saw.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# A second push to the same branch makes the run in flight pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # No version here on purpose: the action reads packageManager from
+      # package.json, so pnpm can only be upgraded in one place.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # Fails outright when pnpm-lock.yaml disagrees with the manifests, rather
+      # than quietly resolving something else than what runs locally.
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Cheapest first: a type error should not wait for the test run.
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      # Catches what typecheck cannot: a missing asset, a native-only import,
+      # anything that breaks bundling rather than compilation.
+      - name: Build web bundle
+        run: pnpm build:web
