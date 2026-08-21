@@ -39,6 +39,14 @@ describe("steam id storage", () => {
     await expect(storage.read()).resolves.toBe(STEAM_ID);
   });
 
+  it("normalises a stored value that arrived with whitespace around it", async () => {
+    // write() stores whatever it is handed; read() is what puts the value
+    // through the domain, so this is the layer that has to come out clean.
+    const { store } = createFakeStore({ [STEAM_ID_KEY]: ` ${STEAM_ID} ` });
+
+    await expect(createSteamIdStorage(store).read()).resolves.toBe(STEAM_ID);
+  });
+
   it("forgets the steam id", async () => {
     const { store } = createFakeStore({ [STEAM_ID_KEY]: STEAM_ID });
     const storage = createSteamIdStorage(store);
