@@ -1,43 +1,36 @@
-import { resolveApiConfig } from "./config";
+import { resolveBaseUrl, resolveInitialSteamId } from "./config";
 
 const STEAM_ID = "76561197979269357";
 
-describe("resolveApiConfig", () => {
-  it("reads both settings when they are given", () => {
-    expect(
-      resolveApiConfig("https://api.example.com", STEAM_ID),
-    ).toEqual({
-      ok: true,
-      value: { baseUrl: "https://api.example.com", steamId: STEAM_ID },
-    });
+describe("resolveBaseUrl", () => {
+  it("uses the address the build was given", () => {
+    expect(resolveBaseUrl("https://api.example.com")).toBe("https://api.example.com");
   });
 
   it("falls back to a local backend, which is where it runs while developing", () => {
-    const result = resolveApiConfig(undefined, STEAM_ID);
-    expect(result.ok).toBe(true);
-    if (result.ok) expect(result.value.baseUrl).toBe("http://localhost:3000");
+    expect(resolveBaseUrl(undefined)).toBe("http://localhost:3000");
   });
 
-  it("says it is unconfigured when no steam id was supplied", () => {
-    expect(resolveApiConfig(undefined, undefined)).toEqual({
-      ok: false,
-      error: "NOT_CONFIGURED",
-    });
+  it("treats an address that is only whitespace as none at all", () => {
+    expect(resolveBaseUrl("   ")).toBe("http://localhost:3000");
   });
 
-  it("says it is unconfigured when the steam id is not one", () => {
-    expect(resolveApiConfig(undefined, "my-steam-name")).toEqual({
-      ok: false,
-      error: "NOT_CONFIGURED",
-    });
+  it("trims an address that arrived with whitespace around it", () => {
+    expect(resolveBaseUrl("  https://api.example.com  ")).toBe("https://api.example.com");
+  });
+});
+
+describe("resolveInitialSteamId", () => {
+  it("offers the steam id the build was given", () => {
+    expect(resolveInitialSteamId(` ${STEAM_ID} `)).toBe(STEAM_ID);
   });
 
-  it("trims settings that arrived with whitespace around them", () => {
-    const result = resolveApiConfig("  https://api.example.com  ", ` ${STEAM_ID} `);
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.baseUrl).toBe("https://api.example.com");
-      expect(result.value.steamId).toBe(STEAM_ID);
-    }
+  it("offers nothing when the build was given none", () => {
+    expect(resolveInitialSteamId(undefined)).toBeUndefined();
+  });
+
+  it("offers nothing when what it was given is not a steam id", () => {
+    // The usual mistake is putting the backend URL in EXPO_PUBLIC_STEAM_ID.
+    expect(resolveInitialSteamId("http://localhost:3000")).toBeUndefined();
   });
 });
