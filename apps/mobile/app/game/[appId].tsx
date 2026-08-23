@@ -1,16 +1,17 @@
 import type { GameDto, GameProgressDto } from "@steam/contracts";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Redirect, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { apiClient } from "../../src/api-client";
+import { useApiClient } from "../../src/api-client/use-api-client";
 import { Chip } from "../../src/components/atoms/Chip";
 import { Tabs } from "../../src/components/atoms/Tabs";
 import { AchievementRow } from "../../src/components/molecules/AchievementRow";
 import { TimelineDayRow } from "../../src/components/molecules/TimelineDayRow";
 import { CompletionSummary } from "../../src/components/organisms/CompletionSummary";
 import { GameHero } from "../../src/components/organisms/GameHero";
+import { useSteamId } from "../../src/settings/steam-id-store";
 import { colors, fonts, spacing } from "../../src/theme/tokens";
 import { messageFor } from "../../src/view-models/api-errors";
 import {
@@ -37,11 +38,16 @@ export default function GameScreen() {
   const { appId: appIdParam } = useLocalSearchParams<{ appId: string }>();
   const appId = Number.parseInt(appIdParam ?? "", 10);
 
+  const { state: steamId } = useSteamId();
+  const apiClient = useApiClient();
   const [state, setState] = useState<State>({ status: "loading" });
   const [tab, setTab] = useState(0);
   const [filter, setFilter] = useState<AchievementFilter>("all");
 
   useEffect(() => {
+    if (apiClient === undefined) {
+      return;
+    }
     let cancelled = false;
 
     const load = async () => {
@@ -82,7 +88,7 @@ export default function GameScreen() {
     return () => {
       cancelled = true;
     };
-  }, [appId]);
+  }, [appId, apiClient]);
 
   const progress = state.status === "ready" ? state.data.progress : null;
 
@@ -99,6 +105,10 @@ export default function GameScreen() {
     [progress, filter],
   );
   const days = useMemo(() => (progress ? buildTimelineDays(progress) : []), [progress]);
+
+  if (steamId.status === "absent") {
+    return <Redirect href="/setup" />;
+  }
 
   if (state.status === "loading") {
     return (
