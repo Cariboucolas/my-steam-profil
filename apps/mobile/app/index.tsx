@@ -1,15 +1,16 @@
 import type { GameDto, ProfileDto } from "@steam/contracts";
-import { useRouter } from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { apiClient } from "../src/api-client";
+import { useApiClient } from "../src/api-client/use-api-client";
 import { loadLibraryProgress } from "../src/api-client/library-progress";
 import { GameListItem } from "../src/components/molecules/GameListItem";
 import { SortChips } from "../src/components/molecules/SortChips";
 import { LibraryStatsCard } from "../src/components/organisms/LibraryStatsCard";
 import { ProfileHeader } from "../src/components/organisms/ProfileHeader";
+import { useSteamId } from "../src/settings/steam-id-store";
 import { colors, fonts, spacing } from "../src/theme/tokens";
 import { messageFor } from "../src/view-models/api-errors";
 import {
@@ -34,12 +35,22 @@ type State =
 export default function LibraryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { state: steamId } = useSteamId();
+  const apiClient = useApiClient();
   const [state, setState] = useState<State>({ status: "loading" });
   const [progress, setProgress] = useState<ProgressByAppId>({});
   const [sort, setSort] = useState<LibrarySort>("closest");
 
   useEffect(() => {
+    if (apiClient === undefined) {
+      return;
+    }
     let cancelled = false;
+
+    // A different profile must not show the previous one's library while it
+    // loads. Without this, switching profiles flashes the old data.
+    setState({ status: "loading" });
+    setProgress({});
 
     const load = async () => {
       const [profile, games] = await Promise.all([
@@ -76,7 +87,7 @@ export default function LibraryScreen() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [apiClient]);
 
   const games = state.status === "ready" ? state.data.games : [];
 
@@ -93,6 +104,10 @@ export default function LibraryScreen() {
     (appId: number) => router.push(`/game/${appId}`),
     [router],
   );
+
+  if (steamId.status === "absent") {
+    return <Redirect href="/setup" />;
+  }
 
   if (state.status === "loading") {
     return (
