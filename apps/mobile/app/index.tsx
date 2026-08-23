@@ -134,7 +134,11 @@ export default function LibraryScreen() {
       contentContainerStyle={{ paddingTop: insets.top + spacing.lg, paddingBottom: insets.bottom + 40 }}
       ListHeaderComponent={
         <>
-          <ProfileHeader profile={state.data.profile} gameCount={games.length} />
+          <ProfileHeader
+            profile={state.data.profile}
+            gameCount={games.length}
+            onChangeProfile={() => router.push("/setup")}
+          />
           <LibraryStatsCard summary={summary} gameCount={games.length} />
           <SortChips active={sort} onSelect={setSort} />
         </>
