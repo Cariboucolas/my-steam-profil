@@ -16,9 +16,11 @@ export default function SetupScreen() {
 
   const submit = async (raw: string) => {
     const accepted = await remember(raw);
-    // replace, not push: the setup screen is not somewhere to come back to.
+    // Pops back to the library rather than stacking another copy of it. When
+    // there is no library to pop back to — a first run, reached by the redirect
+    // — dismissTo falls back to replacing this screen with it.
     if (accepted) {
-      router.replace("/");
+      router.dismissTo("/");
     }
     return accepted;
   };
