@@ -20,12 +20,9 @@ Architecture hexagonale, monorepo pnpm. Voir `docs/superpowers/` (local) pour le
 
 | Quoi | Où | Déployé par |
 |---|---|---|
-| Le site | https://steam-achievements.pages.dev | Cloudflare Pages |
-| L'API | https://steam-achievements-api.<sous-domaine>.workers.dev | Cloudflare Workers |
+| Le site | https://steam-achievements-czo.pages.dev | Cloudflare Pages |
+| L'API | https://steam-achievements-api.cdcraft.workers.dev | Cloudflare Workers |
 | L'app Android | canal EAS `preview` | EAS Update, en OTA |
-
-> `<sous-domaine>` est celui du compte Cloudflare ; il apparaît dans les logs du premier
-> déploiement réussi et se relit avec `gh variable get API_URL`.
 
 Chaque merge sur `main` déploie les trois et publie une [Release](https://github.com/Cariboucolas/my-steam-profil/releases)
 qui redonne ces adresses. Vérifier qu'un merge est bien arrivé jusqu'au bout :
@@ -34,6 +31,10 @@ qui redonne ces adresses. Vérifier qu'un merge est bien arrivé jusqu'au bout :
 gh release view --web                                    # la dernière release
 curl -s "$(gh variable get API_URL)/health"
 ```
+
+Le projet Pages s'appelle `steam-achievements-czo` et non `steam-achievements` : les sous-domaines
+`.pages.dev` sont uniques à l'échelle de Cloudflare, et le nom court était pris.
+`--project-name` dans `deploy.yml` doit rester d'accord avec lui.
 
 `STEAM_API_KEY` vit à deux endroits et nulle part ailleurs : un secret GitHub, et un secret
 Worker que le déploiement repose à chaque fois depuis le premier. Elle n'est dans aucun fichier

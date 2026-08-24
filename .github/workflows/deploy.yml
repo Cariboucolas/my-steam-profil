@@ -103,7 +103,7 @@ jobs:
           packageManager: pnpm
           command: >-
             pages deploy apps/mobile/dist
-            --project-name=steam-achievements
+            --project-name=steam-achievements-czo
             --branch=main
 
   release:
