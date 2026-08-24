@@ -11,9 +11,11 @@ concurrency:
   group: deploy
   cancel-in-progress: false
 
-# The release job writes a tag and a release; nothing else here writes anything.
+# Checkout needs to read; nothing at this level needs to write. The release
+# job raises its own permission, so the deploy jobs — which run third-party
+# actions — never hold a token that can rewrite the repository.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   api:
@@ -69,6 +71,18 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The address is baked into the bundle, and an empty one silently falls
+      # back to http://localhost:3000 — a site that looks right and answers
+      # nobody. API_URL is set once, after the first Worker deploy succeeds.
+      - name: Refuse to build a bundle that points at localhost
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          test -n "$API_URL" || {
+            echo "::error::API_URL is not set. Run: gh variable set API_URL --body <worker url>"
+            exit 1
+          }
+
       # EXPO_PUBLIC_ variables are substituted into the bundle, not read at
       # runtime: this address is baked into the JavaScript that ships. The
       # steam id is emptied rather than omitted, so the deployed app asks.
@@ -99,6 +113,10 @@ jobs:
     needs: [api, web]
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
+    # The only job here that writes: it creates a tag and a release.
+    permissions:
+      contents: write
 
     steps:
       - uses: actions/checkout@v7
