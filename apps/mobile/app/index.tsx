@@ -1,7 +1,7 @@
 import type { GameDto, ProfileDto } from "@steam/contracts";
 import { Redirect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApiClient } from "../src/api-client/use-api-client";
@@ -11,7 +11,7 @@ import { SortChips } from "../src/components/molecules/SortChips";
 import { LibraryStatsCard } from "../src/components/organisms/LibraryStatsCard";
 import { ProfileHeader } from "../src/components/organisms/ProfileHeader";
 import { useSteamId } from "../src/settings/steam-id-store";
-import { colors, fonts, spacing } from "../src/theme/tokens";
+import { colors, fonts, radius, spacing } from "../src/theme/tokens";
 import { messageFor } from "../src/view-models/api-errors";
 import {
   buildLibraryRows,
@@ -40,6 +40,10 @@ export default function LibraryScreen() {
   const [state, setState] = useState<State>({ status: "loading" });
   const [progress, setProgress] = useState<ProgressByAppId>({});
   const [sort, setSort] = useState<LibrarySort>("closest");
+  // Bumped to re-run the load when nothing else about the request changed —
+  // a backend that was down and may now be up. The api client is memoised on
+  // the steam id, so without this a retry with the same profile is a no-op.
+  const [reloadNonce, setReloadNonce] = useState(0);
 
   useEffect(() => {
     if (apiClient === undefined) {
@@ -87,7 +91,7 @@ export default function LibraryScreen() {
     return () => {
       cancelled = true;
     };
-  }, [apiClient]);
+  }, [apiClient, reloadNonce]);
 
   const games = state.status === "ready" ? state.data.games : [];
 
@@ -121,6 +125,29 @@ export default function LibraryScreen() {
     return (
       <View style={styles.centred}>
         <Text style={styles.error}>{state.message}</Text>
+        {/*
+         * Two ways out, because the message covers two kinds of failure and
+         * this screen renders no header. A backend that was down may now be
+         * up, so retrying the same profile has to be possible; a profile that
+         * does not exist will never load, so changing it has to be possible.
+         * Without both, the only recovery is killing the app.
+         */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Try again"
+          onPress={() => setReloadNonce((previous) => previous + 1)}
+          style={styles.recover}
+        >
+          <Text style={styles.recoverLabel}>Try again</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Change profile"
+          onPress={() => router.push("/setup")}
+          style={styles.secondary}
+        >
+          <Text style={styles.secondaryLabel}>Change profile</Text>
+        </Pressable>
       </View>
     );
   }
@@ -169,5 +196,29 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: "center",
     lineHeight: 21,
+  },
+  recover: {
+    marginTop: spacing.xl,
+    backgroundColor: colors.accentSoft,
+    borderWidth: 1,
+    borderColor: colors.accentBorder,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+  },
+  recoverLabel: {
+    fontFamily: fonts.sansSemiBold,
+    fontSize: 15,
+    color: colors.accent,
+  },
+  secondary: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  secondaryLabel: {
+    fontFamily: fonts.sansMedium,
+    fontSize: 14,
+    color: colors.textDim,
   },
 });
