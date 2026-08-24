@@ -7,10 +7,8 @@ export type ApiError =
   | "NOT_FOUND"
   /** Steam will not answer for this player. */
   | "PRIVATE_PROFILE"
-  /** The backend refused the steam id this app was configured with. */
+  /** The backend refused the steam id it was asked about. */
   | "INVALID_STEAM_ID"
-  /** This build has no steam id to ask about. */
-  | "NOT_CONFIGURED"
   /** Steam or the backend is down. */
   | "UNAVAILABLE";
 

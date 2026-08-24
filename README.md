@@ -12,7 +12,7 @@ Architecture hexagonale, monorepo pnpm. Voir `docs/superpowers/` (local) pour le
 | `packages/domain` | Le domaine : SteamId, Playtime, CompletionRate, Timeline… Aucune I/O. |
 | `packages/contracts` | Les DTO « fil » partagés entre le backend et l'app. |
 | `apps/api` | Proxy Steam (ADR-0001) : trois endpoints, mappers et presenters. |
-| `apps/mobile` | L'app Expo : écrans Library et Game. |
+| `apps/mobile` | L'app Expo : l'écran de saisie du profil, puis les écrans Library et Game. |
 | `tools/steam-spike` | Récupère les réponses brutes de Steam dans `fixtures/steam-raw/`. |
 | `tools/fixtures-dto` | Transforme ces réponses brutes en DTO pour l'app. |
 
@@ -46,7 +46,7 @@ réponse ni dans un message d'erreur.
 L'app parle au backend. Lancez-le d'abord, puis :
 
 ```bash
-cp apps/mobile/.env.example apps/mobile/.env   # puis renseigner EXPO_PUBLIC_STEAM_ID
+cp apps/mobile/.env.example apps/mobile/.env   # EXPO_PUBLIC_STEAM_ID est facultatif, voir plus bas
 pnpm --filter @steam/mobile start
 ```
 
@@ -61,9 +61,13 @@ moment du bundle** : après avoir modifié le fichier, redémarrez le serveur de
 développement. Au démarrage, il affiche `env: export EXPO_PUBLIC_...` — si une
 variable n'y figure pas, elle n'atteindra pas l'app.
 
-Si l'écran affiche « No Steam profile to show », c'est que `EXPO_PUBLIC_STEAM_ID`
-ne contient pas un SteamID64 (dix-sept chiffres) — et non que le backend est
-injoignable.
+Au premier lancement, l'app demande quel profil afficher : un SteamID64, dix-sept chiffres.
+Elle s'en souvient ensuite — sur le web dans `localStorage`, sur un téléphone dans le stockage
+de l'application. Le bouton « Change » de l'en-tête permet d'en changer.
+
+`EXPO_PUBLIC_STEAM_ID` reste utile en développement : renseigné, il évite de retaper le
+SteamID à chaque installation neuve. Il n'est **plus obligatoire**, et une valeur invalide
+mène simplement à l'écran de saisie au lieu de bloquer l'app.
 
 **Expo Go** : le Play Store sert une version figée au SDK 54 et ne se mettra pas
 à jour. Installez le client courant depuis les releases officielles —
