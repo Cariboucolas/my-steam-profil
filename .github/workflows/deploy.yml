@@ -1,0 +1,46 @@
+name: Deploy
+
+# Only what is already on main. CI has passed by then, since main is protected.
+on:
+  push:
+    branches: [main]
+
+# Never two deployments onto the same environment at once. Unlike CI, an in
+# flight deployment is not cancelled: half a deployment is worse than a late one.
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  api:
+    name: api
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Deploy the Worker
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/api
+          packageManager: pnpm
+          # Pushes the key as a Worker secret on every deploy, so the running
+          # Worker and the repository secret can never drift apart. The value
+          # arrives through env, never on a command line where a log could
+          # catch it (ADR-0001).
+          secrets: |
+            STEAM_API_KEY
+        env:
+          STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
