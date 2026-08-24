@@ -43,9 +43,22 @@ Le site déployé ne contient **aucun** SteamID : le build de production force
 `EXPO_PUBLIC_STEAM_ID` à vide — explicitement, et non en comptant sur son absence — donc l'app
 demande quel profil afficher, ce qui la rend utilisable par n'importe qui.
 
-**Sur téléphone**, l'app installée depuis le canal `preview` se met à jour toute seule au
-lancement suivant un merge. Reconstruire un APK n'est nécessaire que si une dépendance native
-change, c'est-à-dire si `runtimeVersion` change.
+**Sur téléphone**, il y a une étape humaine, et une seule. Un update EAS ne se charge **pas
+dans Expo Go** : il faut un build qui embarque `expo-updates`. On le fabrique une fois :
+
+```bash
+cd apps/mobile
+eas build --profile preview --platform android   # ~15 à 20 min, chez Expo
+```
+
+Le build se termine par un lien et un QR code : l'ouvrir depuis le téléphone et installer
+l'APK. **Cette attente n'a lieu qu'une fois.** Ensuite, l'app installée se met à jour toute
+seule au lancement qui suit un merge — Expo télécharge l'update en arrière-plan au premier
+lancement et l'applique au suivant. Reconstruire un APK n'est nécessaire que si une dépendance
+native change, c'est-à-dire si `runtimeVersion` change.
+
+iOS sur appareil réel est hors périmètre : il exige le programme Apple Developer (99 $/an).
+Le site déployé couvre la vérification visuelle en attendant.
 
 ## Démarrer le backend
 
