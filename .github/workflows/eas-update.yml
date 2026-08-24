@@ -1,0 +1,44 @@
+name: EAS Update
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: eas-update
+  cancel-in-progress: true
+
+jobs:
+  update:
+    name: preview channel
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - uses: expo/expo-github-action@v9
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Publish to the preview channel
+        working-directory: apps/mobile
+        env:
+          # Same substitution as the web build: the update carries the address
+          # of the deployed API, not localhost.
+          EXPO_PUBLIC_API_URL: ${{ vars.API_URL }}
+          # Through the environment, never interpolated into the command: a
+          # commit message is attacker-controlled text, and ${{ }} inside a run
+          # block is substituted before the shell ever sees it.
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: eas update --channel preview --message "$COMMIT_MESSAGE" --non-interactive
