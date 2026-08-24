@@ -11,6 +11,10 @@ concurrency:
   group: deploy
   cancel-in-progress: false
 
+# The release job writes a tag and a release; nothing else here writes anything.
+permissions:
+  contents: write
+
 jobs:
   api:
     name: api
@@ -87,3 +91,46 @@ jobs:
             pages deploy apps/mobile/dist
             --project-name=steam-achievements
             --branch=main
+
+  release:
+    name: release
+    # Both must have succeeded. A release that names a deployment which failed
+    # is worse than no release at all.
+    needs: [api, web]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          # A shallow clone cannot describe what changed since the last tag.
+          fetch-depth: 0
+
+      - name: Tag what is now in production
+        env:
+          GH_TOKEN: ${{ github.token }}
+          API_URL: ${{ vars.API_URL }}
+          WEB_URL: ${{ vars.WEB_URL }}
+        run: |
+          set -euo pipefail
+
+          # Dated, and disambiguated by the commit: several merges a day is the
+          # normal case in trunk-based development.
+          TAG="v$(date -u +%Y.%m.%d)-${GITHUB_SHA::7}"
+          PREVIOUS=$(gh release list --limit 1 --json tagName --jq '.[0].tagName // empty')
+
+          {
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Web | $WEB_URL |"
+            echo "| API | $API_URL/health |"
+            echo
+            if [ -n "$PREVIOUS" ]; then
+              echo "[Changes since $PREVIOUS](https://github.com/$GITHUB_REPOSITORY/compare/$PREVIOUS...$TAG)"
+            fi
+          } > notes.md
+
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file notes.md \
+            --target "$GITHUB_SHA"
