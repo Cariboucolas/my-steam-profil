@@ -32,9 +32,11 @@ gh release view --web                                    # la dernière release
 curl -s "$(gh variable get API_URL)/health"
 ```
 
-Le projet Pages s'appelle `steam-achievements-czo` et non `steam-achievements` : les sous-domaines
-`.pages.dev` sont uniques à l'échelle de Cloudflare, et le nom court était pris.
-`--project-name` dans `deploy.yml` doit rester d'accord avec lui.
+Le projet Pages s'appelle `steam-achievements`, mais son adresse est
+`steam-achievements-czo.pages.dev` : le **nom** d'un projet est unique par compte, son
+**sous-domaine** l'est mondialement, et le court était déjà pris. `--project-name` dans
+`deploy.yml` suit le nom, jamais l'adresse — les lire comme une seule et même chose est une
+erreur facile, et elle coûte un déploiement.
 
 `STEAM_API_KEY` vit à deux endroits et nulle part ailleurs : un secret GitHub, et un secret
 Worker que le déploiement repose à chaque fois depuis le premier. Elle n'est dans aucun fichier
