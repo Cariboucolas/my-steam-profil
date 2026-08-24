@@ -104,14 +104,19 @@ jobs:
           # inherited one would bake a personal SteamID64 into a public bundle.
           EXPO_PUBLIC_STEAM_ID: ""
 
+      # workingDirectory matters more than it looks: without it the action runs
+      # at the workspace root, where wrangler is not installed — it then tries
+      # to add it there and pnpm refuses, since adding to a workspace root
+      # needs -w. Run it where the app that deploys keeps its own tool.
       - name: Deploy to Pages
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/mobile
           packageManager: pnpm
           command: >-
-            pages deploy apps/mobile/dist
+            pages deploy dist
             --project-name=steam-achievements
             --branch=main
 
