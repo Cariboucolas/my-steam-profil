@@ -16,6 +16,37 @@ Architecture hexagonale, monorepo pnpm. Voir `docs/superpowers/` (local) pour le
 | `tools/steam-spike` | Récupère les réponses brutes de Steam dans `fixtures/steam-raw/`. |
 | `tools/fixtures-dto` | Transforme ces réponses brutes en DTO pour l'app. |
 
+## En production
+
+| Quoi | Où | Déployé par |
+|---|---|---|
+| Le site | https://steam-achievements.pages.dev | Cloudflare Pages |
+| L'API | https://steam-achievements-api.<sous-domaine>.workers.dev | Cloudflare Workers |
+| L'app Android | canal EAS `preview` | EAS Update, en OTA |
+
+> `<sous-domaine>` est celui du compte Cloudflare ; il apparaît dans les logs du premier
+> déploiement réussi et se relit avec `gh variable get API_URL`.
+
+Chaque merge sur `main` déploie les trois et publie une [Release](https://github.com/Cariboucolas/my-steam-profil/releases)
+qui redonne ces adresses. Vérifier qu'un merge est bien arrivé jusqu'au bout :
+
+```bash
+gh release view --web                                    # la dernière release
+curl -s "$(gh variable get API_URL)/health"
+```
+
+`STEAM_API_KEY` vit à deux endroits et nulle part ailleurs : un secret GitHub, et un secret
+Worker que le déploiement repose à chaque fois depuis le premier. Elle n'est dans aucun fichier
+du dépôt et dans aucun bundle livré (ADR-0001, ADR-0003).
+
+Le site déployé ne contient **aucun** SteamID : le build de production force
+`EXPO_PUBLIC_STEAM_ID` à vide — explicitement, et non en comptant sur son absence — donc l'app
+demande quel profil afficher, ce qui la rend utilisable par n'importe qui.
+
+**Sur téléphone**, l'app installée depuis le canal `preview` se met à jour toute seule au
+lancement suivant un merge. Reconstruire un APK n'est nécessaire que si une dépendance native
+change, c'est-à-dire si `runtimeVersion` change.
+
 ## Démarrer le backend
 
 ```bash
@@ -72,6 +103,10 @@ mène simplement à l'écran de saisie au lieu de bloquer l'app.
 **Expo Go** : le Play Store sert une version figée au SDK 54 et ne se mettra pas
 à jour. Installez le client courant depuis les releases officielles —
 `api.expo.dev/v2/versions/latest` pointe vers `github.com/expo/expo-go-releases`.
+
+> Tout ce qui suit ne concerne que le développement avec Metro. Pour simplement
+> *voir* l'app, le site déployé ou le canal `preview` suffisent — ni réseau
+> partagé, ni câble.
 
 **« Failed to download remote update »** : le téléphone ne joint pas Metro. Le
 Mac sert bien le bundle — vérifiable en local :
@@ -166,7 +201,7 @@ pull request et sur chaque push vers `main` :
 
 ```bash
 pnpm typecheck    # les 6 paquets du workspace
-pnpm test         # 191 tests : domaine, api, mobile
+pnpm test         # 224 tests : domaine, api, mobile
 pnpm build:web    # construit le bundle web, pour prouver qu'il se construit
 ```
 
