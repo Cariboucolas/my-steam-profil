@@ -1,17 +1,18 @@
 import type { GameDto, ProfileDto } from "@steam/contracts";
 import { Redirect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApiClient } from "../src/api-client/use-api-client";
 import { loadLibraryProgress } from "../src/api-client/library-progress";
 import { GameListItem } from "../src/components/molecules/GameListItem";
 import { SortChips } from "../src/components/molecules/SortChips";
+import { ErrorState } from "../src/components/organisms/ErrorState";
 import { LibraryStatsCard } from "../src/components/organisms/LibraryStatsCard";
 import { ProfileHeader } from "../src/components/organisms/ProfileHeader";
 import { useSteamId } from "../src/settings/steam-id-store";
-import { colors, fonts, radius, spacing } from "../src/theme/tokens";
+import { colors, spacing } from "../src/theme/tokens";
 import { messageFor } from "../src/view-models/api-errors";
 import {
   buildLibraryRows,
@@ -122,33 +123,17 @@ export default function LibraryScreen() {
   }
 
   if (state.status === "error") {
+    // Two ways out, because the message covers two kinds of failure and this
+    // screen renders no header. A backend that was down may now be up, so
+    // retrying the same profile has to be possible; a profile that does not
+    // exist will never load, so changing it has to be possible. Without both,
+    // the only recovery is killing the app.
     return (
-      <View style={styles.centred}>
-        <Text style={styles.error}>{state.message}</Text>
-        {/*
-         * Two ways out, because the message covers two kinds of failure and
-         * this screen renders no header. A backend that was down may now be
-         * up, so retrying the same profile has to be possible; a profile that
-         * does not exist will never load, so changing it has to be possible.
-         * Without both, the only recovery is killing the app.
-         */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Try again"
-          onPress={() => setReloadNonce((previous) => previous + 1)}
-          style={styles.recover}
-        >
-          <Text style={styles.recoverLabel}>Try again</Text>
-        </Pressable>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Change profile"
-          onPress={() => router.push("/setup")}
-          style={styles.secondary}
-        >
-          <Text style={styles.secondaryLabel}>Change profile</Text>
-        </Pressable>
-      </View>
+      <ErrorState
+        message={state.message}
+        onRetry={() => setReloadNonce((previous) => previous + 1)}
+        onChangeProfile={() => router.push("/setup")}
+      />
     );
   }
 
@@ -189,36 +174,5 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.bg,
     padding: spacing.xxl,
-  },
-  error: {
-    fontFamily: fonts.sans,
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: "center",
-    lineHeight: 21,
-  },
-  recover: {
-    marginTop: spacing.xl,
-    backgroundColor: colors.accentSoft,
-    borderWidth: 1,
-    borderColor: colors.accentBorder,
-    borderRadius: radius.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-  },
-  recoverLabel: {
-    fontFamily: fonts.sansSemiBold,
-    fontSize: 15,
-    color: colors.accent,
-  },
-  secondary: {
-    marginTop: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
-  secondaryLabel: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 14,
-    color: colors.textDim,
   },
 });

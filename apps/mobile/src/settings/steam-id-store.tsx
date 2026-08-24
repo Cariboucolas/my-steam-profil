@@ -56,16 +56,26 @@ export function SteamIdProvider({ storage, fallback, children }: Props) {
   useEffect(() => {
     let cancelled = false;
 
-    void storage.read().then((stored) => {
-      if (cancelled) return;
-      // The device wins over the build: someone who typed an id meant it.
-      const steamId = stored ?? fallback;
-      setState(
-        steamId === undefined
-          ? { status: "absent" }
-          : { status: "known", steamId },
-      );
-    });
+    void storage.read().then(
+      (stored) => {
+        if (cancelled) return;
+        // The device wins over the build: someone who typed an id meant it.
+        const steamId = stored ?? fallback;
+        setState(
+          steamId === undefined
+            ? { status: "absent" }
+            : { status: "known", steamId },
+        );
+      },
+      () => {
+        // A device whose store cannot be read — blocked site data on the web —
+        // is a device with no profile. Ask for one rather than holding a
+        // spinner that nothing will ever clear.
+        if (!cancelled) {
+          setState({ status: "absent" });
+        }
+      },
+    );
 
     return () => {
       cancelled = true;
@@ -78,7 +88,13 @@ export function SteamIdProvider({ storage, fallback, children }: Props) {
       if (!steamId.ok) {
         return false;
       }
-      await storage.write(steamId.value.value);
+      try {
+        await storage.write(steamId.value.value);
+      } catch {
+        // A store that refuses the write must not cost the profile: the id is
+        // valid, so show it for this session. The next launch will find
+        // nothing stored and ask again, which is the honest outcome.
+      }
       setState({ status: "known", steamId: steamId.value.value });
       return true;
     },
@@ -86,7 +102,12 @@ export function SteamIdProvider({ storage, fallback, children }: Props) {
   );
 
   const forget = useCallback(async () => {
-    await storage.forget();
+    try {
+      await storage.forget();
+    } catch {
+      // Nothing to do about it: the state set below is what the app reads,
+      // and a store that cannot be cleared cannot be read either.
+    }
     setState({ status: "absent" });
   }, [storage]);
 

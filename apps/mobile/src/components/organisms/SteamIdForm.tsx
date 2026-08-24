@@ -22,11 +22,19 @@ export function SteamIdForm({ onSubmit, onCancel }: Props) {
 
   const submit = useCallback(async () => {
     setBusy(true);
-    const accepted = await onSubmit(raw);
-    setBusy(false);
-    // The value stays in the field: retyping seventeen digits to fix one of
-    // them is the kind of thing that makes people give up.
-    setRefused(!accepted);
+    try {
+      const accepted = await onSubmit(raw);
+      // The value stays in the field: retyping seventeen digits to fix one of
+      // them is the kind of thing that makes people give up.
+      setRefused(!accepted);
+    } catch {
+      // onSubmit is not expected to reject now that the store's failures are
+      // handled below it. If one ever does, a refusal is still better than a
+      // button disabled for good with nothing said.
+      setRefused(true);
+    } finally {
+      setBusy(false);
+    }
   }, [onSubmit, raw]);
 
   const edit = useCallback((next: string) => {

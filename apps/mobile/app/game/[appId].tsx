@@ -10,6 +10,7 @@ import { Tabs } from "../../src/components/atoms/Tabs";
 import { AchievementRow } from "../../src/components/molecules/AchievementRow";
 import { TimelineDayRow } from "../../src/components/molecules/TimelineDayRow";
 import { CompletionSummary } from "../../src/components/organisms/CompletionSummary";
+import { ErrorState } from "../../src/components/organisms/ErrorState";
 import { GameHero } from "../../src/components/organisms/GameHero";
 import { useSteamId } from "../../src/settings/steam-id-store";
 import { colors, fonts, spacing } from "../../src/theme/tokens";
@@ -43,6 +44,9 @@ export default function GameScreen() {
   const [state, setState] = useState<State>({ status: "loading" });
   const [tab, setTab] = useState(0);
   const [filter, setFilter] = useState<AchievementFilter>("all");
+  // Bumped to re-run the load when nothing else about the request changed —
+  // a backend that was down and may now be up.
+  const [reloadNonce, setReloadNonce] = useState(0);
 
   useEffect(() => {
     if (apiClient === undefined) {
@@ -88,7 +92,7 @@ export default function GameScreen() {
     return () => {
       cancelled = true;
     };
-  }, [appId, apiClient]);
+  }, [appId, apiClient, reloadNonce]);
 
   const progress = state.status === "ready" ? state.data.progress : null;
 
@@ -119,10 +123,15 @@ export default function GameScreen() {
   }
 
   if (state.status === "error") {
+    // A deep link straight to this screen can be the only history entry, so
+    // there is no back path at all: both a retry and a way to another
+    // profile have to be offered here, the same as the library screen.
     return (
-      <View style={styles.centred}>
-        <Text style={styles.message}>{state.message}</Text>
-      </View>
+      <ErrorState
+        message={state.message}
+        onRetry={() => setReloadNonce((previous) => previous + 1)}
+        onChangeProfile={() => router.push("/setup")}
+      />
     );
   }
 
@@ -219,12 +228,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.bg,
     padding: spacing.xxl,
-  },
-  message: {
-    fontFamily: fonts.sans,
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: "center",
   },
   filters: {
     flexDirection: "row",
