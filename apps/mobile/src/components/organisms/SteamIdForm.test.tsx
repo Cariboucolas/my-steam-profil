@@ -58,4 +58,20 @@ describe("SteamIdForm", () => {
 
     expect(onCancel).toHaveBeenCalled();
   });
+
+  it("stops waiting even when the submit handler rejects", async () => {
+    // A rejected submit used to skip setBusy(false) and disable the button
+    // for good, with no message.
+    const onSubmit = jest.fn<Promise<boolean>, [string]>()
+      .mockRejectedValue(new Error("storage unavailable"));
+    render(<SteamIdForm onSubmit={onSubmit} />);
+
+    fireEvent.changeText(screen.getByLabelText(FIELD), "76561197979269357");
+    fireEvent.press(screen.getByText("Show this profile"));
+
+    await waitFor(() => expect(screen.getByText(/that is not a steamid64/i)).toBeTruthy());
+    // The control must still respond: press it a second time.
+    fireEvent.press(screen.getByText("Show this profile"));
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(2));
+  });
 });

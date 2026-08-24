@@ -108,4 +108,53 @@ describe("steam id store", () => {
     expect(result.current.state.status).toBe("absent");
     await expect(storage.read()).resolves.toBeUndefined();
   });
+
+  it("asks for a profile when the device store cannot be read", async () => {
+    // Blocked site data on the web makes localStorage throw, so the promise
+    // rejects. Without a rejection handler this hangs on "loading" forever.
+    const storage: SteamIdStorage = {
+      read: () => Promise.reject(new Error("storage unavailable")),
+      write: () => Promise.resolve(),
+      forget: () => Promise.resolve(),
+    };
+    const { result } = renderStore(storage);
+
+    await waitFor(() => expect(result.current.state.status).toBe("absent"));
+  });
+
+  it("still shows the profile when the device store refuses the write", async () => {
+    const storage: SteamIdStorage = {
+      read: () => Promise.resolve(undefined),
+      write: () => Promise.reject(new Error("storage unavailable")),
+      forget: () => Promise.resolve(),
+    };
+    const { result } = renderStore(storage);
+    await waitFor(() => expect(result.current.state.status).toBe("absent"));
+
+    let accepted = false;
+    await act(async () => {
+      accepted = await result.current.remember(STEAM_ID);
+    });
+
+    // The id is valid; only persistence failed. Refusing it would tell the
+    // user their id is malformed, which is false.
+    expect(accepted).toBe(true);
+    expect(result.current.state).toEqual({ status: "known", steamId: STEAM_ID });
+  });
+
+  it("forgets the profile even when the device store refuses to clear it", async () => {
+    const storage: SteamIdStorage = {
+      read: () => Promise.resolve(STEAM_ID),
+      write: () => Promise.resolve(),
+      forget: () => Promise.reject(new Error("storage unavailable")),
+    };
+    const { result } = renderStore(storage);
+    await waitFor(() => expect(result.current.state.status).toBe("known"));
+
+    await act(async () => {
+      await result.current.forget();
+    });
+
+    expect(result.current.state.status).toBe("absent");
+  });
 });

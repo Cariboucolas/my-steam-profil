@@ -37,8 +37,11 @@ export default function SetupScreen() {
     >
       <SteamIdForm
         onSubmit={submit}
-        // Nothing to cancel back to on a first run.
-        onCancel={state.status === "known" ? () => router.back() : undefined}
+        // Nothing to cancel back to on a first run. dismissTo pops to "/" when
+        // it is on the stack and replaces this screen with it otherwise, so a
+        // reload or a deep link straight to /setup — where router.back() would
+        // be a silent no-op — still lands somewhere.
+        onCancel={state.status === "known" ? () => router.dismissTo("/") : undefined}
       />
     </ScrollView>
   );
