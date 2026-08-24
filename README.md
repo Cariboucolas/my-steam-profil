@@ -44,8 +44,19 @@ Le site déployé ne contient **aucun** SteamID : le build de production force
 `EXPO_PUBLIC_STEAM_ID` à vide — explicitement, et non en comptant sur son absence — donc l'app
 demande quel profil afficher, ce qui la rend utilisable par n'importe qui.
 
-**Sur téléphone**, il y a une étape humaine, et une seule. Un update EAS ne se charge **pas
-dans Expo Go** : il faut un build qui embarque `expo-updates`. On le fabrique une fois :
+**Sur téléphone**, le workflow `EAS Update` est **en sommeil** tant que la variable
+`EAS_ENABLED` ne vaut pas `true` : sans compte Expo il ne pourrait qu'échouer, et une croix
+rouge à chaque merge apprend surtout à ne plus regarder les croix rouges. Pour le réveiller,
+une fois pour toutes :
+
+```bash
+cd apps/mobile && eas init && eas update:configure   # écrit projectId et runtimeVersion
+gh secret set EXPO_TOKEN                             # un Robot token, depuis expo.dev
+gh variable set EAS_ENABLED --body true
+```
+
+Ensuite il y a une étape humaine, et une seule. Un update EAS ne se charge **pas dans
+Expo Go** : il faut un build qui embarque `expo-updates`. On le fabrique une fois :
 
 ```bash
 cd apps/mobile
