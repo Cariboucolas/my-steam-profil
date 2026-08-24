@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "steam-achievements-api",
+  "main": "src/worker.ts",
+  // Pins the runtime behaviour to what was current when this was written.
+  // Raising it is a deliberate act, never a side effect of deploying.
+  "compatibility_date": "2026-08-21",
+  // Logs and metrics in the dashboard; without it a 503 is invisible.
+  "observability": { "enabled": true }
+}

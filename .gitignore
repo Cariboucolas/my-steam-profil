@@ -18,6 +18,12 @@ coverage/
 .env.*
 !.env.example
 
+# Secrets locaux de wrangler (même rôle que .env, autre nom)
+.dev.vars
+
+# État local de wrangler dev (cache et stockage du runtime)
+.wrangler/
+
 # Specs & plans (ne pas pousser sur le remote)
 docs/superpowers/
 
