@@ -11,13 +11,10 @@ concurrency:
 jobs:
   update:
     name: preview channel
-    # Dormant until Expo is set up, because until then it can only fail: the
-    # update needs EXPO_TOKEN and the projectId that `eas init` writes into
-    # app.json. A red cross on every merge teaches people to ignore red
-    # crosses, which is worse than not publishing updates yet.
-    #
-    # To wake it: eas init && eas update:configure, gh secret set EXPO_TOKEN,
-    # then gh variable set EAS_ENABLED --body true
+    # A kill switch, not a waiting room: Expo is configured and this publishes
+    # on every merge. Setting EAS_ENABLED to anything but "true" stops the
+    # updates without editing or reverting this workflow — which is what one
+    # wants when the Expo account, and not the code, is what went wrong.
     if: vars.EAS_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
