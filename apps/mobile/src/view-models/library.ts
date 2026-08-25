@@ -1,17 +1,38 @@
-import type { GameDto, GameProgressDto } from "@steam/contracts";
+import type { GameCompletionDto, GameDto } from "@steam/contracts";
 
-/** Progress keyed by appId; absent means "never fetched", not "none". */
-export type ProgressByAppId = Readonly<Record<number, GameProgressDto>>;
+/** Tallies keyed by appId; absent means "not asked for yet", not "none". */
+export type CompletionByAppId = Readonly<Record<number, GameCompletionDto>>;
 
-export type LibrarySort = "closest" | "recent" | "playtime";
+export type LibrarySort = "perfected" | "recent" | "playtime";
 
 export type GameRow = {
   readonly appId: number;
   readonly name: string;
-  /** Completion, or null when progress was never fetched for this game. */
+  /** Completion, or null when there is no tally to show. */
   readonly percentage: number | null;
   readonly rateLabel: string;
   readonly meta: string;
+  /**
+   * A tally for this game is on its way. The row draws a skeleton rather than a
+   * dash: a game being counted and a game with nothing to count must not look
+   * the same, or waiting reads as an empty result.
+   */
+  readonly pending: boolean;
+};
+
+/** Everything the list needs to lay itself out, including what it is still waiting for. */
+export type LibraryView = {
+  readonly games: readonly GameDto[];
+  readonly completions: CompletionByAppId;
+  readonly sort: LibrarySort;
+  /** Games whose tally has been asked for and has not come back. */
+  readonly pending: ReadonlySet<number>;
+  /**
+   * While tallies are arriving, the order the list started with. The chosen
+   * order depends on tallies, so re-deriving it on every wave would move rows
+   * under the reader's finger. Null once nothing is outstanding.
+   */
+  readonly frozenOrder: readonly number[] | null;
 };
 
 export type LibrarySummary = {
@@ -54,35 +75,69 @@ export const formatDay = (iso: string): string => {
 };
 
 /**
- * Null covers two cases the list draws the same way: progress was never
- * fetched, and the game defines no achievements. Neither has a rate worth
- * showing, and 0 % would read as failure rather than absence.
+ * Null covers two cases the list draws the same way: no tally was fetched, and
+ * the game defines no achievements. Neither has a rate worth showing, and 0 %
+ * would read as failure rather than absence.
  */
-const percentageOf = (progress: GameProgressDto | undefined): number | null =>
-  progress && progress.completion.total > 0
-    ? Math.round(progress.completion.percentage)
-    : null;
+const percentageOf = (tally: GameCompletionDto | undefined): number | null =>
+  tally && tally.total > 0 ? Math.round(tally.percentage) : null;
 
-const metaFor = (game: GameDto, progress: GameProgressDto | undefined): string => {
+const metaFor = (game: GameDto, tally: GameCompletionDto | undefined): string => {
   const played = formatHours(game.playtimeMinutes);
   const when = game.lastPlayedAt ? formatDay(game.lastPlayedAt) : "never played";
 
-  if (!progress) {
+  if (!tally) {
     return `${played} · ${when}`;
   }
-  if (progress.completion.total === 0) {
+  if (tally.total === 0) {
     return `no achievements · ${played}`;
   }
-  const { unlocked, total } = progress.completion;
-  return `${unlocked}/${total} · ${played} · ${when}`;
+  return `${tally.unlocked}/${tally.total} · ${played} · ${when}`;
 };
 
 /** Games with no completion sink to the bottom, whatever the order. */
 const UNKNOWN_LAST = -1;
 
+/**
+ * Which band a game belongs to under the default order: finished first, then
+ * started, then everything with no tally to speak of.
+ */
+const FINISHED = 0;
+const STARTED = 1;
+const NOTHING_TO_SHOW = 2;
+
+const bandOf = (tally: GameCompletionDto | undefined): number => {
+  if (!tally || tally.total === 0) return NOTHING_TO_SHOW;
+  return tally.unlocked === tally.total ? FINISHED : STARTED;
+};
+
+/**
+ * Finished games first, richest first among them: 400 of 400 is a larger thing
+ * to have done than 10 of 10, and the order should say so. Unfinished games
+ * follow by how far along they are, and a game with more to earn leads a game
+ * with less at the same rate.
+ */
+const byWhatIsFinished = (
+  completions: CompletionByAppId,
+): ((a: GameDto, b: GameDto) => number) => {
+  const of = (game: GameDto) => completions[game.appId];
+  return (a, b) => {
+    const [left, right] = [of(a), of(b)];
+    const band = bandOf(left) - bandOf(right);
+    if (band !== 0) return band;
+
+    // Within the finished band the rate is 100 for everyone, so size decides.
+    if (bandOf(left) === STARTED) {
+      const rate = (right?.percentage ?? 0) - (left?.percentage ?? 0);
+      if (rate !== 0) return rate;
+    }
+    return (right?.total ?? 0) - (left?.total ?? 0);
+  };
+};
+
 const comparatorFor = (
   sort: LibrarySort,
-  progress: ProgressByAppId,
+  completions: CompletionByAppId,
 ): ((a: GameDto, b: GameDto) => number) => {
   if (sort === "playtime") {
     return (a, b) => b.playtimeMinutes - a.playtimeMinutes;
@@ -92,38 +147,55 @@ const comparatorFor = (
       game.lastPlayedAt ? Date.parse(game.lastPlayedAt) : UNKNOWN_LAST;
     return (a, b) => played(b) - played(a);
   }
-  const rate = (game: GameDto) => percentageOf(progress[game.appId]) ?? UNKNOWN_LAST;
-  return (a, b) => rate(b) - rate(a);
+  return byWhatIsFinished(completions);
 };
 
-export const buildLibraryRows = (
+/**
+ * Orders by the pinned sequence when there is one, and appends anything the
+ * sequence does not name rather than dropping it — a library that grew under a
+ * running load must still show every game it has.
+ */
+const orderedBy = (
   games: readonly GameDto[],
-  progress: ProgressByAppId,
-  sort: LibrarySort,
-): readonly GameRow[] =>
+  pinned: readonly number[],
+): readonly GameDto[] => {
+  const rank = new Map(pinned.map((appId, index) => [appId, index]));
+  const place = (game: GameDto) => rank.get(game.appId) ?? rank.size;
+  return [...games].sort((a, b) => place(a) - place(b));
+};
+
+export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
+  const { games, completions, sort, pending, frozenOrder } = view;
+
   // Copied before sorting: the caller's list is not ours to reorder.
-  [...games].sort(comparatorFor(sort, progress)).map((game) => {
-    const known = progress[game.appId];
-    const percentage = percentageOf(known);
+  const ordered = frozenOrder
+    ? orderedBy(games, frozenOrder)
+    : [...games].sort(comparatorFor(sort, completions));
+
+  return ordered.map((game) => {
+    const tally = completions[game.appId];
+    const percentage = percentageOf(tally);
     return {
       appId: game.appId,
       name: game.name,
       percentage,
       rateLabel: percentage === null ? "—" : `${percentage}%`,
-      meta: metaFor(game, known),
+      meta: metaFor(game, tally),
+      pending: pending.has(game.appId) && tally === undefined,
     };
   });
+};
 
 export const buildLibrarySummary = (
   games: readonly GameDto[],
-  progress: ProgressByAppId,
+  completions: CompletionByAppId,
 ): LibrarySummary => {
   const loaded = games
-    .map((game) => progress[game.appId])
-    .filter((entry): entry is GameProgressDto => entry !== undefined);
+    .map((game) => completions[game.appId])
+    .filter((entry): entry is GameCompletionDto => entry !== undefined);
 
-  const unlocked = loaded.reduce((sum, e) => sum + e.completion.unlocked, 0);
-  const total = loaded.reduce((sum, e) => sum + e.completion.total, 0);
+  const unlocked = loaded.reduce((sum, e) => sum + e.unlocked, 0);
+  const total = loaded.reduce((sum, e) => sum + e.total, 0);
   const minutes = games.reduce((sum, game) => sum + game.playtimeMinutes, 0);
   const rate = total === 0 ? 0 : Math.round((unlocked / total) * PERFECT);
 
@@ -133,9 +205,7 @@ export const buildLibrarySummary = (
     rateLabel: `${rate}%`,
     // Said out loud, because the figure only covers the games we fetched.
     fraction: `${unlocked} / ${total} across ${loaded.length} of ${games.length} games loaded`,
-    perfectGames: loaded.filter(
-      (e) => e.completion.total > 0 && e.completion.unlocked === e.completion.total,
-    ).length,
+    perfectGames: loaded.filter((e) => e.total > 0 && e.unlocked === e.total).length,
     playtimeLabel: formatHours(minutes),
   };
 };
