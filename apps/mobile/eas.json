@@ -6,6 +6,10 @@
     "preview": {
       "distribution": "internal",
       "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://steam-achievements-api.cdcraft.workers.dev",
+        "EXPO_PUBLIC_STEAM_ID": "unset"
+      },
       "android": {
         "buildType": "apk"
       }
