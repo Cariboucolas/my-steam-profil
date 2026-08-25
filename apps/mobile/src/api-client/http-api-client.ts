@@ -1,5 +1,10 @@
 import { ok, err } from "@steam/domain";
-import type { GameDto, GameProgressDto, ProfileDto } from "@steam/contracts";
+import type {
+  GameCompletionDto,
+  GameDto,
+  GameProgressDto,
+  ProfileDto,
+} from "@steam/contracts";
 
 import type { ApiClient, ApiError } from "./api-client";
 
@@ -65,5 +70,7 @@ export const createHttpApiClient = (config: HttpApiClientConfig): ApiClient => {
     getProfile: () => get<ProfileDto>(""),
     getGames: () => get<readonly GameDto[]>("/games"),
     getGameProgress: (appId) => get<GameProgressDto>(`/games/${appId}/progress`),
+    getGameCompletion: (appId) =>
+      get<GameCompletionDto>(`/games/${appId}/completion`),
   };
 };
