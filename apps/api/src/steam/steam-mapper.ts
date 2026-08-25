@@ -3,6 +3,7 @@ import {
   Playtime,
   unlockStateFromSteam,
   computeGameCompletion,
+  CompletionRate,
   buildTimeline,
   type Profile,
   type Game,
@@ -67,16 +68,52 @@ export interface GameProgress {
 
 export type AchievementsError = "PRIVATE_PROFILE" | "NO_ACHIEVEMENTS";
 
+/**
+ * Steam refuses the player call in two very different ways and says which only
+ * in a prose message: the profile is private, or the game keeps no stats. Both
+ * arrive as `success: false`, so the two readings are told apart here and
+ * nowhere else — every caller of the player response goes through this.
+ */
+const refusalIn = (
+  player: SteamPlayerAchievementsResponse,
+): AchievementsError | null => {
+  if (player.playerstats.success) return null;
+  const message = player.playerstats.error ?? "";
+  return message.includes("not public") ? "PRIVATE_PROFILE" : "NO_ACHIEVEMENTS";
+};
+
+/**
+ * How far a player has got in a game, counted without asking what the game
+ * defines. Steam answers the player call with the full achievement list, each
+ * entry flagged for this player, so the tally is already there — and the schema
+ * call, which is the larger of the two payloads, is not needed at all.
+ *
+ * This is what lets the library ask about every game it owns for one Steam call
+ * apiece instead of two (ADR-0005).
+ */
+export const mapGameCompletion = (
+  player: SteamPlayerAchievementsResponse,
+): Result<GameCompletion, AchievementsError> => {
+  const refusal = refusalIn(player);
+  if (refusal) return err(refusal);
+
+  const achievements = player.playerstats.achievements ?? [];
+  if (achievements.length === 0) return err("NO_ACHIEVEMENTS");
+
+  const unlocked = achievements.filter((entry) => entry.achieved === 1).length;
+  return ok({
+    unlocked,
+    total: achievements.length,
+    rate: CompletionRate.from(unlocked, achievements.length),
+  });
+};
+
 export const mapGameProgress = (
   schema: SteamSchemaResponse,
   player: SteamPlayerAchievementsResponse,
 ): Result<GameProgress, AchievementsError> => {
-  // Private profile / no stats are signalled by playerstats.success === false.
-  if (!player.playerstats.success) {
-    const message = player.playerstats.error ?? "";
-    if (message.includes("not public")) return err("PRIVATE_PROFILE");
-    return err("NO_ACHIEVEMENTS");
-  }
+  const refusal = refusalIn(player);
+  if (refusal) return err(refusal);
 
   const schemaAchievements = schema.game.availableGameStats?.achievements ?? [];
   if (schemaAchievements.length === 0) return err("NO_ACHIEVEMENTS");
