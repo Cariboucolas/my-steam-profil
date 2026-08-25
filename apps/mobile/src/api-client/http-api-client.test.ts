@@ -1,4 +1,4 @@
-import type { GameProgressDto, ProfileDto } from "@steam/contracts";
+import type { GameCompletionDto, GameProgressDto, ProfileDto } from "@steam/contracts";
 
 import { createHttpApiClient } from "./http-api-client";
 
@@ -143,5 +143,56 @@ describe("createHttpApiClient (failures)", () => {
   it("reads an answer that is not JSON as unavailable", async () => {
     const client = clientAnswering(() => new Response("<html>oops</html>"));
     expect(await client.getProfile()).toEqual({ ok: false, error: "UNAVAILABLE" });
+  });
+});
+
+describe("createHttpApiClient (completion)", () => {
+  const completion: GameCompletionDto = {
+    unlocked: 353,
+    total: 483,
+    percentage: 73.08,
+  };
+
+  it("asks the backend for one game's tally", async () => {
+    const seen: string[] = [];
+    const client = clientAnswering((url) => {
+      seen.push(url);
+      return json(completion);
+    });
+
+    await client.getGameCompletion(APP_ID);
+
+    expect(seen).toEqual([
+      `${BASE_URL}/api/profile/${STEAM_ID}/games/${APP_ID}/completion`,
+    ]);
+  });
+
+  it("serves the tally the backend answered with", async () => {
+    const client = clientReturning(completion);
+
+    expect(await client.getGameCompletion(APP_ID)).toEqual({
+      ok: true,
+      value: completion,
+    });
+  });
+
+  it("reports a private profile as such", async () => {
+    const client = clientReturning({ error: "PRIVATE_PROFILE" }, 403);
+
+    expect(await client.getGameCompletion(APP_ID)).toEqual({
+      ok: false,
+      error: "PRIVATE_PROFILE",
+    });
+  });
+
+  it("reports a backend that is down as unavailable", async () => {
+    const client = clientAnswering(() => {
+      throw new TypeError("network down");
+    });
+
+    expect(await client.getGameCompletion(APP_ID)).toEqual({
+      ok: false,
+      error: "UNAVAILABLE",
+    });
   });
 });

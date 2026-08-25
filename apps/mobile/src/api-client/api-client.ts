@@ -1,5 +1,10 @@
 import type { Result } from "@steam/domain";
-import type { GameDto, GameProgressDto, ProfileDto } from "@steam/contracts";
+import type {
+  GameCompletionDto,
+  GameDto,
+  GameProgressDto,
+  ProfileDto,
+} from "@steam/contracts";
 
 /** Failures every call can meet. */
 export type ApiError =
@@ -27,4 +32,12 @@ export interface ApiClient {
   getProfile(): Promise<Result<ProfileDto, ApiError>>;
   getGames(): Promise<Result<readonly GameDto[], ApiError>>;
   getGameProgress(appId: number): Promise<Result<GameProgressDto, ProgressError>>;
+  /**
+   * How far the player has got in one game, and nothing else. The library asks
+   * this once per game it owns, so it is deliberately the cheapest question the
+   * app can ask — the backend answers it with a single Steam call (ADR-0005).
+   */
+  getGameCompletion(
+    appId: number,
+  ): Promise<Result<GameCompletionDto, ProgressError>>;
 }
