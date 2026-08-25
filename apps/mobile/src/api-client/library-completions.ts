@@ -55,7 +55,12 @@ export type LoadOptions = {
 export const loadLibraryCompletions = async (
   client: ApiClient,
   appIds: readonly number[],
-  onWave: (loaded: CompletionByAppId) => void,
+  /**
+   * Given what landed and what was asked for. The two differ when a game
+   * fails, and a caller drawing a skeleton per outstanding game needs the
+   * second to stop drawing one for a game that is never coming.
+   */
+  onWave: (loaded: CompletionByAppId, asked: readonly number[]) => void,
   options: LoadOptions = {},
 ): Promise<void> => {
   const size = options.concurrency ?? CONCURRENT_TALLIES;
@@ -78,6 +83,6 @@ export const loadLibraryCompletions = async (
         landed[appId] = tally.value;
       }
     }
-    onWave(landed);
+    onWave(landed, wave);
   }
 };

@@ -1,11 +1,14 @@
 import type { GameDto, ProfileDto } from "@steam/contracts";
 import { Redirect, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApiClient } from "../src/api-client/use-api-client";
-import { loadLibraryProgress } from "../src/api-client/library-progress";
+import {
+  gamesWorthTallying,
+  loadLibraryCompletions,
+} from "../src/api-client/library-completions";
 import { GameListItem } from "../src/components/molecules/GameListItem";
 import { SortChips } from "../src/components/molecules/SortChips";
 import { ErrorState } from "../src/components/organisms/ErrorState";
@@ -17,15 +20,9 @@ import { messageFor } from "../src/view-models/api-errors";
 import {
   buildLibraryRows,
   buildLibrarySummary,
+  type CompletionByAppId,
   type LibrarySort,
-  type ProgressByAppId,
 } from "../src/view-models/library";
-
-/**
- * Completion costs one backend call per game, so the screen loads it for the
- * handful played most recently. Everything else shows a dash until opened.
- */
-const GAMES_TO_LOAD_PROGRESS_FOR = 12;
 
 type Loaded = { readonly profile: ProfileDto; readonly games: readonly GameDto[] };
 type State =
@@ -39,8 +36,16 @@ export default function LibraryScreen() {
   const { state: steamId } = useSteamId();
   const apiClient = useApiClient();
   const [state, setState] = useState<State>({ status: "loading" });
-  const [progress, setProgress] = useState<ProgressByAppId>({});
-  const [sort, setSort] = useState<LibrarySort>("closest");
+  const [completions, setCompletions] = useState<CompletionByAppId>({});
+  /** Games whose tally has been asked for and has not come back: they pulse. */
+  const [pending, setPending] = useState<ReadonlySet<number>>(new Set());
+  /**
+   * While tallies arrive, the order the list is pinned to. The default order
+   * depends on tallies, so without this every wave would shuffle rows under the
+   * reader's finger. Null once nothing is outstanding.
+   */
+  const [frozenOrder, setFrozenOrder] = useState<readonly number[] | null>(null);
+  const [sort, setSort] = useState<LibrarySort>("perfected");
   // Bumped to re-run the load when nothing else about the request changed —
   // a backend that was down and may now be up. The api client is memoised on
   // the steam id, so without this a retry with the same profile is a no-op.
@@ -55,7 +60,9 @@ export default function LibraryScreen() {
     // A different profile must not show the previous one's library while it
     // loads. Without this, switching profiles flashes the old data.
     setState({ status: "loading" });
-    setProgress({});
+    setCompletions({});
+    setPending(new Set());
+    setFrozenOrder(null);
 
     const load = async () => {
       const [profile, games] = await Promise.all([
@@ -73,17 +80,36 @@ export default function LibraryScreen() {
         return;
       }
 
-      // The library shows as soon as it arrives; completion fills in after,
-      // rather than holding the whole screen back for it.
+      // The library shows as soon as it arrives; tallies fill in after, rather
+      // than holding the whole screen back for several hundred of them.
       setState({ status: "ready", data: { profile: profile.value, games: games.value } });
 
-      const loaded = await loadLibraryProgress(
+      // Recency order, which is also the order they are fetched in, so the list
+      // fills from the top instead of popping in at random.
+      const wanted = gamesWorthTallying(games.value);
+      setPending(new Set(wanted));
+      setFrozenOrder(wanted);
+
+      await loadLibraryCompletions(
         apiClient,
-        games.value,
-        GAMES_TO_LOAD_PROGRESS_FOR,
+        wanted,
+        (wave, asked) => {
+          if (cancelled) return;
+          setCompletions((known) => ({ ...known, ...wave }));
+          // Cleared for everything asked, not just what landed: a game that
+          // failed is not coming, and must stop pulsing.
+          setPending((waiting) => {
+            const left = new Set(waiting);
+            for (const appId of asked) left.delete(appId);
+            return left;
+          });
+        },
+        { keepGoing: () => !cancelled },
       );
+
       if (!cancelled) {
-        setProgress(loaded);
+        // Everything that is coming has come: the chosen order applies again.
+        setFrozenOrder(null);
       }
     };
 
@@ -96,14 +122,38 @@ export default function LibraryScreen() {
 
   const games = state.status === "ready" ? state.data.games : [];
 
-  const rows = useMemo(
-    () => buildLibraryRows(games, progress, sort),
-    [games, progress, sort],
+  const view = useMemo(
+    () => ({ games, completions, sort, pending, frozenOrder }),
+    [games, completions, sort, pending, frozenOrder],
   );
+  const rows = useMemo(() => buildLibraryRows(view), [view]);
   const summary = useMemo(
-    () => buildLibrarySummary(games, progress),
-    [games, progress],
+    () => buildLibrarySummary(games, completions),
+    [games, completions],
   );
+
+  // Read by the sort handler so it can re-pin without depending on the state it
+  // is about to replace, which would make it a new function on every wave.
+  const latest = useRef(view);
+  latest.current = view;
+
+  /**
+   * Choosing an order is a request to see things move, so the list re-sorts at
+   * once — and then re-pins, so the waves still arriving do not carry on
+   * shuffling it afterwards.
+   */
+  const chooseSort = useCallback((next: LibrarySort) => {
+    setSort(next);
+    setFrozenOrder((pinned) =>
+      pinned === null
+        ? null
+        : buildLibraryRows({
+            ...latest.current,
+            sort: next,
+            frozenOrder: null,
+          }).map((row) => row.appId),
+    );
+  }, []);
 
   const openGame = useCallback(
     (appId: number) => router.push(`/game/${appId}`),
@@ -152,7 +202,7 @@ export default function LibraryScreen() {
             onChangeProfile={() => router.push("/setup")}
           />
           <LibraryStatsCard summary={summary} gameCount={games.length} />
-          <SortChips active={sort} onSelect={setSort} />
+          <SortChips active={sort} onSelect={chooseSort} />
         </>
       }
       // Hundreds of rows: only what is on screen gets mounted.
