@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createApp } from "./app";
 import { createSteamClient } from "../steam/steam-client";
+import { CACHE_SECONDS, type ResponseCache } from "./cache";
 
 const API_KEY = "TEST_KEY";
 const STEAM_ID = "76561197979269357";
@@ -676,5 +677,152 @@ describe("GET /api/profile/:steamId/games/:appId/completion", () => {
 
     expect(response.status).toBe(502);
     expect(await response.json()).toEqual({ error: "STEAM_UNAVAILABLE" });
+  });
+});
+
+/**
+ * A cache is only observable through what it stops happening, so these are the
+ * one place in this suite that counts calls to Steam. Everywhere else that
+ * would be asserting on implementation; here it is the behaviour itself.
+ */
+describe("caching the library tally", () => {
+  const APP_ID = 2066020;
+  const OTHER_APP_ID = 25900;
+  const OTHER_STEAM_ID = "76561197960287930";
+
+  const completionUrl = (steamId: string, appId: number) =>
+    `/api/profile/${steamId}/games/${appId}/completion`;
+
+  const player = {
+    playerstats: {
+      success: true,
+      achievements: [{ apiname: "ACH_0", achieved: 1, unlocktime: 1697568656 }],
+    },
+  };
+
+  /** Counts what reaches Steam, and answers every call the same way. */
+  const countingSteam = (answers: SteamAnswers) => {
+    const answer = steamAnswering(answers);
+    const calls: string[] = [];
+    const fetchImpl: typeof fetch = (input, init) => {
+      calls.push(String(input));
+      return answer(input, init);
+    };
+    return { fetchImpl, calls };
+  };
+
+  /** A cache with the Cloudflare Cache API's shape and a Map behind it. */
+  const mapCache = (): ResponseCache => {
+    const entries = new Map<string, Response>();
+    return {
+      match: (request) => {
+        const hit = entries.get(request.url);
+        return Promise.resolve(hit ? hit.clone() : undefined);
+      },
+      put: (request, response) => {
+        entries.set(request.url, response.clone());
+        return Promise.resolve();
+      },
+    };
+  };
+
+  const appCaching = (fetchImpl: typeof fetch, cache: ResponseCache) =>
+    createApp(createSteamClient({ apiKey: API_KEY, fetch: fetchImpl }), cache);
+
+  it("asks Steam once for a tally it is asked for twice", async () => {
+    const { fetchImpl, calls } = countingSteam({ playerAchievements: [player] });
+    const app = appCaching(fetchImpl, mapCache());
+    const url = completionUrl(STEAM_ID, APP_ID);
+
+    const first = await app.request(url);
+    const second = await app.request(url);
+
+    expect(calls).toHaveLength(1);
+    expect(await first.json()).toEqual(await second.json());
+  });
+
+  it("never serves one game's tally for another", async () => {
+    const { fetchImpl, calls } = countingSteam({ playerAchievements: [player] });
+    const app = appCaching(fetchImpl, mapCache());
+
+    await app.request(completionUrl(STEAM_ID, APP_ID));
+    await app.request(completionUrl(STEAM_ID, OTHER_APP_ID));
+
+    expect(calls).toHaveLength(2);
+  });
+
+  it("never serves one player's tally to another", async () => {
+    const { fetchImpl, calls } = countingSteam({ playerAchievements: [player] });
+    const app = appCaching(fetchImpl, mapCache());
+
+    await app.request(completionUrl(STEAM_ID, APP_ID));
+    await app.request(completionUrl(OTHER_STEAM_ID, APP_ID));
+
+    expect(calls).toHaveLength(2);
+  });
+
+  /**
+   * User story 10 of #2: an unlock from minutes ago has to show when the player
+   * reopens the game. That is the moment they check whether it registered, so
+   * this endpoint is deliberately left uncached (ADR-0005).
+   */
+  it("asks Steam again every time a game is opened", async () => {
+    const { fetchImpl, calls } = countingSteam({
+      schemaForGame: [
+        {
+          game: {
+            availableGameStats: {
+              achievements: [
+                { name: "ACH_0", displayName: "A", hidden: 0, icon: "i", icongray: "g" },
+              ],
+            },
+          },
+        },
+      ],
+      playerAchievements: [player],
+    });
+    const app = appCaching(fetchImpl, mapCache());
+    const url = `/api/profile/${STEAM_ID}/games/${APP_ID}/progress`;
+
+    await app.request(url);
+    await app.request(url);
+
+    // Two calls per request, and both requests made them.
+    expect(calls).toHaveLength(4);
+  });
+
+  it("does not keep a refusal, which describes a state that can change", async () => {
+    const { fetchImpl, calls } = countingSteam({
+      playerAchievements: [
+        { playerstats: { success: false, error: "Profile is not public" } },
+        403,
+      ],
+    });
+    const app = appCaching(fetchImpl, mapCache());
+    const url = completionUrl(STEAM_ID, APP_ID);
+
+    expect((await app.request(url)).status).toBe(403);
+    expect((await app.request(url)).status).toBe(403);
+    expect(calls).toHaveLength(2);
+  });
+
+  it("tells the caller how long the tally is good for", async () => {
+    const { fetchImpl } = countingSteam({ playerAchievements: [player] });
+    const app = appCaching(fetchImpl, mapCache());
+
+    const response = await app.request(completionUrl(STEAM_ID, APP_ID));
+
+    expect(response.headers.get("cache-control")).toBe(`max-age=${CACHE_SECONDS}`);
+  });
+
+  it("remembers nothing when built without a cache", async () => {
+    const { fetchImpl, calls } = countingSteam({ playerAchievements: [player] });
+    const app = createApp(createSteamClient({ apiKey: API_KEY, fetch: fetchImpl }));
+    const url = completionUrl(STEAM_ID, APP_ID);
+
+    await app.request(url);
+    await app.request(url);
+
+    expect(calls).toHaveLength(2);
   });
 });

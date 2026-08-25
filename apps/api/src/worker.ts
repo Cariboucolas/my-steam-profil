@@ -4,6 +4,7 @@ import { createApp } from "./http/app";
 import { loadConfig } from "./http/config";
 import { createSteamClient } from "./steam/steam-client";
 import type { SteamGateway } from "./steam/steam-gateway";
+import { noCache, type ResponseCache } from "./http/cache";
 
 /**
  * What Cloudflare hands the Worker in place of process.env.
@@ -15,6 +16,40 @@ import type { SteamGateway } from "./steam/steam-gateway";
  */
 export type WorkerEnv = {
   readonly STEAM_API_KEY?: string;
+};
+
+/**
+ * What Cloudflare adds to the standard `caches` global: a ready-made cache
+ * shared by every request the zone serves. It is not in the DOM lib's
+ * CacheStorage, and it is absent entirely under `tsx` and vitest.
+ */
+type PlatformCaches = {
+  readonly default?: ResponseCache;
+};
+
+/**
+ * Adapts the platform's cache to the port the app depends on, and falls back to
+ * remembering nothing when there is no platform cache — which is every
+ * environment that is not a Worker.
+ *
+ * A write that Cloudflare refuses (it rejects some responses outright) must not
+ * fail the request: an answer that could not be cached is still an answer. The
+ * failure goes to the log, where `wrangler tail` will find it.
+ */
+export const cacheFrom = (platform: PlatformCaches | undefined): ResponseCache => {
+  const store = platform?.default;
+  if (!store) return noCache;
+
+  return {
+    match: (request) => store.match(request),
+    put: async (request, response) => {
+      try {
+        await store.put(request, response);
+      } catch (cause) {
+        console.error("Could not cache an answer", cause);
+      }
+    },
+  };
 };
 
 /** Says nothing a caller could use. The reason goes to the log instead. */
@@ -43,7 +78,10 @@ export const createFetchHandler = (
       return Response.json(MISCONFIGURED, { status: SERVICE_UNAVAILABLE });
     }
 
-    app ??= createApp(createGateway(config.value.steamApiKey));
+    app ??= createApp(
+      createGateway(config.value.steamApiKey),
+      cacheFrom((globalThis as { caches?: PlatformCaches }).caches),
+    );
     return app.fetch(request);
   };
 };

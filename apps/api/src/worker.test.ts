@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 import type { SteamGateway } from "./steam/steam-gateway";
-import { createFetchHandler } from "./worker";
+import { createFetchHandler, cacheFrom } from "./worker";
 
 const API_KEY = "TEST_KEY";
 const HEALTH = "https://api.example.com/health";
@@ -89,5 +89,59 @@ describe("worker fetch handler", () => {
     const response = await handle(new Request(HEALTH), { STEAM_API_KEY: API_KEY });
 
     expect(await response.text()).not.toContain(API_KEY);
+  });
+});
+
+/**
+ * The `caches` global exists on Workers and not under vitest, which is the
+ * whole reason the cache is a port rather than something a route reaches for.
+ * These cover the adapter between the two.
+ */
+describe("the Worker's cache", () => {
+  const COMPLETION = `https://api.example.com/api/profile/76561197979269357/games/1/completion`;
+
+  it("keeps nothing when the platform offers no cache", async () => {
+    const cache = cacheFrom(undefined);
+
+    await cache.put(new Request(COMPLETION), new Response("{}"));
+
+    await expect(cache.match(new Request(COMPLETION))).resolves.toBeUndefined();
+  });
+
+  it("uses the cache the platform provides", async () => {
+    const stored = new Map<string, Response>();
+    const cache = cacheFrom({
+      default: {
+        match: (request: Request) => Promise.resolve(stored.get(request.url)),
+        put: (request: Request, response: Response) => {
+          stored.set(request.url, response);
+          return Promise.resolve();
+        },
+      },
+    });
+
+    await cache.put(new Request(COMPLETION), new Response('{"unlocked":1}'));
+    const hit = await cache.match(new Request(COMPLETION));
+
+    expect(await hit?.text()).toBe('{"unlocked":1}');
+  });
+
+  /**
+   * Cloudflare's cache refuses some responses outright. A tally that could not
+   * be stored is still a tally: the request must be answered, and only an
+   * operator needs to know the write failed.
+   */
+  it("answers anyway when the cache refuses a write", async () => {
+    const cache = cacheFrom({
+      default: {
+        match: () => Promise.resolve(undefined),
+        put: () => Promise.reject(new TypeError("cannot cache this response")),
+      },
+    });
+
+    await expect(
+      cache.put(new Request(COMPLETION), new Response("{}")),
+    ).resolves.toBeUndefined();
+    expect(logged).toHaveBeenCalled();
   });
 });

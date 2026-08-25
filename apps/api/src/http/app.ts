@@ -20,6 +20,7 @@ import {
   emptyGameCompletionDto,
   emptyGameProgressDto,
 } from "./presenters";
+import { cached, noCache, type ResponseCache } from "./cache";
 
 const BAD_REQUEST = 400;
 const FORBIDDEN = 403;
@@ -150,11 +151,15 @@ const serveGameCompletion = (
   });
 
 /**
- * Builds the API around a way out to Steam. It takes the gateway rather than
- * reading the environment itself, so a test can build a fully working app
- * without any configuration.
+ * Builds the API around a way out to Steam, and somewhere to keep the answers
+ * worth keeping. Both are parameters rather than things it reaches for, so a
+ * test can build a fully working app without any configuration, and the cache
+ * defaults to one that remembers nothing.
  */
-export const createApp = (gateway: SteamGateway): Hono => {
+export const createApp = (
+  gateway: SteamGateway,
+  cache: ResponseCache = noCache,
+): Hono => {
   const app = new Hono();
 
   /**
@@ -174,9 +179,15 @@ export const createApp = (gateway: SteamGateway): Hono => {
     "/api/profile/:steamId/games/:appId/progress",
     serveGameProgress(gateway),
   );
+  /**
+   * The one cached route. The library asks it once per game it owns, and a
+   * tally five minutes stale is invisible in a column of numbers — where the
+   * progress route above must stay live, because opening a game is when a
+   * player checks that a fresh unlock registered (ADR-0005).
+   */
   app.get(
     "/api/profile/:steamId/games/:appId/completion",
-    serveGameCompletion(gateway),
+    cached(cache, serveGameCompletion(gateway)),
   );
 
   /**
