@@ -70,7 +70,7 @@ describe("formatDay", () => {
 
 describe("buildLibraryRows", () => {
   it("shows completion for a game whose tally arrived", () => {
-    const row = buildLibraryRows(settled("perfected")).find((r) => r.appId === 2066020);
+    const row = buildLibraryRows(settled("completed")).find((r) => r.appId === 2066020);
 
     expect(row?.rateLabel).toBe("73%");
     expect(row?.percentage).toBe(73);
@@ -78,20 +78,20 @@ describe("buildLibraryRows", () => {
   });
 
   it("shows a dash for a game whose tally was never asked for", () => {
-    const row = buildLibraryRows(settled("perfected")).find((r) => r.appId === 8930);
+    const row = buildLibraryRows(settled("completed")).find((r) => r.appId === 8930);
 
     expect(row?.rateLabel).toBe("—");
     expect(row?.percentage).toBeNull();
   });
 
   it("says so when a game defines no achievements", () => {
-    const rows = buildLibraryRows(settled("perfected", { 8930: completion(0, 0) }));
+    const rows = buildLibraryRows(settled("completed", { 8930: completion(0, 0) }));
     expect(rows.find((r) => r.appId === 8930)?.meta).toContain("no achievements");
   });
 
   it("shows a dash, not 0 %, for a game that defines no achievements", () => {
     const row = buildLibraryRows(
-      settled("perfected", { 8930: completion(0, 0) }),
+      settled("completed", { 8930: completion(0, 0) }),
     ).find((r) => r.appId === 8930);
 
     expect(row?.rateLabel).toBe("—");
@@ -99,7 +99,7 @@ describe("buildLibraryRows", () => {
   });
 
   it("says so when a game was never launched", () => {
-    const rows = buildLibraryRows(settled("perfected"));
+    const rows = buildLibraryRows(settled("completed"));
     expect(rows.find((r) => r.appId === 978520)?.meta).toContain("never played");
   });
 
@@ -133,7 +133,7 @@ describe("buildLibraryRows, ordered by what the player has finished", () => {
   };
 
   const ordered = () =>
-    buildLibraryRows(settled("perfected", completions, games)).map((r) => r.appId);
+    buildLibraryRows(settled("completed", completions, games)).map((r) => r.appId);
 
   it("puts a finished game ahead of an unfinished one, however close", () => {
     expect(ordered().indexOf(1)).toBeLessThan(ordered().indexOf(3));
@@ -173,7 +173,7 @@ describe("buildLibraryRows, while tallies are still arriving", () => {
   const loading = (completions: CompletionByAppId, pending: readonly number[]) => ({
     games: GAMES,
     completions,
-    sort: "perfected" as const,
+    sort: "completed" as const,
     pending: new Set(pending),
     frozenOrder: [8930, 978520, 2066020, 2218750],
   });
@@ -224,8 +224,8 @@ describe("buildLibrarySummary", () => {
     expect(summary.rateLabel).toBe("85%");
   });
 
-  it("admits how much of the library it actually measured", () => {
-    expect(summary.fraction).toBe("853 / 1007 across 3 of 4 games loaded");
+  it("names what it measured, without implying the rest is missing", () => {
+    expect(summary.fraction).toBe("853 / 1007 across 3 games counted");
   });
 
   it("counts a fully completed game as perfect", () => {

@@ -1,6 +1,6 @@
 import type { GameDto, ProfileDto } from "@steam/contracts";
 import { Redirect, useRouter } from "expo-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -45,7 +45,7 @@ export default function LibraryScreen() {
    * reader's finger. Null once nothing is outstanding.
    */
   const [frozenOrder, setFrozenOrder] = useState<readonly number[] | null>(null);
-  const [sort, setSort] = useState<LibrarySort>("perfected");
+  const [sort, setSort] = useState<LibrarySort>("completed");
   // Bumped to re-run the load when nothing else about the request changed —
   // a backend that was down and may now be up. The api client is memoised on
   // the steam id, so without this a retry with the same profile is a no-op.
@@ -132,28 +132,25 @@ export default function LibraryScreen() {
     [games, completions],
   );
 
-  // Read by the sort handler so it can re-pin without depending on the state it
-  // is about to replace, which would make it a new function on every wave.
-  const latest = useRef(view);
-  latest.current = view;
-
   /**
    * Choosing an order is a request to see things move, so the list re-sorts at
-   * once — and then re-pins, so the waves still arriving do not carry on
-   * shuffling it afterwards.
+   * once — and then re-pins to the result, so the waves still arriving do not
+   * carry on shuffling it afterwards. Movement happens when the reader asks for
+   * it, and at no other time.
    */
-  const chooseSort = useCallback((next: LibrarySort) => {
-    setSort(next);
-    setFrozenOrder((pinned) =>
-      pinned === null
-        ? null
-        : buildLibraryRows({
-            ...latest.current,
-            sort: next,
-            frozenOrder: null,
-          }).map((row) => row.appId),
-    );
-  }, []);
+  const chooseSort = useCallback(
+    (next: LibrarySort) => {
+      setSort(next);
+      setFrozenOrder((pinned) =>
+        pinned === null
+          ? null
+          : buildLibraryRows({ ...view, sort: next, frozenOrder: null }).map(
+              (row) => row.appId,
+            ),
+      );
+    },
+    [view],
+  );
 
   const openGame = useCallback(
     (appId: number) => router.push(`/game/${appId}`),

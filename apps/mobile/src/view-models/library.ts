@@ -3,7 +3,7 @@ import type { GameCompletionDto, GameDto } from "@steam/contracts";
 /** Tallies keyed by appId; absent means "not asked for yet", not "none". */
 export type CompletionByAppId = Readonly<Record<number, GameCompletionDto>>;
 
-export type LibrarySort = "perfected" | "recent" | "playtime";
+export type LibrarySort = "completed" | "recent" | "playtime";
 
 export type GameRow = {
   readonly appId: number;
@@ -95,8 +95,8 @@ const metaFor = (game: GameDto, tally: GameCompletionDto | undefined): string =>
   return `${tally.unlocked}/${tally.total} · ${played} · ${when}`;
 };
 
-/** Games with no completion sink to the bottom, whatever the order. */
-const UNKNOWN_LAST = -1;
+/** A game never launched has no date to sort on, so it goes last. */
+const NEVER_PLAYED_LAST = -1;
 
 /**
  * Which band a game belongs to under the default order: finished first, then
@@ -144,7 +144,7 @@ const comparatorFor = (
   }
   if (sort === "recent") {
     const played = (game: GameDto) =>
-      game.lastPlayedAt ? Date.parse(game.lastPlayedAt) : UNKNOWN_LAST;
+      game.lastPlayedAt ? Date.parse(game.lastPlayedAt) : NEVER_PLAYED_LAST;
     return (a, b) => played(b) - played(a);
   }
   return byWhatIsFinished(completions);
@@ -203,8 +203,9 @@ export const buildLibrarySummary = (
     unlocked,
     total,
     rateLabel: `${rate}%`,
-    // Said out loud, because the figure only covers the games we fetched.
-    fraction: `${unlocked} / ${total} across ${loaded.length} of ${games.length} games loaded`,
+    // Names what was measured and claims nothing about the rest: the games
+    // left out were never launched, so they are excluded rather than missing.
+    fraction: `${unlocked} / ${total} across ${loaded.length} games counted`,
     perfectGames: loaded.filter((e) => e.total > 0 && e.unlocked === e.total).length,
     playtimeLabel: formatHours(minutes),
   };
