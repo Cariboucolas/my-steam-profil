@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { mapProfile, mapGames, mapGameProgress } from "./steam-mapper";
+import {
+  mapProfile,
+  mapGames,
+  mapGameProgress,
+  mapGameCompletion,
+} from "./steam-mapper";
 import {
   type SteamPlayerSummariesResponse,
   type SteamOwnedGamesResponse,
@@ -212,6 +217,81 @@ describe("mapGameProgress (errors)", () => {
       playerstats: { success: true, achievements: [] },
     };
     expect(mapGameProgress(emptySchema, player)).toEqual({
+      ok: false,
+      error: "NO_ACHIEVEMENTS",
+    });
+  });
+});
+
+describe("mapGameCompletion", () => {
+  /**
+   * Steam answers the player call with the game's whole achievement list, each
+   * entry carrying whether this player has it. Counting therefore needs this
+   * response and nothing else — the schema only adds names and icons, which a
+   * tally has no use for.
+   */
+  const playerWith = (
+    achieved: readonly number[],
+  ): SteamPlayerAchievementsResponse => ({
+    playerstats: {
+      success: true,
+      achievements: achieved.map((flag, index) => ({
+        apiname: `ACH_${index}`,
+        achieved: flag,
+        unlocktime: flag === 1 ? 1697568656 : 0,
+      })),
+    },
+  });
+
+  it("counts the achievements this player has earned", () => {
+    const result = mapGameCompletion(playerWith([1, 0, 1, 0, 1]));
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.unlocked).toBe(3);
+      expect(result.value.total).toBe(5);
+      expect(result.value.rate.percentage).toBe(60);
+    }
+  });
+
+  it("reports a game the player has finished as complete", () => {
+    const result = mapGameCompletion(playerWith([1, 1]));
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toMatchObject({ unlocked: 2, total: 2 });
+      expect(result.value.rate.percentage).toBe(100);
+    }
+  });
+
+  it("reports a game the player has never scored in as zero of its real total", () => {
+    const result = mapGameCompletion(playerWith([0, 0, 0, 0]));
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value).toMatchObject({ unlocked: 0, total: 4 });
+      expect(result.value.rate.percentage).toBe(0);
+    }
+  });
+
+  it("returns PRIVATE_PROFILE when the player stats are not public", () => {
+    expect(
+      mapGameCompletion({
+        playerstats: { success: false, error: "Profile is not public" },
+      }),
+    ).toEqual({ ok: false, error: "PRIVATE_PROFILE" });
+  });
+
+  it("returns NO_ACHIEVEMENTS when the app has no stats", () => {
+    expect(
+      mapGameCompletion({
+        playerstats: { success: false, error: "Requested app has no stats" },
+      }),
+    ).toEqual({ ok: false, error: "NO_ACHIEVEMENTS" });
+  });
+
+  it("returns NO_ACHIEVEMENTS when the game defines none", () => {
+    expect(mapGameCompletion({ playerstats: { success: true, achievements: [] } })).toEqual({
       ok: false,
       error: "NO_ACHIEVEMENTS",
     });
