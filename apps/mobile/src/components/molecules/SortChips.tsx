@@ -9,7 +9,7 @@ import { Chip } from "../atoms/Chip";
  * is about — rather than with the ones nearest to finishing.
  */
 const OPTIONS: readonly (readonly [LibrarySort, string])[] = [
-  ["perfected", "Completed first"],
+  ["completed", "Completed first"],
   ["recent", "Recently played"],
   ["playtime", "Most played"],
 ];
