@@ -2,12 +2,22 @@ import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { SteamId } from "@steam/domain";
 
+import type { GameCompletionDto, GameProgressDto } from "@steam/contracts";
+
 import { SteamGatewayError, type SteamGateway } from "../steam/steam-gateway";
-import { mapProfile, mapGames, mapGameProgress } from "../steam/steam-mapper";
+import {
+  mapProfile,
+  mapGames,
+  mapGameProgress,
+  mapGameCompletion,
+  type AchievementsError,
+} from "../steam/steam-mapper";
 import {
   toProfileDto,
   toGameDto,
+  toGameCompletionDto,
   toGameProgressDto,
+  emptyGameCompletionDto,
   emptyGameProgressDto,
 } from "./presenters";
 
@@ -43,6 +53,46 @@ const parseAppId = (raw: string): number | null => {
   return Number.isInteger(appId) && appId > 0 ? appId : null;
 };
 
+type GameHandler = (
+  context: Context,
+  steamId: SteamId,
+  appId: number,
+) => Promise<Response>;
+
+/**
+ * The guard for a route about one game: both identifiers are checked before a
+ * handler runs, so neither bad steam id nor bad app id costs a Steam call.
+ */
+const withGame = (handle: GameHandler) =>
+  withSteamId((context, steamId) => {
+    const appId = parseAppId(context.req.param("appId") ?? "");
+    return appId === null
+      ? Promise.resolve(context.json({ error: "INVALID_APP_ID" }, BAD_REQUEST))
+      : handle(context, steamId, appId);
+  });
+
+/**
+ * The two ways Steam refuses to tally a game, answered the same way by every
+ * route that asks: a private profile is a refusal the caller must see, and a
+ * game with nothing to earn is a normal answer shaped like a full one, so no
+ * screen needs a special case.
+ *
+ * Listed rather than defaulted: a new failure should break the build here, not
+ * quietly become a successful empty answer.
+ */
+const answerRefusal = (
+  context: Context,
+  refusal: AchievementsError,
+  emptyAnswer: GameCompletionDto | GameProgressDto,
+): Response => {
+  switch (refusal) {
+    case "PRIVATE_PROFILE":
+      return context.json({ error: "PRIVATE_PROFILE" }, FORBIDDEN);
+    case "NO_ACHIEVEMENTS":
+      return context.json(emptyAnswer);
+  }
+};
+
 const serveProfile = (gateway: SteamGateway): ((c: Context) => Promise<Response>) =>
   withSteamId(async (context, steamId) => {
     const profile = mapProfile(await gateway.getPlayerSummaries(steamId.value));
@@ -68,12 +118,7 @@ const serveGames = (gateway: SteamGateway): ((c: Context) => Promise<Response>) 
 const serveGameProgress = (
   gateway: SteamGateway,
 ): ((c: Context) => Promise<Response>) =>
-  withSteamId(async (context, steamId) => {
-    const appId = parseAppId(context.req.param("appId") ?? "");
-    if (appId === null) {
-      return context.json({ error: "INVALID_APP_ID" }, BAD_REQUEST);
-    }
-
+  withGame(async (context, steamId, appId) => {
     // What a game asks of you, and what this player has done: two calls, and
     // neither is meaningful without the other.
     const [schema, player] = await Promise.all([
@@ -82,18 +127,26 @@ const serveGameProgress = (
     ]);
 
     const progress = mapGameProgress(schema, player);
-    if (progress.ok) {
-      return context.json(toGameProgressDto(progress.value));
-    }
-    // Listed rather than defaulted: a new failure should break the build here,
-    // not quietly become a successful empty answer.
-    switch (progress.error) {
-      case "PRIVATE_PROFILE":
-        return context.json({ error: "PRIVATE_PROFILE" }, FORBIDDEN);
-      case "NO_ACHIEVEMENTS":
-        // A game with nothing to earn is a normal answer, shaped like any other.
-        return context.json(emptyGameProgressDto());
-    }
+    return progress.ok
+      ? context.json(toGameProgressDto(progress.value))
+      : answerRefusal(context, progress.error, emptyGameProgressDto());
+  });
+
+/**
+ * How far a player has got in one game, and nothing else. The library asks this
+ * for every game it owns, so it is deliberately the cheapest answer the service
+ * can give: one Steam call, and the smaller of the two payloads (ADR-0005).
+ */
+const serveGameCompletion = (
+  gateway: SteamGateway,
+): ((c: Context) => Promise<Response>) =>
+  withGame(async (context, steamId, appId) => {
+    const player = await gateway.getPlayerAchievements(steamId.value, appId);
+
+    const completion = mapGameCompletion(player);
+    return completion.ok
+      ? context.json(toGameCompletionDto(completion.value))
+      : answerRefusal(context, completion.error, emptyGameCompletionDto());
   });
 
 /**
@@ -120,6 +173,10 @@ export const createApp = (gateway: SteamGateway): Hono => {
   app.get(
     "/api/profile/:steamId/games/:appId/progress",
     serveGameProgress(gateway),
+  );
+  app.get(
+    "/api/profile/:steamId/games/:appId/completion",
+    serveGameCompletion(gateway),
   );
 
   /**

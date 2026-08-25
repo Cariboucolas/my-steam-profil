@@ -551,3 +551,130 @@ describe("cross-origin requests", () => {
     expect(response.headers.get("access-control-allow-origin")).toBeTruthy();
   });
 });
+
+/**
+ * The library asks this for every game it owns, so what it does *not* do
+ * matters as much as what it answers. Steam is stubbed with an answer for the
+ * player call and none for the schema call, and `steamAnswering` throws for a
+ * URL it has no answer for — so a test that reaches 200 has proved the schema
+ * was never fetched, without counting calls.
+ */
+describe("GET /api/profile/:steamId/games/:appId/completion", () => {
+  const APP_ID = 2066020;
+  const BAD_REQUEST_FROM_STEAM = 400;
+  const FORBIDDEN_FROM_STEAM = 403;
+
+  const url = `/api/profile/${STEAM_ID}/games/${APP_ID}/completion`;
+
+  const playerWith = (achieved: readonly number[]) => ({
+    playerstats: {
+      success: true,
+      achievements: achieved.map((flag, index) => ({
+        apiname: `ACH_${index}`,
+        achieved: flag,
+        unlocktime: flag === 1 ? 1697568656 : 0,
+      })),
+    },
+  });
+
+  it("answers with the tally, without ever fetching the schema", async () => {
+    const app = appReaching(
+      steamAnswering({ playerAchievements: [playerWith([1, 0, 1, 0])] }),
+    );
+
+    const response = await app.request(url);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      unlocked: 2,
+      total: 4,
+      percentage: 50,
+    });
+  });
+
+  it("reports a game the player has never scored in as zero of its real total", async () => {
+    const app = appReaching(
+      steamAnswering({ playerAchievements: [playerWith([0, 0, 0])] }),
+    );
+
+    expect(await (await app.request(url)).json()).toEqual({
+      unlocked: 0,
+      total: 3,
+      percentage: 0,
+    });
+  });
+
+  /**
+   * The same call as the progress endpoint: a game with nothing to earn is a
+   * normal answer shaped like any other, so a row can draw it without a special
+   * case. Steam says so with a 400 carrying a body.
+   */
+  it("is a 200 with a zero tally when the game defines no achievements", async () => {
+    const app = appReaching(
+      steamAnswering({
+        playerAchievements: [
+          { playerstats: { success: false, error: "Requested app has no stats" } },
+          BAD_REQUEST_FROM_STEAM,
+        ],
+      }),
+    );
+
+    const response = await app.request(url);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      unlocked: 0,
+      total: 0,
+      percentage: 0,
+    });
+  });
+
+  it("is a 403 when the profile is private", async () => {
+    const app = appReaching(
+      steamAnswering({
+        playerAchievements: [
+          { playerstats: { success: false, error: "Profile is not public" } },
+          FORBIDDEN_FROM_STEAM,
+        ],
+      }),
+    );
+
+    const response = await app.request(url);
+
+    expect(response.status).toBe(403);
+    expect(await response.json()).toEqual({ error: "PRIVATE_PROFILE" });
+  });
+
+  it("refuses a malformed steam id before asking Steam anything", async () => {
+    const app = appReaching(unreachableSteam);
+
+    const response = await app.request(
+      `/api/profile/${MALFORMED_STEAM_ID}/games/${APP_ID}/completion`,
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "INVALID_STEAM_ID" });
+  });
+
+  it("refuses an app id that is not a whole number above zero", async () => {
+    const app = appReaching(unreachableSteam);
+
+    const response = await app.request(
+      `/api/profile/${STEAM_ID}/games/not-an-app/completion`,
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "INVALID_APP_ID" });
+  });
+
+  it("is a 502 when Steam cannot be reached", async () => {
+    const app = appReaching(() => {
+      throw new TypeError("network down");
+    });
+
+    const response = await app.request(url);
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: "STEAM_UNAVAILABLE" });
+  });
+});
