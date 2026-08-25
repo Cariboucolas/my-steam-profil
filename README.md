@@ -11,7 +11,7 @@ Architecture hexagonale, monorepo pnpm. Voir `docs/superpowers/` (local) pour le
 |---|---|
 | `packages/domain` | Le domaine : SteamId, Playtime, CompletionRate, Timeline… Aucune I/O. |
 | `packages/contracts` | Les DTO « fil » partagés entre le backend et l'app. |
-| `apps/api` | Proxy Steam (ADR-0001) : trois endpoints, mappers et presenters. |
+| `apps/api` | Proxy Steam (ADR-0001) : quatre endpoints, mappers et presenters. |
 | `apps/mobile` | L'app Expo : l'écran de saisie du profil, puis les écrans Library et Game. |
 | `tools/steam-spike` | Récupère les réponses brutes de Steam dans `fixtures/steam-raw/`. |
 | `tools/fixtures-dto` | Transforme ces réponses brutes en DTO pour l'app. |
@@ -80,16 +80,24 @@ Le serveur lit `apps/api/.env` s'il existe, sinon l'environnement du processus �
 ce qui laisse un déploiement fournir ses variables à sa façon. Il écoute sur
 toutes les interfaces, donc un téléphone du même réseau peut le joindre.
 
-Trois endpoints, les seuls que l'app appelle :
+Quatre endpoints, les seuls que l'app appelle :
 
 | Endpoint | Réponse |
 |---|---|
 | `GET /api/profile/:steamId` | `ProfileDto` — 404 si le profil est introuvable |
 | `GET /api/profile/:steamId/games` | `GameDto[]` — liste vide si le compte ne possède rien |
 | `GET /api/profile/:steamId/games/:appId/progress` | `GameProgressDto` — 403 si le profil est privé, 200 vide si le jeu n'a pas de succès |
+| `GET /api/profile/:steamId/games/:appId/completion` | `GameCompletionDto` — le décompte seul, mêmes échecs que `progress` |
 
 Plus `GET /health`. Un SteamID mal formé donne 400 sans qu'aucun appel ne parte
 vers Steam ; une panne Steam donne 502, un bug de notre côté donne 500.
+
+`completion` existe pour la bibliothèque, qui l'appelle une fois par jeu
+possédé : il se contente de `GetPlayerAchievements`, dont la réponse porte déjà
+la liste complète des succès avec un drapeau par joueur. Un appel Steam au lieu
+de deux, et la plus légère des deux charges utiles. Ses réponses sont gardées
+cinq minutes ; `progress` ne l'est jamais, parce qu'ouvrir un jeu est le moment
+où l'on vérifie qu'un succès vient d'être enregistré (ADR-0005).
 
 La clé API ne quitte jamais le serveur (ADR-0001) et n'apparaît ni dans une
 réponse ni dans un message d'erreur.
