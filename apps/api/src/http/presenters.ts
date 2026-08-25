@@ -1,8 +1,9 @@
-import type { Profile, Game, Achievement } from "@steam/domain";
+import type { Profile, Game, Achievement, GameCompletion } from "@steam/domain";
 import type {
   ProfileDto,
   GameDto,
   AchievementDto,
+  GameCompletionDto,
   GameProgressDto,
 } from "@steam/contracts";
 import type { GameProgress } from "../steam/steam-mapper";
@@ -36,13 +37,17 @@ export const toAchievementDto = (achievement: Achievement): AchievementDto => ({
     : null,
 });
 
+export const toGameCompletionDto = (
+  completion: GameCompletion,
+): GameCompletionDto => ({
+  unlocked: completion.unlocked,
+  total: completion.total,
+  // Unrounded on purpose: a client can round, it cannot recover precision.
+  percentage: completion.rate.percentage,
+});
+
 export const toGameProgressDto = (data: GameProgress): GameProgressDto => ({
-  completion: {
-    unlocked: data.completion.unlocked,
-    total: data.completion.total,
-    // Unrounded on purpose: a client can round, it cannot recover precision.
-    percentage: data.completion.rate.percentage,
-  },
+  completion: toGameCompletionDto(data.completion),
   achievements: data.achievements.map(toAchievementDto),
   timeline: data.timeline.map((entry) => ({
     apiName: entry.achievement.apiName,
@@ -50,9 +55,16 @@ export const toGameProgressDto = (data: GameProgress): GameProgressDto => ({
   })),
 });
 
+/** A game Steam defines no achievements for: a valid, empty tally. */
+export const emptyGameCompletionDto = (): GameCompletionDto => ({
+  unlocked: 0,
+  total: 0,
+  percentage: 0,
+});
+
 /** A game Steam defines no achievements for: a valid, empty progress. */
 export const emptyGameProgressDto = (): GameProgressDto => ({
-  completion: { unlocked: 0, total: 0, percentage: 0 },
+  completion: emptyGameCompletionDto(),
   achievements: [],
   timeline: [],
 });
