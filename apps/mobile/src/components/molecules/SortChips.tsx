@@ -4,9 +4,12 @@ import type { LibrarySort } from "../../view-models/library";
 import { spacing } from "../../theme/tokens";
 import { Chip } from "../atoms/Chip";
 
-/** Labels come from the mock, in its order. */
+/**
+ * The default leads with the games the player has finished — the thing the app
+ * is about — rather than with the ones nearest to finishing.
+ */
 const OPTIONS: readonly (readonly [LibrarySort, string])[] = [
-  ["closest", "Closest to 100%"],
+  ["perfected", "Completed first"],
   ["recent", "Recently played"],
   ["playtime", "Most played"],
 ];

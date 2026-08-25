@@ -56,12 +56,14 @@ const recordingClient = () => {
 
 const collect = () => {
   const waves: CompletionByAppId[] = [];
+  const asked: number[][] = [];
   const merged: Record<number, GameCompletionDto> = {};
-  const onWave = (wave: CompletionByAppId) => {
+  const onWave = (wave: CompletionByAppId, wanted: readonly number[]) => {
     waves.push(wave);
+    asked.push([...wanted]);
     Object.assign(merged, wave);
   };
-  return { waves, merged, onWave };
+  return { waves, asked, merged, onWave };
 };
 
 describe("gamesWorthTallying", () => {
@@ -143,6 +145,21 @@ describe("loadLibraryCompletions", () => {
     await loadLibraryCompletions(client, [1, 2, 3], onWave);
 
     expect(merged).toEqual({ 1: tally(1), 3: tally(3) });
+  });
+
+  /**
+   * Without this a game that failed would keep its skeleton for the rest of the
+   * load, because nothing would ever arrive to take it away.
+   */
+  it("names the games it asked about, including the one that failed", async () => {
+    const client = clientAsking((appId) =>
+      Promise.resolve(appId === 2 ? err("UNAVAILABLE") : ok(tally(appId))),
+    );
+    const { asked, onWave } = collect();
+
+    await loadLibraryCompletions(client, [1, 2, 3], onWave, { concurrency: 3 });
+
+    expect(asked).toEqual([[1, 2, 3]]);
   });
 
   /**
