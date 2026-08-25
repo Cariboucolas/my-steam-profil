@@ -20,6 +20,7 @@ import {
   buildFilterCounts,
   buildGameSummary,
   buildTimelineDays,
+  gameInLibrary,
   type AchievementFilter,
 } from "../../src/view-models/game-progress";
 
@@ -67,7 +68,9 @@ export default function GameScreen() {
         return;
       }
 
-      const game = games.value.find((candidate) => candidate.appId === appId);
+      // ADR-0004: the backend answers for any appId, so a game outside the
+      // library is refused here or nowhere.
+      const game = gameInLibrary(games.value, appId);
       if (!game) {
         setState({ status: "error", message: "This game is not in the library." });
         return;
