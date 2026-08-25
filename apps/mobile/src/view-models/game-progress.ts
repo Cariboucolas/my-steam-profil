@@ -173,3 +173,23 @@ export const buildGameSummary = (
     meta,
   };
 };
+
+/**
+ * The Game a screen is being asked to show, or null when the player does not
+ * own it.
+ *
+ * ADR-0004: the API answers for whatever appId it is given without checking
+ * that the player owns it, so a game outside the library comes back looking
+ * exactly like a game with nothing to earn. The refusal lives here instead,
+ * because the screen already loads the library — it needs the Game's name,
+ * cover and playtime before it can draw anything — and so already holds the
+ * answer the API would spend a Steam call to learn.
+ *
+ * That makes this rule load-bearing rather than defensive: a stale link or a
+ * mistyped appId is refused here or nowhere.
+ */
+export const gameInLibrary = (
+  games: readonly GameDto[],
+  appId: number,
+): GameDto | null =>
+  games.find((candidate) => candidate.appId === appId) ?? null;

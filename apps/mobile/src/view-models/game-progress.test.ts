@@ -5,6 +5,7 @@ import {
   buildFilterCounts,
   buildGameSummary,
   buildTimelineDays,
+  gameInLibrary,
 } from "./game-progress";
 
 const achievement = (
@@ -168,5 +169,36 @@ describe("buildGameSummary", () => {
     expect(buildGameSummary(GAME, null).meta).toBe(
       "82 h 57 played · last played 25 Jun 2026",
     );
+  });
+});
+
+describe("gameInLibrary", () => {
+  const owned = (appId: number): GameDto => ({
+    appId,
+    name: `Game ${appId}`,
+    playtimeMinutes: 10,
+    playtimeLabel: "10 min",
+    iconUrl: `https://icon/${appId}.jpg`,
+    lastPlayedAt: null,
+  });
+
+  const LIBRARY = [owned(2066020), owned(440)] as const;
+
+  it("finds the game the player was asking for", () => {
+    expect(gameInLibrary(LIBRARY, 440)).toEqual(owned(440));
+  });
+
+  /**
+   * The one that matters (ADR-0004). The API would answer 200 with an empty
+   * progress for this appId, which is indistinguishable from a game that
+   * defines no achievements — so a stale link would read as "nothing to earn"
+   * unless it is refused right here.
+   */
+  it("refuses a game the player does not own", () => {
+    expect(gameInLibrary(LIBRARY, 999999)).toBeNull();
+  });
+
+  it("refuses anything at all against an empty library", () => {
+    expect(gameInLibrary([], 440)).toBeNull();
   });
 });
