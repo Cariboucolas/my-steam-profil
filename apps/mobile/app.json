@@ -16,7 +16,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.cariboucolas.steamachievements"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -28,6 +29,19 @@
       "expo-image",
       "expo-font",
       "expo-splash-screen"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "ad797727-8cd1-489d-8198-cc036d9b07c9"
+      }
+    },
+    "owner": "cariboucolas",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ad797727-8cd1-489d-8198-cc036d9b07c9"
+    }
   }
 }
