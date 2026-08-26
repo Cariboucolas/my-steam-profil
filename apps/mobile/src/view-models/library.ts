@@ -186,10 +186,15 @@ export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
   });
 };
 
-export const buildLibrarySummary = (
-  games: readonly GameDto[],
-  completions: CompletionByAppId,
-): LibrarySummary => {
+/**
+ * Reads the same LibraryView the rows are built from. The card and the list
+ * describe one screen, so a caller holds one thing and hands it to both — even
+ * though the summary has no use for the chosen order or for what is still
+ * outstanding.
+ */
+export const buildLibrarySummary = (view: LibraryView): LibrarySummary => {
+  const { games, completions } = view;
+
   const loaded = games
     .map((game) => completions[game.appId])
     .filter((entry): entry is GameCompletionDto => entry !== undefined);
