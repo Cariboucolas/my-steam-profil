@@ -22,6 +22,7 @@ import {
   buildLibrarySummary,
   type CompletionByAppId,
   type LibrarySort,
+  type LibraryView,
 } from "../src/view-models/library";
 
 type Loaded = { readonly profile: ProfileDto; readonly games: readonly GameDto[] };
@@ -122,15 +123,14 @@ export default function LibraryScreen() {
 
   const games = state.status === "ready" ? state.data.games : [];
 
-  const view = useMemo(
+  // Named, now that both builders read it: a missing field fails to compile
+  // rather than quietly satisfying one caller and not the other.
+  const view = useMemo<LibraryView>(
     () => ({ games, completions, sort, pending, frozenOrder }),
     [games, completions, sort, pending, frozenOrder],
   );
   const rows = useMemo(() => buildLibraryRows(view), [view]);
-  const summary = useMemo(
-    () => buildLibrarySummary(games, completions),
-    [games, completions],
-  );
+  const summary = useMemo(() => buildLibrarySummary(view), [view]);
 
   /**
    * Choosing an order is a request to see things move, so the list re-sorts at

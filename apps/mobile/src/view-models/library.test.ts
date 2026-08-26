@@ -213,7 +213,8 @@ describe("buildLibraryRows, while tallies are still arriving", () => {
 });
 
 describe("buildLibrarySummary", () => {
-  const summary = buildLibrarySummary(GAMES, COMPLETIONS);
+  // The chosen order has no bearing on a summary; any settled view will do.
+  const summary = buildLibrarySummary(settled("completed"));
 
   it("counts unlocked achievements across the games it has data for", () => {
     expect(summary.unlocked).toBe(853);
