@@ -93,13 +93,16 @@ export default function LibraryScreen() {
     };
   }, [apiClient, reloadNonce]);
 
-  // Only the games this very client loaded. On the render where the profile
-  // has just changed, the previous library is still in state, and effects all
-  // run before that render's reset does: handing it over would spend a wave of
-  // requests on the wrong profile's games.
-  const games =
+  // What the screen draws: the library in hand, until the next one arrives.
+  const games = state.status === "ready" ? state.data.games : NO_GAMES;
+
+  // What gets counted: only the games this very client answered for. On the
+  // render where the profile has just changed, the previous library is still in
+  // state and every effect runs before that render's reset does, so counting
+  // what is drawn would spend a wave of requests on the wrong profile's games.
+  const gamesToCount =
     state.status === "ready" && state.data.client === apiClient
-      ? state.data.games
+      ? games
       : NO_GAMES;
 
   // Where the tallies have got to. Fetching them, bounding them, abandoning
@@ -107,7 +110,7 @@ export default function LibraryScreen() {
   // all its concern, and none of them are state this screen keeps.
   const { completions, pending, frozenOrder, repin } = useLibraryTallies(
     apiClient,
-    games,
+    gamesToCount,
   );
 
   // Named, now that both builders read it: a missing field fails to compile

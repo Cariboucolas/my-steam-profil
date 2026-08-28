@@ -1,5 +1,5 @@
 import type { GameDto } from "@steam/contracts";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import type { ApiClient } from "./api-client";
 import type { CompletionByAppId } from "../view-models/library";
@@ -101,9 +101,11 @@ export type LibraryTallies = {
  * them when the profile changes, merging what lands and taking it out of the
  * outstanding set, pinning the order and releasing it — lives behind this.
  *
- * `games` must keep a stable identity across renders: a fresh array each
- * render restarts the load, so hand over the loaded value or a constant, never
- * a literal.
+ * Two things are asked of a caller. `games` must keep a stable identity across
+ * renders — a fresh array each render restarts the load, so hand over the
+ * loaded value or a constant, never a literal. And `games` must be the games
+ * that very `client` answered for: the pair is what a load is, and a library
+ * held over from a previous profile would be counted against the new one.
  */
 export const useLibraryTallies = (
   client: ApiClient | undefined,
@@ -123,7 +125,7 @@ export const useLibraryTallies = (
     setPending(NOTHING_OUTSTANDING);
     setFrozenOrder(null);
 
-    const wanted = client === undefined ? [] : gamesWorthTallying(games);
+    const wanted = gamesWorthTallying(games);
     if (client !== undefined && wanted.length > 0) {
       setPending(new Set(wanted));
       setFrozenOrder(wanted);
@@ -164,8 +166,5 @@ export const useLibraryTallies = (
     setFrozenOrder((pinned) => (pinned === null ? null : order));
   }, []);
 
-  return useMemo(
-    () => ({ completions, pending, frozenOrder, repin }),
-    [completions, pending, frozenOrder, repin],
-  );
+  return { completions, pending, frozenOrder, repin };
 };

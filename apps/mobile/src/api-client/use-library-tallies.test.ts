@@ -289,6 +289,9 @@ describe("useLibraryTallies", () => {
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
     expect(result.current.completions).toEqual({ 500: tally(500) });
+    // Not merely ignored on arrival: the waves behind the first one are never
+    // asked for at all, so an abandoned library costs no further requests.
+    expect(previous.asked).toHaveLength(6);
   });
 
   it("has nothing outstanding while no profile is chosen", async () => {
