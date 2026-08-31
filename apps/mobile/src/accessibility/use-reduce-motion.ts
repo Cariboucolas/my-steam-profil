@@ -40,7 +40,10 @@ export const useReduceMotion = (): boolean | undefined => {
 
     return () => {
       superseded = true;
-      subscription.remove();
+      // react-native-web hands back nothing at all when matchMedia is missing —
+      // no DOM, which is what static rendering is — and its types do not admit
+      // it. A screen leaving must not take the app down with it.
+      subscription?.remove();
     };
   }, []);
 
