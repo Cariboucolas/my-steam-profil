@@ -10,6 +10,7 @@ const STEAM_BASE_URL = "https://api.steampowered.com";
 
 const BAD_REQUEST = 400;
 const FORBIDDEN = 403;
+const INTERNAL_SERVER_ERROR = 500;
 
 /**
  * The only statuses Steam uses to say something true about a game or a player
@@ -18,6 +19,23 @@ const FORBIDDEN = 403;
  * body the mapper reads.
  */
 const CARRIES_AN_ANSWER = [BAD_REQUEST, FORBIDDEN] as const;
+
+/**
+ * The player call says "this app keeps no stats" with a 400 for most games and
+ * with a 500 for a few of them. Measured on appId 24400, which answers 500 five
+ * times out of five and whose schema declares no achievements at all: the
+ * status is a standing property of the game, not Steam having a bad minute.
+ *
+ * Scoped to this one call. A 500 on the library or the schema is Steam being
+ * down, and reading it would turn an outage into a library of games that appear
+ * to have nothing to earn. What keeps a real outage out even here is the body:
+ * Steam answers with its own envelope and fails with an HTML page, and a page
+ * is not JSON, so it raises below rather than reaching the mapper.
+ */
+const CARRIES_A_PLAYER_ANSWER = [
+  ...CARRIES_AN_ANSWER,
+  INTERNAL_SERVER_ERROR,
+] as const;
 
 /** Steam localises achievement names; the domain speaks English. */
 const LANGUAGE = "english";
@@ -113,7 +131,7 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
       call<SteamPlayerAchievementsResponse>(
         "/ISteamUserStats/GetPlayerAchievements/v1/",
         { steamid: steamId, appid: String(appId), l: LANGUAGE },
-        CARRIES_AN_ANSWER,
+        CARRIES_A_PLAYER_ANSWER,
       ),
   };
 };
