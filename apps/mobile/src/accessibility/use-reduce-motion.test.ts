@@ -1,7 +1,11 @@
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { AccessibilityInfo, type EmitterSubscription } from "react-native";
 
-import { deviceAsksForLessMotion } from "./reduce-motion.test-support";
+import {
+  deviceAsksForLessMotion,
+  deviceIsFineWithMotion,
+  letTheDeviceAnswer,
+} from "./reduce-motion.test-support";
 import { useReduceMotion } from "./use-reduce-motion";
 
 type ReduceMotionListener = (enabled: boolean) => void;
@@ -23,13 +27,28 @@ const subscription = (remove: () => void) =>
 beforeEach(() => {
   // Both platform functions are shared mocks that outlive the test that set
   // them, so each test starts from a device that has been told nothing.
-  deviceAsksForLessMotion(false);
+  deviceIsFineWithMotion();
   spyOnListening().mockImplementation(() => subscription(() => {}));
 });
 
 describe("useReduceMotion", () => {
+  /**
+   * The device can only be asked asynchronously, and a caller that took silence
+   * for "motion is fine" would animate for the frame it takes to answer — in
+   * front of the one player who asked it not to.
+   */
+  it("says nothing until the device has answered", () => {
+    jest
+      .spyOn(AccessibilityInfo, "isReduceMotionEnabled")
+      .mockReturnValue(new Promise(() => {}));
+
+    const { result } = renderHook(() => useReduceMotion());
+
+    expect(result.current).toBeUndefined();
+  });
+
   it("answers what the device says once it has asked", async () => {
-    deviceAsksForLessMotion(true);
+    deviceAsksForLessMotion();
 
     const { result } = renderHook(() => useReduceMotion());
 
@@ -39,7 +58,7 @@ describe("useReduceMotion", () => {
   });
 
   it("follows the setting when it is changed while the app is open", async () => {
-    deviceAsksForLessMotion(true);
+    deviceAsksForLessMotion();
     let announce: ReduceMotionListener | undefined;
     spyOnListening().mockImplementation((event, handler) => {
       if (event === "reduceMotionChanged") {
@@ -64,7 +83,7 @@ describe("useReduceMotion", () => {
    * A library open mounts one of these per row and the list unmounts them as it
    * scrolls, so a listener left behind is a listener per row that was ever seen.
    */
-  it("stops listening once the component that asked has gone", async () => {
+  it("stops listening once the component that asked has gone", () => {
     const remove = jest.fn();
     spyOnListening().mockReturnValue(subscription(remove));
 
@@ -109,4 +128,3 @@ describe("useReduceMotion", () => {
     expect(result.current).toBe(true);
   });
 });
-
