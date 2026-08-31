@@ -165,6 +165,26 @@ describe("buildGameSummary", () => {
     expect(unfetched.fraction).toBe("not loaded");
   });
 
+  /**
+   * Steam does not always send a last-played time, and "last played never"
+   * beside 82 hours is untrue. Where it withholds the date the line says only
+   * what is known; only a game with no playtime either was really never opened.
+   */
+  it("says only what is known where Steam sent no date", () => {
+    const undated = buildGameSummary({ ...GAME, lastPlayedAt: null }, null);
+
+    expect(undated.meta).toBe("82 h 57 played");
+  });
+
+  it("still says never for a game with no playtime either", () => {
+    const untouched = buildGameSummary(
+      { ...GAME, lastPlayedAt: null, playtimeMinutes: 0, playtimeLabel: "0 min" },
+      null,
+    );
+
+    expect(untouched.meta).toBe("0 min played · last played never");
+  });
+
   it("still describes playtime for a game never fetched", () => {
     expect(buildGameSummary(GAME, null).meta).toBe(
       "82 h 57 played · last played 25 Jun 2026",
