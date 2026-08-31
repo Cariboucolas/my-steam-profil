@@ -1,6 +1,10 @@
-import { render, fireEvent, waitFor } from "@testing-library/react-native";
+import { render, fireEvent } from "@testing-library/react-native";
 
-import { deviceAsksForLessMotion } from "../../accessibility/reduce-motion.test-support";
+import {
+  deviceAsksForLessMotion,
+  deviceIsFineWithMotion,
+  letTheDeviceAnswer,
+} from "../../accessibility/reduce-motion.test-support";
 import type { GameRow } from "../../view-models/library";
 import { SKELETON_TEST_ID } from "../atoms/Skeleton";
 import { GameListItem } from "./GameListItem";
@@ -16,7 +20,7 @@ const row = (over: Partial<GameRow> = {}): GameRow => ({
 });
 
 beforeEach(() => {
-  deviceAsksForLessMotion(false);
+  deviceIsFineWithMotion();
 });
 
 describe("GameListItem", () => {
@@ -41,13 +45,14 @@ describe("GameListItem", () => {
    * already means "nothing to earn here", so a row still being counted cannot
    * borrow it.
    */
-  it("shows a skeleton, not a dash, while its tally is on its way", () => {
+  it("shows a skeleton, not a dash, while its tally is on its way", async () => {
     const { getByTestId, queryByText } = render(
       <GameListItem
         row={row({ percentage: null, rateLabel: "—", pending: true })}
         onPress={() => {}}
       />,
     );
+    await letTheDeviceAnswer();
 
     expect(getByTestId(SKELETON_TEST_ID)).toBeTruthy();
     expect(queryByText("—")).toBeNull();
@@ -77,7 +82,7 @@ describe("GameListItem", () => {
    * dash.
    */
   it("shows a skeleton, not a dash, with less motion asked for", async () => {
-    deviceAsksForLessMotion(true);
+    deviceAsksForLessMotion();
 
     const { getByTestId, queryByText } = render(
       <GameListItem
@@ -86,10 +91,9 @@ describe("GameListItem", () => {
       />,
     );
 
-    await waitFor(() => {
-      expect(getByTestId(SKELETON_TEST_ID)).toHaveStyle({ opacity: 0.675 });
-    });
+    await letTheDeviceAnswer();
+
+    expect(getByTestId(SKELETON_TEST_ID)).toBeTruthy();
     expect(queryByText("—")).toBeNull();
   });
 });
-

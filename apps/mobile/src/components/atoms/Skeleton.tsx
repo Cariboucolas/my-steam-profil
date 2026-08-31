@@ -43,7 +43,10 @@ export function Skeleton({ width, height, radius }: Props) {
   const reduceMotion = useReduceMotion();
 
   useEffect(() => {
-    if (reduceMotion) {
+    // Only once the device has actually said motion is fine: an unanswered
+    // setting is not permission, and a swing started on the strength of one
+    // would still have run for a frame.
+    if (reduceMotion !== false) {
       return;
     }
 
@@ -74,7 +77,7 @@ export function Skeleton({ width, height, radius }: Props) {
         width,
         height,
         borderRadius: radius ?? height / 2,
-        opacity: reduceMotion ? STILL : pulse,
+        opacity: reduceMotion === true ? STILL : pulse,
       }}
     />
   );
