@@ -105,7 +105,7 @@ describe("Skeleton", () => {
     const swing = watchSwings();
 
     render(<Skeleton width={44} height={9} />);
-    await act(async () => {});
+    await letTheDeviceAnswer();
 
     expect(swing.start).not.toHaveBeenCalled();
   });
@@ -114,7 +114,7 @@ describe("Skeleton", () => {
     const swing = watchSwings();
 
     render(<Skeleton width={44} height={9} />);
-    await act(async () => {});
+    await letTheDeviceAnswer();
 
     expect(swing.start).toHaveBeenCalled();
   });
@@ -131,7 +131,7 @@ describe("Skeleton", () => {
     const announce = watchAnnouncements();
 
     const { getByTestId } = render(<Skeleton width={44} height={9} />);
-    await act(async () => {});
+    await letTheDeviceAnswer();
     expect(swing.start).toHaveBeenCalled();
 
     await announce(true);
