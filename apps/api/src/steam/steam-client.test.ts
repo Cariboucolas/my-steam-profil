@@ -254,3 +254,55 @@ describe("createSteamClient (Steam's meaningful 500)", () => {
   });
 });
 
+/**
+ * A library open makes one call per game the player has ever launched, so
+ * "Steam answered 500" on its own leaves an operator with nothing to go on:
+ * not which game, not which player, not whether it was one call or all of
+ * them. Naming the parameters costs no secret — the key is set on the URL and
+ * never travels in them.
+ */
+describe("createSteamClient (what a failure says)", () => {
+  const namesTheQuestion = (error: unknown): boolean => {
+    const message = String(error);
+    return message.includes(STEAM_ID) && message.includes(String(APP_ID));
+  };
+
+  it("names what it was asking about when Steam refuses", async () => {
+    const client = clientWith(stubFetch(() => jsonResponse({}, SERVER_ERROR)));
+
+    await expect(
+      client.getPlayerAchievements(STEAM_ID, APP_ID),
+    ).rejects.toSatisfy(namesTheQuestion);
+  });
+
+  it("names what it was asking about when Steam cannot be reached", async () => {
+    const client = clientWith(
+      stubFetch(() => {
+        throw new TypeError("network down");
+      }),
+    );
+
+    await expect(
+      client.getPlayerAchievements(STEAM_ID, APP_ID),
+    ).rejects.toSatisfy(namesTheQuestion);
+  });
+
+  it("names what it was asking about when the answer is not JSON", async () => {
+    const client = clientWith(
+      stubFetch(() => new Response("<html>maintenance</html>", { status: 200 })),
+    );
+
+    await expect(
+      client.getPlayerAchievements(STEAM_ID, APP_ID),
+    ).rejects.toSatisfy(namesTheQuestion);
+  });
+
+  it("still keeps the api key out of the richer message", async () => {
+    const client = clientWith(stubFetch(() => jsonResponse({}, SERVER_ERROR)));
+
+    await expect(
+      client.getPlayerAchievements(STEAM_ID, APP_ID),
+    ).rejects.toSatisfy((error: unknown) => !String(error).includes(API_KEY));
+  });
+});
+
