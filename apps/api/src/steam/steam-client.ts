@@ -40,6 +40,25 @@ const CARRIES_A_PLAYER_ANSWER = [
 /** Steam localises achievement names; the domain speaks English. */
 const LANGUAGE = "english";
 
+/**
+ * What a failure names: the path, and what was being asked about.
+ *
+ * A library open makes one call per game the player has ever launched, so a
+ * message that says only "Steam answered 500" leaves an operator with nothing
+ * to go on — not which game, not which player, not whether one call failed or
+ * all of them. Every parameter is safe to print: the key is set on the URL
+ * below and never travels in `params`.
+ */
+const asking = (
+  path: string,
+  params: Readonly<Record<string, string>>,
+): string => {
+  const named = Object.entries(params)
+    .map(([name, value]) => `${name}=${value}`)
+    .join(", ");
+  return named === "" ? path : `${path} (${named})`;
+};
+
 export interface SteamClientConfig {
   readonly apiKey: string;
   /** Injectable so the whole backend can be tested without a network. */
@@ -52,8 +71,9 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
   const request = config.fetch ?? globalThis.fetch;
 
   /**
-   * Error messages name the path, never the URL: the URL carries the API key
-   * and these messages end up in logs and, indirectly, in responses.
+   * Error messages name the path and what was asked, never the URL: only the
+   * URL carries the API key, and these messages end up in logs and, indirectly,
+   * in responses.
    */
   const call = async <T>(
     path: string,
@@ -75,14 +95,14 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
     try {
       response = await request(url);
     } catch (cause) {
-      throw new SteamGatewayError(`Could not reach Steam at ${path}`, undefined, {
+      throw new SteamGatewayError(`Could not reach Steam at ${asking(path, params)}`, undefined, {
         cause,
       });
     }
 
     if (!response.ok && !carriesAnAnswer.includes(response.status)) {
       throw new SteamGatewayError(
-        `Steam answered ${response.status} at ${path}`,
+        `Steam answered ${response.status} at ${asking(path, params)}`,
         response.status,
       );
     }
@@ -91,7 +111,7 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
       return (await response.json()) as T;
     } catch (cause) {
       throw new SteamGatewayError(
-        `Steam answered something that is not JSON at ${path}`,
+        `Steam answered something that is not JSON at ${asking(path, params)}`,
         response.status,
         { cause },
       );
