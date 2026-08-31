@@ -22,20 +22,49 @@ const NO_TALLIES: CompletionByAppId = {};
 const NOTHING_OUTSTANDING: ReadonlySet<number> = new Set();
 
 /**
- * The games worth spending a request on, most recently played first.
+ * Whether the player has ever opened a game, and so whether it can hold an
+ * unlock at all.
  *
- * A game that was never launched cannot hold an unlock, so asking about it buys
- * a guaranteed zero — 100 of the 367 games on the library this was measured
- * against. Recent first because that is the order a player recognises, so the
- * list fills from the top with the games they came to look at.
+ * Playtime first, and the date only as a second chance: Steam does not always
+ * send a last-played time. On the public profile 76561197997989573 not one of
+ * its 99 games carries one, while 80 of them carry playtime — 149 hours on the
+ * heaviest. Reading that absence as "never launched" asked for no tally at all
+ * and left every row of that library blank.
+ */
+const everOpened = (game: GameDto): boolean =>
+  game.playtimeMinutes > 0 || game.lastPlayedAt !== null;
+
+/**
+ * Most recently played first, because that is the order a player recognises, so
+ * the list fills from the top with the games they came to look at.
+ *
+ * Where Steam withholds the date, the longest played comes first instead — the
+ * nearest thing to recognition that is actually there. A game that has a date
+ * always outranks one that has none, so a real order is never displaced by a
+ * stand-in.
+ */
+const playedAt = (game: GameDto): number | null =>
+  game.lastPlayedAt === null ? null : Date.parse(game.lastPlayedAt);
+
+const recognisedFirst = (a: GameDto, b: GameDto): number => {
+  const [left, right] = [playedAt(a), playedAt(b)];
+  if (left !== null && right !== null) return right - left;
+  if (left !== null) return -1;
+  if (right !== null) return 1;
+  return b.playtimeMinutes - a.playtimeMinutes;
+};
+
+/**
+ * The games worth spending a request on, the ones a player recognises first.
+ *
+ * A game never opened cannot hold an unlock, so asking about it buys a
+ * guaranteed zero — 100 of the 367 games on the library this was measured
+ * against.
  */
 const gamesWorthTallying = (games: readonly GameDto[]): readonly number[] =>
   games
-    .filter((game): game is GameDto & { lastPlayedAt: string } =>
-      game.lastPlayedAt !== null,
-    )
-    .slice()
-    .sort((a, b) => Date.parse(b.lastPlayedAt) - Date.parse(a.lastPlayedAt))
+    .filter(everOpened)
+    .sort(recognisedFirst)
     .map((game) => game.appId);
 
 /**
