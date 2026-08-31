@@ -351,5 +351,27 @@ describe("useLibraryTallies", () => {
 
     expect(asked).toEqual([2, 3, 1]);
   });
+
+  it("has nothing to report before a load has started", () => {
+    const { result } = renderTallies(undefined);
+
+    expect(result.current.loaded).toBeNull();
+  });
+
+  /**
+   * The card's figures grow as waves land, and something has to say they are
+   * not final yet. Six of the eight launched games make up the first wave, so
+   * holding one of the second leaves the load visibly part done.
+   */
+  it("reports how far the tallies have got while they are landing", async () => {
+    const { client, release } = heldClient([7]);
+    const { result } = renderTallies(client);
+
+    await waitFor(() => expect(result.current.loaded).toBe(0.75));
+
+    await release();
+
+    expect(result.current.loaded).toBeNull();
+  });
 });
 

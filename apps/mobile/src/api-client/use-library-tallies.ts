@@ -110,6 +110,13 @@ export type LibraryTallies = {
   /** Games whose tally has been asked for and has not come back: they pulse. */
   readonly pending: ReadonlySet<number>;
   /**
+   * The share of the tallies asked for that have come back, between 0 and 1,
+   * or null while nothing is outstanding. Null covers both silences — before a
+   * library has anything to count, and once everything has landed — because a
+   * load nobody is waiting on has nothing to report.
+   */
+  readonly loaded: number | null;
+  /**
    * While tallies arrive, the order the list is pinned to. The default order
    * depends on tallies, so without this every wave would shuffle rows under
    * the reader's finger. Null once nothing is outstanding.
@@ -142,6 +149,8 @@ export const useLibraryTallies = (
 ): LibraryTallies => {
   const [completions, setCompletions] = useState<CompletionByAppId>(NO_TALLIES);
   const [pending, setPending] = useState<ReadonlySet<number>>(NOTHING_OUTSTANDING);
+  /** How many were asked for, which the outstanding set alone cannot say. */
+  const [asked, setAsked] = useState(0);
   const [frozenOrder, setFrozenOrder] = useState<readonly number[] | null>(null);
 
   useEffect(() => {
@@ -152,11 +161,13 @@ export const useLibraryTallies = (
     // library's numbers against the other's games.
     setCompletions(NO_TALLIES);
     setPending(NOTHING_OUTSTANDING);
+    setAsked(0);
     setFrozenOrder(null);
 
     const wanted = gamesWorthTallying(games);
     if (client !== undefined && wanted.length > 0) {
       setPending(new Set(wanted));
+      setAsked(wanted.length);
       setFrozenOrder(wanted);
 
       void (async () => {
@@ -195,5 +206,8 @@ export const useLibraryTallies = (
     setFrozenOrder((pinned) => (pinned === null ? null : order));
   }, []);
 
-  return { completions, pending, frozenOrder, repin };
+  const loaded =
+    pending.size === 0 ? null : (asked - pending.size) / asked;
+
+  return { completions, pending, loaded, frozenOrder, repin };
 };
