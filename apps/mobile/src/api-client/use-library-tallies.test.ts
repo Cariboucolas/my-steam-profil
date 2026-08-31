@@ -7,10 +7,14 @@ import { useLibraryTallies } from "./use-library-tallies";
 
 type Tally = Result<GameCompletionDto, ProgressError>;
 
-const game = (appId: number, lastPlayedAt: string | null): GameDto => ({
+const game = (
+  appId: number,
+  lastPlayedAt: string | null,
+  playtimeMinutes = 100,
+): GameDto => ({
   appId,
   name: `Game ${appId}`,
-  playtimeMinutes: 100,
+  playtimeMinutes,
   playtimeLabel: "1 h 40",
   iconUrl: `https://icon/${appId}.jpg`,
   lastPlayedAt,
@@ -40,7 +44,7 @@ const NEVER_PLAYED = 99;
 
 const GAMES: readonly GameDto[] = [
   ...libraryOf([3, 7, 1, 8, 4, 2, 6, 5]),
-  game(NEVER_PLAYED, null),
+  game(NEVER_PLAYED, null, 0),
 ];
 
 /** Three waves' worth, so a wave can land after the reader has chosen. */
@@ -311,4 +315,41 @@ describe("useLibraryTallies", () => {
     expect(result.current.completions).toEqual({});
     expect(result.current.pending.size).toBe(0);
   });
+
+  /**
+   * Steam does not always send a last-played time. Measured on the public
+   * profile 76561197997989573: 80 of its 99 games carry playtime — one of them
+   * 149 hours — and not one carries the field. Reading its absence as "never
+   * launched" spent no request at all on that library, so every row sat there
+   * without a tally on a profile with hundreds of hours behind it.
+   */
+  it("counts a game the player has played even with no last-played time", async () => {
+    const { client, asked } = eagerClient();
+    const played = [game(1, null, 8975), game(2, null, 60)];
+    const { result } = renderTallies(client, [...played, game(NEVER_PLAYED, null, 0)]);
+
+    await waitFor(() => expect(result.current.frozenOrder).toBeNull());
+
+    expect([...asked].sort()).toEqual([1, 2]);
+    expect(result.current.completions[1]).toEqual(tally(1));
+  });
+
+  /**
+   * Recency is the order a player recognises, so the list fills from the top
+   * with what they came to look at. Where Steam withholds it, the longest
+   * played is the nearest thing to it that is actually there.
+   */
+  it("falls back to the most played first when no last-played time is sent", async () => {
+    const { client, asked } = eagerClient();
+    const { result } = renderTallies(client, [
+      game(1, null, 60),
+      game(2, null, 8975),
+      game(3, null, 600),
+    ]);
+
+    await waitFor(() => expect(result.current.frozenOrder).toBeNull());
+
+    expect(asked).toEqual([2, 3, 1]);
+  });
 });
+
