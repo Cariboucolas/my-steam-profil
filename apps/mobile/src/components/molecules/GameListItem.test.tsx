@@ -1,5 +1,6 @@
-import { render, fireEvent } from "@testing-library/react-native";
+import { render, fireEvent, waitFor } from "@testing-library/react-native";
 
+import { deviceAsksForLessMotion } from "../../accessibility/reduce-motion.test-support";
 import type { GameRow } from "../../view-models/library";
 import { SKELETON_TEST_ID } from "../atoms/Skeleton";
 import { GameListItem } from "./GameListItem";
@@ -12,6 +13,10 @@ const row = (over: Partial<GameRow> = {}): GameRow => ({
   meta: "353/483 · 83 h · 25 Jun 2026",
   pending: false,
   ...over,
+});
+
+beforeEach(() => {
+  deviceAsksForLessMotion(false);
 });
 
 describe("GameListItem", () => {
@@ -65,4 +70,26 @@ describe("GameListItem", () => {
 
     expect(queryByTestId(SKELETON_TEST_ID)).toBeNull();
   });
+
+  /**
+   * Turning off the pulse must not cost the distinction it was carrying: with
+   * less motion asked for, a row on its way is still a block and still not a
+   * dash.
+   */
+  it("shows a skeleton, not a dash, with less motion asked for", async () => {
+    deviceAsksForLessMotion(true);
+
+    const { getByTestId, queryByText } = render(
+      <GameListItem
+        row={row({ percentage: null, rateLabel: "—", pending: true })}
+        onPress={() => {}}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(getByTestId(SKELETON_TEST_ID)).toHaveStyle({ opacity: 0.675 });
+    });
+    expect(queryByText("—")).toBeNull();
+  });
 });
+
