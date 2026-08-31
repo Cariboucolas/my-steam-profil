@@ -7,6 +7,8 @@ import { CompletionRing } from "../atoms/CompletionRing";
 import { TallyLoadBar } from "../atoms/TallyLoadBar";
 import { StatBlock } from "../atoms/StatBlock";
 
+export const LIBRARY_STATS_CARD_TEST_ID = "library-stats-card";
+
 const RING_SIZE = 78;
 const RING_STROKE = 6;
 
@@ -29,6 +31,7 @@ export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
       colors={[colors.surfaceGradientFrom, colors.surfaceGradientTo]}
       start={{ x: 0.2, y: 0 }}
       end={{ x: 0.8, y: 1 }}
+      testID={LIBRARY_STATS_CARD_TEST_ID}
       style={styles.card}
     >
       <TallyLoadBar loaded={loaded} />
@@ -66,6 +69,9 @@ const styles = StyleSheet.create({
     borderRadius: radius.xl,
     borderWidth: 1,
     borderColor: colors.hairline,
+    // The load bar lies on the top edge, so the corners have to cut it rather
+    // than let it run straight across them.
+    overflow: "hidden",
   },
   top: {
     flexDirection: "row",
