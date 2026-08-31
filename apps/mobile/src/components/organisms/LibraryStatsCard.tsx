@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from "react-native";
 import type { LibrarySummary } from "../../view-models/library";
 import { colors, fonts, radius, spacing } from "../../theme/tokens";
 import { CompletionRing } from "../atoms/CompletionRing";
+import { TallyLoadBar } from "../atoms/TallyLoadBar";
 import { StatBlock } from "../atoms/StatBlock";
 
 const RING_SIZE = 78;
@@ -12,9 +13,15 @@ const RING_STROKE = 6;
 type Props = {
   readonly summary: LibrarySummary;
   readonly gameCount: number;
+  /**
+   * How far the library's tallies have got, or null when none are outstanding.
+   * The figures above are built from what has landed so far, so while this is
+   * a number they are still growing.
+   */
+  readonly loaded: number | null;
 };
 
-export function LibraryStatsCard({ summary, gameCount }: Props) {
+export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
   const rate = summary.total === 0 ? null : Number.parseInt(summary.rateLabel, 10);
 
   return (
@@ -24,6 +31,8 @@ export function LibraryStatsCard({ summary, gameCount }: Props) {
       end={{ x: 0.8, y: 1 }}
       style={styles.card}
     >
+      <TallyLoadBar loaded={loaded} />
+
       <View style={styles.top}>
         <View style={styles.figures}>
           <View style={styles.headline}>

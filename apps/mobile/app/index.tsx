@@ -108,7 +108,7 @@ export default function LibraryScreen() {
   // Where the tallies have got to. Fetching them, bounding them, abandoning
   // them on a profile switch and holding the list still while they land are
   // all its concern, and none of them are state this screen keeps.
-  const { completions, pending, frozenOrder, repin } = useLibraryTallies(
+  const { completions, pending, loaded, frozenOrder, repin } = useLibraryTallies(
     apiClient,
     gamesToCount,
   );
@@ -186,7 +186,11 @@ export default function LibraryScreen() {
             gameCount={games.length}
             onChangeProfile={() => router.push("/setup")}
           />
-          <LibraryStatsCard summary={summary} gameCount={games.length} />
+          <LibraryStatsCard
+            summary={summary}
+            gameCount={games.length}
+            loaded={loaded}
+          />
           <SortChips active={sort} onSelect={chooseSort} />
         </>
       }
