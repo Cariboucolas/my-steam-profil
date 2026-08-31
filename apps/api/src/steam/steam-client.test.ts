@@ -10,6 +10,7 @@ const TOO_MANY_REQUESTS = 429;
 const BAD_REQUEST = 400;
 const FORBIDDEN = 403;
 const SERVER_ERROR = 503;
+const INTERNAL_SERVER_ERROR = 500;
 
 const jsonResponse = (body: unknown, status = 200): Response =>
   new Response(JSON.stringify(body), {
@@ -202,3 +203,54 @@ describe("createSteamClient (4xx everywhere else)", () => {
     );
   });
 });
+
+/**
+ * Steam says "this app keeps no stats" with a 400 for most games and with a 500
+ * for a few. Measured on appId 24400, which answers 500 five times out of five
+ * and whose schema declares no achievements at all — so the 500 is a standing
+ * property of the game, not Steam having a bad minute.
+ *
+ * The body is what tells the two apart. When Steam is answering it sends its
+ * own playerstats envelope; when the request itself is wrong, or Steam is down,
+ * it sends an HTML error page, which is not an answer and must not become one.
+ */
+describe("createSteamClient (Steam's meaningful 500)", () => {
+  it("returns the body of a 500 that carries Steam's own answer", async () => {
+    const body = {
+      playerstats: { error: "Internal server error", success: false },
+    };
+    const client = clientWith(
+      stubFetch(() => jsonResponse(body, INTERNAL_SERVER_ERROR)),
+    );
+    expect(await client.getPlayerAchievements(STEAM_ID, APP_ID)).toEqual(body);
+  });
+
+  it("raises on a 500 that is Steam failing rather than answering", async () => {
+    const client = clientWith(
+      stubFetch(
+        () =>
+          new Response("<html><body>Internal Server Error</body></html>", {
+            status: INTERNAL_SERVER_ERROR,
+          }),
+      ),
+    );
+    await expect(
+      client.getPlayerAchievements(STEAM_ID, APP_ID),
+    ).rejects.toBeInstanceOf(SteamGatewayError);
+  });
+
+  /**
+   * Scoped to the player call, which is the only one measured answering this
+   * way. A 500 anywhere else is Steam being down, and reading it would turn an
+   * outage into a library of games that appear to have nothing to earn.
+   */
+  it("still raises when the schema call answers 500", async () => {
+    const client = clientWith(
+      stubFetch(() => jsonResponse({ game: {} }, INTERNAL_SERVER_ERROR)),
+    );
+    await expect(client.getSchemaForGame(APP_ID)).rejects.toBeInstanceOf(
+      SteamGatewayError,
+    );
+  });
+});
+
