@@ -82,17 +82,34 @@ export const formatDay = (iso: string): string => {
 const percentageOf = (tally: GameCompletionDto | undefined): number | null =>
   tally && tally.total > 0 ? Math.round(tally.percentage) : null;
 
+/**
+ * When the player last opened it, where that can be said at all.
+ *
+ * Steam does not always send a last-played time — on the public profile
+ * 76561197997989573 not one of its 99 games carries one, while 80 carry
+ * playtime. "never played" beside 149 hours is simply untrue, so a game with
+ * playtime and no date says nothing about when rather than something false.
+ * Only a game with neither was really never opened.
+ */
+const whenFor = (game: GameDto): string | null => {
+  if (game.lastPlayedAt) return formatDay(game.lastPlayedAt);
+  return game.playtimeMinutes === 0 ? "never played" : null;
+};
+
+const joined = (parts: readonly (string | null)[]): string =>
+  parts.filter((part): part is string => part !== null).join(" · ");
+
 const metaFor = (game: GameDto, tally: GameCompletionDto | undefined): string => {
   const played = formatHours(game.playtimeMinutes);
-  const when = game.lastPlayedAt ? formatDay(game.lastPlayedAt) : "never played";
+  const when = whenFor(game);
 
   if (!tally) {
-    return `${played} · ${when}`;
+    return joined([played, when]);
   }
   if (tally.total === 0) {
     return `no achievements · ${played}`;
   }
-  return `${tally.unlocked}/${tally.total} · ${played} · ${when}`;
+  return joined([`${tally.unlocked}/${tally.total}`, played, when]);
 };
 
 /** A game never launched has no date to sort on, so it goes last. */

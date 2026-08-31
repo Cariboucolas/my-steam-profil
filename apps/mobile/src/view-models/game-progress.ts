@@ -136,9 +136,18 @@ export const buildGameSummary = (
   game: GameDto,
   progress: GameProgressDto | null,
 ): GameSummary => {
-  const meta = `${game.playtimeLabel} played · last played ${
-    game.lastPlayedAt ? formatDay(game.lastPlayedAt) : "never"
-  }`;
+  // Steam does not always send a last-played time, and "last played never"
+  // beside 82 hours is untrue. Where it withholds the date the line says only
+  // what is known; only a game with no playtime either was really never opened.
+  const lastPlayed = game.lastPlayedAt
+    ? formatDay(game.lastPlayedAt)
+    : game.playtimeMinutes === 0
+      ? "never"
+      : null;
+  const meta =
+    lastPlayed === null
+      ? `${game.playtimeLabel} played`
+      : `${game.playtimeLabel} played · last played ${lastPlayed}`;
 
   if (progress === null) {
     return {

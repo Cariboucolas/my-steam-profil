@@ -103,6 +103,20 @@ describe("buildLibraryRows", () => {
     expect(rows.find((r) => r.appId === 978520)?.meta).toContain("never played");
   });
 
+  /**
+   * Steam does not always send a last-played time. On the public profile
+   * 76561197997989573 not one of 99 games carries one, while 80 carry playtime.
+   * "never played" beside 149 hours is simply untrue, and the honest answer to
+   * a question Steam did not answer is to say nothing.
+   */
+  it("says nothing about when, rather than never, where Steam sent no date", () => {
+    const played = game(1, "Counter-Strike: Source", 8975, null);
+    const rows = buildLibraryRows(settled("playtime", {}, [played]));
+
+    expect(rows[0]?.meta).not.toContain("never");
+    expect(rows[0]?.meta).toContain("150 h");
+  });
+
   it("leaves the games it was given untouched", () => {
     const order = GAMES.map((g) => g.appId);
     buildLibraryRows(settled("playtime"));
