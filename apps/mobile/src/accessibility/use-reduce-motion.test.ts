@@ -127,4 +127,18 @@ describe("useReduceMotion", () => {
 
     expect(result.current).toBe(true);
   });
+
+  /**
+   * react-native-web hands back nothing at all from addEventListener when
+   * matchMedia is missing — no DOM, which is what static rendering is — and
+   * its types do not admit it. Unmounting must not take the screen down.
+   */
+  it("survives a platform that hands back no subscription", () => {
+    spyOnListening().mockReturnValue(undefined as unknown as EmitterSubscription);
+
+    const { unmount } = renderHook(() => useReduceMotion());
+
+    expect(() => unmount()).not.toThrow();
+  });
 });
+
