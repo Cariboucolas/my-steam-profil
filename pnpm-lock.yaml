@@ -177,6 +177,21 @@ importers:
         specifier: ^5.5.0
         version: 5.9.3
 
+  tools/repo-checks:
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.0
+      tsx:
+        specifier: ^4.16.0
+        version: 4.22.4
+      typescript:
+        specifier: ^5.5.0
+        version: 5.9.3
+      vitest:
+        specifier: ^2.1.9
+        version: 2.1.9(@types/node@22.20.0)(jsdom@20.0.3)(lightningcss@1.33.0)(terser@5.50.0)
+
   tools/steam-spike:
     devDependencies:
       '@types/node':
