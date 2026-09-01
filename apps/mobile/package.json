@@ -43,7 +43,7 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
-    "test": "TZ=UTC jest",
+    "test": "TZ=UTC jest --coverage",
     "test:watch": "TZ=UTC jest --watch"
   },
   "private": true,
@@ -54,6 +54,17 @@
       "**/src/**/*.test.tsx",
       "**/app/**/*.test.ts",
       "**/app/**/*.test.tsx"
-    ]
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.{ts,tsx}"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "statements": 96,
+        "branches": 90,
+        "functions": 96,
+        "lines": 96
+      }
+    }
   }
 }
