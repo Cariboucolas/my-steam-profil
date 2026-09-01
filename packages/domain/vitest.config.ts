@@ -11,6 +11,8 @@ export default defineConfig({
         "src/**/*.test.ts", // the tests themselves
         "src/index.ts", // barrel: only re-exports
         "src/achievement.ts", // type-only file: no runtime code
+        "src/game.ts", // type-only file: no runtime code
+        "src/profile.ts", // type-only file: no runtime code
       ],
     },
   },
