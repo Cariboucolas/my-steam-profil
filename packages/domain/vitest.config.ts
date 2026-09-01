@@ -14,6 +14,14 @@ export default defineConfig({
         "src/game.ts", // type-only file: no runtime code
         "src/profile.ts", // type-only file: no runtime code
       ],
+      // The domain is pure functions with no I/O to stand in the way, so it is
+      // held where it already is rather than somewhere short of it.
+      thresholds: {
+        statements: 100,
+        branches: 100,
+        functions: 100,
+        lines: 100,
+      },
     },
   },
 });
