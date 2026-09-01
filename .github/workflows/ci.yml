@@ -39,6 +39,12 @@ jobs:
       - name: Typecheck
         run: pnpm typecheck
 
+      # pnpm -r test skips a package that has no test script without a word, so
+      # a package created with tests but no script would leave CI green having
+      # run none of them. This refuses that package instead.
+      - name: Check tests are collected
+        run: pnpm check:tests
+
       - name: Test
         run: pnpm test
 
