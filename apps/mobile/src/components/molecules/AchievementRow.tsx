@@ -4,6 +4,8 @@ import { StyleSheet, Text, View } from "react-native";
 import type { AchievementRow as Row } from "../../view-models/game-progress";
 import { colors, fonts, radius, spacing } from "../../theme/tokens";
 
+export const ACHIEVEMENT_TILE_TEST_ID = "achievement-tile";
+
 const TILE = 44;
 
 type Props = { readonly row: Row };
@@ -12,6 +14,7 @@ export function AchievementRow({ row }: Props) {
   return (
     <View style={styles.row}>
       <View
+        testID={ACHIEVEMENT_TILE_TEST_ID}
         style={{
           ...styles.tile,
           backgroundColor: row.unlocked ? colors.accentSoft : colors.tileEmpty,
