@@ -18,6 +18,7 @@ import {
   type SteamPlayerSummariesResponse,
   type SteamOwnedGamesResponse,
   type SteamSchemaResponse,
+  type SteamPlayerAchievement,
   type SteamPlayerAchievementsResponse,
 } from "./steam-types";
 
@@ -69,6 +70,21 @@ export interface GameProgress {
 export type AchievementsError = "PRIVATE_PROFILE" | "NO_ACHIEVEMENTS";
 
 /**
+ * What the library is told about one game: the tally, and the dates the
+ * unlocks it counted happened on.
+ *
+ * The dates sit beside the GameCompletion rather than inside it. A
+ * GameCompletion is three numbers; the same three numbers plus 353 dates is a
+ * different thing, and giving it the tally's name would make every reader of a
+ * tally carry a payload they have no use for (ADR-0006).
+ */
+export interface GameTally {
+  readonly completion: GameCompletion;
+  /** Epoch seconds, unlocked achievements only, ascending. */
+  readonly unlockedAt: readonly number[];
+}
+
+/**
  * Steam refuses the player call in two very different ways and says which only
  * in a prose message: the profile is private, or the game keeps no stats. Both
  * arrive as `success: false`, so the two readings are told apart here and
@@ -83,17 +99,29 @@ const refusalIn = (
 };
 
 /**
- * How far a player has got in a game, counted without asking what the game
- * defines. Steam answers the player call with the full achievement list, each
- * entry flagged for this player, so the tally is already there — and the schema
- * call, which is the larger of the two payloads, is not needed at all.
+ * Steam flags an achievement earned and dates it at the epoch often enough to
+ * matter: that is Steam saying it does not know when, not a January morning in
+ * 1970. The player still has it, so it stays in the tally; a calendar has
+ * nothing to draw, so it is left out of the dates. The domain draws the same
+ * line in `unlockStateFromSteam`.
+ */
+const unlockedOn = (entry: SteamPlayerAchievement): boolean =>
+  entry.achieved === 1 && entry.unlocktime > 0;
+
+/**
+ * How far a player has got in a game and when they got there, counted without
+ * asking what the game defines. Steam answers the player call with the full
+ * achievement list, each entry flagged for this player and dated, so both are
+ * already there — and the schema call, which is the larger of the two
+ * payloads, is not needed at all.
  *
  * This is what lets the library ask about every game it owns for one Steam call
- * apiece instead of two (ADR-0005).
+ * apiece instead of two (ADR-0005), and the dates ride along on a download
+ * already made (ADR-0006).
  */
-export const mapGameCompletion = (
+export const mapGameTally = (
   player: SteamPlayerAchievementsResponse,
-): Result<GameCompletion, AchievementsError> => {
+): Result<GameTally, AchievementsError> => {
   const refusal = refusalIn(player);
   if (refusal) return err(refusal);
 
@@ -102,9 +130,17 @@ export const mapGameCompletion = (
 
   const unlocked = achievements.filter((entry) => entry.achieved === 1).length;
   return ok({
-    unlocked,
-    total: achievements.length,
-    rate: CompletionRate.from(unlocked, achievements.length),
+    completion: {
+      unlocked,
+      total: achievements.length,
+      rate: CompletionRate.from(unlocked, achievements.length),
+    },
+    // Sorted here rather than by every reader in turn: Steam sends the
+    // achievements in whatever order the game defines them.
+    unlockedAt: achievements
+      .filter(unlockedOn)
+      .map((entry) => entry.unlocktime)
+      .sort((a, b) => a - b),
   });
 };
 
