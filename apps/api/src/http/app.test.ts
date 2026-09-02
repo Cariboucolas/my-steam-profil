@@ -567,13 +567,15 @@ describe("GET /api/profile/:steamId/games/:appId/completion", () => {
 
   const url = `/api/profile/${STEAM_ID}/games/${APP_ID}/completion`;
 
+  const UNLOCK_SECONDS = 1697568656;
+
   const playerWith = (achieved: readonly number[]) => ({
     playerstats: {
       success: true,
       achievements: achieved.map((flag, index) => ({
         apiname: `ACH_${index}`,
         achieved: flag,
-        unlocktime: flag === 1 ? 1697568656 : 0,
+        unlocktime: flag === 1 ? UNLOCK_SECONDS + index : 0,
       })),
     },
   });
@@ -587,10 +589,25 @@ describe("GET /api/profile/:steamId/games/:appId/completion", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
-      unlocked: 2,
-      total: 4,
-      percentage: 50,
+      completion: { unlocked: 2, total: 4, percentage: 50 },
+      unlockedAt: [UNLOCK_SECONDS, UNLOCK_SECONDS + 2],
     });
+  });
+
+  /**
+   * The tally is a named part of the answer rather than the answer itself, so
+   * the dates could be added without widening what a GameCompletion is.
+   */
+  it("keeps the tally exactly as it was, beside the dates", async () => {
+    const app = appReaching(
+      steamAnswering({ playerAchievements: [playerWith([1, 0, 1, 0])] }),
+    );
+
+    const body = (await (await app.request(url)).json()) as {
+      completion: unknown;
+    };
+
+    expect(body.completion).toEqual({ unlocked: 2, total: 4, percentage: 50 });
   });
 
   it("reports a game the player has never scored in as zero of its real total", async () => {
@@ -599,9 +616,8 @@ describe("GET /api/profile/:steamId/games/:appId/completion", () => {
     );
 
     expect(await (await app.request(url)).json()).toEqual({
-      unlocked: 0,
-      total: 3,
-      percentage: 0,
+      completion: { unlocked: 0, total: 3, percentage: 0 },
+      unlockedAt: [],
     });
   });
 
@@ -624,9 +640,8 @@ describe("GET /api/profile/:steamId/games/:appId/completion", () => {
 
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
-      unlocked: 0,
-      total: 0,
-      percentage: 0,
+      completion: { unlocked: 0, total: 0, percentage: 0 },
+      unlockedAt: [],
     });
   });
 

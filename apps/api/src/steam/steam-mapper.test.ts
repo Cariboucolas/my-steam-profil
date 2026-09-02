@@ -3,7 +3,7 @@ import {
   mapProfile,
   mapGames,
   mapGameProgress,
-  mapGameCompletion,
+  mapGameTally,
 } from "./steam-mapper";
 import {
   type SteamPlayerSummariesResponse,
@@ -223,7 +223,7 @@ describe("mapGameProgress (errors)", () => {
   });
 });
 
-describe("mapGameCompletion", () => {
+describe("mapGameTally", () => {
   /**
    * Steam answers the player call with the game's whole achievement list, each
    * entry carrying whether this player has it. Counting therefore needs this
@@ -232,51 +232,91 @@ describe("mapGameCompletion", () => {
    */
   const playerWith = (
     achieved: readonly number[],
+    unlockTimes: readonly number[] = [],
   ): SteamPlayerAchievementsResponse => ({
     playerstats: {
       success: true,
       achievements: achieved.map((flag, index) => ({
         apiname: `ACH_${index}`,
         achieved: flag,
-        unlocktime: flag === 1 ? 1697568656 : 0,
+        unlocktime: flag === 1 ? (unlockTimes[index] ?? 1697568656) : 0,
       })),
     },
   });
 
   it("counts the achievements this player has earned", () => {
-    const result = mapGameCompletion(playerWith([1, 0, 1, 0, 1]));
+    const result = mapGameTally(playerWith([1, 0, 1, 0, 1]));
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.unlocked).toBe(3);
-      expect(result.value.total).toBe(5);
-      expect(result.value.rate.percentage).toBe(60);
+      expect(result.value.completion.unlocked).toBe(3);
+      expect(result.value.completion.total).toBe(5);
+      expect(result.value.completion.rate.percentage).toBe(60);
     }
   });
 
   it("reports a game the player has finished as complete", () => {
-    const result = mapGameCompletion(playerWith([1, 1]));
+    const result = mapGameTally(playerWith([1, 1]));
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value).toMatchObject({ unlocked: 2, total: 2 });
-      expect(result.value.rate.percentage).toBe(100);
+      expect(result.value.completion).toMatchObject({ unlocked: 2, total: 2 });
+      expect(result.value.completion.rate.percentage).toBe(100);
     }
   });
 
   it("reports a game the player has never scored in as zero of its real total", () => {
-    const result = mapGameCompletion(playerWith([0, 0, 0, 0]));
+    const result = mapGameTally(playerWith([0, 0, 0, 0]));
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value).toMatchObject({ unlocked: 0, total: 4 });
-      expect(result.value.rate.percentage).toBe(0);
+      expect(result.value.completion).toMatchObject({ unlocked: 0, total: 4 });
+      expect(result.value.completion.rate.percentage).toBe(0);
+    }
+  });
+
+  /**
+   * The dates are what tells a calendar when a player was unlocking. Steam
+   * sends them in whatever order it defines the achievements in, so the order
+   * is imposed here rather than left to every reader to impose again.
+   */
+  it("keeps the unlock dates, earliest first", () => {
+    const result = mapGameTally(playerWith([1, 1, 1], [300, 100, 200]));
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.unlockedAt).toEqual([100, 200, 300]);
+    }
+  });
+
+  it("keeps no date for an achievement the player has not earned", () => {
+    const result = mapGameTally(playerWith([1, 0, 1], [100, 0, 200]));
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.unlockedAt).toEqual([100, 200]);
+    }
+  });
+
+  /**
+   * Steam does occasionally flag an achievement earned and date it at the
+   * epoch, which is it saying it does not know when. It still counts towards
+   * the tally — the player has it — but a calendar cannot draw 1970, so the
+   * two figures are allowed to disagree rather than inventing a day.
+   */
+  it("leaves out an earned achievement Steam dates at the epoch", () => {
+    const result = mapGameTally(playerWith([1, 1], [0, 200]));
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.completion.unlocked).toBe(2);
+      expect(result.value.unlockedAt).toEqual([200]);
     }
   });
 
   it("returns PRIVATE_PROFILE when the player stats are not public", () => {
     expect(
-      mapGameCompletion({
+      mapGameTally({
         playerstats: { success: false, error: "Profile is not public" },
       }),
     ).toEqual({ ok: false, error: "PRIVATE_PROFILE" });
@@ -284,14 +324,14 @@ describe("mapGameCompletion", () => {
 
   it("returns NO_ACHIEVEMENTS when the app has no stats", () => {
     expect(
-      mapGameCompletion({
+      mapGameTally({
         playerstats: { success: false, error: "Requested app has no stats" },
       }),
     ).toEqual({ ok: false, error: "NO_ACHIEVEMENTS" });
   });
 
   it("returns NO_ACHIEVEMENTS when the game defines none", () => {
-    expect(mapGameCompletion({ playerstats: { success: true, achievements: [] } })).toEqual({
+    expect(mapGameTally({ playerstats: { success: true, achievements: [] } })).toEqual({
       ok: false,
       error: "NO_ACHIEVEMENTS",
     });

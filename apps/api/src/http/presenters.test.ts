@@ -4,7 +4,9 @@ import {
   toGameDto,
   toAchievementDto,
   toGameProgressDto,
+  toGameTallyDto,
   emptyGameProgressDto,
+  emptyGameTallyDto,
 } from "./presenters";
 import {
   SteamId,
@@ -148,6 +150,55 @@ describe("toGameProgressDto", () => {
       timeline: [],
     });
     expect(dto.completion.percentage).toBe(100);
+  });
+});
+
+describe("toGameTallyDto", () => {
+  const achievements: Achievement[] = [
+    {
+      apiName: "BOSS_1",
+      displayName: "First boss",
+      description: "",
+      hidden: false,
+      icon: "i",
+      iconGray: "g",
+      unlockState: unlockStateFromSteam(1, UNLOCK_SECONDS),
+    },
+  ];
+
+  it("carries the tally and the dates as two named parts", () => {
+    const dto = toGameTallyDto({
+      completion: computeGameCompletion(achievements),
+      unlockedAt: [UNLOCK_SECONDS],
+    });
+
+    expect(dto).toEqual({
+      completion: { unlocked: 1, total: 1, percentage: 100 },
+      unlockedAt: [UNLOCK_SECONDS],
+    });
+  });
+
+  /**
+   * Epoch seconds, as Steam sends them, where an AchievementDto carries an ISO
+   * string. The calendar buckets a thousand of these per library open, and a
+   * number needs no parsing; a date shown to a reader is written once.
+   */
+  it("leaves the dates in the epoch seconds Steam sent", () => {
+    const dto = toGameTallyDto({
+      completion: computeGameCompletion(achievements),
+      unlockedAt: [UNLOCK_SECONDS],
+    });
+
+    expect(dto.unlockedAt[0]).toBe(UNLOCK_SECONDS);
+  });
+});
+
+describe("emptyGameTallyDto", () => {
+  it("represents a game that has no achievements", () => {
+    expect(emptyGameTallyDto()).toEqual({
+      completion: { unlocked: 0, total: 0, percentage: 0 },
+      unlockedAt: [],
+    });
   });
 });
 

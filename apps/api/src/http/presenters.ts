@@ -5,8 +5,9 @@ import type {
   AchievementDto,
   GameCompletionDto,
   GameProgressDto,
+  GameTallyDto,
 } from "@steam/contracts";
-import type { GameProgress } from "../steam/steam-mapper";
+import type { GameProgress, GameTally } from "../steam/steam-mapper";
 
 export const toProfileDto = (profile: Profile): ProfileDto => ({
   steamId: profile.steamId.value,
@@ -46,6 +47,12 @@ export const toGameCompletionDto = (
   percentage: completion.rate.percentage,
 });
 
+/** The tally the library asks for, and the dates it was counted from. */
+export const toGameTallyDto = (tally: GameTally): GameTallyDto => ({
+  completion: toGameCompletionDto(tally.completion),
+  unlockedAt: tally.unlockedAt,
+});
+
 export const toGameProgressDto = (data: GameProgress): GameProgressDto => ({
   completion: toGameCompletionDto(data.completion),
   achievements: data.achievements.map(toAchievementDto),
@@ -60,6 +67,12 @@ export const emptyGameCompletionDto = (): GameCompletionDto => ({
   unlocked: 0,
   total: 0,
   percentage: 0,
+});
+
+/** A game Steam defines no achievements for: a tally of nothing, on no day. */
+export const emptyGameTallyDto = (): GameTallyDto => ({
+  completion: emptyGameCompletionDto(),
+  unlockedAt: [],
 });
 
 /** A game Steam defines no achievements for: a valid, empty progress. */
