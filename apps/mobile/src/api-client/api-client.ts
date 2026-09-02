@@ -1,8 +1,8 @@
 import type { Result } from "@steam/domain";
 import type {
-  GameCompletionDto,
   GameDto,
   GameProgressDto,
+  GameTallyDto,
   ProfileDto,
 } from "@steam/contracts";
 
@@ -33,11 +33,10 @@ export interface ApiClient {
   getGames(): Promise<Result<readonly GameDto[], ApiError>>;
   getGameProgress(appId: number): Promise<Result<GameProgressDto, ProgressError>>;
   /**
-   * How far the player has got in one game, and nothing else. The library asks
-   * this once per game it owns, so it is deliberately the cheapest question the
-   * app can ask — the backend answers it with a single Steam call (ADR-0005).
+   * How far the player has got in one game, and when they got there. The
+   * library asks this once per game it owns, so it is deliberately the cheapest
+   * question the app can ask — the backend answers it with a single Steam call
+   * (ADR-0005), and the unlock dates ride along on it (ADR-0006).
    */
-  getGameCompletion(
-    appId: number,
-  ): Promise<Result<GameCompletionDto, ProgressError>>;
+  getGameTally(appId: number): Promise<Result<GameTallyDto, ProgressError>>;
 }

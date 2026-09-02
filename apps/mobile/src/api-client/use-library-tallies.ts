@@ -2,7 +2,7 @@ import type { GameDto } from "@steam/contracts";
 import { useCallback, useEffect, useState } from "react";
 
 import type { ApiClient } from "./api-client";
-import type { CompletionByAppId } from "../view-models/library";
+import type { TallyByAppId } from "../view-models/library";
 
 /**
  * How many tallies to have in flight at once.
@@ -18,7 +18,7 @@ import type { CompletionByAppId } from "../view-models/library";
 const CONCURRENT_TALLIES = 6;
 
 /** Shared, so resetting a library that is already empty re-renders nothing. */
-const NO_TALLIES: CompletionByAppId = {};
+const NO_TALLIES: TallyByAppId = {};
 const NOTHING_OUTSTANDING: ReadonlySet<number> = new Set();
 
 /**
@@ -79,7 +79,7 @@ const gamesWorthTallying = (games: readonly GameDto[]): readonly number[] =>
 const tallyInWaves = async (
   client: ApiClient,
   appIds: readonly number[],
-  onWave: (landed: CompletionByAppId, asked: readonly number[]) => void,
+  onWave: (landed: TallyByAppId, asked: readonly number[]) => void,
   keepGoing: () => boolean,
 ): Promise<void> => {
   for (let start = 0; start < appIds.length; start += CONCURRENT_TALLIES) {
@@ -89,11 +89,11 @@ const tallyInWaves = async (
     const answers = await Promise.all(
       wave.map(async (appId) => ({
         appId,
-        tally: await client.getGameCompletion(appId),
+        tally: await client.getGameTally(appId),
       })),
     );
 
-    const landed: Record<number, CompletionByAppId[number]> = {};
+    const landed: Record<number, TallyByAppId[number]> = {};
     for (const { appId, tally } of answers) {
       if (tally.ok) {
         landed[appId] = tally.value;
@@ -106,7 +106,7 @@ const tallyInWaves = async (
 /** Where a library's tallies have got to, and the one lever over that. */
 export type LibraryTallies = {
   /** Every tally that has landed. Absent means "not counted", not "none". */
-  readonly completions: CompletionByAppId;
+  readonly tallies: TallyByAppId;
   /** Games whose tally has been asked for and has not come back: they pulse. */
   readonly pending: ReadonlySet<number>;
   /**
@@ -147,7 +147,7 @@ export const useLibraryTallies = (
   client: ApiClient | undefined,
   games: readonly GameDto[],
 ): LibraryTallies => {
-  const [completions, setCompletions] = useState<CompletionByAppId>(NO_TALLIES);
+  const [tallies, setTallies] = useState<TallyByAppId>(NO_TALLIES);
   const [pending, setPending] = useState<ReadonlySet<number>>(NOTHING_OUTSTANDING);
   /** How many were asked for, which the outstanding set alone cannot say. */
   const [asked, setAsked] = useState(0);
@@ -159,7 +159,7 @@ export const useLibraryTallies = (
     // A different profile must not be counted with the previous one's tallies
     // while its own load runs. Without this, switching profiles shows one
     // library's numbers against the other's games.
-    setCompletions(NO_TALLIES);
+    setTallies(NO_TALLIES);
     setPending(NOTHING_OUTSTANDING);
     setAsked(0);
     setFrozenOrder(null);
@@ -176,7 +176,7 @@ export const useLibraryTallies = (
           wanted,
           (landed, asked) => {
             if (cancelled) return;
-            setCompletions((known) => ({ ...known, ...landed }));
+            setTallies((known) => ({ ...known, ...landed }));
             // Cleared for everything asked, not just what landed: a game that
             // failed is not coming, and must stop pulsing.
             setPending((waiting) => {
@@ -209,5 +209,5 @@ export const useLibraryTallies = (
   const loaded =
     pending.size === 0 ? null : (asked - pending.size) / asked;
 
-  return { completions, pending, loaded, frozenOrder, repin };
+  return { tallies, pending, loaded, frozenOrder, repin };
 };

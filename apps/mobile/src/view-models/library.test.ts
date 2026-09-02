@@ -1,4 +1,4 @@
-import type { GameCompletionDto, GameDto } from "@steam/contracts";
+import type { GameDto, GameTallyDto } from "@steam/contracts";
 
 import {
   buildLibraryRows,
@@ -6,7 +6,7 @@ import {
   formatDay,
   formatHours,
   type LibrarySort,
-  type CompletionByAppId,
+  type TallyByAppId,
 } from "./library";
 
 const game = (
@@ -23,10 +23,17 @@ const game = (
   lastPlayedAt,
 });
 
-const completion = (unlocked: number, total: number): GameCompletionDto => ({
-  unlocked,
-  total,
-  percentage: total === 0 ? 0 : (unlocked / total) * 100,
+/**
+ * A tally as the library holds it. Only the completion half decides a row or a
+ * summary, so the dates stay empty here — the calendar is what reads those.
+ */
+const tally = (unlocked: number, total: number): GameTallyDto => ({
+  completion: {
+    unlocked,
+    total,
+    percentage: total === 0 ? 0 : (unlocked / total) * 100,
+  },
+  unlockedAt: [],
 });
 
 const SOULSTONE = game(2066020, "Soulstone Survivors", 4977, "2026-06-25T12:16:14.000Z");
@@ -35,18 +42,18 @@ const CIV5 = game(8930, "Sid Meier's Civilization V", 38496, "2017-08-24T10:00:0
 const KEEPERS = game(978520, "Legend of Keepers", 0, null);
 
 const GAMES = [SOULSTONE, HALLS, CIV5, KEEPERS] as const;
-const COMPLETIONS: CompletionByAppId = {
-  2066020: completion(353, 483),
-  2218750: completion(500, 500),
-  978520: completion(0, 24),
+const TALLIES: TallyByAppId = {
+  2066020: tally(353, 483),
+  2218750: tally(500, 500),
+  978520: tally(0, 24),
 };
 
 /** Nothing outstanding and nothing pinned: the settled view, after a load. */
 const settled = (
   sort: LibrarySort,
-  completions: CompletionByAppId = COMPLETIONS,
+  tallies: TallyByAppId = TALLIES,
   games: readonly GameDto[] = GAMES,
-) => ({ games, completions, sort, pending: new Set<number>(), frozenOrder: null });
+) => ({ games, tallies, sort, pending: new Set<number>(), frozenOrder: null });
 
 describe("formatHours", () => {
   it("groups thousands with a space, as the mock does", () => {
@@ -85,13 +92,13 @@ describe("buildLibraryRows", () => {
   });
 
   it("says so when a game defines no achievements", () => {
-    const rows = buildLibraryRows(settled("completed", { 8930: completion(0, 0) }));
+    const rows = buildLibraryRows(settled("completed", { 8930: tally(0, 0) }));
     expect(rows.find((r) => r.appId === 8930)?.meta).toContain("no achievements");
   });
 
   it("shows a dash, not 0 %, for a game that defines no achievements", () => {
     const row = buildLibraryRows(
-      settled("completed", { 8930: completion(0, 0) }),
+      settled("completed", { 8930: tally(0, 0) }),
     ).find((r) => r.appId === 8930);
 
     expect(row?.rateLabel).toBe("—");
@@ -138,16 +145,16 @@ describe("buildLibraryRows, ordered by what the player has finished", () => {
   const UNASKED = game(6, "Never asked", 100, "2026-01-01T00:00:00.000Z");
 
   const games = [BARELY, UNASKED, ROGUE, NOTHING, EPIC, NEARLY] as const;
-  const completions: CompletionByAppId = {
-    1: completion(10, 10),
-    2: completion(400, 400),
-    3: completion(90, 100),
-    4: completion(2, 100),
-    5: completion(0, 0),
+  const tallies: TallyByAppId = {
+    1: tally(10, 10),
+    2: tally(400, 400),
+    3: tally(90, 100),
+    4: tally(2, 100),
+    5: tally(0, 0),
   };
 
   const ordered = () =>
-    buildLibraryRows(settled("completed", completions, games)).map((r) => r.appId);
+    buildLibraryRows(settled("completed", tallies, games)).map((r) => r.appId);
 
   it("puts a finished game ahead of an unfinished one, however close", () => {
     expect(ordered().indexOf(1)).toBeLessThan(ordered().indexOf(3));
@@ -184,22 +191,22 @@ describe("buildLibraryRows, other orders", () => {
  * so while a load runs the order it started with is the order it keeps.
  */
 describe("buildLibraryRows, while tallies are still arriving", () => {
-  const loading = (completions: CompletionByAppId, pending: readonly number[]) => ({
+  const loading = (tallies: TallyByAppId, pending: readonly number[]) => ({
     games: GAMES,
-    completions,
+    tallies,
     sort: "completed" as const,
     pending: new Set(pending),
     frozenOrder: [8930, 978520, 2066020, 2218750],
   });
 
   it("keeps the order it was pinned to, whatever the tallies say", () => {
-    const rows = buildLibraryRows(loading(COMPLETIONS, []));
+    const rows = buildLibraryRows(loading(TALLIES, []));
     expect(rows.map((r) => r.appId)).toEqual([8930, 978520, 2066020, 2218750]);
   });
 
   it("still shows every game, including one the pinned order does not name", () => {
     const rows = buildLibraryRows({
-      ...loading(COMPLETIONS, []),
+      ...loading(TALLIES, []),
       frozenOrder: [2066020],
     });
     expect(rows).toHaveLength(GAMES.length);
@@ -212,7 +219,7 @@ describe("buildLibraryRows, while tallies are still arriving", () => {
   });
 
   it("does not mark a game whose tally has landed", () => {
-    const rows = buildLibraryRows(loading(COMPLETIONS, [8930]));
+    const rows = buildLibraryRows(loading(TALLIES, [8930]));
     expect(rows.find((r) => r.appId === 2066020)?.pending).toBe(false);
   });
 

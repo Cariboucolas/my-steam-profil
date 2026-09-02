@@ -108,7 +108,7 @@ export default function LibraryScreen() {
   // Where the tallies have got to. Fetching them, bounding them, abandoning
   // them on a profile switch and holding the list still while they land are
   // all its concern, and none of them are state this screen keeps.
-  const { completions, pending, loaded, frozenOrder, repin } = useLibraryTallies(
+  const { tallies, pending, loaded, frozenOrder, repin } = useLibraryTallies(
     apiClient,
     gamesToCount,
   );
@@ -116,8 +116,8 @@ export default function LibraryScreen() {
   // Named, now that both builders read it: a missing field fails to compile
   // rather than quietly satisfying one caller and not the other.
   const view = useMemo<LibraryView>(
-    () => ({ games, completions, sort, pending, frozenOrder }),
-    [games, completions, sort, pending, frozenOrder],
+    () => ({ games, tallies, sort, pending, frozenOrder }),
+    [games, tallies, sort, pending, frozenOrder],
   );
   const rows = useMemo(() => buildLibraryRows(view), [view]);
   const summary = useMemo(() => buildLibrarySummary(view), [view]);

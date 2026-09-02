@@ -1,8 +1,8 @@
 import { ok, err } from "@steam/domain";
 import type {
-  GameCompletionDto,
   GameDto,
   GameProgressDto,
+  GameTallyDto,
   ProfileDto,
 } from "@steam/contracts";
 
@@ -70,7 +70,6 @@ export const createHttpApiClient = (config: HttpApiClientConfig): ApiClient => {
     getProfile: () => get<ProfileDto>(""),
     getGames: () => get<readonly GameDto[]>("/games"),
     getGameProgress: (appId) => get<GameProgressDto>(`/games/${appId}/progress`),
-    getGameCompletion: (appId) =>
-      get<GameCompletionDto>(`/games/${appId}/completion`),
+    getGameTally: (appId) => get<GameTallyDto>(`/games/${appId}/completion`),
   };
 };
