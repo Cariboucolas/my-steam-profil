@@ -1,5 +1,9 @@
 # The library tally is cached, the game view is not
 
+> Amended by [ADR-0006](0006-the-tally-carries-its-unlock-dates.md): the completion route answers
+> the tally beside the dates its unlocks happened on. The one Steam call, the payload it chooses,
+> and what is cached and for how long are all unchanged — only what survives the mapping.
+
 The library asks the API how far the player has got in every game they have launched — 267 of
 them on the account this was measured against. Two decisions make that affordable, and they are
 the same decision applied twice: **only fetch what the answer needs, and only fetch it once.**
