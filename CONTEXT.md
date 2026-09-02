@@ -43,3 +43,15 @@ _Avoid_: Progress, Stats, Summary
 **GameProgress**:
 Everything there is to say about one player in one Game: its GameCompletion, its achievements with their UnlockState, and their Timeline.
 _Avoid_: GameAchievements, Game stats, Game detail
+
+**CalendarWindow**:
+A stretch of days ending today, over which unlocks are counted. Three lengths: three, six or twelve months.
+_Avoid_: Range, Period, Duration
+
+**UnlockDay**:
+One calendar day, in the player's own time zone, and how many achievements they unlocked across their whole library that day. A day with none is a real UnlockDay counting zero; a day beyond today is not one at all.
+_Avoid_: Bucket, Cell, Entry
+
+**UnlockCalendar**:
+Every UnlockDay in a CalendarWindow — how a player's unlocking is spread over time, across the whole library rather than one Game. Unlike a Timeline it does not say **which** achievement was earned, only how many and when.
+_Avoid_: Timeline (that is one Game's, and it names its achievements), Heatmap (one of the ways it is drawn), Activity, Graph
