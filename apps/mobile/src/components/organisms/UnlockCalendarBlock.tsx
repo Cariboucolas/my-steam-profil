@@ -22,6 +22,18 @@ const OPENS_ON: CalendarWindow = 12;
 /** While a load is running the block draws shapes, and writes no figures. */
 const NOTHING_TO_SAY_YET = "";
 
+/**
+ * Whether anything has been counted at all, which is not the same question as
+ * whether the window holds anything.
+ *
+ * On the first paint after a library arrives no wave has left yet, and a
+ * library whose games were never launched is never asked about. Both are a
+ * silence, and "no unlocks in this window" would answer a question nobody has
+ * been able to ask.
+ */
+const nothingCounted = (tallies: TallyByAppId): boolean =>
+  Object.keys(tallies).length === 0;
+
 type Props = {
   readonly tallies: TallyByAppId;
   /**
@@ -65,7 +77,7 @@ export function UnlockCalendarBlock({ tallies, loaded }: Props) {
   );
 
   const counter =
-    loaded !== null
+    loaded !== null || nothingCounted(tallies)
       ? NOTHING_TO_SAY_YET
       : selected
         ? describeDay(selected)

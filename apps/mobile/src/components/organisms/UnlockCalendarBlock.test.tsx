@@ -34,7 +34,11 @@ const libraryUnlocking = (
   return { 2066020: tally };
 };
 
-const NOTHING: TallyByAppId = {};
+/** Nothing asked for yet: no game has been counted, one way or the other. */
+const NOTHING_COUNTED: TallyByAppId = {};
+
+/** Counted, and holding nothing a twelve-month window would draw. */
+const COUNTED_AND_QUIET = libraryUnlocking({ 900: 3 });
 
 /** The label the cell for that day carries, and what a tap should write. */
 const labelFor = (daysBack: number, count: number): string =>
@@ -75,10 +79,23 @@ describe("UnlockCalendarBlock", () => {
 
   it("says a finished window is empty rather than leaving a blank", () => {
     const { getByText } = render(
-      <UnlockCalendarBlock tallies={NOTHING} loaded={null} />,
+      <UnlockCalendarBlock tallies={COUNTED_AND_QUIET} loaded={null} />,
     );
 
     expect(getByText(EMPTY_WINDOW)).toBeTruthy();
+  });
+
+  /**
+   * Not the same silence. A library nothing has been counted for cannot say
+   * its window is empty — on the paint where a library first appears no wave
+   * has left yet, and that sentence would be a claim nobody has checked.
+   */
+  it("claims nothing about a window it has counted nothing for", () => {
+    const { queryByText } = render(
+      <UnlockCalendarBlock tallies={NOTHING_COUNTED} loaded={null} />,
+    );
+
+    expect(queryByText(EMPTY_WINDOW)).toBeNull();
   });
 
   it("puts the day a reader taps where the counter was", () => {
@@ -94,7 +111,7 @@ describe("UnlockCalendarBlock", () => {
 
   it("draws less of the year on a shorter duration", () => {
     const { getAllByRole, getByText } = render(
-      <UnlockCalendarBlock tallies={NOTHING} loaded={null} />,
+      <UnlockCalendarBlock tallies={COUNTED_AND_QUIET} loaded={null} />,
     );
     const wholeYear = getAllByRole("button").length;
 
@@ -120,7 +137,7 @@ describe("UnlockCalendarBlock", () => {
    */
   it("keeps the left of its control row empty for what comes next", () => {
     const { getByTestId } = render(
-      <UnlockCalendarBlock tallies={NOTHING} loaded={null} />,
+      <UnlockCalendarBlock tallies={COUNTED_AND_QUIET} loaded={null} />,
     );
     const controls = getByTestId(UNLOCK_CALENDAR_CONTROLS_TEST_ID);
 
@@ -131,7 +148,7 @@ describe("UnlockCalendarBlock", () => {
   it("names the months the window runs between", () => {
     const today = new Date();
     const { getByText } = render(
-      <UnlockCalendarBlock tallies={NOTHING} loaded={null} />,
+      <UnlockCalendarBlock tallies={COUNTED_AND_QUIET} loaded={null} />,
     );
 
     const thisMonth = today
