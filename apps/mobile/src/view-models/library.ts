@@ -46,7 +46,8 @@ export type LibrarySummary = {
 
 const MINUTES_PER_HOUR = 60;
 const PERFECT = 100;
-const MONTHS = [
+/** Shared with the calendar, so one place decides how a month is written. */
+export const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ] as const;
