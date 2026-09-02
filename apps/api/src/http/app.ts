@@ -2,23 +2,23 @@ import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { SteamId } from "@steam/domain";
 
-import type { GameCompletionDto, GameProgressDto } from "@steam/contracts";
+import type { GameProgressDto, GameTallyDto } from "@steam/contracts";
 
 import { SteamGatewayError, type SteamGateway } from "../steam/steam-gateway";
 import {
   mapProfile,
   mapGames,
   mapGameProgress,
-  mapGameCompletion,
+  mapGameTally,
   type AchievementsError,
 } from "../steam/steam-mapper";
 import {
   toProfileDto,
   toGameDto,
-  toGameCompletionDto,
   toGameProgressDto,
-  emptyGameCompletionDto,
+  toGameTallyDto,
   emptyGameProgressDto,
+  emptyGameTallyDto,
 } from "./presenters";
 import { cached, noCache, type ResponseCache } from "./cache";
 
@@ -84,7 +84,7 @@ const withGame = (handle: GameHandler) =>
 const answerRefusal = (
   context: Context,
   refusal: AchievementsError,
-  emptyAnswer: GameCompletionDto | GameProgressDto,
+  emptyAnswer: GameProgressDto | GameTallyDto,
 ): Response => {
   switch (refusal) {
     case "PRIVATE_PROFILE":
@@ -134,20 +134,22 @@ const serveGameProgress = (
   });
 
 /**
- * How far a player has got in one game, and nothing else. The library asks this
- * for every game it owns, so it is deliberately the cheapest answer the service
- * can give: one Steam call, and the smaller of the two payloads (ADR-0005).
+ * How far a player has got in one game, and when. The library asks this for
+ * every game it owns, so it is deliberately the cheapest answer the service can
+ * give: one Steam call, and the smaller of the two payloads (ADR-0005). The
+ * unlock dates come out of that same response, so they cost no call of their
+ * own (ADR-0006).
  */
-const serveGameCompletion = (
+const serveGameTally = (
   gateway: SteamGateway,
 ): ((c: Context) => Promise<Response>) =>
   withGame(async (context, steamId, appId) => {
     const player = await gateway.getPlayerAchievements(steamId.value, appId);
 
-    const completion = mapGameCompletion(player);
-    return completion.ok
-      ? context.json(toGameCompletionDto(completion.value))
-      : answerRefusal(context, completion.error, emptyGameCompletionDto());
+    const tally = mapGameTally(player);
+    return tally.ok
+      ? context.json(toGameTallyDto(tally.value))
+      : answerRefusal(context, tally.error, emptyGameTallyDto());
   });
 
 /**
@@ -187,7 +189,7 @@ export const createApp = (
    */
   app.get(
     "/api/profile/:steamId/games/:appId/completion",
-    cached(cache, serveGameCompletion(gateway)),
+    cached(cache, serveGameTally(gateway)),
   );
 
   /**
