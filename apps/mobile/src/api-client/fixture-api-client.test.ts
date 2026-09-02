@@ -28,10 +28,22 @@ const games: readonly GameDto[] = [
   },
 ];
 
+const UNLOCK_SECONDS = 1697568656;
+const LATER_SECONDS = 1697655056;
+
 const progress: GameProgressDto = {
   completion: { unlocked: 353, total: 483, percentage: 73.08488612836439 },
   achievements: [],
-  timeline: [],
+  timeline: [
+    {
+      apiName: "BOSS_1",
+      unlockedAt: new Date(UNLOCK_SECONDS * 1000).toISOString(),
+    },
+    {
+      apiName: "BOSS_2",
+      unlockedAt: new Date(LATER_SECONDS * 1000).toISOString(),
+    },
+  ],
 };
 
 const client = createFixtureApiClient({
@@ -57,6 +69,28 @@ describe("createFixtureApiClient", () => {
     expect(await client.getGameProgress(2066020)).toEqual({
       ok: true,
       value: progress,
+    });
+  });
+
+  /**
+   * The fixture build only ever stored whole progress, so the tally the library
+   * asks for is read back out of it — including the unlock dates, which the
+   * Timeline already holds earliest first.
+   */
+  it("serves a tally, dated, for a game it has data for", async () => {
+    expect(await client.getGameTally(2066020)).toEqual({
+      ok: true,
+      value: {
+        completion: progress.completion,
+        unlockedAt: [UNLOCK_SECONDS, LATER_SECONDS],
+      },
+    });
+  });
+
+  it("reports a library game whose progress was never fetched as not loaded", async () => {
+    expect(await client.getGameTally(440)).toEqual({
+      ok: false,
+      error: "NOT_LOADED",
     });
   });
 

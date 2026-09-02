@@ -1,7 +1,7 @@
-import type { GameCompletionDto, GameDto } from "@steam/contracts";
+import type { GameCompletionDto, GameDto, GameTallyDto } from "@steam/contracts";
 
 /** Tallies keyed by appId; absent means "not asked for yet", not "none". */
-export type CompletionByAppId = Readonly<Record<number, GameCompletionDto>>;
+export type TallyByAppId = Readonly<Record<number, GameTallyDto>>;
 
 export type LibrarySort = "completed" | "recent" | "playtime";
 
@@ -23,7 +23,7 @@ export type GameRow = {
 /** Everything the list needs to lay itself out, including what it is still waiting for. */
 export type LibraryView = {
   readonly games: readonly GameDto[];
-  readonly completions: CompletionByAppId;
+  readonly tallies: TallyByAppId;
   readonly sort: LibrarySort;
   /** Games whose tally has been asked for and has not come back. */
   readonly pending: ReadonlySet<number>;
@@ -135,9 +135,9 @@ const bandOf = (tally: GameCompletionDto | undefined): number => {
  * with less at the same rate.
  */
 const byWhatIsFinished = (
-  completions: CompletionByAppId,
+  tallies: TallyByAppId,
 ): ((a: GameDto, b: GameDto) => number) => {
-  const of = (game: GameDto) => completions[game.appId];
+  const of = (game: GameDto) => tallies[game.appId]?.completion;
   return (a, b) => {
     const [left, right] = [of(a), of(b)];
     const band = bandOf(left) - bandOf(right);
@@ -154,7 +154,7 @@ const byWhatIsFinished = (
 
 const comparatorFor = (
   sort: LibrarySort,
-  completions: CompletionByAppId,
+  tallies: TallyByAppId,
 ): ((a: GameDto, b: GameDto) => number) => {
   if (sort === "playtime") {
     return (a, b) => b.playtimeMinutes - a.playtimeMinutes;
@@ -164,7 +164,7 @@ const comparatorFor = (
       game.lastPlayedAt ? Date.parse(game.lastPlayedAt) : NEVER_PLAYED_LAST;
     return (a, b) => played(b) - played(a);
   }
-  return byWhatIsFinished(completions);
+  return byWhatIsFinished(tallies);
 };
 
 /**
@@ -182,15 +182,15 @@ const orderedBy = (
 };
 
 export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
-  const { games, completions, sort, pending, frozenOrder } = view;
+  const { games, tallies, sort, pending, frozenOrder } = view;
 
   // Copied before sorting: the caller's list is not ours to reorder.
   const ordered = frozenOrder
     ? orderedBy(games, frozenOrder)
-    : [...games].sort(comparatorFor(sort, completions));
+    : [...games].sort(comparatorFor(sort, tallies));
 
   return ordered.map((game) => {
-    const tally = completions[game.appId];
+    const tally = tallies[game.appId]?.completion;
     const percentage = percentageOf(tally);
     return {
       appId: game.appId,
@@ -210,10 +210,10 @@ export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
  * outstanding.
  */
 export const buildLibrarySummary = (view: LibraryView): LibrarySummary => {
-  const { games, completions } = view;
+  const { games, tallies } = view;
 
   const loaded = games
-    .map((game) => completions[game.appId])
+    .map((game) => tallies[game.appId]?.completion)
     .filter((entry): entry is GameCompletionDto => entry !== undefined);
 
   const unlocked = loaded.reduce((sum, e) => sum + e.unlocked, 0);

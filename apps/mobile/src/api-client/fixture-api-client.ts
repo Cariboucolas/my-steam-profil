@@ -1,12 +1,14 @@
 import { ok, err, type Result } from "@steam/domain";
 import type {
-  GameCompletionDto,
   GameDto,
   GameProgressDto,
+  GameTallyDto,
   ProfileDto,
 } from "@steam/contracts";
 
 import type { ApiClient, ProgressError } from "./api-client";
+
+const MS_PER_SECOND = 1000;
 
 export type FixtureData = {
   readonly profile: ProfileDto;
@@ -43,11 +45,21 @@ export const createFixtureApiClient = (data: FixtureData): ApiClient => {
      * The fixture build stored whole progress, so a tally is read back out of
      * it. The real client asks a cheaper endpoint; both answer the same shape,
      * which is what lets a screen not care which one it is holding.
+     *
+     * The dates come from the Timeline, which is already earliest first, and
+     * are put back into the epoch seconds the wire uses.
      */
-    getGameCompletion: (appId) => {
+    getGameTally: (appId) => {
       const progress = progressOf(appId);
       return Promise.resolve(
-        progress.ok ? ok<GameCompletionDto>(progress.value.completion) : progress,
+        progress.ok
+          ? ok<GameTallyDto>({
+              completion: progress.value.completion,
+              unlockedAt: progress.value.timeline.map((entry) =>
+                Math.floor(Date.parse(entry.unlockedAt) / MS_PER_SECOND),
+              ),
+            })
+          : progress,
       );
     },
   };

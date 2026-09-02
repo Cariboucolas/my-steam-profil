@@ -1,4 +1,4 @@
-import type { GameCompletionDto, GameProgressDto, ProfileDto } from "@steam/contracts";
+import type { GameProgressDto, GameTallyDto, ProfileDto } from "@steam/contracts";
 
 import { createHttpApiClient } from "./http-api-client";
 
@@ -147,20 +147,19 @@ describe("createHttpApiClient (failures)", () => {
 });
 
 describe("createHttpApiClient (completion)", () => {
-  const completion: GameCompletionDto = {
-    unlocked: 353,
-    total: 483,
-    percentage: 73.08,
+  const tally: GameTallyDto = {
+    completion: { unlocked: 353, total: 483, percentage: 73.08 },
+    unlockedAt: [1697568656, 1697655056],
   };
 
   it("asks the backend for one game's tally", async () => {
     const seen: string[] = [];
     const client = clientAnswering((url) => {
       seen.push(url);
-      return json(completion);
+      return json(tally);
     });
 
-    await client.getGameCompletion(APP_ID);
+    await client.getGameTally(APP_ID);
 
     expect(seen).toEqual([
       `${BASE_URL}/api/profile/${STEAM_ID}/games/${APP_ID}/completion`,
@@ -168,18 +167,18 @@ describe("createHttpApiClient (completion)", () => {
   });
 
   it("serves the tally the backend answered with", async () => {
-    const client = clientReturning(completion);
+    const client = clientReturning(tally);
 
-    expect(await client.getGameCompletion(APP_ID)).toEqual({
+    expect(await client.getGameTally(APP_ID)).toEqual({
       ok: true,
-      value: completion,
+      value: tally,
     });
   });
 
   it("reports a private profile as such", async () => {
     const client = clientReturning({ error: "PRIVATE_PROFILE" }, 403);
 
-    expect(await client.getGameCompletion(APP_ID)).toEqual({
+    expect(await client.getGameTally(APP_ID)).toEqual({
       ok: false,
       error: "PRIVATE_PROFILE",
     });
@@ -190,7 +189,7 @@ describe("createHttpApiClient (completion)", () => {
       throw new TypeError("network down");
     });
 
-    expect(await client.getGameCompletion(APP_ID)).toEqual({
+    expect(await client.getGameTally(APP_ID)).toEqual({
       ok: false,
       error: "UNAVAILABLE",
     });

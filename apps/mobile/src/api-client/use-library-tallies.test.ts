@@ -1,11 +1,11 @@
-import type { GameCompletionDto, GameDto } from "@steam/contracts";
+import type { GameDto, GameTallyDto } from "@steam/contracts";
 import { err, ok, type Result } from "@steam/domain";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 
 import type { ApiClient, ProgressError } from "./api-client";
 import { useLibraryTallies } from "./use-library-tallies";
 
-type Tally = Result<GameCompletionDto, ProgressError>;
+type Tally = Result<GameTallyDto, ProgressError>;
 
 const game = (
   appId: number,
@@ -20,10 +20,9 @@ const game = (
   lastPlayedAt,
 });
 
-const tally = (unlocked: number): GameCompletionDto => ({
-  unlocked,
-  total: 10,
-  percentage: unlocked * 10,
+const tally = (unlocked: number): GameTallyDto => ({
+  completion: { unlocked, total: 10, percentage: unlocked * 10 },
+  unlockedAt: [],
 });
 
 /** Dated so that recency order is simply the appIds in ascending order. */
@@ -53,7 +52,7 @@ const LONG_LIBRARY = libraryOf([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]);
 /** A second library, so a profile switch has something else to land on. */
 const OTHER_GAMES: readonly GameDto[] = [game(500, "2026-06-25T00:00:00.000Z")];
 
-/** Only getGameCompletion is exercised; anything else is a bug in the hook. */
+/** Only getGameTally is exercised; anything else is a bug in the hook. */
 const refuse = () => {
   throw new Error("the library should not have called this");
 };
@@ -62,7 +61,7 @@ const clientAsking = (answer: (appId: number) => Promise<Tally>): ApiClient => (
   getProfile: refuse,
   getGames: refuse,
   getGameProgress: refuse,
-  getGameCompletion: answer,
+  getGameTally: answer,
 });
 
 /** Answers every game at once, and records the order it was asked in. */
@@ -123,8 +122,8 @@ describe("useLibraryTallies", () => {
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
     expect([...asked].sort()).toEqual([...BY_RECENCY]);
-    expect(result.current.completions[1]).toEqual(tally(1));
-    expect(result.current.completions[8]).toEqual(tally(8));
+    expect(result.current.tallies[1]).toEqual(tally(1));
+    expect(result.current.tallies[8]).toEqual(tally(8));
   });
 
   /**
@@ -138,7 +137,7 @@ describe("useLibraryTallies", () => {
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
     expect(asked).not.toContain(NEVER_PLAYED);
-    expect(result.current.completions[NEVER_PLAYED]).toBeUndefined();
+    expect(result.current.tallies[NEVER_PLAYED]).toBeUndefined();
   });
 
   /**
@@ -162,13 +161,13 @@ describe("useLibraryTallies", () => {
     const { client, release } = heldClient([7, 8]);
     const { result } = renderTallies(client);
 
-    await waitFor(() => expect(Object.keys(result.current.completions)).toHaveLength(6));
+    await waitFor(() => expect(Object.keys(result.current.tallies)).toHaveLength(6));
     expect(result.current.pending).toEqual(new Set([7, 8]));
 
     await release();
 
     await waitFor(() => expect(result.current.pending.size).toBe(0));
-    expect(Object.keys(result.current.completions)).toHaveLength(8);
+    expect(Object.keys(result.current.tallies)).toHaveLength(8);
   });
 
   /**
@@ -204,8 +203,8 @@ describe("useLibraryTallies", () => {
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
-    expect(result.current.completions[2]).toBeUndefined();
-    expect(result.current.completions[1]).toEqual(tally(1));
+    expect(result.current.tallies[2]).toBeUndefined();
+    expect(result.current.tallies[1]).toEqual(tally(1));
   });
 
   /**
@@ -287,12 +286,12 @@ describe("useLibraryTallies", () => {
     await waitFor(() => expect(result.current.pending.size).toBe(8));
 
     rerender({ client: next.client, games: OTHER_GAMES });
-    expect(result.current.completions).toEqual({});
+    expect(result.current.tallies).toEqual({});
 
     await previous.release();
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
-    expect(result.current.completions).toEqual({ 500: tally(500) });
+    expect(result.current.tallies).toEqual({ 500: tally(500) });
     // Not merely ignored on arrival: the waves behind the first one are never
     // asked for at all, so an abandoned library costs no further requests.
     expect(previous.asked).toHaveLength(6);
@@ -303,7 +302,7 @@ describe("useLibraryTallies", () => {
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
-    expect(result.current.completions).toEqual({});
+    expect(result.current.tallies).toEqual({});
     expect(result.current.pending.size).toBe(0);
   });
 
@@ -312,7 +311,7 @@ describe("useLibraryTallies", () => {
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
-    expect(result.current.completions).toEqual({});
+    expect(result.current.tallies).toEqual({});
     expect(result.current.pending.size).toBe(0);
   });
 
@@ -331,7 +330,7 @@ describe("useLibraryTallies", () => {
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
     expect([...asked].sort()).toEqual([1, 2]);
-    expect(result.current.completions[1]).toEqual(tally(1));
+    expect(result.current.tallies[1]).toEqual(tally(1));
   });
 
   /**
