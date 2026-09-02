@@ -12,6 +12,7 @@ import { SortChips } from "../src/components/molecules/SortChips";
 import { ErrorState } from "../src/components/organisms/ErrorState";
 import { LibraryStatsCard } from "../src/components/organisms/LibraryStatsCard";
 import { ProfileHeader } from "../src/components/organisms/ProfileHeader";
+import { UnlockCalendarBlock } from "../src/components/organisms/UnlockCalendarBlock";
 import { useSteamId } from "../src/settings/steam-id-store";
 import { colors, spacing } from "../src/theme/tokens";
 import { messageFor } from "../src/view-models/api-errors";
@@ -191,6 +192,7 @@ export default function LibraryScreen() {
             gameCount={games.length}
             loaded={loaded}
           />
+          <UnlockCalendarBlock tallies={tallies} loaded={loaded} />
           <SortChips active={sort} onSelect={chooseSort} />
         </>
       }
