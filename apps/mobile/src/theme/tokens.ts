@@ -41,6 +41,18 @@ export const colors = {
   tileEmpty: "rgba(255,255,255,0.04)",
 } as const;
 
+/**
+ * The four tones a day of unlocks climbs through, palest first, over
+ * `colors.tileEmpty` for a day with none. Opacity steps of the one accent
+ * rather than four hues: the grid has to read as one quantity getting larger.
+ */
+export const unlockTones = [
+  "rgba(233,164,85,0.22)",
+  "rgba(233,164,85,0.45)",
+  "rgba(233,164,85,0.72)",
+  colors.accent,
+] as const;
+
 /** Cover art placeholder while a game header image loads or fails. */
 export const coverPlaceholder = "#1b2430";
 
