@@ -40,6 +40,10 @@ _Avoid_: Percentage, Progress, Score
 The tally: how many achievements a player has unlocked, out of how many **the Game defines**, and the resulting CompletionRate.
 _Avoid_: Progress, Stats, Summary
 
+**GameTally**:
+What the app asks for per Game while it is counting a whole library: a GameCompletion, and the instants that Game's unlocked achievements fell on. Two named parts rather than one widened shape — a GameCompletion **is** the tally itself, and a tally carrying three hundred dates is no longer one (ADR-0006).
+_Avoid_: widening GameCompletion, Progress, Unlocks, History
+
 **GameProgress**:
 Everything there is to say about one player in one Game: its GameCompletion, its achievements with their UnlockState, and their Timeline.
 _Avoid_: GameAchievements, Game stats, Game detail
