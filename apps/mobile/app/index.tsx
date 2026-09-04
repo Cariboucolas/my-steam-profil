@@ -12,6 +12,7 @@ import { SortChips } from "../src/components/molecules/SortChips";
 import { ErrorState } from "../src/components/organisms/ErrorState";
 import { LibraryStatsCard } from "../src/components/organisms/LibraryStatsCard";
 import { ProfileHeader } from "../src/components/organisms/ProfileHeader";
+import { UnlockCalendarCard } from "../src/components/organisms/UnlockCalendarCard";
 import { useSteamId } from "../src/settings/steam-id-store";
 import { colors, spacing } from "../src/theme/tokens";
 import { messageFor } from "../src/view-models/api-errors";
@@ -21,6 +22,7 @@ import {
   type LibrarySort,
   type LibraryView,
 } from "../src/view-models/library";
+import { buildUnlockCalendar } from "../src/view-models/unlock-calendar";
 
 type Loaded = {
   /** Which client answered, so a profile switch invalidates these at once. */
@@ -51,6 +53,10 @@ export default function LibraryScreen() {
   // a backend that was down and may now be up. The api client is memoised on
   // the steam id, so without this a retry with the same profile is a no-op.
   const [reloadNonce, setReloadNonce] = useState(0);
+  // Today, read once when the screen opens. The calendar is a statement about
+  // today, so it takes one — and a fresh Date on every render would rebuild the
+  // whole year on every render.
+  const [today] = useState(() => new Date());
 
   useEffect(() => {
     if (apiClient === undefined) {
@@ -121,6 +127,7 @@ export default function LibraryScreen() {
   );
   const rows = useMemo(() => buildLibraryRows(view), [view]);
   const summary = useMemo(() => buildLibrarySummary(view), [view]);
+  const calendar = useMemo(() => buildUnlockCalendar(view, today), [view, today]);
 
   /**
    * Choosing an order is a request to see things move, so the list re-sorts at
@@ -191,6 +198,7 @@ export default function LibraryScreen() {
             gameCount={games.length}
             loaded={loaded}
           />
+          <UnlockCalendarCard calendar={calendar} />
           <SortChips active={sort} onSelect={chooseSort} />
         </>
       }
