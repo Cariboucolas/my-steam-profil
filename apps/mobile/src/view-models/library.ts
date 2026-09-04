@@ -46,7 +46,12 @@ export type LibrarySummary = {
 
 const MINUTES_PER_HOUR = 60;
 const PERFECT = 100;
-const MONTHS = [
+/**
+ * Shared rather than copied: the unlock calendar labels its rows from these
+ * too, in capitals. Two lists of twelve months drift the day one of them is
+ * corrected.
+ */
+export const MONTHS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ] as const;
