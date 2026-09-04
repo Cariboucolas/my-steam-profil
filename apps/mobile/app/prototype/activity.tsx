@@ -47,15 +47,18 @@ const SUMMARY = {
 };
 
 export default function ActivityPrototype() {
-  const params = useLocalSearchParams<{ variant?: string }>();
+  const params = useLocalSearchParams<{ variant?: string; w?: string }>();
+  // The root layout caps the column at 402. `?w=` narrows it further, so a
+  // smaller phone can be measured without fighting the browser window.
+  const width = Number(params.w) || 402;
   const key = VARIANTS.includes(params.variant as never) ? (params.variant as string) : "A";
   const year = useMemo(() => buildYear(20260904), []);
 
   const Variant = key === "B" ? VariantB : key === "C" ? VariantC : VariantA;
-  const note = `variant ${key} · synthetic year · resize the window to change phone width`;
+  const note = `variant ${key} · synthetic year · phone width ${width}px (?w=375)`;
 
   return (
-    <View style={styles.screen}>
+    <View style={[styles.screen, { width: "100%", maxWidth: width, alignSelf: "center" }]}>
       <ScrollView contentContainerStyle={styles.content}>
         <ProfileHeader profile={PROFILE} gameCount={267} onChangeProfile={() => {}} />
         <LibraryStatsCard summary={SUMMARY} gameCount={267} loaded={null} />

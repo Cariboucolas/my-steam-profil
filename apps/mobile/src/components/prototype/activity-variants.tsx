@@ -69,6 +69,16 @@ const buildYear = (seed: number): Year => {
   };
 };
 
+/**
+ * A row always spans the full 31 columns. Without the padding a short month
+ * spreads four cells across the whole width and the day axis stops lining up
+ * — which is itself the finding: cells cannot be flexed per row.
+ */
+const padTo = (row: readonly number[], width: number): readonly (number | null)[] => [
+  ...row,
+  ...Array.from({ length: Math.max(0, width - row.length) }, () => null),
+];
+
 const toneOf = (n: number, cuts: Year["cuts"]): number =>
   n === 0 ? 0 : n <= cuts[0] ? 1 : n <= cuts[1] ? 2 : n <= cuts[2] ? 3 : 4;
 
@@ -142,8 +152,11 @@ export const VariantA = ({ year, note }: CardProps) => {
         <View key={m} style={s.row}>
           <Text style={[s.month, { width: 30 }, m === year.today.month && s.monthNow]}>{MONTHS[m]}</Text>
           <View style={s.cells}>
-            {row.map((n, d) => (
-              <View key={d} style={[s.cell, { marginRight: GAP_A, backgroundColor: TONES[toneOf(n, year.cuts)] }]} />
+            {padTo(row, 31).map((n, d) => (
+              <View
+                key={d}
+                style={[s.cell, { marginRight: GAP_A, backgroundColor: n === null ? "transparent" : TONES[toneOf(n, year.cuts)] }]}
+              />
             ))}
           </View>
           <Text style={[s.sigma, { width: 26 }]}>
@@ -183,8 +196,11 @@ export const VariantB = ({ year, note }: CardProps) => {
               style={s.cells}
               onLayout={(e) => m === 0 && setGridWidth(e.nativeEvent.layout.width)}
             >
-              {row.map((n, d) => (
-                <View key={d} style={[s.cell, { marginRight: GAP_B, backgroundColor: TONES[toneOf(n, year.cuts)] }]} />
+              {padTo(row, 31).map((n, d) => (
+                <View
+                  key={d}
+                  style={[s.cell, { marginRight: GAP_B, backgroundColor: n === null ? "transparent" : TONES[toneOf(n, year.cuts)] }]}
+                />
               ))}
             </View>
           </View>
@@ -220,11 +236,12 @@ export const VariantC = ({ year, note }: CardProps) => {
             <View style={s.rowC}>
               <Text style={[s.month, { width: 30 }, m === year.today.month && s.monthNow]}>{MONTHS[m]}</Text>
               <View style={s.cells} onLayout={(e) => m === 0 && setGridWidth(e.nativeEvent.layout.width)}>
-                {row.slice(0, 16).map((n, d) => (
+                {padTo(row.slice(0, 16), 16).map((n, d) => (
                   <Pressable
                     key={d}
-                    onPress={() => setPicked(`${n} unlocks · ${d + 1} ${MONTHS[m]}`)}
-                    style={[s.cellC, { marginRight: GAP_C, backgroundColor: TONES[toneOf(n, year.cuts)] }]}
+                    disabled={n === null}
+                    onPress={() => setPicked(`${String(n)} unlocks · ${d + 1} ${MONTHS[m]}`)}
+                    style={[s.cellC, { marginRight: GAP_C, backgroundColor: n === null ? "transparent" : TONES[toneOf(n, year.cuts)] }]}
                   />
                 ))}
               </View>
@@ -233,15 +250,13 @@ export const VariantC = ({ year, note }: CardProps) => {
             <View style={s.rowC}>
               <View style={{ width: 30 }} />
               <View style={s.cells}>
-                {row.slice(16).map((n, d) => (
+                {padTo(row.slice(16), 16).map((n, d) => (
                   <Pressable
                     key={d}
-                    onPress={() => setPicked(`${n} unlocks · ${d + 17} ${MONTHS[m]}`)}
-                    style={[s.cellC, { marginRight: GAP_C, backgroundColor: TONES[toneOf(n, year.cuts)] }]}
+                    disabled={n === null}
+                    onPress={() => setPicked(`${String(n)} unlocks · ${d + 17} ${MONTHS[m]}`)}
+                    style={[s.cellC, { marginRight: GAP_C, backgroundColor: n === null ? "transparent" : TONES[toneOf(n, year.cuts)] }]}
                   />
-                ))}
-                {Array.from({ length: 16 - row.slice(16).length }, (_, i) => (
-                  <View key={`pad${i}`} style={[s.cellC, { marginRight: GAP_C, backgroundColor: "transparent" }]} />
                 ))}
               </View>
               <View style={{ width: 26 }} />
