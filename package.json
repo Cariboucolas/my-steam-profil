@@ -13,7 +13,8 @@
     "coverage:domain": "pnpm --filter @steam/domain coverage",
     "fixtures:build": "pnpm --filter @steam/fixtures-dto build",
     "dev:api": "pnpm --filter @steam/api dev",
-    "tdd": "pnpm --filter @steam/domain test:watch"
+    "tdd": "pnpm --filter @steam/domain test:watch",
+    "prototype": "pnpm --filter @steam/mobile exec expo start --web --clear"
   },
   "devDependencies": {
     "typescript": "^5.5.0"
