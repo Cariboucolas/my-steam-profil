@@ -43,3 +43,19 @@ _Avoid_: Progress, Stats, Summary
 **GameProgress**:
 Everything there is to say about one player in one Game: its GameCompletion, its achievements with their UnlockState, and their Timeline.
 _Avoid_: GameAchievements, Game stats, Game detail
+
+**UnlockDay**:
+One calendar day, in the player's own time zone, and how many achievements they unlocked across their whole library that day. A day with none is a real UnlockDay counting zero; a day that has not arrived, or that never existed — 31 February — is not one at all. An achievement Steam will not date falls on no UnlockDay: it is counted in its GameCompletion and appears nowhere on the calendar.
+_Avoid_: Bucket, Cell, Entry
+
+**UnlockMonth**:
+One calendar month of a year, and its UnlockDays. A month already begun holds every day up to today and no further; a month still to come is not an UnlockMonth at all. It knows its own total, the one number the calendar states outright instead of in tone.
+_Avoid_: Row, Bucket, Period
+
+**UnlockCalendar**:
+Every UnlockMonth of one year — how a player's unlocking is spread over that year, across the whole library rather than one Game. Unlike a Timeline it does not say **which** achievement was earned, only how many and when. It shows the year in progress; earlier years belong to a statistics view, not to this one.
+_Avoid_: Timeline (that is one Game's, and it names its achievements), Heatmap and Activity (what the screen calls it, not what it is), Graph
+
+**LastYearsTotal**:
+How many achievements the player unlocked in the whole of the previous calendar year. Set beside the year in progress it is a target, not a measurement — a finished year against a running one, deliberately. Written "all of 2025" wherever it is shown, because the two spans are unequal on purpose and must not be read like for like.
+_Avoid_: YearOverYear (it promises equal spans), UnlockPace, Trend
