@@ -58,10 +58,15 @@ type Props = { readonly month: UnlockMonth };
  * The month's total sits inside its label rather than in a column of its own at
  * the end of the row. That column would cost the grid the width the cells need
  * to be told apart, and the total reads just as well on the name it belongs to.
+ *
+ * Read aloud, the whole row is one stop, and its thirty-one cells are none:
+ * grouping them is what turns three hundred and sixty-five stops into twelve,
+ * for information the rows already state outright. The sentence it is read by
+ * arrives written, as every other label on this card does.
  */
 export function UnlockMonthRow({ month }: Props) {
   return (
-    <View style={styles.row}>
+    <View accessible accessibilityLabel={month.a11yLabel} style={styles.row}>
       <Text
         testID={UNLOCK_MONTH_LABEL_TEST_ID}
         style={{
