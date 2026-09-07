@@ -5,9 +5,12 @@ import { MONTHS, type LibraryView } from "./library";
  * cell's width from its own row would spread a four-day September across the
  * whole card, and the day axis would stop meaning anything.
  */
-const COLUMNS = 31;
+export const COLUMNS = 31;
 
 const MS_PER_SECOND = 1000;
+
+/** What a month that held nothing writes where its total would be. */
+const EM_DASH = "—";
 
 /** One calendar day in the player's own time zone, and what it held. */
 export type UnlockDay = { readonly count: number };
@@ -22,6 +25,14 @@ export type UnlockMonth = {
    * is always the last cell of the last row.
    */
   readonly current: boolean;
+  /** What the month held: the one number the calendar states outright. */
+  readonly total: number;
+  /**
+   * The total as the label writes it — an em dash where the month held
+   * nothing, because a zero reads as a figure worth comparing and there is
+   * nothing here to compare.
+   */
+  readonly totalLabel: string;
   /** Always 31 entries. A day that does not exist, or has not arrived, is null. */
   readonly days: readonly (UnlockDay | null)[];
 };
@@ -92,15 +103,20 @@ export const buildUnlockCalendar = (
     // The month in progress stops at today; every earlier one is complete.
     const lastDrawn = current ? now.getDate() : daysIn(year, month);
 
+    const days = Array.from({ length: COLUMNS }, (_, index) => {
+      const day = index + 1;
+      return day > lastDrawn
+        ? null
+        : { count: counts.get(keyOf(month, day)) ?? 0 };
+    });
+    const total = days.reduce((sum, day) => sum + (day?.count ?? 0), 0);
+
     return {
       label: (MONTHS[month] ?? "").toUpperCase(),
       current,
-      days: Array.from({ length: COLUMNS }, (_, index) => {
-        const day = index + 1;
-        return day > lastDrawn
-          ? null
-          : { count: counts.get(keyOf(month, day)) ?? 0 };
-      }),
+      total,
+      totalLabel: total === 0 ? EM_DASH : String(total),
+      days,
     };
   });
 

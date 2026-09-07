@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, View } from "react-native";
 
-import { colors, radius, spacing } from "../../theme/tokens";
+import { colors, spacing } from "../../theme/tokens";
 import type { UnlockCalendar } from "../../view-models/unlock-calendar";
 import { UnlockMonthRow } from "../molecules/UnlockMonthRow";
 
@@ -12,7 +12,10 @@ type Props = { readonly calendar: UnlockCalendar };
 /**
  * The player's year, one row per month begun. On the same surface as the stats
  * card above it, so it reads as part of the library rather than as a widget
- * dropped into it.
+ * dropped into it — but running the full width of the screen rather than inset
+ * like that card, because thirty-one day columns have to fit a phone and an
+ * inset one puts the cell at 7.8px, under what four tones need to be told
+ * apart. Hairlines top and bottom stand in for the border a card would have.
  */
 export function UnlockCalendarCard({ calendar }: Props) {
   return (
@@ -34,12 +37,10 @@ export function UnlockCalendarCard({ calendar }: Props) {
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: spacing.xl,
     marginBottom: spacing.xxl,
-    padding: spacing.lg + 2,
-    paddingHorizontal: spacing.xl,
-    borderRadius: radius.xl,
-    borderWidth: 1,
+    paddingVertical: spacing.lg + 2,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
     borderColor: colors.hairline,
   },
   grid: {
