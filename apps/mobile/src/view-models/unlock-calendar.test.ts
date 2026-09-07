@@ -180,6 +180,36 @@ describe("buildUnlockCalendar", () => {
     expect(totalOf(calendar)).toBe(0);
   });
 
+  /**
+   * The one number the calendar states outright instead of in tone, and it is
+   * stated per row so months can be compared without counting cells.
+   */
+  it("carries each month's own total", () => {
+    const calendar = buildUnlockCalendar(
+      libraryWhereUnlocksHappened({
+        [SOULSTONE]: ["2026-03-14T09:00:00Z", "2026-03-14T10:00:00Z"],
+        [HALLS]: ["2026-03-30T11:00:00Z", "2026-04-02T11:00:00Z"],
+      }),
+      new Date("2026-04-17T10:00:00Z"),
+    );
+
+    expect(rowFor(calendar, "MAR").total).toBe(3);
+    expect(rowFor(calendar, "MAR").totalLabel).toBe("3");
+    expect(rowFor(calendar, "APR").total).toBe(1);
+  });
+
+  it("writes an em dash where a month held nothing", () => {
+    // A zero would read as a figure worth comparing; the dash says there is
+    // nothing to compare, which is what an empty month means.
+    const calendar = buildUnlockCalendar(
+      libraryWhereUnlocksHappened({ [SOULSTONE]: ["2026-03-14T09:00:00Z"] }),
+      new Date("2026-04-17T10:00:00Z"),
+    );
+
+    expect(rowFor(calendar, "JAN").total).toBe(0);
+    expect(rowFor(calendar, "JAN").totalLabel).toBe("—");
+  });
+
   /** The row's label is picked out for it; the card does not work out which. */
   it("names the month today falls in", () => {
     const calendar = buildUnlockCalendar(

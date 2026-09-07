@@ -1,14 +1,36 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, fonts, spacing } from "../../theme/tokens";
-import type { UnlockMonth } from "../../view-models/unlock-calendar";
+import { COLUMNS, type UnlockMonth } from "../../view-models/unlock-calendar";
 
 export const UNLOCK_DAY_TEST_ID = "unlock-day";
+export const UNLOCK_MONTH_LABEL_TEST_ID = "unlock-month-label";
+export const UNLOCK_MONTH_TOTAL_TEST_ID = "unlock-month-total";
 
-/** The label column, so every row's days start on the same vertical line. */
-const LABEL_WIDTH = 30;
-const CELL_RADIUS = 2;
-const CELL_GAP = 2;
+/**
+ * The label column, so every row's days start on the same vertical line. Wide
+ * enough for the longest month a heavy player can write there — `DEC 1024`.
+ */
+const LABEL_WIDTH = 44;
+const CELL_RADIUS = 1;
+const CELL_GAP = 1;
+
+/**
+ * All the row holds the grid off the screen edge by. The band it sits in
+ * spends nothing on a margin, because thirty-one columns leave no width to
+ * spend: every pixel taken here comes out of the day cells.
+ */
+const GRID_INSET = spacing.sm;
+
+/**
+ * How wide a day ends up on a phone this many pixels across. The cells
+ * themselves flex, so this predicts rather than sets — but it predicts from
+ * the very constants above, so a wider label or a fatter gutter fails the
+ * tests that pin the legible minimum.
+ */
+export const dayCellWidth = (screenWidth: number): number =>
+  (screenWidth - 2 * GRID_INSET - LABEL_WIDTH - (COLUMNS - 1) * CELL_GAP) /
+  COLUMNS;
 
 type Props = { readonly month: UnlockMonth };
 
@@ -19,17 +41,25 @@ type Props = { readonly month: UnlockMonth };
  * sits under the same day in every month. A column with no day behind it — the
  * 31st of April, a day not yet lived through — keeps its place and draws
  * nothing. The row decides none of this; it is handed the shape it draws.
+ *
+ * The month's total sits inside its label rather than in a column of its own at
+ * the end of the row. That column would cost the grid the width the cells need
+ * to be told apart, and the total reads just as well on the name it belongs to.
  */
 export function UnlockMonthRow({ month }: Props) {
   return (
     <View style={styles.row}>
       <Text
+        testID={UNLOCK_MONTH_LABEL_TEST_ID}
         style={{
           ...styles.label,
           color: month.current ? colors.accent : colors.textDim,
         }}
       >
         {month.label}
+        <Text testID={UNLOCK_MONTH_TOTAL_TEST_ID} style={styles.total}>
+          {` ${month.totalLabel}`}
+        </Text>
       </Text>
 
       <View style={styles.days}>
@@ -57,13 +87,16 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    paddingHorizontal: GRID_INSET,
   },
   label: {
     fontFamily: fonts.monoMedium,
     fontSize: 9.5,
     letterSpacing: 0.5,
     width: LABEL_WIDTH,
+  },
+  total: {
+    color: colors.accent,
   },
   days: {
     flex: 1,
