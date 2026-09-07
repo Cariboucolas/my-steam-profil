@@ -109,4 +109,24 @@ describe("offsetOfHalf", () => {
       14,
     );
   });
+
+  /**
+   * The dot pressed is the dot that then lights up, whatever length of year
+   * it is pressed on. The two read the same grid from opposite ends — one
+   * names an offset, the other reads one back — and an August, where the
+   * whole of the second half is two rows of movement, is where they would
+   * disagree first.
+   */
+  it("lands the reader on the half its dot names, in any year that scrolls", () => {
+    // Seven, eight and twelve rows of ten pixels four pixels apart.
+    for (const content of [94, 108, 164]) {
+      const grid = { offset: 0, viewport: SIX_ROWS, content };
+
+      for (const half of [0, 1] as const) {
+        expect(halfInView({ ...grid, offset: offsetOfHalf(half, grid) })).toBe(
+          half,
+        );
+      }
+    }
+  });
 });
