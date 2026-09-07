@@ -16,8 +16,17 @@ const DOT = 5;
  * What is pressed is the padding around the dot rather than the five pixels
  * of it, with a little more slack beyond: a target a thumb can find.
  */
-const TARGET_PADDING = spacing.sm;
+const TARGET_PADDING = spacing.md;
 const TARGET_SLACK = 6;
+
+/**
+ * How much of a dot a pointer can actually hit. `hitSlop` is a native
+ * courtesy — react-native-web extends nothing beyond the box itself — so on
+ * the platform where the pointer is a mouse this box is the whole target.
+ * Derived from the very constants that draw it, so that a tighter dot or a
+ * thinner padding fails the test that pins the smallest target allowed.
+ */
+export const HALF_DOT_TARGET = DOT + 2 * TARGET_PADDING;
 
 type Props = {
   readonly inView: YearHalf;
