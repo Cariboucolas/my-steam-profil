@@ -154,6 +154,25 @@ describe("UnlockCalendarCard", () => {
     expect(header.getByText("-224 vs all of 2025 (306)")).toBeTruthy();
   });
 
+  /**
+   * The card is never hidden and never replaced with a message. An empty grid
+   * is not a failure to show something: it is an exact answer to an exact
+   * question, and it is the one screen that shows the newest arrival the shape
+   * of what will fill. Hiding it from them is the classic trap.
+   */
+  it("draws the year out for a player who has unlocked nothing at all", () => {
+    const { getAllByTestId, getByTestId } = render(
+      <UnlockCalendarCard calendar={calendar} />,
+    );
+    const header = within(getByTestId(UNLOCK_HEADER_TEST_ID));
+
+    expect(getAllByTestId(UNLOCK_DAY_TEST_ID)).toHaveLength(31 + 28 + 5);
+    expect(getByTestId(UNLOCK_LEGEND_TEST_ID)).toBeTruthy();
+    expect(header.getByText("0")).toBeTruthy();
+    // Nothing measured against a year the player was not there for.
+    expect(header.queryByText(/vs all of/)).toBeNull();
+  });
+
   it("never falls back on less and more", () => {
     const { queryByText } = render(<UnlockCalendarCard calendar={calendar} />);
 
