@@ -1,24 +1,54 @@
-import { render } from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 
 import { UNLOCK_DAY_TEST_ID } from "../molecules/UnlockMonthRow";
 import type { UnlockCalendar } from "../../view-models/unlock-calendar";
+import { UNLOCK_HALF_DOT_TEST_ID } from "../molecules/UnlockHalfDots";
+import { colors } from "../../theme/tokens";
 import {
   UnlockCalendarCard,
   UNLOCK_CALENDAR_CARD_TEST_ID,
+  UNLOCK_CALENDAR_GRID_TEST_ID,
+  UNLOCK_FADE_BOTTOM_TEST_ID,
+  UNLOCK_FADE_TOP_TEST_ID,
 } from "./UnlockCalendarCard";
 
-/** A year that has reached the 5th of March, scaled as ADR-0007 has it. */
-const calendar: UnlockCalendar = {
-  months: ["JAN", "FEB", "MAR"].map((label, index) => ({
-    label,
-    current: label === "MAR",
-    total: 0,
-    totalLabel: "—",
-    days: Array.from({ length: 31 }, (_, day) =>
-      day + 1 > [31, 28, 5][index]! ? null : { count: 0, tone: 0 },
-    ),
-  })),
+const MONTHS = [
+  "JAN",
+  "FEB",
+  "MAR",
+  "APR",
+  "MAY",
+  "JUN",
+  "JUL",
+  "AUG",
+  "SEP",
+  "OCT",
+  "NOV",
+  "DEC",
+];
+const DAYS_IN = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+/**
+ * A year that has reached the 5th of the month it names, scaled as ADR-0007
+ * has it. How far the year has got is what decides whether the card scrolls,
+ * so the tests below say it by naming a month.
+ */
+const yearTo = (monthsDrawn: number): UnlockCalendar => ({
+  months: MONTHS.slice(0, monthsDrawn).map((label, index) => {
+    const current = index === monthsDrawn - 1;
+    const drawn = current ? 5 : DAYS_IN[index]!;
+
+    return {
+      label,
+      current,
+      total: 0,
+      totalLabel: "—",
+      days: Array.from({ length: 31 }, (_, day) =>
+        day + 1 > drawn ? null : { count: 0, tone: 0 },
+      ),
+    };
+  }),
   legend: [
     { tone: 0, label: "0" },
     { tone: 1, label: "1-2" },
@@ -28,7 +58,10 @@ const calendar: UnlockCalendar = {
   ],
   counting: false,
   scale: [2, 5, 11],
-};
+});
+
+/** March, where the card is six rows short of having anything to scroll. */
+const calendar = yearTo(3);
 
 describe("UnlockCalendarCard", () => {
   it("draws a row for every month the year has reached", () => {
@@ -85,5 +118,90 @@ describe("UnlockCalendarCard", () => {
 
     expect(queryByText(/less/i)).toBeNull();
     expect(queryByText(/more/i)).toBeNull();
+  });
+});
+
+/**
+ * A December as the card really measures it: twelve rows ten pixels tall with
+ * four pixels between them, so the whole grid comes to 164 and the six rows
+ * the card holds itself to come to 80.
+ */
+const DECEMBER_HEIGHT = 164;
+const SIX_ROWS = 80;
+
+/** A scroll, as the grid reports one. */
+const scrolledTo = (y: number) => ({ nativeEvent: { contentOffset: { y } } });
+
+/** A full year, drawn and then measured as layout would measure it. */
+const december = () => {
+  const view = render(<UnlockCalendarCard calendar={yearTo(12)} />);
+  const grid = view.getByTestId(UNLOCK_CALENDAR_GRID_TEST_ID);
+
+  fireEvent(grid, "contentSizeChange", 320, DECEMBER_HEIGHT);
+
+  return { ...view, grid };
+};
+
+describe("a year taller than the card", () => {
+  it("holds itself to six rows and scrolls the rest", () => {
+    const { grid } = december();
+
+    expect(StyleSheet.flatten(grid.props.style).maxHeight).toBe(SIX_ROWS);
+  });
+
+  /**
+   * Thirty-one columns are made to fit the phone rather than run off it
+   * (#37), and the one movement this card has is downwards.
+   */
+  it("moves the year down and never sideways", () => {
+    expect(december().grid.props.horizontal).toBeFalsy();
+  });
+
+  it("marks the edge that has more year beyond it", () => {
+    const { getByTestId, grid, queryByTestId } = december();
+
+    // At rest at the top of the year: December is what is out of sight.
+    expect(getByTestId(UNLOCK_FADE_BOTTOM_TEST_ID)).toBeTruthy();
+    expect(queryByTestId(UNLOCK_FADE_TOP_TEST_ID)).toBeNull();
+
+    fireEvent.scroll(grid, scrolledTo(SIX_ROWS + 4));
+
+    // Scrolled to the end: now it is January.
+    expect(getByTestId(UNLOCK_FADE_TOP_TEST_ID)).toBeTruthy();
+    expect(queryByTestId(UNLOCK_FADE_BOTTOM_TEST_ID)).toBeNull();
+  });
+
+  it("says which half of the year is in view", () => {
+    const { getAllByTestId, grid } = december();
+    const painted = () =>
+      getAllByTestId(UNLOCK_HALF_DOT_TEST_ID).map(
+        (dot) => dot.props.style.backgroundColor,
+      );
+
+    expect(painted()).toEqual([colors.accent, colors.textFaint]);
+
+    fireEvent.scroll(grid, scrolledTo(SIX_ROWS + 4));
+
+    expect(painted()).toEqual([colors.textFaint, colors.accent]);
+  });
+});
+
+/**
+ * Before July the whole year fits the six rows the card holds. Nothing is
+ * scrolled, and so nothing says anything about scrolling: a control that
+ * appears when it becomes true beats one offered for a movement that is not
+ * possible.
+ */
+describe("a year the card holds whole", () => {
+  it("draws every month it has reached with no scroll and no dots", () => {
+    const { getByText, queryAllByTestId, queryByTestId } = render(
+      <UnlockCalendarCard calendar={yearTo(6)} />,
+    );
+
+    expect(getByText("JAN —")).toBeTruthy();
+    expect(getByText("JUN —")).toBeTruthy();
+    expect(queryByTestId(UNLOCK_CALENDAR_GRID_TEST_ID)).toBeNull();
+    expect(queryAllByTestId(UNLOCK_HALF_DOT_TEST_ID)).toHaveLength(0);
+    expect(queryByTestId(UNLOCK_FADE_BOTTOM_TEST_ID)).toBeNull();
   });
 });
