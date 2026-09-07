@@ -62,6 +62,17 @@ export type UnlockCalendar = {
   readonly months: readonly UnlockMonth[];
   /** The five appearances a day can take, palest first, empty tile included. */
   readonly legend: readonly UnlockToneBand[];
+  /**
+   * Whether a tally the library asked for has still to come back. The grid is
+   * built over and over while the waves land, and this is what tells one of
+   * those builds from the last of them.
+   */
+  readonly counting: boolean;
+  /**
+   * The scale the tones and the legend were read off. Handed back to the next
+   * build while counting, which is how it holds still.
+   */
+  readonly scale: UnlockToneScale;
 };
 
 /**
@@ -131,14 +142,14 @@ const activeCountsWithin = (
  * darkest. Boundaries and not thresholds — they are read off this player's own
  * days, and a fixed set of them is the failure ADR-0007 rules out.
  */
-type BandBoundaries = readonly [number, number, number];
+export type UnlockToneScale = readonly [number, number, number];
 
 /**
  * What a player with no active day at all is scaled against: a tone an unlock,
  * until they earn one. The grid is drawn empty rather than hidden, so the
  * legend under it has to say something rather than nothing.
  */
-const UNSCALED_BOUNDARIES: BandBoundaries = [1, 2, 3];
+const UNSCALED_BOUNDARIES: UnlockToneScale = [1, 2, 3];
 
 /**
  * The count at `fraction` of the way up `sorted`, by nearest rank — the
@@ -164,7 +175,7 @@ const quantile = (sorted: readonly number[], fraction: number): number =>
  * their third. Each boundary is pushed above the one below it, so four tones
  * stay four and the legend prints four ranges rather than one repeated.
  */
-const bandBoundaries = (activeCounts: readonly number[]): BandBoundaries => {
+const bandBoundaries = (activeCounts: readonly number[]): UnlockToneScale => {
   if (activeCounts.length === 0) return UNSCALED_BOUNDARIES;
 
   const sorted = [...activeCounts].sort((left, right) => left - right);
@@ -190,7 +201,7 @@ const legendFor = ([
   first,
   second,
   third,
-]: BandBoundaries): readonly UnlockToneBand[] => [
+]: UnlockToneScale): readonly UnlockToneBand[] => [
   { tone: 0, label: "0" },
   { tone: 1, label: bandLabel(1, first) },
   { tone: 2, label: bandLabel(first + 1, second) },
@@ -200,7 +211,7 @@ const legendFor = ([
 
 const toneOf = (
   count: number,
-  [first, second, third]: BandBoundaries,
+  [first, second, third]: UnlockToneScale,
 ): UnlockTone => {
   if (count === 0) return 0;
   if (count <= first) return 1;
@@ -219,11 +230,19 @@ const toneOf = (
 export const buildUnlockCalendar = (
   view: LibraryView,
   now: Date,
+  held: UnlockToneScale | null = null,
 ): UnlockCalendar => {
   const year = now.getFullYear();
   const currentMonth = now.getMonth();
   const counts = countByDay(view);
-  const boundaries = bandBoundaries(activeCountsWithin(counts, now));
+  const counting = view.pending.size > 0;
+  // Held still while the waves land, and read once more when the last of them
+  // has: the scale a load ends on has the whole window behind it, not the
+  // first wave alone (ADR-0007).
+  const scale =
+    counting && held !== null
+      ? held
+      : bandBoundaries(activeCountsWithin(counts, now));
 
   const months = Array.from({ length: currentMonth + 1 }, (_, month) => {
     const current = month === currentMonth;
@@ -234,7 +253,7 @@ export const buildUnlockCalendar = (
       const day = index + 1;
       if (day > lastDrawn) return null;
       const count = counts.get(dayNumber(year, month, day)) ?? 0;
-      return { count, tone: toneOf(count, boundaries) };
+      return { count, tone: toneOf(count, scale) };
     });
     const total = days.reduce((sum, day) => sum + (day?.count ?? 0), 0);
 
@@ -247,5 +266,10 @@ export const buildUnlockCalendar = (
     };
   });
 
-  return { months, legend: legendFor(boundaries) };
+  return {
+    months,
+    legend: legendFor(scale),
+    counting,
+    scale,
+  };
 };
