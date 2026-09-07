@@ -9,6 +9,12 @@ export const colors = {
   bg: "#0b0f14",
   /** Behind the device frame, a shade darker than the page. */
   bgDeep: "#080c10",
+  /**
+   * The page's own ground with the colour taken out of it: what a gradient
+   * laid over the page fades to. The word `transparent` fades through grey on
+   * Android, so the fade has to name the ground it is leaving.
+   */
+  bgClear: "rgba(11,15,20,0)",
   /** Cards and raised rows. */
   surface: "#131a22",
   /** The stats card reads as a soft gradient between these two. */
