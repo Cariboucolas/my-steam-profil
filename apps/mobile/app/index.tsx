@@ -22,7 +22,7 @@ import {
   type LibrarySort,
   type LibraryView,
 } from "../src/view-models/library";
-import { buildUnlockCalendar } from "../src/view-models/unlock-calendar";
+import { useUnlockCalendar } from "../src/view-models/use-unlock-calendar";
 
 type Loaded = {
   /** Which client answered, so a profile switch invalidates these at once. */
@@ -127,7 +127,10 @@ export default function LibraryScreen() {
   );
   const rows = useMemo(() => buildLibraryRows(view), [view]);
   const summary = useMemo(() => buildLibrarySummary(view), [view]);
-  const calendar = useMemo(() => buildUnlockCalendar(view, today), [view, today]);
+  // The tones hold still while the waves land, which is the hook's own doing
+  // and not this screen's: it is the calendar's half of what `frozenOrder` is
+  // to the list below.
+  const calendar = useUnlockCalendar(view, today);
 
   /**
    * Choosing an order is a request to see things move, so the list re-sorts at
