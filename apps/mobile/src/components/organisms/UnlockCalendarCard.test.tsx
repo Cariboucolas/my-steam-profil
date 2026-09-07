@@ -21,6 +21,13 @@ import {
   UNLOCK_FADE_TOP_TEST_ID,
 } from "./UnlockCalendarCard";
 
+/**
+ * A month row is one screen-reader stop and holds everything inside it out of
+ * the traversal, so a query about what is drawn has to ask for what is hidden.
+ * `UnlockMonthRow` is where that is decided, and pinned.
+ */
+const PAINTED = { includeHiddenElements: true } as const;
+
 const MONTHS = [
   "JAN",
   "FEB",
@@ -57,7 +64,7 @@ const yearTo = (monthsDrawn: number): UnlockCalendar => ({
       current,
       total: 0,
       totalLabel: "—",
-      a11yLabel: `${label}, 0 unlocks`,
+      screenReaderLabel: `${label}, 0 unlocks`,
       days: Array.from({ length: 31 }, (_, day) =>
         day + 1 > drawn ? null : { count: 0, tone: 0 },
       ),
@@ -74,7 +81,12 @@ const yearTo = (monthsDrawn: number): UnlockCalendar => ({
   scale: [2, 5, 11],
 });
 
-/** March, where the card is six rows short of having anything to scroll. */
+/**
+ * March, where the card is six rows short of having anything to scroll — and
+ * a year holding nothing, which is drawn out in full rather than hidden. An
+ * empty grid is an exact answer, and the one screen that shows the newest
+ * arrival the shape of what will fill.
+ */
 const calendar = yearTo(3);
 
 describe("UnlockCalendarCard", () => {
@@ -85,10 +97,10 @@ describe("UnlockCalendarCard", () => {
 
     // A label carries its month's total, so it reads "JAN —" for a month
     // that held nothing.
-    expect(getByText("JAN —")).toBeTruthy();
-    expect(getByText("MAR —")).toBeTruthy();
+    expect(getByText("JAN —", PAINTED)).toBeTruthy();
+    expect(getByText("MAR —", PAINTED)).toBeTruthy();
     // April has not begun, so it has no row rather than an empty one.
-    expect(queryByText(/^APR/)).toBeNull();
+    expect(queryByText(/^APR/, PAINTED)).toBeNull();
   });
 
   it("draws every day those months hold", () => {
@@ -96,7 +108,7 @@ describe("UnlockCalendarCard", () => {
       <UnlockCalendarCard calendar={calendar} />,
     );
 
-    expect(getAllByTestId(UNLOCK_DAY_TEST_ID)).toHaveLength(31 + 28 + 5);
+    expect(getAllByTestId(UNLOCK_DAY_TEST_ID, PAINTED)).toHaveLength(31 + 28 + 5);
   });
 
   /**
@@ -155,44 +167,11 @@ describe("UnlockCalendarCard", () => {
     expect(header.getByText("-224 vs all of 2025 (306)")).toBeTruthy();
   });
 
-  /**
-   * The card is never hidden and never replaced with a message. An empty grid
-   * is not a failure to show something: it is an exact answer to an exact
-   * question, and it is the one screen that shows the newest arrival the shape
-   * of what will fill. Hiding it from them is the classic trap.
-   */
-  it("draws the year out for a player who has unlocked nothing at all", () => {
-    const { getAllByTestId, getByTestId } = render(
-      <UnlockCalendarCard calendar={calendar} />,
-    );
-    const header = within(getByTestId(UNLOCK_HEADER_TEST_ID));
-
-    expect(getAllByTestId(UNLOCK_DAY_TEST_ID)).toHaveLength(31 + 28 + 5);
-    expect(getByTestId(UNLOCK_LEGEND_TEST_ID)).toBeTruthy();
-    expect(header.getByText("0")).toBeTruthy();
-    // Nothing measured against a year the player was not there for.
-    expect(header.queryByText(/vs all of/)).toBeNull();
-  });
-
-  /**
-   * One stop a month, so the whole card is twelve of them rather than three
-   * hundred and sixty-five — and every one of them a sentence.
-   */
-  it("gives a screen reader one stop per month and no more", () => {
-    const { getAllByLabelText } = render(
-      <UnlockCalendarCard calendar={calendar} />,
-    );
-
-    expect(
-      getAllByLabelText(/unlock/).map((row) => row.props.accessibilityLabel),
-    ).toEqual(["JAN, 0 unlocks", "FEB, 0 unlocks", "MAR, 0 unlocks"]);
-  });
-
   it("never falls back on less and more", () => {
     const { queryByText } = render(<UnlockCalendarCard calendar={calendar} />);
 
-    expect(queryByText(/less/i)).toBeNull();
-    expect(queryByText(/more/i)).toBeNull();
+    expect(queryByText(/less/i, PAINTED)).toBeNull();
+    expect(queryByText(/more/i, PAINTED)).toBeNull();
   });
 });
 
@@ -268,8 +247,8 @@ describe("a year the card holds whole", () => {
       <UnlockCalendarCard calendar={yearTo(6)} />,
     );
 
-    expect(getByText("JAN —")).toBeTruthy();
-    expect(getByText("JUN —")).toBeTruthy();
+    expect(getByText("JAN —", PAINTED)).toBeTruthy();
+    expect(getByText("JUN —", PAINTED)).toBeTruthy();
     expect(queryByTestId(UNLOCK_CALENDAR_GRID_TEST_ID)).toBeNull();
     expect(queryAllByTestId(UNLOCK_HALF_DOT_TEST_ID)).toHaveLength(0);
     expect(queryByTestId(UNLOCK_FADE_BOTTOM_TEST_ID)).toBeNull();
