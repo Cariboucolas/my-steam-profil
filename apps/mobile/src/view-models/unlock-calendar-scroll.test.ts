@@ -6,25 +6,17 @@ import {
   scrollsThroughTheYear,
   type ScrolledGrid,
 } from "./unlock-calendar-scroll";
+import {
+  december,
+  DECEMBER_HEIGHT,
+  ROW_GAP,
+  SCROLLED_PAST,
+  SIX_ROWS,
+} from "./unlock-calendar-scroll.test-support";
 
-/**
- * That same December, held to its six rows: 164 pixels of grid seen 80 at a
- * time, so 84 of it can be scrolled past.
- */
-const december = (offset: number): ScrolledGrid => ({
-  offset,
-  viewport: 80,
-  content: 164,
-});
-
-/**
- * A December as the card really measures it: twelve rows ten pixels tall with
- * four pixels between them, so the whole of it comes to 12 × 10 + 11 × 4 = 164.
- * Six of those rows, with the five gaps between them, come to 80.
- */
 describe("heightOfMonthsInView", () => {
   it("holds six rows of the height the year it was handed took", () => {
-    expect(heightOfMonthsInView(164, 12, 4)).toBe(80);
+    expect(heightOfMonthsInView(DECEMBER_HEIGHT, 12, ROW_GAP)).toBe(SIX_ROWS);
   });
 });
 
@@ -55,7 +47,7 @@ describe("halfInView", () => {
    */
   it("takes the second half part way down rather than at the end of the scroll", () => {
     expect(halfInView(december(43))).toBe(1);
-    expect(halfInView(december(84))).toBe(1);
+    expect(halfInView(december(SCROLLED_PAST))).toBe(1);
   });
 
   /**
@@ -66,7 +58,7 @@ describe("halfInView", () => {
   it("reaches the second half of a July that can barely move", () => {
     const july = (offset: number): ScrolledGrid => ({
       offset,
-      viewport: 80,
+      viewport: SIX_ROWS,
       content: 94,
     });
 
@@ -86,7 +78,7 @@ describe("fadedEdges", () => {
   });
 
   it("marks only the top once the year has been scrolled to its end", () => {
-    expect(fadedEdges(december(84))).toEqual({ top: true, bottom: false });
+    expect(fadedEdges(december(SCROLLED_PAST))).toEqual({ top: true, bottom: false });
   });
 
   it("marks both edges in the middle, where the grid runs off in both directions", () => {
@@ -105,7 +97,7 @@ describe("offsetOfHalf", () => {
    * the second dot in December really does land the reader on July.
    */
   it("puts the second half as far down as the grid goes", () => {
-    expect(offsetOfHalf(1, december(0))).toBe(84);
+    expect(offsetOfHalf(1, december(0))).toBe(SCROLLED_PAST);
   });
 
   /**
@@ -113,6 +105,8 @@ describe("offsetOfHalf", () => {
    * to be had, and asking for the second half asks for all of it.
    */
   it("asks for no more movement than a barely-scrolling year has", () => {
-    expect(offsetOfHalf(1, { offset: 0, viewport: 80, content: 94 })).toBe(14);
+    expect(offsetOfHalf(1, { offset: 0, viewport: SIX_ROWS, content: 94 })).toBe(
+      14,
+    );
   });
 });
