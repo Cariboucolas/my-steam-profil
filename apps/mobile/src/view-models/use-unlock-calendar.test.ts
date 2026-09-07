@@ -43,11 +43,14 @@ const APRIL_PEAKS = [
 ];
 const BUSY_SCALE = ["0", "1-2", "3-5", "6-11", "12+"];
 
-/** Twenty quiet days of one unlock, and the scale the two of them read together. */
-const MARCH_SINGLES = Array.from({ length: 20 }, (_, index) =>
-  heldBy(`2026-03-${String(index + 1).padStart(2, "0")}`, 1),
+/** Twenty steady days of three, and the scale the two of them read together. */
+const MARCH_STEADY = Array.from({ length: 20 }, (_, index) =>
+  heldBy(`2026-03-${String(index + 1).padStart(2, "0")}`, 3),
 ).flat();
-const QUIET_SCALE = ["0", "1", "2", "3", "4+"];
+const STEADY_SCALE = ["0", "1-3", "4", "5", "6+"];
+
+/** What a calendar with nothing of the player's own in hand is drawn against. */
+const STAND_IN = ["0", "1", "2", "3", "4+"];
 
 /**
  * A library of three games, part counted. A game named in `unlocks` has been
@@ -69,16 +72,21 @@ const libraryWhere = (
   frozenOrder: null,
 });
 
+/**
+ * Where a cold library really starts: every tally asked for, not one back.
+ * The load sets its outstanding set before it has anything to show for it.
+ */
+const AWAITING = libraryWhere({}, [SOULSTONE, HALLS, EXILE]);
 /** One wave in, two to go. */
 const FIRST_WAVE = libraryWhere({ [SOULSTONE]: APRIL_PEAKS }, [HALLS, EXILE]);
 /** The quiet month has landed since, and a tally is still outstanding. */
 const SECOND_WAVE = libraryWhere(
-  { [SOULSTONE]: APRIL_PEAKS, [HALLS]: MARCH_SINGLES },
+  { [SOULSTONE]: APRIL_PEAKS, [HALLS]: MARCH_STEADY },
   [EXILE],
 );
 /** Everything that was coming has come. */
 const COUNTED = libraryWhere(
-  { [SOULSTONE]: APRIL_PEAKS, [HALLS]: MARCH_SINGLES },
+  { [SOULSTONE]: APRIL_PEAKS, [HALLS]: MARCH_STEADY },
   [],
 );
 
@@ -95,27 +103,43 @@ const calendarFor = (view: LibraryView) =>
 
 describe("useUnlockCalendar", () => {
   /**
+   * The load has its outstanding set before it has a single tally, so the very
+   * first counting render has nothing of the player's own to read a scale off.
+   * Holding the stand-in it draws against would spend the whole load on fixed
+   * thresholds, which is the failure ADR-0007 rules out.
+   */
+  it("waits for a day of the player's own before it holds anything", () => {
+    const { result, rerender } = calendarFor(AWAITING);
+    expect(legendOf(result.current)).toEqual(STAND_IN);
+
+    rerender({ shown: FIRST_WAVE });
+
+    expect(legendOf(result.current)).toEqual(BUSY_SCALE);
+  });
+
+  /**
    * Six tallies at a time, most recently played first: recent months fill
    * before old ones, so a scale read afresh on every wave would repaint the
    * whole grid dozens of times over one cold open (ADR-0007).
    */
   it("holds the scale it read while the waves land", () => {
-    const { result, rerender } = calendarFor(FIRST_WAVE);
-    expect(legendOf(result.current)).toEqual(BUSY_SCALE);
+    const { result, rerender } = calendarFor(AWAITING);
+    rerender({ shown: FIRST_WAVE });
 
     rerender({ shown: SECOND_WAVE });
 
     expect(legendOf(result.current)).toEqual(BUSY_SCALE);
     // The grid fills all the same: what landed since is drawn, on that scale.
-    expect(totalOf(result.current, "MAR")).toBe(20);
+    expect(totalOf(result.current, "MAR")).toBe(60);
   });
 
   it("reads the scale once more when the last tally has landed", () => {
-    const { result, rerender } = calendarFor(FIRST_WAVE);
+    const { result, rerender } = calendarFor(AWAITING);
+    rerender({ shown: FIRST_WAVE });
 
     rerender({ shown: COUNTED });
 
-    expect(legendOf(result.current)).toEqual(QUIET_SCALE);
+    expect(legendOf(result.current)).toEqual(STEADY_SCALE);
   });
 
   /**
@@ -124,7 +148,8 @@ describe("useUnlockCalendar", () => {
    * colour its whole load against a library it never held.
    */
   it("reads a fresh scale for the load after it", () => {
-    const { result, rerender } = calendarFor(SECOND_WAVE);
+    const { result, rerender } = calendarFor(AWAITING);
+    rerender({ shown: SECOND_WAVE });
     rerender({ shown: COUNTED });
 
     rerender({ shown: FIRST_WAVE });

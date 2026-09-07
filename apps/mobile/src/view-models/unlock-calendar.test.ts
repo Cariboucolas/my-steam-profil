@@ -447,16 +447,16 @@ describe("buildUnlockCalendar", () => {
     ];
 
     /**
-     * Twenty quiet days of a single unlock. Landing them beside the four busy
-     * ones pulls every quartile down to a count of its own, so a scale read
-     * before they arrived and one read after cannot be confused.
+     * Twenty steady days of three unlocks. Landing them beside the four busy
+     * ones pulls every quartile down onto them, so a scale read before they
+     * arrived and one read after cannot be confused.
      */
-    const MARCH_SINGLES = Array.from({ length: 20 }, (_, index) =>
-      heldBy(`2026-03-${String(index + 1).padStart(2, "0")}`, 1),
+    const MARCH_STEADY = Array.from({ length: 20 }, (_, index) =>
+      heldBy(`2026-03-${String(index + 1).padStart(2, "0")}`, 3),
     ).flat();
 
     /** What the first wave had in hand: the four busy April days, alone. */
-    const scaleReadMidLoad = (): UnlockToneScale =>
+    const scaleReadMidLoad = (): UnlockToneScale | null =>
       buildUnlockCalendar(
         stillCounting(libraryWhereUnlocksHappened({ [SOULSTONE]: APRIL_PEAKS }), [
           HALLS,
@@ -464,6 +464,31 @@ describe("buildUnlockCalendar", () => {
         ]),
         NOW,
       ).scale;
+
+    /**
+     * A cold library is counting before a single tally has landed, so the
+     * first build has nothing of the player's own to read a scale off. It
+     * draws against the stand-in all the same — but holding that stand-in for
+     * the rest of the load would spend the whole load on fixed thresholds,
+     * which is the failure ADR-0007 rules out arriving by another road.
+     */
+    it("holds no scale until a day of the player's own has landed", () => {
+      const nothingYet = buildUnlockCalendar(
+        stillCounting(libraryWhereUnlocksHappened(), [SOULSTONE, HALLS, EXILE]),
+        NOW,
+      );
+
+      expect(nothingYet.scale).toBeNull();
+      expect(nothingYet.legend.map((band) => band.label)).toEqual([
+        "0",
+        "1",
+        "2",
+        "3",
+        "4+",
+      ]);
+      // The first days to land are read, and those are worth holding.
+      expect(scaleReadMidLoad()).toEqual([2, 5, 11]);
+    });
 
     /**
      * Tallies land six at a time in most-recently-played order, so recent
@@ -475,7 +500,7 @@ describe("buildUnlockCalendar", () => {
         stillCounting(
           libraryWhereUnlocksHappened({
             [SOULSTONE]: APRIL_PEAKS,
-            [HALLS]: MARCH_SINGLES,
+            [HALLS]: MARCH_STEADY,
           }),
           [EXILE],
         ),
@@ -493,7 +518,7 @@ describe("buildUnlockCalendar", () => {
       // Two unlocks are still the palest tone, as they were a wave ago.
       expect(rowFor(later, "APR").days[0]?.tone).toBe(1);
       // The grid fills all the same: what landed since is drawn, on that scale.
-      expect(rowFor(later, "MAR").total).toBe(20);
+      expect(rowFor(later, "MAR").total).toBe(60);
     });
 
     /**
@@ -505,22 +530,23 @@ describe("buildUnlockCalendar", () => {
       const done = buildUnlockCalendar(
         libraryWhereUnlocksHappened({
           [SOULSTONE]: APRIL_PEAKS,
-          [HALLS]: MARCH_SINGLES,
+          [HALLS]: MARCH_STEADY,
         }),
         NOW,
         scaleReadMidLoad(),
       );
 
-      // Twenty quiet days against four busy ones: every quartile is a count.
+      // Twenty steady days against four busy ones: every quartile lands on
+      // three, and the bands are pushed apart from there.
       expect(done.legend.map((band) => band.label)).toEqual([
         "0",
-        "1",
-        "2",
-        "3",
-        "4+",
+        "1-3",
+        "4",
+        "5",
+        "6+",
       ]);
-      // The same two unlocks the held scale drew palest sit a tone higher.
-      expect(rowFor(done, "APR").days[0]?.tone).toBe(2);
+      // The five unlocks the held scale drew in the middle sit a tone higher.
+      expect(rowFor(done, "APR").days[1]?.tone).toBe(3);
     });
   });
 });
