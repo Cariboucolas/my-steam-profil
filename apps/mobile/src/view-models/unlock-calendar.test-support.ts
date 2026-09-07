@@ -35,15 +35,29 @@ const tally = (unlockedAt: readonly number[]): GameTallyDto => ({
 const at = (iso: string): number => Date.parse(iso) / 1000;
 
 /**
- * A library of three games, counted. A game named here has been counted; one
- * left out has a tally still on its way, as it would mid-load. Three, because
- * a load that has landed one tally and is still waiting on another needs a
- * third.
+ * The three games a load is made of. Held rather than rebuilt per view,
+ * because a load is its games: every view of one load names the very same
+ * array, as the screen and `useLibraryTallies` do. Three, because a load that
+ * has landed one tally and is still waiting on another needs a third.
+ */
+const LIBRARY: readonly GameDto[] = [game(SOULSTONE), game(HALLS), game(EXILE)];
+
+/** The same three titles in another player's hands: another load entirely. */
+export const ANOTHER_LIBRARY: readonly GameDto[] = [
+  game(SOULSTONE),
+  game(HALLS),
+  game(EXILE),
+];
+
+/**
+ * A library, counted. A game named here has been counted; one left out has a
+ * tally still on its way, as it would mid-load.
  */
 export const libraryWhereUnlocksHappened = (
   unlocks: Readonly<Record<number, readonly string[]>> = {},
+  games: readonly GameDto[] = LIBRARY,
 ): LibraryView => ({
-  games: [game(SOULSTONE), game(HALLS), game(EXILE)],
+  games,
   tallies: Object.fromEntries(
     Object.entries(unlocks).map(([appId, instants]) => [
       Number(appId),

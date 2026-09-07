@@ -1,3 +1,4 @@
+import type { GameDto } from "@steam/contracts";
 import { useMemo, useState } from "react";
 
 import type { LibraryView } from "./library";
@@ -21,21 +22,37 @@ import {
  *
  * Nothing is held until a day of the player's own has arrived to read a scale
  * off — a cold library is counting before its first tally lands, and the
- * stand-in it draws against until then is nobody's scale. And a scale is held
- * for the load that read it and no longer, so the profile after it is scaled
- * against its own days rather than the previous player's.
+ * stand-in it draws against until then is nobody's scale.
+ *
+ * A scale is held for the load that read it and no longer. A load is its
+ * games, which is the identity `useLibraryTallies` keys its own work on, so a
+ * library arriving in a fresh array is a new load and reads its own scale.
+ * Nothing else would say so: switching profile mid-count refills the
+ * outstanding set in the same update that empties it, so `counting` never
+ * falls to false between two loads.
  *
  * `view` must keep a stable identity across renders — a fresh object each
- * render rebuilds the whole year each render.
+ * render rebuilds the whole year each render — and so must its `games`, which
+ * is what names the load.
  */
+/** A scale, and the load it was read for: a scale outlives neither. */
+type HeldScale = {
+  readonly games: readonly GameDto[];
+  readonly scale: UnlockToneScale;
+};
+
 export const useUnlockCalendar = (
   view: LibraryView,
   now: Date,
 ): UnlockCalendar => {
-  const [held, setHeld] = useState<UnlockToneScale | null>(null);
+  const [held, setHeld] = useState<HeldScale | null>(null);
+
+  // Nothing is held for a library other than the one that read it.
+  const heldScale =
+    held !== null && held.games === view.games ? held.scale : null;
   const calendar = useMemo(
-    () => buildUnlockCalendar(view, now, held),
-    [view, now, held],
+    () => buildUnlockCalendar(view, now, heldScale),
+    [view, now, heldScale],
   );
 
   // Adjusted here rather than in an effect or a ref. A ref written mid-render
@@ -46,8 +63,10 @@ export const useUnlockCalendar = (
   // build it re-runs then returns the very scale it was handed, so this
   // settles in one further pass and never loops.
   const worthHolding = calendar.counting ? calendar.scale : null;
-  if (worthHolding !== held) {
-    setHeld(worthHolding);
+  if (worthHolding !== heldScale) {
+    setHeld(
+      worthHolding === null ? null : { games: view.games, scale: worthHolding },
+    );
   }
 
   return calendar;

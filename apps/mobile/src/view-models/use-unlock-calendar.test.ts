@@ -1,8 +1,10 @@
+import type { GameDto } from "@steam/contracts";
 import { renderHook } from "@testing-library/react-native";
 
 import type { LibraryView } from "./library";
 import type { UnlockCalendar } from "./unlock-calendar";
 import {
+  ANOTHER_LIBRARY,
   APRIL_PEAKS,
   EXILE,
   HALLS,
@@ -27,8 +29,9 @@ const STAND_IN = ["0", "1", "2", "3", "4+"];
 const libraryWhere = (
   unlocks: Readonly<Record<number, readonly string[]>>,
   outstanding: readonly number[],
+  games?: readonly GameDto[],
 ): LibraryView =>
-  stillCounting(libraryWhereUnlocksHappened(unlocks), outstanding);
+  stillCounting(libraryWhereUnlocksHappened(unlocks, games), outstanding);
 
 /**
  * Where a cold library really starts: every tally asked for, not one back.
@@ -41,6 +44,12 @@ const FIRST_WAVE = libraryWhere({ [SOULSTONE]: APRIL_PEAKS }, [HALLS, EXILE]);
 const SECOND_WAVE = libraryWhere(
   { [SOULSTONE]: APRIL_PEAKS, [HALLS]: MARCH_STEADY },
   [EXILE],
+);
+/** Another player's library, its own load one wave in. */
+const ANOTHER_FIRST_WAVE = libraryWhere(
+  { [HALLS]: MARCH_STEADY },
+  [SOULSTONE, EXILE],
+  ANOTHER_LIBRARY,
 );
 /** Everything that was coming has come. */
 const COUNTED = libraryWhere(
@@ -105,6 +114,23 @@ describe("useUnlockCalendar", () => {
    * counts from nothing, and a scale carried over from the previous one would
    * colour its whole load against a library it never held.
    */
+  /**
+   * Switching profile mid-count never lets `counting` fall to false: the
+   * outstanding set is emptied and refilled inside one effect, so both land in
+   * a single update and no render sits between them with nothing outstanding.
+   * Nothing else can tell the hook that the scale it holds is another
+   * player's — the library arriving in an array of its own is what does.
+   */
+  it("scales a library that arrives mid-count against its own days", () => {
+    const { result, rerender } = calendarFor(AWAITING);
+    rerender({ shown: FIRST_WAVE });
+    expect(legendOf(result.current)).toEqual(BUSY_SCALE);
+
+    rerender({ shown: ANOTHER_FIRST_WAVE });
+
+    expect(legendOf(result.current)).toEqual(STEADY_SCALE);
+  });
+
   it("reads a fresh scale for the load after it", () => {
     const { result, rerender } = calendarFor(AWAITING);
     rerender({ shown: SECOND_WAVE });
