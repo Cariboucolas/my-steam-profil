@@ -3,6 +3,7 @@ import { StyleSheet, View } from "react-native";
 import { spacing } from "../../theme/tokens";
 import type { UnlockCalendar } from "../../view-models/unlock-calendar";
 import { UnlockMonthRow } from "../molecules/UnlockMonthRow";
+import { UnlockToneLegend } from "../molecules/UnlockToneLegend";
 
 export const UNLOCK_CALENDAR_CARD_TEST_ID = "unlock-calendar-card";
 
@@ -12,6 +13,9 @@ type Props = { readonly calendar: UnlockCalendar };
  * The player's year, one row per month begun, running the full width of the
  * screen: thirty-one day columns have to fit a phone, and an inset card puts
  * the cell at 7.8px, under what four tones need to be told apart.
+ *
+ * Under the grid, the legend states the numbers behind the tones, because the
+ * window they are read over is not the year the grid draws (ADR-0007).
  *
  * It draws no surface and no border of its own. A band of its own tone read as
  * a seam across the screen and pulled the eye harder than the grid it was
@@ -26,6 +30,8 @@ export function UnlockCalendarCard({ calendar }: Props) {
           <UnlockMonthRow key={month.label} month={month} />
         ))}
       </View>
+
+      <UnlockToneLegend legend={calendar.legend} />
     </View>
   );
 }

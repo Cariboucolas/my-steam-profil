@@ -48,6 +48,16 @@ const libraryWhereUnlocksHappened = (
   frozenOrder: null,
 });
 
+/**
+ * `count` unlocks all falling on the one day `date` names, minutes apart, as a
+ * busy day really arrives.
+ */
+const heldBy = (date: string, count: number): readonly string[] =>
+  Array.from(
+    { length: count },
+    (_, index) => `${date}T09:${String(index).padStart(2, "0")}:00Z`,
+  );
+
 const rowFor = (calendar: UnlockCalendar, label: string): UnlockMonth => {
   const month = calendar.months.find((one) => one.label === label);
   if (!month) throw new Error(`no ${label} row in the calendar`);
@@ -57,6 +67,15 @@ const rowFor = (calendar: UnlockCalendar, label: string): UnlockMonth => {
 /** The days a row really draws, out of the thirty-one columns it always has. */
 const drawn = (month: UnlockMonth): readonly UnlockDay[] =>
   month.days.filter((day): day is UnlockDay => day !== null);
+
+/** How many of a row's active days took each tone. */
+const activeTones = (month: UnlockMonth): Readonly<Record<number, number>> =>
+  drawn(month)
+    .filter((day) => day.count > 0)
+    .reduce<Record<number, number>>(
+      (tally, day) => ({ ...tally, [day.tone]: (tally[day.tone] ?? 0) + 1 }),
+      {},
+    );
 
 /** Everything the calendar says the player unlocked, across every row. */
 const totalOf = (calendar: UnlockCalendar): number =>
@@ -103,7 +122,7 @@ describe("buildUnlockCalendar", () => {
     expect(april.days).toHaveLength(31);
     expect(drawn(april)).toHaveLength(17);
     // A day already lived through with nothing on it is a real day counting zero.
-    expect(april.days[16]).toEqual({ count: 0 });
+    expect(april.days[16]?.count).toBe(0);
   });
 
   it("never draws a day that did not exist", () => {
@@ -138,8 +157,8 @@ describe("buildUnlockCalendar", () => {
     );
     const april = rowFor(calendar, "APR");
 
-    expect(april.days[4]).toEqual({ count: 3 });
-    expect(april.days[5]).toEqual({ count: 1 });
+    expect(april.days[4]?.count).toBe(3);
+    expect(april.days[5]?.count).toBe(1);
   });
 
   /** The grid fills as the waves of tallies land, rather than waiting for them. */
@@ -149,7 +168,7 @@ describe("buildUnlockCalendar", () => {
       new Date("2026-04-17T10:00:00Z"),
     );
 
-    expect(rowFor(calendar, "APR").days[4]).toEqual({ count: 1 });
+    expect(rowFor(calendar, "APR").days[4]?.count).toBe(1);
     expect(totalOf(calendar)).toBe(1);
   });
 
@@ -162,8 +181,8 @@ describe("buildUnlockCalendar", () => {
     );
     const march = rowFor(calendar, "MAR");
 
-    expect(march.days[13]).toEqual({ count: 1 });
-    expect(march.days[14]).toEqual({ count: 0 });
+    expect(march.days[13]?.count).toBe(1);
+    expect(march.days[14]?.count).toBe(0);
   });
 
   it("draws nothing for an unlock outside the year it shows", () => {
@@ -223,5 +242,167 @@ describe("buildUnlockCalendar", () => {
       false,
       true,
     ]);
+  });
+
+  describe("the tone scale", () => {
+    it("leaves a day that held nothing outside the scale", () => {
+      // Zero is not the palest tone; it is the empty tile, and ADR-0007 keeps
+      // it out of the bands entirely.
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({ [SOULSTONE]: ["2026-04-05T09:00:00Z"] }),
+        new Date("2026-04-17T10:00:00Z"),
+      );
+      const april = rowFor(calendar, "APR");
+
+      expect(april.days[3]?.tone).toBe(0);
+      expect(april.days[4]?.tone).toBeGreaterThan(0);
+    });
+    /**
+     * Fixed thresholds would paint every one of these days the palest tone —
+     * the failure ADR-0007 rules out. Quartiles of the player's own active days
+     * spread five modest days over the whole range.
+     */
+    it("spreads a handful of unlocks across all four tones", () => {
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({
+          [SOULSTONE]: [
+            ...heldBy("2026-04-01", 1),
+            ...heldBy("2026-04-02", 1),
+            ...heldBy("2026-04-03", 2),
+            ...heldBy("2026-04-04", 3),
+            ...heldBy("2026-04-05", 5),
+          ],
+        }),
+        new Date("2026-04-17T10:00:00Z"),
+      );
+      const april = rowFor(calendar, "APR");
+
+      expect(april.days.slice(0, 5).map((day) => day?.tone)).toEqual([
+        1, 1, 2, 3, 4,
+      ]);
+    });
+    /**
+     * The other half of ADR-0007's argument: a scale read from the player's own
+     * days must not pile a busy player into its darkest band either. Twenty
+     * active days holding one unlock through twenty land five to a tone; the
+     * fixed thresholds the ADR rules out would have put nine of them in `12+`.
+     */
+    it("keeps a busy player off the top of the scale", () => {
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({
+          [SOULSTONE]: Array.from({ length: 20 }, (_, index) =>
+            heldBy(`2026-03-${String(index + 1).padStart(2, "0")}`, index + 1),
+          ).flat(),
+        }),
+        new Date("2026-04-17T10:00:00Z"),
+      );
+
+      expect(activeTones(rowFor(calendar, "MAR"))).toEqual({
+        1: 5,
+        2: 5,
+        3: 5,
+        4: 5,
+      });
+    });
+    /**
+     * The window the tones are read over deliberately does not match the year
+     * the grid draws (ADR-0007): a calendar-bounded window repaints every tone
+     * on 1 January, and a sliding one never does.
+     */
+    it("reads the bands over the 365 days ending today", () => {
+      const april = [
+        ...heldBy("2026-04-01", 4),
+        ...heldBy("2026-04-02", 8),
+        ...heldBy("2026-04-03", 12),
+      ];
+      const aprilTonesGiven = (older: readonly string[]) =>
+        rowFor(
+          buildUnlockCalendar(
+            libraryWhereUnlocksHappened({ [SOULSTONE]: [...april, ...older] }),
+            new Date("2026-04-17T10:00:00Z"),
+          ),
+          "APR",
+        )
+          .days.slice(0, 3)
+          .map((day) => day?.tone);
+
+      // Alone, three days of 4, 8 and 12 are their own quartiles.
+      expect(aprilTonesGiven([])).toEqual([1, 2, 3]);
+      // The 13th of March 2025 is 400 days back: past the edge of the window,
+      // and no part of the sample the quartiles are taken over.
+      expect(aprilTonesGiven(heldBy("2025-03-13", 1))).toEqual([1, 2, 3]);
+      // The 21st of June 2025 is 300 days back. It falls in the previous
+      // calendar year, so the grid never draws it — and it still moves every
+      // tone in April, because the window reaches back past 1 January.
+      expect(aprilTonesGiven(heldBy("2025-06-21", 1))).toEqual([2, 3, 4]);
+    });
+    /**
+     * What pays for the window not matching the drawn year: the scale is read
+     * rather than inferred, and it never says "less" or "more" (ADR-0007). Four
+     * active days holding 2, 5, 11 and 20 are their own quartiles, and print
+     * the very legend the ADR names.
+     */
+    it("prints the numbers behind its own tones", () => {
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({
+          [SOULSTONE]: [
+            ...heldBy("2026-04-01", 2),
+            ...heldBy("2026-04-02", 5),
+            ...heldBy("2026-04-03", 11),
+            ...heldBy("2026-04-04", 20),
+          ],
+        }),
+        new Date("2026-04-17T10:00:00Z"),
+      );
+
+      expect(calendar.legend.map((band) => band.tone)).toEqual([0, 1, 2, 3, 4]);
+      expect(calendar.legend.map((band) => band.label)).toEqual([
+        "0",
+        "1-2",
+        "3-5",
+        "6-11",
+        "12+",
+      ]);
+    });
+    it("writes a band holding one count as that count", () => {
+      // Three days of a single unlock have no quartile distinct from any
+      // other, so the bands are pushed apart to a count each. "1-1" would
+      // read as a range where there is only ever one number.
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({
+          [SOULSTONE]: [
+            ...heldBy("2026-04-01", 1),
+            ...heldBy("2026-04-02", 1),
+            ...heldBy("2026-04-03", 1),
+          ],
+        }),
+        new Date("2026-04-17T10:00:00Z"),
+      );
+
+      expect(calendar.legend.map((band) => band.label)).toEqual([
+        "0",
+        "1",
+        "2",
+        "3",
+        "4+",
+      ]);
+    });
+    it("still prints a scale for a player who has unlocked nothing", () => {
+      // There is nothing to take quartiles of. The grid is drawn empty rather
+      // than hidden, so the legend under it has to say something rather than
+      // nothing: a tone an unlock, until the player earns one.
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened(),
+        new Date("2026-04-17T10:00:00Z"),
+      );
+
+      expect(calendar.legend.map((band) => band.label)).toEqual([
+        "0",
+        "1",
+        "2",
+        "3",
+        "4+",
+      ]);
+    });
   });
 });

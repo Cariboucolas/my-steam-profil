@@ -41,6 +41,24 @@ export const colors = {
   tileEmpty: "rgba(255,255,255,0.04)",
 } as const;
 
+/**
+ * What each of the five appearances an UnlockDay can take is painted, indexed
+ * by its tone: first the empty tile a day outside the scale takes, then the one
+ * accent at four evenly spaced strengths, palest first.
+ *
+ * The mock draws the accent at one strength only, so the four are derived from
+ * it rather than copied — `colors.accent` is the last of them, and the others
+ * are that same hue at a lower opacity over the page's own dark ground. Four
+ * 9-pixel cells have to be told apart, which is what sets the spacing.
+ */
+export const unlockToneFills = [
+  colors.tileEmpty,
+  "rgba(233,164,85,0.25)",
+  "rgba(233,164,85,0.5)",
+  "rgba(233,164,85,0.75)",
+  colors.accent,
+] as const;
+
 /** Cover art placeholder while a game header image loads or fails. */
 export const coverPlaceholder = "#1b2430";
 

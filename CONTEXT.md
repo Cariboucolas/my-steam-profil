@@ -52,6 +52,14 @@ _Avoid_: GameAchievements, Game stats, Game detail
 One calendar day, in the player's own time zone, and how many achievements they unlocked across their whole library that day. A day with none is a real UnlockDay counting zero; a day that has not arrived, or that never existed — 31 February — is not one at all. An achievement Steam will not date falls on no UnlockDay: it is counted in its GameCompletion and appears nowhere on the calendar.
 _Avoid_: Bucket, Cell, Entry
 
+**UnlockTone**:
+How dark an UnlockDay is drawn: the empty tile, or one of four strengths of the one accent. A tone says where that day sits among the player's own days, never how much it held — the count is what the UnlockMonth states outright. A day holding nothing takes the empty tile and has no tone from the scale at all.
+_Avoid_: Level, Intensity, Heat, Shade
+
+**UnlockToneBand**:
+The counts one UnlockTone stands for, and how the legend writes them — `1-2`, `6-11`, `12+`. The five bands are the quartiles of the player's **active** days — those holding at least one unlock — over the 365 days ending today, a window that slides by a day a day and deliberately does not match the year the UnlockCalendar draws, so that no tone repaints on 1 January (ADR-0007). The bands are printed rather than suggested: a scale that does not match the picture has to be read, never inferred, so the legend states numbers and nowhere says "less" or "more".
+_Avoid_: Threshold on its own (the bands are the player's own, not fixed), Bucket, Range, Ramp
+
 **UnlockMonth**:
 One calendar month of a year, and its UnlockDays. A month already begun holds every day up to today and no further; a month still to come is not an UnlockMonth at all. It knows its own total, the one number the calendar states outright instead of in tone.
 _Avoid_: Row, Bucket, Period

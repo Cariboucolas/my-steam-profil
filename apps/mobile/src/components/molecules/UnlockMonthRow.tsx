@@ -1,7 +1,11 @@
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors, fonts, spacing } from "../../theme/tokens";
-import { COLUMNS, type UnlockMonth } from "../../view-models/unlock-calendar";
+import { colors, fonts, spacing, unlockToneFills } from "../../theme/tokens";
+import {
+  COLUMNS,
+  type UnlockDay,
+  type UnlockMonth,
+} from "../../view-models/unlock-calendar";
 
 export const UNLOCK_DAY_TEST_ID = "unlock-day";
 export const UNLOCK_MONTH_LABEL_TEST_ID = "unlock-month-label";
@@ -18,9 +22,10 @@ const CELL_GAP = 1;
 /**
  * All the row holds the grid off the screen edge by. The band it sits in
  * spends nothing on a margin, because thirty-one columns leave no width to
- * spend: every pixel taken here comes out of the day cells.
+ * spend: every pixel taken here comes out of the day cells. The legend under
+ * the grid reads it, so that it ends on the same line the rows do.
  */
-const GRID_INSET = spacing.sm;
+export const GRID_INSET = spacing.sm;
 
 /**
  * How wide a day ends up on a phone this many pixels across. The cells
@@ -31,6 +36,14 @@ const GRID_INSET = spacing.sm;
 export const dayCellWidth = (screenWidth: number): number =>
   (screenWidth - 2 * GRID_INSET - LABEL_WIDTH - (COLUMNS - 1) * CELL_GAP) /
   COLUMNS;
+
+/**
+ * What a column is painted: nothing where no day sits behind it, and otherwise
+ * the fill its tone names. The row reads the tone off the day it was handed; it
+ * never works one out from a count.
+ */
+const fillFor = (day: UnlockDay | null): string =>
+  day === null ? "transparent" : unlockToneFills[day.tone];
 
 type Props = { readonly month: UnlockMonth };
 
@@ -69,12 +82,7 @@ export function UnlockMonthRow({ month }: Props) {
             testID={day === null ? undefined : UNLOCK_DAY_TEST_ID}
             style={{
               ...styles.cell,
-              backgroundColor:
-                day === null
-                  ? "transparent"
-                  : day.count > 0
-                    ? colors.accent
-                    : colors.tileEmpty,
+              backgroundColor: fillFor(day),
             }}
           />
         ))}
