@@ -204,6 +204,43 @@ describe("buildUnlockCalendar", () => {
   });
 
   /**
+   * The two ends the card has to answer honestly. A grid drawn empty is not a
+   * failure to show something: it is an exact answer to an exact question, and
+   * it is the one screen that shows a new player the shape of what will fill.
+   */
+  describe("a year holding nothing", () => {
+    it("draws the year out empty and still sets it against the one before", () => {
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({ [SOULSTONE]: heldBy("2025-06-21", 306) }),
+        NOW,
+      );
+
+      // Every month the year has reached, drawn to today and holding nothing.
+      expect(calendar.months.map((month) => month.label)).toEqual([
+        "JAN",
+        "FEB",
+        "MAR",
+        "APR",
+      ]);
+      expect(drawn(rowFor(calendar, "APR"))).toHaveLength(17);
+      expect(totalOf(calendar)).toBe(0);
+      expect(calendar.total).toBe(0);
+      // A year the player was there for is a target whether or not they have
+      // started on this one: 306 more is exactly where they stand.
+      expect(calendar.deltaLabel).toBe("-306 vs all of 2025 (306)");
+    });
+
+    it("says nothing at all about a year the player was not there for", () => {
+      const calendar = buildUnlockCalendar(libraryWhereUnlocksHappened(), NOW);
+
+      expect(calendar.months).toHaveLength(4);
+      expect(calendar.total).toBe(0);
+      expect(calendar.lastYearsTotal).toBeNull();
+      expect(calendar.deltaLabel).toBeNull();
+    });
+  });
+
+  /**
    * Where the player stands: the running year, the finished one it is set
    * against, and the distance between them. The header is a statement about
    * the very grid under it, so its total is the grid's own rows added up.
