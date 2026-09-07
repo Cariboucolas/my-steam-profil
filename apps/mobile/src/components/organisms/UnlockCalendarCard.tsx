@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { colors, spacing } from "../../theme/tokens";
 import type { UnlockCalendar } from "../../view-models/unlock-calendar";
 import { useUnlockCalendarScroll } from "../../view-models/use-unlock-calendar-scroll";
+import { UnlockCalendarHeader } from "../molecules/UnlockCalendarHeader";
 import { UnlockHalfDots } from "../molecules/UnlockHalfDots";
 import { UnlockMonthRow } from "../molecules/UnlockMonthRow";
 import { UnlockToneLegend } from "../molecules/UnlockToneLegend";
@@ -36,8 +37,10 @@ type Props = { readonly calendar: UnlockCalendar };
  * grid. The scroll is free and never paged, because paging behaves worst in
  * July, where the second half of the year holds a single row.
  *
- * Under the grid, the legend states the numbers behind the tones, because the
- * window they are read over is not the year the grid draws (ADR-0007).
+ * Over the grid, the header says where the player stands: the year's running
+ * total, and the whole of the year before it is measured against. Under the
+ * grid, the legend states the numbers behind the tones, because the window
+ * they are read over is not the year the grid draws (ADR-0007).
  *
  * It draws no surface and no border of its own. A band of its own tone read as
  * a seam across the screen and pulled the eye harder than the grid it was
@@ -106,6 +109,12 @@ export function UnlockCalendarCard({ calendar }: Props) {
 
   return (
     <View testID={UNLOCK_CALENDAR_CARD_TEST_ID} style={styles.card}>
+      <UnlockCalendarHeader
+        total={calendar.total}
+        frameLabel={calendar.frameLabel}
+        deltaLabel={calendar.deltaLabel}
+      />
+
       {grid}
 
       {scroll.scrolls ? (

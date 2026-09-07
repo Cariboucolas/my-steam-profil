@@ -1,4 +1,4 @@
-import { fireEvent, render } from "@testing-library/react-native";
+import { fireEvent, render, within } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 
 import { UNLOCK_DAY_TEST_ID } from "../molecules/UnlockMonthRow";
@@ -10,6 +10,7 @@ import {
   SIX_ROWS,
 } from "../../view-models/unlock-calendar-scroll.test-support";
 import { UNLOCK_HALF_DOT_TEST_ID } from "../molecules/UnlockHalfDots";
+import { UNLOCK_LEGEND_TEST_ID } from "../molecules/UnlockToneLegend";
 import { colors } from "../../theme/tokens";
 import {
   UnlockCalendarCard,
@@ -41,6 +42,11 @@ const DAYS_IN = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
  * so the tests below say it by naming a month.
  */
 const yearTo = (monthsDrawn: number): UnlockCalendar => ({
+  year: 2026,
+  total: 0,
+  lastYearsTotal: null,
+  deltaLabel: null,
+  frameLabel: "YEAR 2026 · JAN → DEC",
   months: MONTHS.slice(0, monthsDrawn).map((label, index) => {
     const current = index === monthsDrawn - 1;
     const drawn = current ? 5 : DAYS_IN[index]!;
@@ -112,11 +118,36 @@ describe("UnlockCalendarCard", () => {
    * the picture — and at a size the 9-pixel cells could never carry (ADR-0007).
    */
   it("prints the numbers behind each tone", () => {
-    const { getByText } = render(<UnlockCalendarCard calendar={calendar} />);
+    const { getByTestId } = render(<UnlockCalendarCard calendar={calendar} />);
+    // Read inside the legend: a year total of nothing writes a "0" of its own
+    // in the header, and the two zeroes say different things.
+    const legend = within(getByTestId(UNLOCK_LEGEND_TEST_ID));
 
     for (const band of ["0", "1-2", "3-5", "6-11", "12+"]) {
-      expect(getByText(band)).toBeTruthy();
+      expect(legend.getByText(band)).toBeTruthy();
     }
+  });
+
+  /**
+   * The header is handed its figures written, comparison and all: the card
+   * states where the player stands and works none of it out for itself.
+   */
+  it("says where the player stands in the year it draws", () => {
+    const { getByText } = render(
+      <UnlockCalendarCard
+        calendar={{
+          ...calendar,
+          total: 82,
+          lastYearsTotal: 306,
+          deltaLabel: "-224 vs all of 2025 (306)",
+        }}
+      />,
+    );
+
+    expect(getByText("Activity")).toBeTruthy();
+    expect(getByText("82")).toBeTruthy();
+    expect(getByText("YEAR 2026 · JAN → DEC")).toBeTruthy();
+    expect(getByText("-224 vs all of 2025 (306)")).toBeTruthy();
   });
 
   it("never falls back on less and more", () => {
