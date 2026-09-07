@@ -1,76 +1,34 @@
-import type { GameDto, GameTallyDto } from "@steam/contracts";
 import { renderHook } from "@testing-library/react-native";
 
 import type { LibraryView } from "./library";
 import type { UnlockCalendar } from "./unlock-calendar";
+import {
+  APRIL_PEAKS,
+  EXILE,
+  HALLS,
+  libraryWhereUnlocksHappened,
+  MARCH_STEADY,
+  NOW,
+  SOULSTONE,
+  stillCounting,
+} from "./unlock-calendar.test-support";
 import { useUnlockCalendar } from "./use-unlock-calendar";
 
-const SOULSTONE = 2066020;
-const HALLS = 2218750;
-const EXILE = 2694490;
-
-/** The day every calendar below is built against. */
-const NOW = new Date("2026-04-17T10:00:00Z");
-
-const game = (appId: number): GameDto => ({
-  appId,
-  name: `Game ${appId}`,
-  playtimeMinutes: 120,
-  playtimeLabel: "2 h",
-  iconUrl: `https://icon/${appId}.jpg`,
-  lastPlayedAt: null,
-});
-
-/** Only the dates decide a scale, so the completion half stays nominal. */
-const tally = (unlockedAt: readonly number[]): GameTallyDto => ({
-  completion: { unlocked: unlockedAt.length, total: 100, percentage: 0 },
-  unlockedAt,
-});
-
-/** `count` unlocks all falling on the one day `date` names, minutes apart. */
-const heldBy = (date: string, count: number): readonly string[] =>
-  Array.from(
-    { length: count },
-    (_, index) => `${date}T09:${String(index).padStart(2, "0")}:00Z`,
-  );
-
-/** Four days of 2, 5, 11 and 20 unlocks, and the scale they read. */
-const APRIL_PEAKS = [
-  ...heldBy("2026-04-01", 2),
-  ...heldBy("2026-04-02", 5),
-  ...heldBy("2026-04-03", 11),
-  ...heldBy("2026-04-04", 20),
-];
+/** The scale the four busy April days read on their own. */
 const BUSY_SCALE = ["0", "1-2", "3-5", "6-11", "12+"];
 
-/** Twenty steady days of three, and the scale the two of them read together. */
-const MARCH_STEADY = Array.from({ length: 20 }, (_, index) =>
-  heldBy(`2026-03-${String(index + 1).padStart(2, "0")}`, 3),
-).flat();
+/** The scale they read once the twenty steady days have landed beside them. */
 const STEADY_SCALE = ["0", "1-3", "4", "5", "6+"];
 
 /** What a calendar with nothing of the player's own in hand is drawn against. */
 const STAND_IN = ["0", "1", "2", "3", "4+"];
 
-/**
- * A library of three games, part counted. A game named in `unlocks` has been
- * counted; one named in `outstanding` has a tally still on its way.
- */
+/** A library part counted: what has landed, and what is still on its way. */
 const libraryWhere = (
   unlocks: Readonly<Record<number, readonly string[]>>,
   outstanding: readonly number[],
-): LibraryView => ({
-  games: [game(SOULSTONE), game(HALLS), game(EXILE)],
-  tallies: Object.fromEntries(
-    Object.entries(unlocks).map(([appId, instants]) => [
-      Number(appId),
-      tally(instants.map((iso) => Date.parse(iso) / 1000)),
-    ]),
-  ),
-  sort: "completed",
-  pending: new Set(outstanding),
-  frozenOrder: null,
-});
+): LibraryView =>
+  stillCounting(libraryWhereUnlocksHappened(unlocks), outstanding);
 
 /**
  * Where a cold library really starts: every tally asked for, not one back.
@@ -79,7 +37,7 @@ const libraryWhere = (
 const AWAITING = libraryWhere({}, [SOULSTONE, HALLS, EXILE]);
 /** One wave in, two to go. */
 const FIRST_WAVE = libraryWhere({ [SOULSTONE]: APRIL_PEAKS }, [HALLS, EXILE]);
-/** The quiet month has landed since, and a tally is still outstanding. */
+/** The steady month has landed since, and a tally is still outstanding. */
 const SECOND_WAVE = libraryWhere(
   { [SOULSTONE]: APRIL_PEAKS, [HALLS]: MARCH_STEADY },
   [EXILE],
