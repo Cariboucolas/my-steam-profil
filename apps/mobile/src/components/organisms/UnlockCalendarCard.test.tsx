@@ -3,6 +3,12 @@ import { StyleSheet } from "react-native";
 
 import { UNLOCK_DAY_TEST_ID } from "../molecules/UnlockMonthRow";
 import type { UnlockCalendar } from "../../view-models/unlock-calendar";
+import {
+  DECEMBER_HEIGHT,
+  SCROLLED_PAST,
+  scrolledTo,
+  SIX_ROWS,
+} from "../../view-models/unlock-calendar-scroll.test-support";
 import { UNLOCK_HALF_DOT_TEST_ID } from "../molecules/UnlockHalfDots";
 import { colors } from "../../theme/tokens";
 import {
@@ -121,17 +127,6 @@ describe("UnlockCalendarCard", () => {
   });
 });
 
-/**
- * A December as the card really measures it: twelve rows ten pixels tall with
- * four pixels between them, so the whole grid comes to 164 and the six rows
- * the card holds itself to come to 80.
- */
-const DECEMBER_HEIGHT = 164;
-const SIX_ROWS = 80;
-
-/** A scroll, as the grid reports one. */
-const scrolledTo = (y: number) => ({ nativeEvent: { contentOffset: { y } } });
-
 /** A full year, drawn and then measured as layout would measure it. */
 const december = () => {
   const view = render(<UnlockCalendarCard calendar={yearTo(12)} />);
@@ -164,7 +159,7 @@ describe("a year taller than the card", () => {
     expect(getByTestId(UNLOCK_FADE_BOTTOM_TEST_ID)).toBeTruthy();
     expect(queryByTestId(UNLOCK_FADE_TOP_TEST_ID)).toBeNull();
 
-    fireEvent.scroll(grid, scrolledTo(SIX_ROWS + 4));
+    fireEvent.scroll(grid, scrolledTo(SCROLLED_PAST));
 
     // Scrolled to the end: now it is January.
     expect(getByTestId(UNLOCK_FADE_TOP_TEST_ID)).toBeTruthy();
@@ -180,7 +175,7 @@ describe("a year taller than the card", () => {
 
     expect(painted()).toEqual([colors.accent, colors.textFaint]);
 
-    fireEvent.scroll(grid, scrolledTo(SIX_ROWS + 4));
+    fireEvent.scroll(grid, scrolledTo(SCROLLED_PAST));
 
     expect(painted()).toEqual([colors.textFaint, colors.accent]);
   });
