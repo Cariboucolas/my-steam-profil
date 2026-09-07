@@ -69,10 +69,13 @@ export type UnlockCalendar = {
    */
   readonly counting: boolean;
   /**
-   * The scale the tones and the legend were read off. Handed back to the next
-   * build while counting, which is how it holds still.
+   * The scale read off this player's own days, and so the one worth handing
+   * back to the next build — which is how it holds still. Null until a day of
+   * theirs has arrived to read one from: the grid draws against a stand-in
+   * until then, and a stand-in held for a whole load is the fixed thresholds
+   * ADR-0007 rules out, arriving by another road.
    */
-  readonly scale: UnlockToneScale;
+  readonly scale: UnlockToneScale | null;
 };
 
 /**
@@ -145,11 +148,15 @@ const activeCountsWithin = (
 export type UnlockToneScale = readonly [number, number, number];
 
 /**
- * What a player with no active day at all is scaled against: a tone an unlock,
- * until they earn one. The grid is drawn empty rather than hidden, so the
- * legend under it has to say something rather than nothing.
+ * What a calendar with no active day at all is drawn against: a tone an
+ * unlock, until one is earned or counted. The grid is drawn empty rather than
+ * hidden, so the legend under it has to say something rather than nothing.
+ *
+ * Drawn against, never held: a library still being counted has no active day
+ * yet either, and holding this through its load would colour the whole of it
+ * against a scale that is nobody's.
  */
-const UNSCALED_BOUNDARIES: UnlockToneScale = [1, 2, 3];
+const UNSCALED_SCALE: UnlockToneScale = [1, 2, 3];
 
 /**
  * The count at `fraction` of the way up `sorted`, by nearest rank — the
@@ -174,9 +181,14 @@ const quantile = (sorted: readonly number[], fraction: number): number =>
  * same — three days of a single unlock have no first quartile distinct from
  * their third. Each boundary is pushed above the one below it, so four tones
  * stay four and the legend prints four ranges rather than one repeated.
+ *
+ * Null where there is no active day to read: no scale can be had from nothing,
+ * and saying so is what keeps the stand-in from being mistaken for one.
  */
-const bandBoundaries = (activeCounts: readonly number[]): UnlockToneScale => {
-  if (activeCounts.length === 0) return UNSCALED_BOUNDARIES;
+const scaleRead = (
+  activeCounts: readonly number[],
+): UnlockToneScale | null => {
+  if (activeCounts.length === 0) return null;
 
   const sorted = [...activeCounts].sort((left, right) => left - right);
   const first = Math.max(1, quantile(sorted, 0.25));
@@ -239,10 +251,11 @@ export const buildUnlockCalendar = (
   // Held still while the waves land, and read once more when the last of them
   // has: the scale a load ends on has the whole window behind it, not the
   // first wave alone (ADR-0007).
-  const scale =
+  const read =
     counting && held !== null
       ? held
-      : bandBoundaries(activeCountsWithin(counts, now));
+      : scaleRead(activeCountsWithin(counts, now));
+  const scale = read ?? UNSCALED_SCALE;
 
   const months = Array.from({ length: currentMonth + 1 }, (_, month) => {
     const current = month === currentMonth;
@@ -270,6 +283,6 @@ export const buildUnlockCalendar = (
     months,
     legend: legendFor(scale),
     counting,
-    scale,
+    scale: read,
   };
 };
