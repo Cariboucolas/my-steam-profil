@@ -51,63 +51,63 @@ export function UnlockCalendarCard({ calendar }: Props) {
     <UnlockMonthRow key={month.label} month={month} />
   ));
 
-  if (!scroll.scrolls) {
-    return (
-      <View testID={UNLOCK_CALENDAR_CARD_TEST_ID} style={styles.card}>
-        <View style={styles.grid}>{months}</View>
+  // A year the card holds whole is drawn as it always was: no scroll to be
+  // had, and so nothing anywhere that speaks of one.
+  const grid = scroll.scrolls ? (
+    <View>
+      <ScrollView
+        testID={UNLOCK_CALENDAR_GRID_TEST_ID}
+        ref={scroll.ref}
+        // Held to six rows only once the grid has said how tall it turned
+        // out; until then it draws at its own height, which is what it is
+        // measured at.
+        style={{ maxHeight: scroll.height }}
+        contentContainerStyle={styles.grid}
+        onContentSizeChange={scroll.onContentSizeChange}
+        onScroll={scroll.onScroll}
+        // Often enough that the dot answers to the drag rather than to where
+        // it came to rest.
+        scrollEventThrottle={16}
+        // The fade and the dots are what say there is more year. A native bar
+        // would be a third thing saying it, and on the platform where it can
+        // be grabbed it is the one that says it least clearly.
+        showsVerticalScrollIndicator={false}
+        // The library list this sits in scrolls the same way, and Android
+        // gives the inner grid nothing without this.
+        nestedScrollEnabled
+      >
+        {months}
+      </ScrollView>
 
-        <UnlockToneLegend legend={calendar.legend} />
-      </View>
-    );
-  }
+      {scroll.fades.top ? (
+        <LinearGradient
+          testID={UNLOCK_FADE_TOP_TEST_ID}
+          pointerEvents="none"
+          colors={[colors.bg, colors.bgClear]}
+          style={styles.fadeTop}
+        />
+      ) : null}
+
+      {scroll.fades.bottom ? (
+        <LinearGradient
+          testID={UNLOCK_FADE_BOTTOM_TEST_ID}
+          pointerEvents="none"
+          colors={[colors.bgClear, colors.bg]}
+          style={styles.fadeBottom}
+        />
+      ) : null}
+    </View>
+  ) : (
+    <View style={styles.grid}>{months}</View>
+  );
 
   return (
     <View testID={UNLOCK_CALENDAR_CARD_TEST_ID} style={styles.card}>
-      <View>
-        <ScrollView
-          testID={UNLOCK_CALENDAR_GRID_TEST_ID}
-          ref={scroll.ref}
-          // Held to six rows only once the grid has said how tall it turned
-          // out; until then it draws at its own height, which is what it is
-          // measured at.
-          style={{ maxHeight: scroll.height }}
-          contentContainerStyle={styles.grid}
-          onContentSizeChange={scroll.onContentSizeChange}
-          onScroll={scroll.onScroll}
-          // Often enough that the dot answers to the drag rather than to where
-          // it came to rest.
-          scrollEventThrottle={16}
-          // The fade and the dots are what say there is more year. A native
-          // bar would be a third thing saying it, and on the platform where it
-          // can be grabbed it is the one that says it least clearly.
-          showsVerticalScrollIndicator={false}
-          // The library list this sits in scrolls the same way, and Android
-          // gives the inner grid nothing without this.
-          nestedScrollEnabled
-        >
-          {months}
-        </ScrollView>
+      {grid}
 
-        {scroll.fades.top ? (
-          <LinearGradient
-            testID={UNLOCK_FADE_TOP_TEST_ID}
-            pointerEvents="none"
-            colors={[colors.bg, colors.bgClear]}
-            style={styles.fadeTop}
-          />
-        ) : null}
-
-        {scroll.fades.bottom ? (
-          <LinearGradient
-            testID={UNLOCK_FADE_BOTTOM_TEST_ID}
-            pointerEvents="none"
-            colors={[colors.bgClear, colors.bg]}
-            style={styles.fadeBottom}
-          />
-        ) : null}
-      </View>
-
-      <UnlockHalfDots inView={scroll.half} onSelect={scroll.goToHalf} />
+      {scroll.scrolls ? (
+        <UnlockHalfDots inView={scroll.half} onSelect={scroll.goToHalf} />
+      ) : null}
 
       <UnlockToneLegend legend={calendar.legend} />
     </View>
