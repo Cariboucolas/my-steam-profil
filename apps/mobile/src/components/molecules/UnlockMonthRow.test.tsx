@@ -9,9 +9,17 @@ import {
   dayCellWidth,
   UnlockMonthRow,
   UNLOCK_DAY_TEST_ID,
+  UNLOCK_DAYS_TEST_ID,
   UNLOCK_MONTH_LABEL_TEST_ID,
   UNLOCK_MONTH_TOTAL_TEST_ID,
 } from "./UnlockMonthRow";
+
+/**
+ * What the row draws is painted for the eye and held out of the screen
+ * reader's traversal on purpose, which is the behaviour pinned further down.
+ * A query about paint has to say it wants what is hidden, or it finds nothing.
+ */
+const PAINTED = { includeHiddenElements: true } as const;
 
 /** A day the builder has already scaled: what it held, and how dark it goes. */
 const held = (count: number, tone: UnlockDay["tone"]): UnlockDay => ({
@@ -36,7 +44,7 @@ const month = (
     current,
     total,
     totalLabel: total === 0 ? "—" : String(total),
-    a11yLabel: `April, ${total} unlocks`,
+    screenReaderLabel: `April, ${total} unlocks`,
     days: Array.from({ length: 31 }, (_, index) =>
       index + 1 > drawnDays ? null : (days[index + 1] ?? held(0, 0)),
     ),
@@ -47,7 +55,7 @@ describe("UnlockMonthRow", () => {
   it("draws only the days its month really holds", () => {
     const { getAllByTestId } = render(<UnlockMonthRow month={month(17)} />);
 
-    expect(getAllByTestId(UNLOCK_DAY_TEST_ID)).toHaveLength(17);
+    expect(getAllByTestId(UNLOCK_DAY_TEST_ID, PAINTED)).toHaveLength(17);
   });
 
   it("leaves a day that held nothing on the empty tile", () => {
@@ -56,7 +64,7 @@ describe("UnlockMonthRow", () => {
     );
 
     expect(
-      getAllByTestId(UNLOCK_DAY_TEST_ID)[3]?.props.style.backgroundColor,
+      getAllByTestId(UNLOCK_DAY_TEST_ID, PAINTED)[3]?.props.style.backgroundColor,
     ).toBe(colors.tileEmpty);
   });
 
@@ -71,7 +79,7 @@ describe("UnlockMonthRow", () => {
         })}
       />,
     );
-    const painted = getAllByTestId(UNLOCK_DAY_TEST_ID)
+    const painted = getAllByTestId(UNLOCK_DAY_TEST_ID, PAINTED)
       .slice(0, 4)
       .map((day) => day.props.style.backgroundColor);
 
@@ -86,7 +94,7 @@ describe("UnlockMonthRow", () => {
       <UnlockMonthRow month={month(17, {}, true)} />,
     );
 
-    expect(getByTestId(UNLOCK_MONTH_LABEL_TEST_ID).props.style.color).toBe(
+    expect(getByTestId(UNLOCK_MONTH_LABEL_TEST_ID, PAINTED).props.style.color).toBe(
       colors.accent,
     );
   });
@@ -94,7 +102,7 @@ describe("UnlockMonthRow", () => {
   it("leaves any other month's label quiet", () => {
     const { getByTestId } = render(<UnlockMonthRow month={month(30)} />);
 
-    expect(getByTestId(UNLOCK_MONTH_LABEL_TEST_ID).props.style.color).toBe(
+    expect(getByTestId(UNLOCK_MONTH_LABEL_TEST_ID, PAINTED).props.style.color).toBe(
       colors.textDim,
     );
   });
@@ -106,7 +114,7 @@ describe("UnlockMonthRow", () => {
 
     // One reading line: the name and the figure, with no separate column at
     // the end of the row to carry the total.
-    expect(getByText("APR 58")).toBeTruthy();
+    expect(getByText("APR 58", PAINTED)).toBeTruthy();
   });
 
   it("writes the month's total in the accent", () => {
@@ -114,43 +122,44 @@ describe("UnlockMonthRow", () => {
       <UnlockMonthRow month={month(30, { 5: held(3, 1) })} />,
     );
 
-    expect(getByTestId(UNLOCK_MONTH_TOTAL_TEST_ID).props.style.color).toBe(
+    expect(getByTestId(UNLOCK_MONTH_TOTAL_TEST_ID, PAINTED).props.style.color).toBe(
       colors.accent,
     );
   });
 
   /**
-   * One stop per row, and the sentence arrives written: a row that assembled
-   * its own would be a second place for the wording to drift from the month
-   * totals it is describing.
+   * The sentence arrives written: a row assembling its own would be a second
+   * place for the wording to drift from the totals it is describing.
    */
-  it("is one screen-reader stop, named for its month and its total", () => {
+  it("is a screen-reader stop, named for its month and its total", () => {
     const { getByLabelText } = render(
       <UnlockMonthRow month={month(30, { 5: held(3, 1), 11: held(55, 4) })} />,
     );
 
-    // Grouped: what makes the row one stop is also what keeps its thirty-one
-    // cells from being thirty-one.
     expect(getByLabelText("April, 58 unlocks").props.accessible).toBe(true);
   });
 
-  it("offers no stop of its own for a single day", () => {
-    // Three hundred and sixty-five stops to hear what twelve rows already
-    // state, on a target no finger could land on anyway.
-    const { getAllByLabelText, getAllByTestId } = render(
+  it("holds its own contents out of the traversal, on either platform", () => {
+    // The stop above is only the whole of the row if nothing inside it is a
+    // stop too. `accessible` is `focusable` on Android and does not settle
+    // that on its own, so both platforms are told in their own words.
+    const { getByTestId } = render(
       <UnlockMonthRow month={month(30, { 5: held(3, 1), 11: held(55, 4) })} />,
     );
 
-    expect(getAllByLabelText(/unlock/)).toHaveLength(1);
-    for (const day of getAllByTestId(UNLOCK_DAY_TEST_ID)) {
-      expect(day.props.accessibilityLabel).toBeUndefined();
+    for (const inside of [UNLOCK_MONTH_LABEL_TEST_ID, UNLOCK_DAYS_TEST_ID]) {
+      // Asked for by name, since being hidden is the very thing under test.
+      const { props } = getByTestId(inside, PAINTED);
+
+      expect(props.accessibilityElementsHidden).toBe(true);
+      expect(props.importantForAccessibility).toBe("no-hide-descendants");
     }
   });
 
   it("writes what the builder gave it for a month that held nothing", () => {
     const { getByText } = render(<UnlockMonthRow month={month(30)} />);
 
-    expect(getByText("APR —")).toBeTruthy();
+    expect(getByText("APR —", PAINTED)).toBeTruthy();
   });
 });
 

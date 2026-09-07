@@ -205,8 +205,7 @@ describe("buildUnlockCalendar", () => {
 
   /**
    * The two ends the card has to answer honestly. A grid drawn empty is not a
-   * failure to show something: it is an exact answer to an exact question, and
-   * it is the one screen that shows a new player the shape of what will fill.
+   * failure to show something: it is an exact answer to an exact question.
    */
   describe("a year holding nothing", () => {
     it("draws the year out empty and still sets it against the one before", () => {
@@ -364,11 +363,7 @@ describe("buildUnlockCalendar", () => {
     });
   });
 
-  /**
-   * One stop per month row, and none per cell. Three hundred and sixty-five
-   * stops is a punitive traversal for the same information the row already
-   * states, and a nine-pixel cell is not a target a finger could find anyway.
-   */
+  /** What a row says when it is listened to rather than looked at. */
   describe("read aloud", () => {
     it("names each month in full, and what it held", () => {
       const calendar = buildUnlockCalendar(
@@ -378,7 +373,7 @@ describe("buildUnlockCalendar", () => {
 
       // The row's own abbreviation is written for the eye; a screen reader is
       // read to, and "MAR" is not a word.
-      expect(rowFor(calendar, "MAR").a11yLabel).toBe("March, 12 unlocks");
+      expect(rowFor(calendar, "MAR").screenReaderLabel).toBe("March, 12 unlocks");
     });
 
     it("reads a month holding one unlock in the singular", () => {
@@ -387,8 +382,8 @@ describe("buildUnlockCalendar", () => {
         NOW,
       );
 
-      expect(rowFor(calendar, "FEB").a11yLabel).toBe("February, 1 unlock");
-      expect(rowFor(calendar, "APR").a11yLabel).toBe("April, 0 unlocks");
+      expect(rowFor(calendar, "FEB").screenReaderLabel).toBe("February, 1 unlock");
+      expect(rowFor(calendar, "APR").screenReaderLabel).toBe("April, 0 unlocks");
     });
 
     it("spells out the figure a month holding nothing draws as a dash", () => {
@@ -399,7 +394,7 @@ describe("buildUnlockCalendar", () => {
       const january = rowFor(calendar, "JAN");
 
       expect(january.totalLabel).toBe("—");
-      expect(january.a11yLabel).toBe("January, 0 unlocks");
+      expect(january.screenReaderLabel).toBe("January, 0 unlocks");
     });
 
     it("names every month of a full year the way it is said", () => {
@@ -409,7 +404,7 @@ describe("buildUnlockCalendar", () => {
       );
 
       expect(
-        calendar.months.map((month) => month.a11yLabel.split(",")[0]),
+        calendar.months.map((month) => month.screenReaderLabel.split(",")[0]),
       ).toEqual([
         "January",
         "February",

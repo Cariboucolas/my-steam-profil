@@ -8,6 +8,7 @@ import {
 } from "../../view-models/unlock-calendar";
 
 export const UNLOCK_DAY_TEST_ID = "unlock-day";
+export const UNLOCK_DAYS_TEST_ID = "unlock-days";
 export const UNLOCK_MONTH_LABEL_TEST_ID = "unlock-month-label";
 export const UNLOCK_MONTH_TOTAL_TEST_ID = "unlock-month-total";
 
@@ -45,6 +46,20 @@ export const dayCellWidth = (screenWidth: number): number =>
 const fillFor = (day: UnlockDay | null): string =>
   day === null ? "transparent" : unlockToneFills[day.tone];
 
+/**
+ * What keeps a row's own contents out of the traversal, so that the label the
+ * row carries is the whole of what is read there.
+ *
+ * `accessible` alone does not do it. It means `isAccessibilityElement` on iOS
+ * but only `focusable` on Android, where TalkBack stays free to stop on a
+ * descendant — which would make a row two stops and its days thirty-one.
+ * The two platforms have their own word for the same thing, so both are said.
+ */
+const CONTENTS_NOT_READ = {
+  accessibilityElementsHidden: true,
+  importantForAccessibility: "no-hide-descendants",
+} as const;
+
 type Props = { readonly month: UnlockMonth };
 
 /**
@@ -59,15 +74,19 @@ type Props = { readonly month: UnlockMonth };
  * the end of the row. That column would cost the grid the width the cells need
  * to be told apart, and the total reads just as well on the name it belongs to.
  *
- * Read aloud, the whole row is one stop, and its thirty-one cells are none:
- * grouping them is what turns three hundred and sixty-five stops into twelve,
- * for information the rows already state outright. The sentence it is read by
- * arrives written, as every other label on this card does.
+ * Read aloud it is one stop, carrying the sentence the builder wrote for it —
+ * and its thirty-one cells are no stops at all, for the reason the field's own
+ * documentation gives.
  */
 export function UnlockMonthRow({ month }: Props) {
   return (
-    <View accessible accessibilityLabel={month.a11yLabel} style={styles.row}>
+    <View
+      accessible
+      accessibilityLabel={month.screenReaderLabel}
+      style={styles.row}
+    >
       <Text
+        {...CONTENTS_NOT_READ}
         testID={UNLOCK_MONTH_LABEL_TEST_ID}
         style={{
           ...styles.label,
@@ -80,7 +99,11 @@ export function UnlockMonthRow({ month }: Props) {
         </Text>
       </Text>
 
-      <View style={styles.days}>
+      <View
+        {...CONTENTS_NOT_READ}
+        testID={UNLOCK_DAYS_TEST_ID}
+        style={styles.days}
+      >
         {month.days.map((day, index) => (
           <View
             key={index}

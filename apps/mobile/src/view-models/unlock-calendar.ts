@@ -52,8 +52,12 @@ export type UnlockMonth = {
    * one screen-reader stop and its cells are none. Three hundred and sixty-five
    * stops is a punitive traversal for what the row already states, and a
    * nine-pixel cell is not a target a finger could find anyway.
+   *
+   * Named for who reads it rather than for the prop it is handed to. It says
+   * nothing about language: everything on this card ships in English, and
+   * `label` above is the same sentence written for the eye.
    */
-  readonly a11yLabel: string;
+  readonly screenReaderLabel: string;
   /** Always 31 entries. A day that does not exist, or has not arrived, is null. */
   readonly days: readonly (UnlockDay | null)[];
 };
@@ -110,8 +114,8 @@ export type UnlockCalendar = {
 /**
  * The months as they are said, rather than as a row writes them. `MAR` is
  * three capitals fitted to a 44-pixel column; it is not a word anyone is read.
- * Written out here rather than asked of Intl, as `formatDate` is, so that the
- * wording does not follow the device's locale.
+ * Written out by hand rather than asked of Intl — the choice `formatDate`
+ * already made — so that the wording does not follow the device's locale.
  */
 const MONTH_NAMES = [
   "January",
@@ -135,8 +139,13 @@ const MONTH_NAMES = [
  * mark for the eye, saying there is nothing here worth comparing; read aloud it
  * is a silence, and a row silent about its own total is one whose total sounds
  * missing rather than nothing.
+ *
+ * The month always lands inside the twelve, as it does for the row's own
+ * abbreviation below; the fallback is what `noUncheckedIndexedAccess` asks for,
+ * and it gives up the name rather than the count, which is the half a listener
+ * could not work out from where they are.
  */
-const a11yLabelFor = (month: number, total: number): string =>
+const screenReaderLabelFor = (month: number, total: number): string =>
   `${MONTH_NAMES[month] ?? ""}, ${total} ${total === 1 ? "unlock" : "unlocks"}`;
 
 /**
@@ -358,7 +367,7 @@ export const buildUnlockCalendar = (
       current,
       total,
       totalLabel: total === 0 ? EM_DASH : String(total),
-      a11yLabel: a11yLabelFor(month, total),
+      screenReaderLabel: screenReaderLabelFor(month, total),
       days,
     };
   });
