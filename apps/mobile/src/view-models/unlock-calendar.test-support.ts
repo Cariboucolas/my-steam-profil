@@ -75,14 +75,21 @@ export const stillCounting = (
   outstanding: readonly number[],
 ): LibraryView => ({ ...view, pending: new Set(outstanding) });
 
+const twoDigits = (value: number): string => String(value).padStart(2, "0");
+
 /**
  * `count` unlocks all falling on the one day `date` names, minutes apart, as a
- * busy day really arrives.
+ * busy day really arrives. A day busy enough to fill the hour runs on into the
+ * next one, so that a year's worth of unlocks can be written a day at a time
+ * and still land on the day it names.
  */
 export const heldBy = (date: string, count: number): readonly string[] =>
   Array.from(
     { length: count },
-    (_, index) => `${date}T09:${String(index).padStart(2, "0")}:00Z`,
+    (_, index) =>
+      `${date}T${twoDigits(9 + Math.floor(index / 60))}:${twoDigits(
+        index % 60,
+      )}:00Z`,
   );
 
 /**
