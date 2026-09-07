@@ -1,7 +1,10 @@
 import { render } from "@testing-library/react-native";
 
-import { colors } from "../../theme/tokens";
-import type { UnlockMonth } from "../../view-models/unlock-calendar";
+import { colors, unlockToneFills } from "../../theme/tokens";
+import type {
+  UnlockDay,
+  UnlockMonth,
+} from "../../view-models/unlock-calendar";
 import {
   dayCellWidth,
   UnlockMonthRow,
@@ -10,16 +13,23 @@ import {
   UNLOCK_MONTH_TOTAL_TEST_ID,
 } from "./UnlockMonthRow";
 
+/** A day the builder has already scaled: what it held, and how dark it goes. */
+const held = (count: number, tone: UnlockDay["tone"]): UnlockDay => ({
+  count,
+  tone,
+});
+
 /**
  * A row as the builder hands it over: thirty-one columns, of which the first
- * `drawnDays` are days that exist, holding what `counts` says by day number.
+ * `drawnDays` are days that exist, holding what `days` says by day number.
+ * Every other drawn day held nothing, and takes the empty tile.
  */
 const month = (
   drawnDays: number,
-  counts: Readonly<Record<number, number>> = {},
+  days: Readonly<Record<number, UnlockDay>> = {},
   current = false,
 ): UnlockMonth => {
-  const total = Object.values(counts).reduce((sum, count) => sum + count, 0);
+  const total = Object.values(days).reduce((sum, day) => sum + day.count, 0);
 
   return {
     label: "APR",
@@ -27,7 +37,7 @@ const month = (
     total,
     totalLabel: total === 0 ? "—" : String(total),
     days: Array.from({ length: 31 }, (_, index) =>
-      index + 1 > drawnDays ? null : { count: counts[index + 1] ?? 0 },
+      index + 1 > drawnDays ? null : (days[index + 1] ?? held(0, 0)),
     ),
   };
 };
@@ -39,14 +49,35 @@ describe("UnlockMonthRow", () => {
     expect(getAllByTestId(UNLOCK_DAY_TEST_ID)).toHaveLength(17);
   });
 
-  it("marks a day that held unlocks and leaves the others empty", () => {
+  it("leaves a day that held nothing on the empty tile", () => {
     const { getAllByTestId } = render(
-      <UnlockMonthRow month={month(17, { 5: 3 })} />,
+      <UnlockMonthRow month={month(17, { 5: held(3, 2) })} />,
     );
-    const days = getAllByTestId(UNLOCK_DAY_TEST_ID);
 
-    expect(days[4]?.props.style.backgroundColor).toBe(colors.accent);
-    expect(days[3]?.props.style.backgroundColor).toBe(colors.tileEmpty);
+    expect(
+      getAllByTestId(UNLOCK_DAY_TEST_ID)[3]?.props.style.backgroundColor,
+    ).toBe(colors.tileEmpty);
+  });
+
+  it("draws each tone in its own strength of the accent", () => {
+    const { getAllByTestId } = render(
+      <UnlockMonthRow
+        month={month(17, {
+          1: held(1, 1),
+          2: held(3, 2),
+          3: held(7, 3),
+          4: held(20, 4),
+        })}
+      />,
+    );
+    const painted = getAllByTestId(UNLOCK_DAY_TEST_ID)
+      .slice(0, 4)
+      .map((day) => day.props.style.backgroundColor);
+
+    expect(painted).toEqual(unlockToneFills.slice(1));
+    // Four tones the reader can actually tell apart, rather than four names
+    // for the same colour.
+    expect(new Set(painted).size).toBe(4);
   });
 
   it("picks out the label of the month today falls in", () => {
@@ -69,7 +100,7 @@ describe("UnlockMonthRow", () => {
 
   it("states the month's total beside its name", () => {
     const { getByText } = render(
-      <UnlockMonthRow month={month(30, { 5: 3, 11: 55 })} />,
+      <UnlockMonthRow month={month(30, { 5: held(3, 1), 11: held(55, 4) })} />,
     );
 
     // One reading line: the name and the figure, with no separate column at
@@ -79,7 +110,7 @@ describe("UnlockMonthRow", () => {
 
   it("writes the month's total in the accent", () => {
     const { getByTestId } = render(
-      <UnlockMonthRow month={month(30, { 5: 3 })} />,
+      <UnlockMonthRow month={month(30, { 5: held(3, 1) })} />,
     );
 
     expect(getByTestId(UNLOCK_MONTH_TOTAL_TEST_ID).props.style.color).toBe(

@@ -8,7 +8,7 @@ import {
   UNLOCK_CALENDAR_CARD_TEST_ID,
 } from "./UnlockCalendarCard";
 
-/** A year that has reached the 5th of March. */
+/** A year that has reached the 5th of March, scaled as ADR-0007 has it. */
 const calendar: UnlockCalendar = {
   months: ["JAN", "FEB", "MAR"].map((label, index) => ({
     label,
@@ -16,9 +16,16 @@ const calendar: UnlockCalendar = {
     total: 0,
     totalLabel: "—",
     days: Array.from({ length: 31 }, (_, day) =>
-      day + 1 > [31, 28, 5][index]! ? null : { count: 0 },
+      day + 1 > [31, 28, 5][index]! ? null : { count: 0, tone: 0 },
     ),
   })),
+  legend: [
+    { tone: 0, label: "0" },
+    { tone: 1, label: "1-2" },
+    { tone: 2, label: "3-5" },
+    { tone: 3, label: "6-11" },
+    { tone: 4, label: "12+" },
+  ],
 };
 
 describe("UnlockCalendarCard", () => {
@@ -57,5 +64,24 @@ describe("UnlockCalendarCard", () => {
 
     expect(style.marginHorizontal ?? 0).toBe(0);
     expect(style.paddingHorizontal ?? 0).toBe(0);
+  });
+  /**
+   * The tone scale is read over a window that does not match the year the grid
+   * draws, so the boundaries have to be written down rather than inferred from
+   * the picture — and at a size the 9-pixel cells could never carry (ADR-0007).
+   */
+  it("prints the numbers behind each tone", () => {
+    const { getByText } = render(<UnlockCalendarCard calendar={calendar} />);
+
+    for (const band of ["0", "1-2", "3-5", "6-11", "12+"]) {
+      expect(getByText(band)).toBeTruthy();
+    }
+  });
+
+  it("never falls back on less and more", () => {
+    const { queryByText } = render(<UnlockCalendarCard calendar={calendar} />);
+
+    expect(queryByText(/less/i)).toBeNull();
+    expect(queryByText(/more/i)).toBeNull();
   });
 });
