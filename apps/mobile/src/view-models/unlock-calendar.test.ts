@@ -364,6 +364,69 @@ describe("buildUnlockCalendar", () => {
     });
   });
 
+  /**
+   * One stop per month row, and none per cell. Three hundred and sixty-five
+   * stops is a punitive traversal for the same information the row already
+   * states, and a nine-pixel cell is not a target a finger could find anyway.
+   */
+  describe("read aloud", () => {
+    it("names each month in full, and what it held", () => {
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({ [SOULSTONE]: heldBy("2026-03-14", 12) }),
+        NOW,
+      );
+
+      // The row's own abbreviation is written for the eye; a screen reader is
+      // read to, and "MAR" is not a word.
+      expect(rowFor(calendar, "MAR").a11yLabel).toBe("March, 12 unlocks");
+    });
+
+    it("reads a month holding one unlock in the singular", () => {
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({ [SOULSTONE]: ["2026-02-09T09:00:00Z"] }),
+        NOW,
+      );
+
+      expect(rowFor(calendar, "FEB").a11yLabel).toBe("February, 1 unlock");
+      expect(rowFor(calendar, "APR").a11yLabel).toBe("April, 0 unlocks");
+    });
+
+    it("spells out the figure a month holding nothing draws as a dash", () => {
+      // The em dash is written for the eye, where a zero would read as a
+      // figure worth comparing. Aloud it is a silence or a punctuation mark,
+      // so the label states the number the row is standing on.
+      const calendar = buildUnlockCalendar(libraryWhereUnlocksHappened(), NOW);
+      const january = rowFor(calendar, "JAN");
+
+      expect(january.totalLabel).toBe("—");
+      expect(january.a11yLabel).toBe("January, 0 unlocks");
+    });
+
+    it("names every month of a full year the way it is said", () => {
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened(),
+        new Date("2026-12-31T10:00:00Z"),
+      );
+
+      expect(
+        calendar.months.map((month) => month.a11yLabel.split(",")[0]),
+      ).toEqual([
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ]);
+    });
+  });
+
   describe("the tone scale", () => {
     it("leaves a day that held nothing outside the scale", () => {
       // Zero is not the palest tone; it is the empty tile, and ADR-0007 keeps

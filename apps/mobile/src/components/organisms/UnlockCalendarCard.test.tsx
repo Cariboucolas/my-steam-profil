@@ -57,6 +57,7 @@ const yearTo = (monthsDrawn: number): UnlockCalendar => ({
       current,
       total: 0,
       totalLabel: "—",
+      a11yLabel: `${label}, 0 unlocks`,
       days: Array.from({ length: 31 }, (_, day) =>
         day + 1 > drawn ? null : { count: 0, tone: 0 },
       ),
@@ -171,6 +172,20 @@ describe("UnlockCalendarCard", () => {
     expect(header.getByText("0")).toBeTruthy();
     // Nothing measured against a year the player was not there for.
     expect(header.queryByText(/vs all of/)).toBeNull();
+  });
+
+  /**
+   * One stop a month, so the whole card is twelve of them rather than three
+   * hundred and sixty-five — and every one of them a sentence.
+   */
+  it("gives a screen reader one stop per month and no more", () => {
+    const { getAllByLabelText } = render(
+      <UnlockCalendarCard calendar={calendar} />,
+    );
+
+    expect(
+      getAllByLabelText(/unlock/).map((row) => row.props.accessibilityLabel),
+    ).toEqual(["JAN, 0 unlocks", "FEB, 0 unlocks", "MAR, 0 unlocks"]);
   });
 
   it("never falls back on less and more", () => {

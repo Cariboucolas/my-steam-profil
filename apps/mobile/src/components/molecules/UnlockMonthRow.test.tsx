@@ -36,6 +36,7 @@ const month = (
     current,
     total,
     totalLabel: total === 0 ? "—" : String(total),
+    a11yLabel: `April, ${total} unlocks`,
     days: Array.from({ length: 31 }, (_, index) =>
       index + 1 > drawnDays ? null : (days[index + 1] ?? held(0, 0)),
     ),
@@ -116,6 +117,34 @@ describe("UnlockMonthRow", () => {
     expect(getByTestId(UNLOCK_MONTH_TOTAL_TEST_ID).props.style.color).toBe(
       colors.accent,
     );
+  });
+
+  /**
+   * One stop per row, and the sentence arrives written: a row that assembled
+   * its own would be a second place for the wording to drift from the month
+   * totals it is describing.
+   */
+  it("is one screen-reader stop, named for its month and its total", () => {
+    const { getByLabelText } = render(
+      <UnlockMonthRow month={month(30, { 5: held(3, 1), 11: held(55, 4) })} />,
+    );
+
+    // Grouped: what makes the row one stop is also what keeps its thirty-one
+    // cells from being thirty-one.
+    expect(getByLabelText("April, 58 unlocks").props.accessible).toBe(true);
+  });
+
+  it("offers no stop of its own for a single day", () => {
+    // Three hundred and sixty-five stops to hear what twelve rows already
+    // state, on a target no finger could land on anyway.
+    const { getAllByLabelText, getAllByTestId } = render(
+      <UnlockMonthRow month={month(30, { 5: held(3, 1), 11: held(55, 4) })} />,
+    );
+
+    expect(getAllByLabelText(/unlock/)).toHaveLength(1);
+    for (const day of getAllByTestId(UNLOCK_DAY_TEST_ID)) {
+      expect(day.props.accessibilityLabel).toBeUndefined();
+    }
   });
 
   it("writes what the builder gave it for a month that held nothing", () => {

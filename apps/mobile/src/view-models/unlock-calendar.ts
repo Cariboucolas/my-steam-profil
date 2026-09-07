@@ -47,6 +47,13 @@ export type UnlockMonth = {
    * nothing here to compare.
    */
   readonly totalLabel: string;
+  /**
+   * The whole row in one sentence — `March, 12 unlocks` — because the row is
+   * one screen-reader stop and its cells are none. Three hundred and sixty-five
+   * stops is a punitive traversal for what the row already states, and a
+   * nine-pixel cell is not a target a finger could find anyway.
+   */
+  readonly a11yLabel: string;
   /** Always 31 entries. A day that does not exist, or has not arrived, is null. */
   readonly days: readonly (UnlockDay | null)[];
 };
@@ -99,6 +106,38 @@ export type UnlockCalendar = {
    */
   readonly scale: UnlockToneScale | null;
 };
+
+/**
+ * The months as they are said, rather than as a row writes them. `MAR` is
+ * three capitals fitted to a 44-pixel column; it is not a word anyone is read.
+ * Written out here rather than asked of Intl, as `formatDate` is, so that the
+ * wording does not follow the device's locale.
+ */
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+] as const;
+
+/**
+ * The row as it is read rather than looked at: its month, and what it held.
+ *
+ * The figure is spelled out even where the row draws an em dash. The dash is a
+ * mark for the eye, saying there is nothing here worth comparing; read aloud it
+ * is a silence, and a row silent about its own total is one whose total sounds
+ * missing rather than nothing.
+ */
+const a11yLabelFor = (month: number, total: number): string =>
+  `${MONTH_NAMES[month] ?? ""}, ${total} ${total === 1 ? "unlock" : "unlocks"}`;
 
 /**
  * How many days a month really has. Day zero of the next month is the last day
@@ -319,6 +358,7 @@ export const buildUnlockCalendar = (
       current,
       total,
       totalLabel: total === 0 ? EM_DASH : String(total),
+      a11yLabel: a11yLabelFor(month, total),
       days,
     };
   });
