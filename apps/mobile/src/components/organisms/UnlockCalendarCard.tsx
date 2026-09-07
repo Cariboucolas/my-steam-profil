@@ -19,12 +19,6 @@ const ROW_GAP = spacing.xs;
 /** How deep an edge fades: about a row and a half of grid. */
 const FADE_DEPTH = 18;
 
-/**
- * The page's own ground with the colour taken out of it rather than the word
- * `transparent`, which fades through grey on Android.
- */
-const CLEAR = "rgba(11,15,20,0)";
-
 type Props = { readonly calendar: UnlockCalendar };
 
 /**
@@ -98,7 +92,7 @@ export function UnlockCalendarCard({ calendar }: Props) {
           <LinearGradient
             testID={UNLOCK_FADE_TOP_TEST_ID}
             pointerEvents="none"
-            colors={[colors.bg, CLEAR]}
+            colors={[colors.bg, colors.bgClear]}
             style={styles.fadeTop}
           />
         ) : null}
@@ -107,7 +101,7 @@ export function UnlockCalendarCard({ calendar }: Props) {
           <LinearGradient
             testID={UNLOCK_FADE_BOTTOM_TEST_ID}
             pointerEvents="none"
-            colors={[CLEAR, colors.bg]}
+            colors={[colors.bgClear, colors.bg]}
             style={styles.fadeBottom}
           />
         ) : null}
