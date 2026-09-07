@@ -26,6 +26,8 @@ const calendar: UnlockCalendar = {
     { tone: 3, label: "6-11" },
     { tone: 4, label: "12+" },
   ],
+  counting: false,
+  scale: [2, 5, 11],
 };
 
 describe("UnlockCalendarCard", () => {

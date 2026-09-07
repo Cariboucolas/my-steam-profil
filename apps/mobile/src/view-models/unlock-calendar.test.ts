@@ -6,10 +6,12 @@ import {
   type UnlockCalendar,
   type UnlockDay,
   type UnlockMonth,
+  type UnlockToneScale,
 } from "./unlock-calendar";
 
 const SOULSTONE = 2066020;
 const HALLS = 2218750;
+const EXILE = 2694490;
 
 const game = (appId: number): GameDto => ({
   appId,
@@ -29,14 +31,18 @@ const tally = (unlockedAt: readonly number[]): GameTallyDto => ({
 /** Epoch seconds, as the wire carries them. */
 const at = (iso: string): number => Date.parse(iso) / 1000;
 
+/** The day the calendars below are built against, where they share one. */
+const NOW = new Date("2026-04-17T10:00:00Z");
+
 /**
- * A library of two games. A game named here has been counted; one left out has
- * a tally still on its way, as it would mid-load.
+ * A library of three games. A game named here has been counted; one left out
+ * has a tally still on its way, as it would mid-load. Three, because a load
+ * that has landed one tally and is still waiting on another needs a third.
  */
 const libraryWhereUnlocksHappened = (
   unlocks: Readonly<Record<number, readonly string[]>> = {},
 ): LibraryView => ({
-  games: [game(SOULSTONE), game(HALLS)],
+  games: [game(SOULSTONE), game(HALLS), game(EXILE)],
   tallies: Object.fromEntries(
     Object.entries(unlocks).map(([appId, instants]) => [
       Number(appId),
@@ -47,6 +53,12 @@ const libraryWhereUnlocksHappened = (
   pending: new Set<number>(),
   frozenOrder: null,
 });
+
+/** The same library, with a tally still on its way for the games named. */
+const stillCounting = (
+  view: LibraryView,
+  outstanding: readonly number[],
+): LibraryView => ({ ...view, pending: new Set(outstanding) });
 
 /**
  * `count` unlocks all falling on the one day `date` names, minutes apart, as a
@@ -403,6 +415,112 @@ describe("buildUnlockCalendar", () => {
         "3",
         "4+",
       ]);
+    });
+  });
+
+  describe("while the library is still being counted", () => {
+    /**
+     * A cold library sends its tallies six at a time, so the calendar is built
+     * over and over while they land. Whether any is still outstanding is the
+     * one thing the card cannot work out for itself.
+     */
+    it("reports whether a tally is still outstanding", () => {
+      const counted = libraryWhereUnlocksHappened({
+        [SOULSTONE]: ["2026-04-05T09:00:00Z"],
+      });
+
+      expect(buildUnlockCalendar(counted, NOW).counting).toBe(false);
+      expect(
+        buildUnlockCalendar(stillCounting(counted, [HALLS]), NOW).counting,
+      ).toBe(true);
+    });
+
+    /**
+     * Four days holding 2, 5, 11 and 20 unlocks are their own quartiles, and
+     * read the scale ADR-0007 prints as `0 · 1-2 · 3-5 · 6-11 · 12+`.
+     */
+    const APRIL_PEAKS = [
+      ...heldBy("2026-04-01", 2),
+      ...heldBy("2026-04-02", 5),
+      ...heldBy("2026-04-03", 11),
+      ...heldBy("2026-04-04", 20),
+    ];
+
+    /**
+     * Twenty quiet days of a single unlock. Landing them beside the four busy
+     * ones pulls every quartile down to a count of its own, so a scale read
+     * before they arrived and one read after cannot be confused.
+     */
+    const MARCH_SINGLES = Array.from({ length: 20 }, (_, index) =>
+      heldBy(`2026-03-${String(index + 1).padStart(2, "0")}`, 1),
+    ).flat();
+
+    /** What the first wave had in hand: the four busy April days, alone. */
+    const scaleReadMidLoad = (): UnlockToneScale =>
+      buildUnlockCalendar(
+        stillCounting(libraryWhereUnlocksHappened({ [SOULSTONE]: APRIL_PEAKS }), [
+          HALLS,
+          EXILE,
+        ]),
+        NOW,
+      ).scale;
+
+    /**
+     * Tallies land six at a time in most-recently-played order, so recent
+     * months fill first: a scale read afresh on every wave would repaint the
+     * whole grid dozens of times over a single cold open (ADR-0007).
+     */
+    it("holds the scale it was handed while tallies are still landing", () => {
+      const later = buildUnlockCalendar(
+        stillCounting(
+          libraryWhereUnlocksHappened({
+            [SOULSTONE]: APRIL_PEAKS,
+            [HALLS]: MARCH_SINGLES,
+          }),
+          [EXILE],
+        ),
+        NOW,
+        scaleReadMidLoad(),
+      );
+
+      expect(later.legend.map((band) => band.label)).toEqual([
+        "0",
+        "1-2",
+        "3-5",
+        "6-11",
+        "12+",
+      ]);
+      // Two unlocks are still the palest tone, as they were a wave ago.
+      expect(rowFor(later, "APR").days[0]?.tone).toBe(1);
+      // The grid fills all the same: what landed since is drawn, on that scale.
+      expect(rowFor(later, "MAR").total).toBe(20);
+    });
+
+    /**
+     * The one repaint the reader gets, and it is worth it: the scale the grid
+     * kept through the load was read off the first wave alone, and the whole
+     * window is what it has to answer to.
+     */
+    it("reads the scale once more when the last tally has landed", () => {
+      const done = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({
+          [SOULSTONE]: APRIL_PEAKS,
+          [HALLS]: MARCH_SINGLES,
+        }),
+        NOW,
+        scaleReadMidLoad(),
+      );
+
+      // Twenty quiet days against four busy ones: every quartile is a count.
+      expect(done.legend.map((band) => band.label)).toEqual([
+        "0",
+        "1",
+        "2",
+        "3",
+        "4+",
+      ]);
+      // The same two unlocks the held scale drew palest sit a tone higher.
+      expect(rowFor(done, "APR").days[0]?.tone).toBe(2);
     });
   });
 });
