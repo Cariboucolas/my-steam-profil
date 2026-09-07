@@ -9,6 +9,7 @@ import {
   scrolledTo,
   SIX_ROWS,
 } from "../../view-models/unlock-calendar-scroll.test-support";
+import { UNLOCK_HEADER_TEST_ID } from "../molecules/UnlockCalendarHeader";
 import { UNLOCK_HALF_DOT_TEST_ID } from "../molecules/UnlockHalfDots";
 import { UNLOCK_LEGEND_TEST_ID } from "../molecules/UnlockToneLegend";
 import { colors } from "../../theme/tokens";
@@ -133,7 +134,7 @@ describe("UnlockCalendarCard", () => {
    * states where the player stands and works none of it out for itself.
    */
   it("says where the player stands in the year it draws", () => {
-    const { getByText } = render(
+    const { getByTestId } = render(
       <UnlockCalendarCard
         calendar={{
           ...calendar,
@@ -143,11 +144,14 @@ describe("UnlockCalendarCard", () => {
         }}
       />,
     );
+    // Read inside the header, as the legend's bands are read inside the
+    // legend: the grid below writes figures of its own.
+    const header = within(getByTestId(UNLOCK_HEADER_TEST_ID));
 
-    expect(getByText("Activity")).toBeTruthy();
-    expect(getByText("82")).toBeTruthy();
-    expect(getByText("YEAR 2026 · JAN → DEC")).toBeTruthy();
-    expect(getByText("-224 vs all of 2025 (306)")).toBeTruthy();
+    expect(header.getByText("Activity")).toBeTruthy();
+    expect(header.getByText("82")).toBeTruthy();
+    expect(header.getByText("YEAR 2026 · JAN → DEC")).toBeTruthy();
+    expect(header.getByText("-224 vs all of 2025 (306)")).toBeTruthy();
   });
 
   it("never falls back on less and more", () => {

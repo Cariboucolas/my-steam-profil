@@ -4,8 +4,6 @@ import { colors, fonts, spacing } from "../../theme/tokens";
 import { GRID_INSET } from "./UnlockMonthRow";
 
 export const UNLOCK_HEADER_TEST_ID = "unlock-calendar-header";
-export const UNLOCK_HEADER_TOTAL_TEST_ID = "unlock-calendar-total";
-export const UNLOCK_HEADER_DELTA_TEST_ID = "unlock-calendar-delta";
 
 /**
  * What the screen calls the card. The concept is an UnlockCalendar and the
@@ -40,17 +38,13 @@ export function UnlockCalendarHeader({ total, frameLabel, deltaLabel }: Props) {
     <View testID={UNLOCK_HEADER_TEST_ID} style={styles.header}>
       <View style={styles.line}>
         <Text style={styles.title}>{TITLE}</Text>
-        <Text testID={UNLOCK_HEADER_TOTAL_TEST_ID} style={styles.total}>
-          {total}
-        </Text>
+        <Text style={styles.total}>{total}</Text>
       </View>
 
       <View style={styles.line}>
         <Text style={styles.frame}>{frameLabel}</Text>
         {deltaLabel === null ? null : (
-          <Text testID={UNLOCK_HEADER_DELTA_TEST_ID} style={styles.delta}>
-            {deltaLabel}
-          </Text>
+          <Text style={styles.delta}>{deltaLabel}</Text>
         )}
       </View>
     </View>
