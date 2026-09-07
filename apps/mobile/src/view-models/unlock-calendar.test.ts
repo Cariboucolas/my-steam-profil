@@ -278,6 +278,19 @@ describe("buildUnlockCalendar", () => {
       expect(calendar.deltaLabel).toBe("+8 vs all of 2025 (4)");
     });
 
+    it("writes a year that has drawn level with the one before as level", () => {
+      // There is no direction left to sign, and a "+0" would invent one.
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({
+          [SOULSTONE]: heldBy("2026-02-11", 4),
+          [HALLS]: heldBy("2025-06-21", 4),
+        }),
+        NOW,
+      );
+
+      expect(calendar.deltaLabel).toBe("0 vs all of 2025 (4)");
+    });
+
     it("drops both figures where there is no year before to compare", () => {
       // "-0 vs all of 2025 (0)" is true and absurd: it measures a player
       // against a year they were not there for.

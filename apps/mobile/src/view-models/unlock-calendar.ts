@@ -269,11 +269,11 @@ const totalIn = (counts: ReadonlyMap<number, number>, year: number): number => {
 };
 
 /**
- * The difference, written so its direction is read rather than worked out. A
- * year that has drawn level says so with a bare `0`: there is no direction
- * left to sign.
+ * The difference as the header writes it, its direction read rather than
+ * worked out. A year that has drawn level says so with a bare `0`: there is no
+ * direction left to sign.
  */
-const signed = (difference: number): string =>
+const signedFigure = (difference: number): string =>
   difference > 0 ? `+${difference}` : String(difference);
 
 /**
@@ -341,7 +341,7 @@ export const buildUnlockCalendar = (
     deltaLabel:
       lastYearsTotal === null
         ? null
-        : `${signed(total - lastYearsTotal)} vs all of ${lastYear} (${lastYearsTotal})`,
+        : `${signedFigure(total - lastYearsTotal)} vs all of ${lastYear} (${lastYearsTotal})`,
     frameLabel: `YEAR ${year} · JAN → DEC`,
     months,
     legend: legendFor(scale),

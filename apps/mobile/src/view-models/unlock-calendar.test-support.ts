@@ -80,8 +80,9 @@ const twoDigits = (value: number): string => String(value).padStart(2, "0");
 /**
  * `count` unlocks all falling on the one day `date` names, minutes apart, as a
  * busy day really arrives. A day busy enough to fill the hour runs on into the
- * next one, so that a year's worth of unlocks can be written a day at a time
- * and still land on the day it names.
+ * next, so that a few hundred can be written on the one day and still land on
+ * the day they name — the fifteen hours that leaves being more day than any
+ * fixture here needs.
  */
 export const heldBy = (date: string, count: number): readonly string[] =>
   Array.from(
