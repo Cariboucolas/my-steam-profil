@@ -72,9 +72,12 @@ export function UnlockCalendarCard({ calendar }: Props) {
         // would be a third thing saying it, and on the platform where it can
         // be grabbed it is the one that says it least clearly.
         showsVerticalScrollIndicator={false}
-        // The library list this sits in scrolls the same way, and Android
-        // gives the inner grid nothing without this.
+        // The library list this sits in scrolls the same way. Android gives
+        // the inner grid nothing without the first of these; the second keeps
+        // the grid from rubber-banding away from an edge the card is meant to
+        // be holding, and leaves the list the drag that reached that edge.
         nestedScrollEnabled
+        bounces={false}
       >
         {months}
       </ScrollView>

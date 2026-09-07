@@ -146,10 +146,16 @@ describe("a year taller than the card", () => {
 
   /**
    * Thirty-one columns are made to fit the phone rather than run off it
-   * (#37), and the one movement this card has is downwards.
+   * (#37), and the one movement this card has is downwards — as far as the
+   * year goes and no further. The library list it sits in bounces; a grid
+   * bouncing inside it would be pulling away from an edge the card is meant
+   * to be holding.
    */
-  it("moves the year down and never sideways", () => {
-    expect(december().grid.props.horizontal).toBeFalsy();
+  it("moves the year down, never sideways, and never past its own edges", () => {
+    const { grid } = december();
+
+    expect(grid.props.horizontal).toBeFalsy();
+    expect(grid.props.bounces).toBe(false);
   });
 
   it("marks the edge that has more year beyond it", () => {
