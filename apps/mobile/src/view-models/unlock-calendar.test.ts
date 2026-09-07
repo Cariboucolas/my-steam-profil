@@ -203,6 +203,117 @@ describe("buildUnlockCalendar", () => {
     ]);
   });
 
+  /**
+   * Where the player stands: the running year, the finished one it is set
+   * against, and the distance between them. The header is a statement about
+   * the very grid under it, so its total is the grid's own rows added up.
+   */
+  describe("the header", () => {
+    it("counts the year it draws, and no more of the player's history", () => {
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({
+          [SOULSTONE]: ["2026-01-08T09:00:00Z", "2026-03-14T09:00:00Z"],
+          [HALLS]: ["2026-04-02T11:00:00Z", "2025-06-21T11:00:00Z"],
+        }),
+        NOW,
+      );
+
+      expect(calendar.year).toBe(2026);
+      expect(calendar.total).toBe(3);
+      // The one number the header states is the one the rows already state.
+      expect(calendar.total).toBe(totalOf(calendar));
+    });
+
+    it("names the year and the extent it covers", () => {
+      const calendar = buildUnlockCalendar(libraryWhereUnlocksHappened(), NOW);
+
+      expect(calendar.frameLabel).toBe("YEAR 2026 · JAN → DEC");
+    });
+
+    /**
+     * A finished year against a running one, deliberately unequal: the target
+     * is what the player managed in the whole of last year, and the difference
+     * says how much of it is still to go.
+     */
+    it("sets the running year against the whole of the one before", () => {
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({
+          [SOULSTONE]: [...heldBy("2026-02-11", 82)],
+          [HALLS]: [...heldBy("2025-06-21", 306)],
+        }),
+        NOW,
+      );
+
+      expect(calendar.total).toBe(82);
+      expect(calendar.lastYearsTotal).toBe(306);
+      expect(calendar.deltaLabel).toBe("-224 vs all of 2025 (306)");
+    });
+
+    /**
+     * "all of" is what stops the line being read like for like. Without it
+     * the sentence is true and means the wrong thing: four months of this year
+     * are not a year of the last one.
+     */
+    it("says whose whole year it is comparing against", () => {
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({ [HALLS]: heldBy("2025-06-21", 4) }),
+        NOW,
+      );
+
+      expect(calendar.deltaLabel).toContain("all of 2025");
+      // A bare year would read as a like-for-like comparison of two spans
+      // that are not alike.
+      expect(calendar.deltaLabel).not.toContain("vs 2025");
+    });
+
+    it("marks a year already past the one before it", () => {
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({
+          [SOULSTONE]: heldBy("2026-02-11", 12),
+          [HALLS]: heldBy("2025-06-21", 4),
+        }),
+        NOW,
+      );
+
+      expect(calendar.deltaLabel).toBe("+8 vs all of 2025 (4)");
+    });
+
+    it("drops both figures where there is no year before to compare", () => {
+      // "-0 vs all of 2025 (0)" is true and absurd: it measures a player
+      // against a year they were not there for.
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({ [SOULSTONE]: heldBy("2026-02-11", 12) }),
+        NOW,
+      );
+
+      expect(calendar.total).toBe(12);
+      expect(calendar.lastYearsTotal).toBeNull();
+      expect(calendar.deltaLabel).toBeNull();
+    });
+
+    /**
+     * The boundary the two totals meet at. A day is the player's own day, so
+     * half past eleven on New Year's Eve belongs to the year they would name —
+     * and the year before that belongs to neither total.
+     */
+    it("puts each side of midnight on New Year in the year it falls in", () => {
+      const calendar = buildUnlockCalendar(
+        libraryWhereUnlocksHappened({
+          [SOULSTONE]: [
+            "2024-12-31T23:30:00Z",
+            "2025-01-01T00:30:00Z",
+            "2025-12-31T23:30:00Z",
+            "2026-01-01T00:30:00Z",
+          ],
+        }),
+        NOW,
+      );
+
+      expect(calendar.total).toBe(1);
+      expect(calendar.lastYearsTotal).toBe(2);
+    });
+  });
+
   describe("the tone scale", () => {
     it("leaves a day that held nothing outside the scale", () => {
       // Zero is not the palest tone; it is the empty tile, and ADR-0007 keeps

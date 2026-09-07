@@ -59,6 +59,28 @@ export type UnlockToneBand = {
 };
 
 export type UnlockCalendar = {
+  /** The calendar year drawn, and the one every figure here is about. */
+  readonly year: number;
+  /**
+   * What the player has unlocked in that year so far — the months on screen
+   * added up, and never a count of anything they are not being shown.
+   */
+  readonly total: number;
+  /**
+   * The whole of the previous calendar year: a finished year set against a
+   * running one, deliberately unequal. Null where that year held nothing,
+   * because a player who was not there has nothing to be measured against.
+   */
+  readonly lastYearsTotal: number | null;
+  /**
+   * Where the running year stands against it — `-224 vs all of 2025 (306)`.
+   * The words "all of" are what stop a reader taking two unequal spans for a
+   * like-for-like comparison, and go wherever the figure does. Null exactly
+   * when `lastYearsTotal` is.
+   */
+  readonly deltaLabel: string | null;
+  /** The year and how far it runs — `YEAR 2026 · JAN → DEC`. */
+  readonly frameLabel: string;
   readonly months: readonly UnlockMonth[];
   /** The five appearances a day can take, palest first, empty tile included. */
   readonly legend: readonly UnlockToneBand[];
@@ -233,6 +255,28 @@ const toneOf = (
 };
 
 /**
+ * Everything the player unlocked in the whole of the calendar year named. Read
+ * off the same days the grid is drawn from, so no year needs a request of its
+ * own: a GameTally carries every instant the player has ever earned (ADR-0006).
+ */
+const totalIn = (counts: ReadonlyMap<number, number>, year: number): number => {
+  const first = dayNumber(year, 0, 1);
+  const last = dayNumber(year, 11, 31);
+
+  return [...counts]
+    .filter(([day]) => day >= first && day <= last)
+    .reduce((sum, [, count]) => sum + count, 0);
+};
+
+/**
+ * The difference, written so its direction is read rather than worked out. A
+ * year that has drawn level says so with a bare `0`: there is no direction
+ * left to sign.
+ */
+const signed = (difference: number): string =>
+  difference > 0 ? `+${difference}` : String(difference);
+
+/**
  * The shape of the player's year: one UnlockMonth per month already begun.
  *
  * `now` is a parameter and the clock is never read here. The whole card is a
@@ -279,7 +323,26 @@ export const buildUnlockCalendar = (
     };
   });
 
+  // The header states the grid's own rows, never a second count of the same
+  // days: a total that could disagree with what is on screen is worse than no
+  // total at all.
+  const total = months.reduce((sum, month) => sum + month.total, 0);
+  const lastYear = year - 1;
+  // A year that held nothing is no target: "-0 vs all of 2025 (0)" is a true
+  // sentence measuring a player against a year they were not there for, so
+  // both figures go rather than one of them reading as a zero worth beating.
+  const lastYearsCount = totalIn(counts, lastYear);
+  const lastYearsTotal = lastYearsCount === 0 ? null : lastYearsCount;
+
   return {
+    year,
+    total,
+    lastYearsTotal,
+    deltaLabel:
+      lastYearsTotal === null
+        ? null
+        : `${signed(total - lastYearsTotal)} vs all of ${lastYear} (${lastYearsTotal})`,
+    frameLabel: `YEAR ${year} · JAN → DEC`,
     months,
     legend: legendFor(scale),
     counting,
