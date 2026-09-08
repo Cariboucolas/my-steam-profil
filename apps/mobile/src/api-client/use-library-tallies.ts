@@ -2,20 +2,8 @@ import type { GameDto } from "@steam/contracts";
 import { useCallback, useEffect, useState } from "react";
 
 import type { ApiClient } from "./api-client";
+import { askInWaves } from "./request-waves";
 import type { TallyByAppId } from "../view-models/library";
-
-/**
- * How many tallies to have in flight at once.
- *
- * The parallelism deliberately lives here rather than on the server: a Worker
- * gets six simultaneous connections and fifty subrequests per invocation, so
- * fanning out server-side cannot cover a library at all, while one request per
- * game keeps every invocation at a single Steam call (ADR-0005).
- *
- * Six matches what a client will open to one host anyway, so a larger number
- * would only queue somewhere less visible.
- */
-const CONCURRENT_TALLIES = 6;
 
 /** Shared, so resetting a library that is already empty re-renders nothing. */
 const NO_TALLIES: TallyByAppId = {};
@@ -66,42 +54,6 @@ const gamesWorthTallying = (games: readonly GameDto[]): readonly number[] =>
     .filter(everOpened)
     .sort(recognisedFirst)
     .map((game) => game.appId);
-
-/**
- * Fetches a tally per game, a wave at a time, reporting each wave as it lands
- * so the list fills in rather than staying blank until the last one returns.
- * `keepGoing` is checked between waves, which is where a load is abandoned.
- *
- * A game that fails is left out rather than failing the load: one private or
- * unreachable game should not empty a library. What was asked for is reported
- * alongside what landed, because those two differ exactly then.
- */
-const tallyInWaves = async (
-  client: ApiClient,
-  appIds: readonly number[],
-  onWave: (landed: TallyByAppId, asked: readonly number[]) => void,
-  keepGoing: () => boolean,
-): Promise<void> => {
-  for (let start = 0; start < appIds.length; start += CONCURRENT_TALLIES) {
-    if (!keepGoing()) return;
-
-    const wave = appIds.slice(start, start + CONCURRENT_TALLIES);
-    const answers = await Promise.all(
-      wave.map(async (appId) => ({
-        appId,
-        tally: await client.getGameTally(appId),
-      })),
-    );
-
-    const landed: Record<number, TallyByAppId[number]> = {};
-    for (const { appId, tally } of answers) {
-      if (tally.ok) {
-        landed[appId] = tally.value;
-      }
-    }
-    onWave(landed, wave);
-  }
-};
 
 /** Where a library's tallies have got to, and the one lever over that. */
 export type LibraryTallies = {
@@ -171,9 +123,9 @@ export const useLibraryTallies = (
       setFrozenOrder(wanted);
 
       void (async () => {
-        await tallyInWaves(
-          client,
+        await askInWaves(
           wanted,
+          (appId) => client.getGameTally(appId),
           (landed, asked) => {
             if (cancelled) return;
             setTallies((known) => ({ ...known, ...landed }));
