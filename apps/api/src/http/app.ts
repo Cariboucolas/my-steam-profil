@@ -10,6 +10,7 @@ import {
   mapGames,
   mapGameProgress,
   mapGameTally,
+  mapGameRarity,
   type AchievementsError,
 } from "../steam/steam-mapper";
 import {
@@ -17,6 +18,7 @@ import {
   toGameDto,
   toGameProgressDto,
   toGameTallyDto,
+  toGameRarityDto,
   emptyGameProgressDto,
   emptyGameTallyDto,
 } from "./presenters";
@@ -41,6 +43,17 @@ const INVALID_STEAM_ID = { error: "INVALID_STEAM_ID" } as const;
  * nothing about any other answer the API gives.
  */
 export const TALLY_CACHE_SECONDS = 300;
+
+/**
+ * Twenty-four hours — 288 times the tally's five minutes, and deliberately so.
+ *
+ * A Rarity is a share of every owner of a Game, so it moves at the speed of a
+ * player base rather than of a player: an unlock that would change it visibly
+ * would have to be a great many unlocks. Nothing a player does to their own
+ * library can make this answer wrong, which is what separates it from the
+ * tally, where a fresh unlock is the whole point (ADR-0008).
+ */
+export const RARITY_CACHE_SECONDS = 86_400;
 
 type Handler = (context: Context, steamId: SteamId) => Promise<Response>;
 
@@ -82,6 +95,19 @@ const withGame = (handle: GameHandler) =>
       ? Promise.resolve(context.json({ error: "INVALID_APP_ID" }, BAD_REQUEST))
       : handle(context, steamId, appId);
   });
+
+/**
+ * The guard for a route about a game and no player: there is no steam id in the
+ * address to check, which is the whole point of it.
+ */
+const withApp =
+  (handle: (context: Context, appId: number) => Promise<Response>) =>
+  (context: Context): Promise<Response> => {
+    const appId = parseAppId(context.req.param("appId") ?? "");
+    return appId === null
+      ? Promise.resolve(context.json({ error: "INVALID_APP_ID" }, BAD_REQUEST))
+      : handle(context, appId);
+  };
 
 /**
  * The two ways Steam refuses to tally a game, answered the same way by every
@@ -164,6 +190,24 @@ const serveGameTally = (
   });
 
 /**
+ * What share of a game's owners holds each of its achievements. One Steam call,
+ * no API key, and no player: this answer is the same for everyone who asks,
+ * which is what lets it be kept for a day under a key every player shares
+ * (ADR-0008).
+ *
+ * A game Steam publishes nothing about answers with an empty list. That is the
+ * true thing to say — a list of zeroes would claim every achievement in it is
+ * the rarest the player owns.
+ */
+const serveGameRarity = (
+  gateway: SteamGateway,
+): ((c: Context) => Promise<Response>) =>
+  withApp(async (context, appId) => {
+    const published = await gateway.getGlobalAchievementPercentages(appId);
+    return context.json(toGameRarityDto(mapGameRarity(published)));
+  });
+
+/**
  * Builds the API around a way out to Steam, and somewhere to keep the answers
  * worth keeping. Both are parameters rather than things it reaches for, so a
  * test can build a fully working app without any configuration, and the cache
@@ -201,6 +245,15 @@ export const createApp = (
   app.get(
     "/api/profile/:steamId/games/:appId/completion",
     cached(cache, TALLY_CACHE_SECONDS, serveGameTally(gateway)),
+  );
+  /**
+   * No steam id in this address, on purpose. Cache keys are request URLs, so
+   * leaving the player out of the address is the entire mechanism by which two
+   * players share one answer — there is nothing else to build (ADR-0008).
+   */
+  app.get(
+    "/api/games/:appId/rarity",
+    cached(cache, RARITY_CACHE_SECONDS, serveGameRarity(gateway)),
   );
 
   /**

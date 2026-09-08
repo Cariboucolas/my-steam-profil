@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createApp, TALLY_CACHE_SECONDS } from "./app";
+import { createApp, TALLY_CACHE_SECONDS, RARITY_CACHE_SECONDS } from "./app";
 import { createSteamClient } from "../steam/steam-client";
 import type { ResponseCache } from "./cache";
 import { mapCache } from "./cache.test-support";
@@ -36,6 +36,7 @@ type SteamAnswers = {
   readonly ownedGames?: Answer;
   readonly schemaForGame?: Answer;
   readonly playerAchievements?: Answer;
+  readonly globalPercentages?: Answer;
 };
 
 const reply = ([body, status = 200]: Answer): Response =>
@@ -51,6 +52,7 @@ const steamAnswering = (answers: SteamAnswers): typeof fetch => {
     ["GetOwnedGames", answers.ownedGames],
     ["GetSchemaForGame", answers.schemaForGame],
     ["GetPlayerAchievements", answers.playerAchievements],
+    ["GetGlobalAchievementPercentagesForApp", answers.globalPercentages],
   ];
   return (input) => {
     const url = String(input);
@@ -825,5 +827,166 @@ describe("caching the library tally", () => {
     await app.request(url);
 
     expect(calls).toHaveLength(2);
+  });
+});
+
+
+/**
+ * What Steam publishes about a Game, for everyone who owns it. The address is
+ * the whole design: no SteamId in it, so two players asking about the same game
+ * ask the same question — and the cache, keyed on the URL, answers both from
+ * one Steam call without any mechanism of its own (ADR-0008).
+ */
+describe("GET /api/games/:appId/rarity", () => {
+  const APP_ID = 2066020;
+  const BAD_REQUEST_FROM_STEAM = 400;
+
+  const url = `/api/games/${APP_ID}/rarity`;
+
+  const publishing = (
+    achievements: readonly { name: string; percent: number }[],
+  ) => ({ achievementpercentages: { achievements } });
+
+  it("answers with the share of owners holding each achievement", async () => {
+    const app = appReaching(
+      steamAnswering({
+        globalPercentages: [
+          publishing([
+            { name: "ACH_BOSS_1", percent: 48.7 },
+            { name: "ACH_BOSS_2", percent: 0.4 },
+          ]),
+        ],
+      }),
+    );
+
+    const response = await app.request(url);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([
+      { apiName: "ACH_BOSS_1", rarity: 48.7 },
+      { apiName: "ACH_BOSS_2", rarity: 0.4 },
+    ]);
+  });
+
+  /**
+   * Never a list of zeroes. Zero is a figure Steam published; nothing is the
+   * absence of one, and downstream ranks the rarest first — zeroes would put
+   * every achievement of a game nobody measures at the top of the list.
+   */
+  it("answers with nothing for a game Steam publishes nothing about", async () => {
+    const app = appReaching(
+      steamAnswering({
+        globalPercentages: [{ achievementpercentages: {} }, BAD_REQUEST_FROM_STEAM],
+      }),
+    );
+
+    const response = await app.request(url);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([]);
+  });
+
+  /** A figure of zero is a figure: Steam measured it and published it. */
+  it("keeps a published zero, which is not the same as nothing published", async () => {
+    const app = appReaching(
+      steamAnswering({ globalPercentages: [publishing([{ name: "ACH_0", percent: 0 }])] }),
+    );
+
+    expect(await (await app.request(url)).json()).toEqual([
+      { apiName: "ACH_0", rarity: 0 },
+    ]);
+  });
+
+  it("refuses an app id that is not a whole number above zero", async () => {
+    const response = await appReaching(unreachableSteam).request(
+      "/api/games/not-an-app/rarity",
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "INVALID_APP_ID" });
+  });
+
+  it("is a 502 when Steam cannot be reached", async () => {
+    const app = appReaching(() => {
+      throw new TypeError("network down");
+    });
+
+    const response = await app.request(url);
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: "STEAM_UNAVAILABLE" });
+  });
+});
+
+/**
+ * The cache ADR-0008 argues for. ADR-0005 forbade a shared key because its
+ * entries were a player's own tally; here there is no player in the question,
+ * so a shared key holds nothing that belongs to anyone.
+ */
+describe("caching a game's published rarity", () => {
+  const APP_ID = 2066020;
+  const OTHER_APP_ID = 25900;
+
+  const rarityUrl = (appId: number) => `/api/games/${appId}/rarity`;
+
+  const publishedFor = {
+    achievementpercentages: { achievements: [{ name: "ACH_0", percent: 12.3 }] },
+  };
+
+  const countingSteam = (answers: SteamAnswers) => {
+    const answer = steamAnswering(answers);
+    const calls: string[] = [];
+    const fetchImpl: typeof fetch = (input, init) => {
+      calls.push(String(input));
+      return answer(input, init);
+    };
+    return { fetchImpl, calls };
+  };
+
+  const appCaching = (fetchImpl: typeof fetch, cache: ResponseCache) =>
+    createApp(createSteamClient({ apiKey: API_KEY, fetch: fetchImpl }), cache);
+
+  /**
+   * The two requests below are two different players' apps asking. Nothing in
+   * the address distinguishes them — there is no steam id to put in it — so the
+   * cache, keyed on the URL, serves the second from the first one's Steam call.
+   * That is the whole mechanism: no shared store, no second cache, an address.
+   */
+  it("asks Steam once for a game two players both ask about", async () => {
+    const { fetchImpl, calls } = countingSteam({ globalPercentages: [publishedFor] });
+    const app = appCaching(fetchImpl, mapCache());
+
+    const forOnePlayer = await app.request(rarityUrl(APP_ID));
+    const forAnother = await app.request(rarityUrl(APP_ID));
+
+    expect(calls).toHaveLength(1);
+    expect(await forOnePlayer.json()).toEqual(await forAnother.json());
+  });
+
+  it("never serves one game's rarity for another", async () => {
+    const { fetchImpl, calls } = countingSteam({ globalPercentages: [publishedFor] });
+    const app = appCaching(fetchImpl, mapCache());
+
+    await app.request(rarityUrl(APP_ID));
+    await app.request(rarityUrl(OTHER_APP_ID));
+
+    expect(calls).toHaveLength(2);
+  });
+
+  /**
+   * The figure moves at the speed of a whole player base, where a tally moves
+   * at the speed of one player. The two durations are the same decision read
+   * against two different clocks.
+   */
+  it("keeps a rarity far longer than a tally", async () => {
+    const { fetchImpl } = countingSteam({ globalPercentages: [publishedFor] });
+    const app = appCaching(fetchImpl, mapCache());
+
+    const response = await app.request(rarityUrl(APP_ID));
+
+    expect(response.headers.get("cache-control")).toBe(
+      `max-age=${RARITY_CACHE_SECONDS}`,
+    );
+    expect(RARITY_CACHE_SECONDS).toBeGreaterThan(TALLY_CACHE_SECONDS);
   });
 });
