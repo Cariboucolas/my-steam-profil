@@ -259,6 +259,37 @@ describe("useLibraryRarity", () => {
     expect(previous.asked).toHaveLength(6);
   });
 
+  /**
+   * Opening the tab is a request about the library in front of the reader, not
+   * a standing order. A reader who looked at one player's rarest unlocks and
+   * went back to Completion has not asked for the next player's whole library
+   * to be fetched behind their back — which is the expensive direction to get
+   * this wrong, one request per game holding an unlock.
+   */
+  it("does not fetch for a profile whose tab was never opened", async () => {
+    const first = eagerClient();
+    const next = eagerClient();
+    const library = counted(first.client);
+    const { result, rerender } = renderRarity(library);
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    // Back to Completion, and then another profile is chosen from there.
+    rerender({ library, active: false });
+    rerender({ library: null, active: false });
+    const other = counted(next.client, { 1: tally(["ACH_1"]) });
+    rerender({ library: other, active: false });
+
+    await waitFor(() => expect(result.current.status).toBe("idle"));
+    expect(next.asked).toEqual([]);
+    expect(result.current.rarity).toEqual({});
+
+    // Disarmed, not disabled: opening the tab on the new profile still loads.
+    rerender({ library: other, active: true });
+
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(next.asked).toEqual([1]);
+  });
+
   it("has nothing to ask about in a library holding no unlock at all", async () => {
     const { result } = renderRarity(counted(clientAsking(refuse), {}));
 
