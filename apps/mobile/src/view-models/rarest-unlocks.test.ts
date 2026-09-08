@@ -236,6 +236,43 @@ describe("buildRarestUnlocks", () => {
     expect(named(ranking)).not.toContain("COMMONER");
   });
 
+  /**
+   * Two rows a reader sees as `0.4%` are two rows a reader sees as equal, and
+   * cutting between them is the very thing the tie rule exists to stop —
+   * whatever the figure behind the label happens to carry.
+   */
+  it("keeps a row the tenth only differs from below what is shown", () => {
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: {
+          ...Object.fromEntries(
+            Array.from({ length: 9 }, (_, index) => [
+              `RARER_${index}`,
+              "2026-01-01T00:00:00Z",
+            ]),
+          ),
+          TENTH: "2026-01-01T00:00:00Z",
+          ELEVENTH: "2026-01-01T00:00:00Z",
+        },
+        published: {
+          // Nine rarer, each shown as its own figure: 0.5%, 1%, 1.5% …
+          ...Object.fromEntries(
+            Array.from({ length: 9 }, (_, index) => [
+              `RARER_${index}`,
+              (index + 1) / 2,
+            ]),
+          ),
+          // Both shown as 5%, and apart only where nobody can see.
+          TENTH: 5,
+          ELEVENTH: 5.0001,
+        },
+      },
+    });
+
+    expect(ranking.rows).toHaveLength(11);
+    expect(named(ranking)).toContain("ELEVENTH");
+  });
+
   it("puts the newest of two equally rare unlocks first", () => {
     const ranking = rank({
       [SOULSTONE]: {
