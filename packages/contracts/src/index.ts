@@ -7,3 +7,4 @@ export type {
   TimelineEntryDto,
   GameProgressDto,
 } from "./game-progress";
+export type { AchievementRarityDto, GameRarityDto } from "./rarity";
