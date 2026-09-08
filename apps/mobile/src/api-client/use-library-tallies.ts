@@ -62,6 +62,18 @@ export type LibraryTallies = {
   /** Games whose tally has been asked for and has not come back: they pulse. */
   readonly pending: ReadonlySet<number>;
   /**
+   * Whether this library has been counted through: every game worth a tally
+   * asked, and every answer either landed or failed. False while no profile is
+   * chosen, and false again the moment another library takes this one's place.
+   *
+   * Nothing is outstanding either side of a load, so `pending` alone cannot
+   * tell a count that has not started from one that is over. What waits on the
+   * difference is the rarest-unlocks tab: it needs to know which games hold an
+   * unlock, which is what the waves deliver, and it fetches under the same six
+   * connections, which is what they must be done with.
+   */
+  readonly counted: boolean;
+  /**
    * The share of the tallies asked for that have come back, between 0 and 1,
    * or null while nothing is outstanding. Null covers both silences — before a
    * library has anything to count, and once everything has landed — because a
@@ -104,6 +116,7 @@ export const useLibraryTallies = (
   /** How many were asked for, which the outstanding set alone cannot say. */
   const [asked, setAsked] = useState(0);
   const [frozenOrder, setFrozenOrder] = useState<readonly number[] | null>(null);
+  const [counted, setCounted] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -115,36 +128,46 @@ export const useLibraryTallies = (
     setPending(NOTHING_OUTSTANDING);
     setAsked(0);
     setFrozenOrder(null);
+    setCounted(false);
 
-    const wanted = gamesWorthTallying(games);
-    if (client !== undefined && wanted.length > 0) {
-      setPending(new Set(wanted));
-      setAsked(wanted.length);
-      setFrozenOrder(wanted);
+    if (client !== undefined) {
+      const wanted = gamesWorthTallying(games);
+      if (wanted.length === 0) {
+        // Nothing worth counting is a library counted through, at once. With
+        // no profile at all there is nothing that could be counted, so it
+        // stays uncounted and whatever waits on the count keeps waiting.
+        setCounted(true);
+      } else {
+        setPending(new Set(wanted));
+        setAsked(wanted.length);
+        setFrozenOrder(wanted);
 
-      void (async () => {
-        await askInWaves(
-          wanted,
-          (appId) => client.getGameTally(appId),
-          (landed, asked) => {
-            if (cancelled) return;
-            setTallies((known) => ({ ...known, ...landed }));
-            // Cleared for everything asked, not just what landed: a game that
-            // failed is not coming, and must stop pulsing.
-            setPending((waiting) => {
-              const left = new Set(waiting);
-              for (const appId of asked) left.delete(appId);
-              return left;
-            });
-          },
-          () => !cancelled,
-        );
+        void (async () => {
+          await askInWaves(
+            wanted,
+            (appId) => client.getGameTally(appId),
+            (landed, asked) => {
+              if (cancelled) return;
+              setTallies((known) => ({ ...known, ...landed }));
+              // Cleared for everything asked, not just what landed: a game that
+              // failed is not coming, and must stop pulsing.
+              setPending((waiting) => {
+                const left = new Set(waiting);
+                for (const appId of asked) left.delete(appId);
+                return left;
+              });
+            },
+            () => !cancelled,
+          );
 
-        if (!cancelled) {
-          // Everything that is coming has come: the chosen order applies again.
-          setFrozenOrder(null);
-        }
-      })();
+          if (!cancelled) {
+            // Everything that is coming has come: the chosen order applies
+            // again, and the library is counted through.
+            setFrozenOrder(null);
+            setCounted(true);
+          }
+        })();
+      }
     }
 
     // Stops the waves where they are, and guards against one landing on a
@@ -158,8 +181,7 @@ export const useLibraryTallies = (
     setFrozenOrder((pinned) => (pinned === null ? null : order));
   }, []);
 
-  const loaded =
-    pending.size === 0 ? null : (asked - pending.size) / asked;
+  const loaded = pending.size === 0 ? null : (asked - pending.size) / asked;
 
-  return { tallies, pending, loaded, frozenOrder, repin };
+  return { tallies, pending, loaded, counted, frozenOrder, repin };
 };
