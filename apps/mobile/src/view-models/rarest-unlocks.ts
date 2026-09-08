@@ -10,8 +10,11 @@ import { gamesCounted, type LibraryView } from "./library";
  */
 export type RarityByAppId = Readonly<Record<number, GameRarityDto>>;
 
-/** One line of the ranking, decided here and drawn as it stands. */
-export type RarestRow = {
+/**
+ * One line of the ranking, decided here and drawn as it stands. Named for what
+ * it is rather than for the row that draws it, as an UnlockMonth is.
+ */
+export type RarestUnlock = {
   readonly appId: number;
   /** Which game this came from — across a library, that is what places it. */
   readonly gameName: string;
@@ -28,7 +31,7 @@ export type RarestRow = {
 
 export type RarestUnlocks = {
   /** Rarest first, and never longer than the ties at the cut make it. */
-  readonly rows: readonly RarestRow[];
+  readonly rows: readonly RarestUnlock[];
   /**
    * What was ranked and what it was ranked across — `rarest 10 across 214
    * games counted`. A library holds games nobody publishes figures for, and a
@@ -45,7 +48,7 @@ export type RarestUnlocks = {
 const ROWS = 10;
 
 /** One candidate row, with the date the cut and the ties are decided on. */
-type Candidate = RarestRow & { readonly at: number | null };
+type Candidate = RarestUnlock & { readonly at: number | null };
 
 /**
  * At most one decimal, and the trailing zero dropped — `12%`, `0.4%`, as every
@@ -66,7 +69,7 @@ const rarityLabelOf = (rarity: number): string => {
  */
 const NEVER_DATED_LAST = -1;
 
-const dayOf = (candidate: Candidate): number => candidate.at ?? NEVER_DATED_LAST;
+const whenOf = (candidate: Candidate): number => candidate.at ?? NEVER_DATED_LAST;
 
 /**
  * Rarest first; among equals the newest unlock first, since Steam's rounding
@@ -79,8 +82,9 @@ const dayOf = (candidate: Candidate): number => candidate.at ?? NEVER_DATED_LAST
 const byRarestThenNewest = (a: Candidate, b: Candidate): number => {
   if (a.rarity !== b.rarity) return a.rarity - b.rarity;
 
-  const [newest, oldest] = [dayOf(a), dayOf(b)];
-  if (newest !== oldest) return oldest - newest;
+  const [when, otherWhen] = [whenOf(a), whenOf(b)];
+  // Reversed, because the newer unlock leads among equals.
+  if (when !== otherWhen) return otherWhen - when;
 
   if (a.appId !== b.appId) return a.appId - b.appId;
   return a.apiName < b.apiName ? -1 : 1;
@@ -118,15 +122,22 @@ const candidatesIn = (
 };
 
 /**
- * The ten rarest, and everything published at the same figure as the tenth.
- * Steam rounds, so the tenth and the eleventh can be exactly equal, and cutting
- * between two identical values is the one place this ranking can mislead
- * without anyone noticing.
+ * The ten rarest, and everything the tenth is tied with. Steam rounds to one
+ * decimal, so the tenth and the eleventh can be published at exactly the same
+ * figure, and cutting between two identical values is the one place this
+ * ranking can mislead without anyone noticing.
+ *
+ * The tie is read off the label rather than off the figure behind it: what a
+ * reader can see is what they would notice being cut. The two agree on
+ * everything Steam has ever been measured sending, and where they would not,
+ * the label is the honest one.
  */
 const topWithItsTies = (ranked: readonly Candidate[]): readonly Candidate[] => {
   const last = ranked[ROWS - 1];
   if (!last) return ranked;
-  return ranked.filter((one, index) => index < ROWS || one.rarity === last.rarity);
+  return ranked.filter(
+    (one, index) => index < ROWS || one.rarityLabel === last.rarityLabel,
+  );
 };
 
 const labelFor = (rows: number, counted: number): string =>
