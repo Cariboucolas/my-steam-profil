@@ -4,6 +4,7 @@ import type {
   SteamOwnedGamesResponse,
   SteamSchemaResponse,
   SteamPlayerAchievementsResponse,
+  SteamGlobalAchievementPercentagesResponse,
 } from "./steam-types";
 
 const STEAM_BASE_URL = "https://api.steampowered.com";
@@ -13,12 +14,22 @@ const FORBIDDEN = 403;
 const INTERNAL_SERVER_ERROR = 500;
 
 /**
- * The only statuses Steam uses to say something true about a game or a player
- * rather than to report a failure, and only on the two calls listed below: 400
- * for a game that defines no stats, 403 for a private profile. Both carry a
- * body the mapper reads.
+ * A 400 is how Steam says "this game defines no stats", on every call that can
+ * be asked about a game. It carries a body the mapper reads, so it is an answer
+ * rather than a failure.
  */
-const CARRIES_AN_ANSWER = [BAD_REQUEST, FORBIDDEN] as const;
+const CARRIES_A_GAME_ANSWER = [BAD_REQUEST] as const;
+
+/**
+ * The statuses Steam uses to say something true about a game or a player rather
+ * than to report a failure: the 400 above, plus 403 for a private profile. Both
+ * carry a body the mapper reads.
+ *
+ * The 403 belongs only to a call that names a player. The rarity call names
+ * none and sends no key, so a 403 there is Steam refusing us — an outage, and
+ * `CARRIES_A_GAME_ANSWER` is what that call asks for instead.
+ */
+const CARRIES_AN_ANSWER = [...CARRIES_A_GAME_ANSWER, FORBIDDEN] as const;
 
 /**
  * The player call says "this app keeps no stats" with a 400 for most games and
@@ -65,7 +76,21 @@ export interface SteamClientConfig {
   readonly fetch?: typeof fetch;
 }
 
-
+/** What one Steam call needs said about it that the path and params do not. */
+interface CallOptions {
+  /**
+   * Statuses this particular call should read rather than raise on. Empty for
+   * most calls: a 4xx there means our key is wrong, and answering with the
+   * error body would turn an outage into an empty library.
+   */
+  readonly carriesAnAnswer?: readonly number[];
+  /**
+   * Whether our API key belongs on the URL. True for every call about a player
+   * or an account; false for the one Steam publishes to anyone, where sending
+   * the key would only widen where it can be logged.
+   */
+  readonly keyed?: boolean;
+}
 
 export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
   const request = config.fetch ?? globalThis.fetch;
@@ -78,15 +103,12 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
   const call = async <T>(
     path: string,
     params: Readonly<Record<string, string>>,
-    /**
-     * Statuses this particular call should read rather than raise on. Empty for
-     * most calls: a 4xx there means our key is wrong, and answering with the
-     * error body would turn an outage into an empty library.
-     */
-    carriesAnAnswer: readonly number[] = [],
+    { carriesAnAnswer = [], keyed = true }: CallOptions = {},
   ): Promise<T> => {
     const url = new URL(path, STEAM_BASE_URL);
-    url.searchParams.set("key", config.apiKey);
+    if (keyed) {
+      url.searchParams.set("key", config.apiKey);
+    }
     for (const [name, value] of Object.entries(params)) {
       url.searchParams.set(name, value);
     }
@@ -139,7 +161,7 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
       call<SteamSchemaResponse>(
         "/ISteamUserStats/GetSchemaForGame/v2/",
         { appid: String(appId), l: LANGUAGE },
-        CARRIES_AN_ANSWER,
+        { carriesAnAnswer: CARRIES_AN_ANSWER },
       ),
 
     /**
@@ -151,7 +173,15 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
       call<SteamPlayerAchievementsResponse>(
         "/ISteamUserStats/GetPlayerAchievements/v1/",
         { steamid: steamId, appid: String(appId), l: LANGUAGE },
-        CARRIES_A_PLAYER_ANSWER,
+        { carriesAnAnswer: CARRIES_A_PLAYER_ANSWER },
+      ),
+
+    getGlobalAchievementPercentages: (appId) =>
+      call<SteamGlobalAchievementPercentagesResponse>(
+        "/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/",
+        // Steam names the parameter `gameid` on this call alone.
+        { gameid: String(appId) },
+        { carriesAnAnswer: CARRIES_A_GAME_ANSWER, keyed: false },
       ),
   };
 };

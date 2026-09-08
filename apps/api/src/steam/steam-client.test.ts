@@ -56,6 +56,37 @@ describe("createSteamClient (URLs)", () => {
     expect(urlOf(fetchImpl)).toContain("include_played_free_games=1");
   });
 
+  /**
+   * The one call in this client that is not about a player: it names a game and
+   * nothing else, which is what lets its answer be shared between players.
+   */
+  it("asks GetGlobalAchievementPercentagesForApp for one game, and no player", async () => {
+    const fetchImpl = stubFetch(() =>
+      jsonResponse({ achievementpercentages: { achievements: [] } }),
+    );
+    await clientWith(fetchImpl).getGlobalAchievementPercentages(APP_ID);
+
+    const url = urlOf(fetchImpl);
+    expect(url).toContain(
+      "/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/",
+    );
+    expect(url).toContain(`gameid=${APP_ID}`);
+    expect(url).not.toContain(STEAM_ID);
+  });
+
+  /**
+   * Steam publishes these figures to anyone, so our key has no work to do here.
+   * A secret that is not needed is one more place it can be logged.
+   */
+  it("keeps our api key off the one call Steam answers without it", async () => {
+    const fetchImpl = stubFetch(() =>
+      jsonResponse({ achievementpercentages: { achievements: [] } }),
+    );
+    await clientWith(fetchImpl).getGlobalAchievementPercentages(APP_ID);
+
+    expect(urlOf(fetchImpl)).not.toContain(API_KEY);
+  });
+
   it("asks GetSchemaForGame for one app", async () => {
     const fetchImpl = stubFetch(() => jsonResponse({ game: {} }));
     await clientWith(fetchImpl).getSchemaForGame(APP_ID);
@@ -171,6 +202,12 @@ describe("createSteamClient (Steam's meaningful 4xx)", () => {
     const client = clientWith(stubFetch(() => jsonResponse({ game: {} }, BAD_REQUEST)));
     expect(await client.getSchemaForGame(APP_ID)).toEqual({ game: {} });
   });
+
+  it("returns the empty body Steam sends for a game it publishes nothing about", async () => {
+    const body = { achievementpercentages: {} };
+    const client = clientWith(stubFetch(() => jsonResponse(body, BAD_REQUEST)));
+    expect(await client.getGlobalAchievementPercentages(APP_ID)).toEqual(body);
+  });
 });
 
 /**
@@ -201,6 +238,20 @@ describe("createSteamClient (4xx everywhere else)", () => {
     await expect(client.getPlayerSummaries(STEAM_ID)).rejects.toBeInstanceOf(
       SteamGatewayError,
     );
+  });
+
+  /**
+   * There is no profile behind the rarity call and no key on it, so a 403 there
+   * cannot mean "this player is private". It means we are being refused, which
+   * is an outage and must not read as a game that publishes nothing.
+   */
+  it("raises when the rarity call is refused, which no game state explains", async () => {
+    const client = clientWith(
+      stubFetch(() => jsonResponse({ achievementpercentages: {} }, FORBIDDEN)),
+    );
+    await expect(
+      client.getGlobalAchievementPercentages(APP_ID),
+    ).rejects.toBeInstanceOf(SteamGatewayError);
   });
 });
 

@@ -19,6 +19,7 @@ const unusedGateway: SteamGateway = {
   getOwnedGames: refuse,
   getSchemaForGame: refuse,
   getPlayerAchievements: refuse,
+  getGlobalAchievementPercentages: refuse,
 };
 
 /**
