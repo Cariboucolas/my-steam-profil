@@ -279,41 +279,68 @@ describe("mapGameTally", () => {
   });
 
   /**
-   * The dates are what tells a calendar when a player was unlocking. Steam
-   * sends them in whatever order it defines the achievements in, so the order
-   * is imposed here rather than left to every reader to impose again.
+   * The dates are what tells a calendar when a player was unlocking, and the
+   * names are what lets a ranking say which unlock is the rare one. Steam sends
+   * both in whatever order it defines the achievements in, so the order is
+   * imposed here rather than left to every reader to impose again.
    */
-  it("keeps the unlock dates, earliest first", () => {
+  it("names each unlock and dates it, earliest first", () => {
     const result = mapGameTally(playerWith([1, 1, 1], [300, 100, 200]));
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.unlockedAt).toEqual([100, 200, 300]);
+      expect(result.value.unlocks).toEqual([
+        { apiName: "ACH_1", at: 100 },
+        { apiName: "ACH_2", at: 200 },
+        { apiName: "ACH_0", at: 300 },
+      ]);
     }
   });
 
-  it("keeps no date for an achievement the player has not earned", () => {
+  it("leaves out an achievement the player has not earned", () => {
     const result = mapGameTally(playerWith([1, 0, 1], [100, 0, 200]));
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.unlockedAt).toEqual([100, 200]);
+      expect(result.value.unlocks).toEqual([
+        { apiName: "ACH_0", at: 100 },
+        { apiName: "ACH_2", at: 200 },
+      ]);
     }
   });
 
   /**
    * Steam does occasionally flag an achievement earned and date it at the
-   * epoch, which is it saying it does not know when. It still counts towards
-   * the tally — the player has it — but a calendar cannot draw 1970, so the
-   * two figures are allowed to disagree rather than inventing a day.
+   * epoch, which is it saying it does not know when. The player has it, so it
+   * is carried like any other unlock — with no date rather than an invented
+   * one, and last, since a day it never happened on would sort it wrongly
+   * against the ones that did (ADR-0009).
    */
-  it("leaves out an earned achievement Steam dates at the epoch", () => {
+  it("carries an earned achievement Steam dates at the epoch, with no date", () => {
     const result = mapGameTally(playerWith([1, 1], [0, 200]));
 
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.completion.unlocked).toBe(2);
-      expect(result.value.unlockedAt).toEqual([200]);
+      expect(result.value.unlocks).toEqual([
+        { apiName: "ACH_1", at: 200 },
+        { apiName: "ACH_0", at: null },
+      ]);
+    }
+  });
+
+  /**
+   * One entry per unlock counted, always. ADR-0006 allowed the tally and its
+   * dates to disagree, because an undated unlock had nowhere to go; it now has
+   * one, and a reader that finds fewer unlocks than the tally counts is
+   * reading a bug.
+   */
+  it("carries exactly as many unlocks as the tally counts", () => {
+    const result = mapGameTally(playerWith([1, 1, 0, 1], [0, 200, 0, 100]));
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.unlocks).toHaveLength(result.value.completion.unlocked);
     }
   });
 

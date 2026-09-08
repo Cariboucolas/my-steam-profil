@@ -4,6 +4,7 @@ export type { AchievementDto } from "./achievement";
 export type {
   GameCompletionDto,
   GameTallyDto,
+  UnlockDto,
   TimelineEntryDto,
   GameProgressDto,
 } from "./game-progress";

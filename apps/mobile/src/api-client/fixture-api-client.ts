@@ -5,6 +5,7 @@ import type {
   GameRarityDto,
   GameTallyDto,
   ProfileDto,
+  UnlockDto,
 } from "@steam/contracts";
 
 import type { ApiClient, ProgressError } from "./api-client";
@@ -41,6 +42,26 @@ export const createFixtureApiClient = (data: FixtureData): ApiClient => {
     return err(inLibrary ? "NOT_LOADED" : "NOT_FOUND");
   };
 
+/**
+ * What the player has earned in one game, as the tally carries it: dated
+ * unlocks earliest first, undated ones last, in the epoch seconds the wire
+ * uses.
+ */
+const unlocksIn = (progress: GameProgressDto): readonly UnlockDto[] =>
+  progress.achievements
+    .filter((achievement) => achievement.unlocked)
+    .map((achievement) => ({
+      apiName: achievement.apiName,
+      at: achievement.unlockedAt
+        ? Math.floor(Date.parse(achievement.unlockedAt) / MS_PER_SECOND)
+        : null,
+    }))
+    .sort((a, b) => {
+      if (a.at === null) return b.at === null ? 0 : 1;
+      if (b.at === null) return -1;
+      return a.at - b.at;
+    });
+
   return {
     getProfile: () => Promise.resolve(ok(data.profile)),
 
@@ -53,8 +74,9 @@ export const createFixtureApiClient = (data: FixtureData): ApiClient => {
      * it. The real client asks a cheaper endpoint; both answer the same shape,
      * which is what lets a screen not care which one it is holding.
      *
-     * The dates come from the Timeline, which is already earliest first, and
-     * are put back into the epoch seconds the wire uses.
+     * The unlocks are read off the achievements rather than the Timeline: the
+     * Timeline holds only what Steam dated, and an unlock Steam will not date
+     * is one the tally counted and the real client carries.
      */
     getGameTally: (appId) => {
       const progress = progressOf(appId);
@@ -62,9 +84,7 @@ export const createFixtureApiClient = (data: FixtureData): ApiClient => {
         progress.ok
           ? ok<GameTallyDto>({
               completion: progress.value.completion,
-              unlockedAt: progress.value.timeline.map((entry) =>
-                Math.floor(Date.parse(entry.unlockedAt) / MS_PER_SECOND),
-              ),
+              unlocks: unlocksIn(progress.value),
             })
           : progress,
       );

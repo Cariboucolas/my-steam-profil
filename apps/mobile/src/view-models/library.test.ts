@@ -25,7 +25,7 @@ const game = (
 
 /**
  * A tally as the library holds it. Only the completion half decides a row or a
- * summary, so the dates stay empty here — the calendar is what reads those.
+ * summary, so the unlocks stay empty here — the calendar is what reads those.
  */
 const tally = (unlocked: number, total: number): GameTallyDto => ({
   completion: {
@@ -33,7 +33,7 @@ const tally = (unlocked: number, total: number): GameTallyDto => ({
     total,
     percentage: total === 0 ? 0 : (unlocked / total) * 100,
   },
-  unlockedAt: [],
+  unlocks: [],
 });
 
 const SOULSTONE = game(2066020, "Soulstone Survivors", 4977, "2026-06-25T12:16:14.000Z");

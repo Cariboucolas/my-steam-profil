@@ -611,15 +611,18 @@ describe("GET /api/profile/:steamId/games/:appId/completion", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       completion: { unlocked: 2, total: 4, percentage: 50 },
-      unlockedAt: [UNLOCK_SECONDS, UNLOCK_SECONDS + 2],
+      unlocks: [
+        { apiName: "ACH_0", at: UNLOCK_SECONDS },
+        { apiName: "ACH_2", at: UNLOCK_SECONDS + 2 },
+      ],
     });
   });
 
   /**
    * The tally is a named part of the answer rather than the answer itself, so
-   * the dates could be added without widening what a GameCompletion is.
+   * the unlocks could be added without widening what a GameCompletion is.
    */
-  it("keeps the tally exactly as it was, beside the dates", async () => {
+  it("keeps the tally exactly as it was, beside the unlocks", async () => {
     const app = appReaching(
       steamAnswering({ playerAchievements: [playerWith([1, 0, 1, 0])] }),
     );
@@ -638,7 +641,7 @@ describe("GET /api/profile/:steamId/games/:appId/completion", () => {
 
     expect(await (await app.request(url)).json()).toEqual({
       completion: { unlocked: 0, total: 3, percentage: 0 },
-      unlockedAt: [],
+      unlocks: [],
     });
   });
 
@@ -662,7 +665,7 @@ describe("GET /api/profile/:steamId/games/:appId/completion", () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       completion: { unlocked: 0, total: 0, percentage: 0 },
-      unlockedAt: [],
+      unlocks: [],
     });
   });
 

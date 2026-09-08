@@ -22,7 +22,7 @@ const game = (
 
 const tally = (unlocked: number): GameTallyDto => ({
   completion: { unlocked, total: 10, percentage: unlocked * 10 },
-  unlockedAt: [],
+  unlocks: [],
 });
 
 /** Dated so that recency order is simply the appIds in ascending order. */

@@ -183,8 +183,11 @@ const countByDay = (view: LibraryView): ReadonlyMap<number, number> => {
     const tally = view.tallies[game.appId];
     if (!tally) continue;
 
-    for (const seconds of tally.unlockedAt) {
-      const day = dayNumberOf(new Date(seconds * MS_PER_SECOND));
+    for (const unlock of tally.unlocks) {
+      // An unlock Steam will not date is a real unlock with no day to draw it
+      // on, and inventing one would put it in a month it never happened in.
+      if (unlock.at === null) continue;
+      const day = dayNumberOf(new Date(unlock.at * MS_PER_SECOND));
       counts.set(day, (counts.get(day) ?? 0) + 1);
     }
   }
