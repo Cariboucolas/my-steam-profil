@@ -1,4 +1,5 @@
 import type {
+  AchievementDto,
   GameDto,
   GameProgressDto,
   GameRarityDto,
@@ -36,9 +37,30 @@ const games: readonly GameDto[] = [
 const UNLOCK_SECONDS = 1697568656;
 const LATER_SECONDS = 1697655056;
 
+/** Only what a tally reads is filled in; the rest of the shape is nominal. */
+const achievement = (
+  apiName: string,
+  unlockedAt: string | null,
+): AchievementDto => ({
+  apiName,
+  displayName: apiName,
+  description: "",
+  hidden: false,
+  icon: "https://icon/a.jpg",
+  iconGray: "https://icon/a_gray.jpg",
+  unlocked: unlockedAt !== null || apiName === "BOSS_3",
+  unlockedAt,
+});
+
 const progress: GameProgressDto = {
   completion: { unlocked: 353, total: 483, percentage: 73.08488612836439 },
-  achievements: [],
+  achievements: [
+    achievement("BOSS_2", new Date(LATER_SECONDS * 1000).toISOString()),
+    achievement("BOSS_1", new Date(UNLOCK_SECONDS * 1000).toISOString()),
+    // Earned, and Steam will not say when.
+    achievement("BOSS_3", null),
+    { ...achievement("BOSS_4", null), unlocked: false },
+  ],
   timeline: [
     {
       apiName: "BOSS_1",
@@ -79,15 +101,19 @@ describe("createFixtureApiClient", () => {
 
   /**
    * The fixture build only ever stored whole progress, so the tally the library
-   * asks for is read back out of it — including the unlock dates, which the
-   * Timeline already holds earliest first.
+   * asks for is read back out of it — every unlock it counted, named, dated
+   * ones earliest first and the one Steam will not date last.
    */
-  it("serves a tally, dated, for a game it has data for", async () => {
+  it("serves a tally naming its unlocks for a game it has data for", async () => {
     expect(await client.getGameTally(2066020)).toEqual({
       ok: true,
       value: {
         completion: progress.completion,
-        unlockedAt: [UNLOCK_SECONDS, LATER_SECONDS],
+        unlocks: [
+          { apiName: "BOSS_1", at: UNLOCK_SECONDS },
+          { apiName: "BOSS_2", at: LATER_SECONDS },
+          { apiName: "BOSS_3", at: null },
+        ],
       },
     });
   });

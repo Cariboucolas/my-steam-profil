@@ -160,7 +160,10 @@ describe("createHttpApiClient (failures)", () => {
 describe("createHttpApiClient (completion)", () => {
   const tally: GameTallyDto = {
     completion: { unlocked: 353, total: 483, percentage: 73.08 },
-    unlockedAt: [1697568656, 1697655056],
+    unlocks: [
+      { apiName: "BOSS_1", at: 1697568656 },
+      { apiName: "BOSS_2", at: 1697655056 },
+    ],
   };
 
   it("asks the backend for one game's tally", async () => {

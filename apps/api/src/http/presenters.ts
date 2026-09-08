@@ -53,10 +53,10 @@ export const toGameCompletionDto = (
   percentage: completion.rate.percentage,
 });
 
-/** The tally the library asks for, and the dates it was counted from. */
+/** The tally the library asks for, and the unlocks it was counted from. */
 export const toGameTallyDto = (tally: GameTally): GameTallyDto => ({
   completion: toGameCompletionDto(tally.completion),
-  unlockedAt: tally.unlockedAt,
+  unlocks: tally.unlocks,
 });
 
 export const toAchievementRarityDto = (
@@ -88,10 +88,10 @@ export const emptyGameCompletionDto = (): GameCompletionDto => ({
   percentage: 0,
 });
 
-/** A game Steam defines no achievements for: a tally of nothing, on no day. */
+/** A game Steam defines no achievements for: a tally of nothing, unlocking nothing. */
 export const emptyGameTallyDto = (): GameTallyDto => ({
   completion: emptyGameCompletionDto(),
-  unlockedAt: [],
+  unlocks: [],
 });
 
 /** A game Steam defines no achievements for: a valid, empty progress. */

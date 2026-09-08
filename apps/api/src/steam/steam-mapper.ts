@@ -71,19 +71,25 @@ export interface GameProgress {
 
 export type AchievementsError = "PRIVATE_PROFILE" | "NO_ACHIEVEMENTS";
 
+/** One unlocked achievement: which one, and when — null where Steam will not say. */
+export interface Unlock {
+  readonly apiName: string;
+  readonly at: number | null;
+}
+
 /**
- * What the library is told about one game: the tally, and the dates the
- * unlocks it counted happened on.
+ * What the library is told about one game: the tally, and the unlocks it
+ * counted.
  *
- * The dates sit beside the GameCompletion rather than inside it. A
- * GameCompletion is three numbers; the same three numbers plus 353 dates is a
+ * The unlocks sit beside the GameCompletion rather than inside it. A
+ * GameCompletion is three numbers; the same three numbers plus 353 unlocks is a
  * different thing, and giving it the tally's name would make every reader of a
  * tally carry a payload they have no use for (ADR-0006).
  */
 export interface GameTally {
   readonly completion: GameCompletion;
-  /** Epoch seconds, unlocked achievements only, ascending. */
-  readonly unlockedAt: readonly number[];
+  /** Unlocked achievements only, dated ones ascending and undated ones last. */
+  readonly unlocks: readonly Unlock[];
 }
 
 /**
@@ -103,12 +109,25 @@ const refusalIn = (
 /**
  * Steam flags an achievement earned and dates it at the epoch often enough to
  * matter: that is Steam saying it does not know when, not a January morning in
- * 1970. The player still has it, so it stays in the tally; a calendar has
- * nothing to draw, so it is left out of the dates. The domain draws the same
- * line in `unlockStateFromSteam`.
+ * 1970. The player still has it, so it is carried like any other unlock, with
+ * no date rather than an invented one. The domain draws the same line in
+ * `unlockStateFromSteam`.
  */
-const unlockedOn = (entry: SteamPlayerAchievement): boolean =>
-  entry.achieved === 1 && entry.unlocktime > 0;
+const unlockIn = (entry: SteamPlayerAchievement): Unlock => ({
+  apiName: entry.apiname,
+  at: entry.unlocktime > 0 ? entry.unlocktime : null,
+});
+
+/**
+ * Dated unlocks earliest first, undated ones last. An undated unlock has no
+ * place on the scale the others share, and putting it at either end of that
+ * scale would state a day Steam refused to state.
+ */
+const byWhenUnlocked = (a: Unlock, b: Unlock): number => {
+  if (a.at === null) return b.at === null ? 0 : 1;
+  if (b.at === null) return -1;
+  return a.at - b.at;
+};
 
 /**
  * How far a player has got in a game and when they got there, counted without
@@ -139,10 +158,10 @@ export const mapGameTally = (
     },
     // Sorted here rather than by every reader in turn: Steam sends the
     // achievements in whatever order the game defines them.
-    unlockedAt: achievements
-      .filter(unlockedOn)
-      .map((entry) => entry.unlocktime)
-      .sort((a, b) => a - b),
+    unlocks: achievements
+      .filter((entry) => entry.achieved === 1)
+      .map(unlockIn)
+      .sort(byWhenUnlocked),
   });
 };
 

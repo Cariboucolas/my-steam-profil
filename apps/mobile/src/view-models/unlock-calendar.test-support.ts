@@ -25,10 +25,13 @@ const game = (appId: number): GameDto => ({
   lastPlayedAt: null,
 });
 
-/** Only the dates decide a calendar, so the completion half stays nominal. */
+/**
+ * Only the dates decide a calendar, so the completion half stays nominal and
+ * the names are just distinct enough to be one unlock apiece.
+ */
 const tally = (unlockedAt: readonly number[]): GameTallyDto => ({
   completion: { unlocked: unlockedAt.length, total: 100, percentage: 0 },
-  unlockedAt,
+  unlocks: unlockedAt.map((at, index) => ({ apiName: `ACH_${index}`, at })),
 });
 
 /** Epoch seconds, as the wire carries them. */
@@ -68,6 +71,39 @@ export const libraryWhereUnlocksHappened = (
   pending: new Set<number>(),
   frozenOrder: null,
 });
+
+/**
+ * The same library, with `count` more unlocks the player really earned in that
+ * game and Steam would not date. The tally counts them; they fall on no day.
+ */
+export const withUndatedUnlocks = (
+  view: LibraryView,
+  appId: number,
+  count: number,
+): LibraryView => {
+  const held = view.tallies[appId];
+  if (!held) throw new Error(`no tally for ${appId} to add unlocks to`);
+
+  return {
+    ...view,
+    tallies: {
+      ...view.tallies,
+      [appId]: {
+        completion: {
+          ...held.completion,
+          unlocked: held.completion.unlocked + count,
+        },
+        unlocks: [
+          ...held.unlocks,
+          ...Array.from({ length: count }, (_, index) => ({
+            apiName: `UNDATED_${index}`,
+            at: null,
+          })),
+        ],
+      },
+    },
+  };
+};
 
 /** The same library, with a tally still on its way for the games named. */
 export const stillCounting = (

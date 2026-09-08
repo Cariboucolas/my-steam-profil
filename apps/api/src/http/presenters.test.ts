@@ -166,15 +166,15 @@ describe("toGameTallyDto", () => {
     },
   ];
 
-  it("carries the tally and the dates as two named parts", () => {
+  it("carries the tally and the unlocks as two named parts", () => {
     const dto = toGameTallyDto({
       completion: computeGameCompletion(achievements),
-      unlockedAt: [UNLOCK_SECONDS],
+      unlocks: [{ apiName: "BOSS_1", at: UNLOCK_SECONDS }],
     });
 
     expect(dto).toEqual({
       completion: { unlocked: 1, total: 1, percentage: 100 },
-      unlockedAt: [UNLOCK_SECONDS],
+      unlocks: [{ apiName: "BOSS_1", at: UNLOCK_SECONDS }],
     });
   });
 
@@ -186,10 +186,10 @@ describe("toGameTallyDto", () => {
   it("leaves the dates in the epoch seconds Steam sent", () => {
     const dto = toGameTallyDto({
       completion: computeGameCompletion(achievements),
-      unlockedAt: [UNLOCK_SECONDS],
+      unlocks: [{ apiName: "BOSS_1", at: UNLOCK_SECONDS }],
     });
 
-    expect(dto.unlockedAt[0]).toBe(UNLOCK_SECONDS);
+    expect(dto.unlocks[0]?.at).toBe(UNLOCK_SECONDS);
   });
 });
 
@@ -197,7 +197,7 @@ describe("emptyGameTallyDto", () => {
   it("represents a game that has no achievements", () => {
     expect(emptyGameTallyDto()).toEqual({
       completion: { unlocked: 0, total: 0, percentage: 0 },
-      unlockedAt: [],
+      unlocks: [],
     });
   });
 });

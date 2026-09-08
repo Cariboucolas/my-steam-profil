@@ -15,6 +15,7 @@ import {
   NOW,
   SOULSTONE,
   stillCounting,
+  withUndatedUnlocks,
 } from "./unlock-calendar.test-support";
 
 const rowFor = (calendar: UnlockCalendar, label: string): UnlockMonth => {
@@ -145,9 +146,6 @@ describe("buildUnlockCalendar", () => {
   });
 
   it("draws nothing for an unlock outside the year it shows", () => {
-    // The epoch is what Steam sends for an achievement it will not date.
-    // ADR-0006 keeps those out of `unlockedAt`, and 1970 is no day of this year
-    // either way.
     const calendar = buildUnlockCalendar(
       libraryWhereUnlocksHappened({
         [SOULSTONE]: ["1970-01-01T00:00:00Z", "2025-12-31T20:00:00Z"],
@@ -156,6 +154,25 @@ describe("buildUnlockCalendar", () => {
     );
 
     expect(totalOf(calendar)).toBe(0);
+  });
+
+  /**
+   * The tally carries every unlock it counted, including the ones Steam will
+   * not date (ADR-0009). A calendar has no day to draw those on, and picking
+   * one would state a day the player never unlocked anything on.
+   */
+  it("draws nothing for an unlock Steam will not date", () => {
+    const dated = libraryWhereUnlocksHappened({
+      [SOULSTONE]: ["2026-03-14T09:00:00Z"],
+    });
+
+    const calendar = buildUnlockCalendar(
+      withUndatedUnlocks(dated, SOULSTONE, 3),
+      new Date("2026-04-17T10:00:00Z"),
+    );
+
+    expect(totalOf(calendar)).toBe(1);
+    expect(rowFor(calendar, "MAR").days[13]?.count).toBe(1);
   });
 
   /**
