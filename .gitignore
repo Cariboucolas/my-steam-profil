@@ -39,3 +39,12 @@ apps/mobile/src/fixtures/
 
 # OS
 .DS_Store
+
+# tokenade — per-project cache / scaffold flag / dedup refs
+.tokenade/
+
+# tokenade — legacy per-project embedding model cache (now global)
+.fastembed_cache/
+
+# tokenade — backups of the files it scaffolded into. Git is the backup.
+*.tokenade-original

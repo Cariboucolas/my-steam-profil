@@ -1,18 +1,6 @@
-# my-steam-profil
+# Project rules for AI coding agents
 
-## Agent skills
-
-### Issue tracker
-
-Issues live in GitHub Issues on `Cariboucolas/my-steam-profil`, managed through the `gh` CLI. See `docs/agents/issue-tracker.md`.
-
-### Triage labels
-
-The five canonical triage roles, each label string equal to its name. See `docs/agents/triage-labels.md`.
-
-### Domain docs
-
-Single-context: `CONTEXT.md` + `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Auto-scaffolded by tokenade on first MCP session. Safe to edit; the tokenade block below is identified by the HTML marker and will be updated in-place on future tokenade upgrades.
 
 <!-- tokenade-scaffold -->
 ## Explore code with the `tokenade` CLI (cheaper than reading whole files)
@@ -42,4 +30,5 @@ Keep prose terse and code minimal — every token you write is billed as output.
 - **Verbatim:** keep code, identifiers, API/CLI names and error strings exact — never abbreviate or paraphrase. Keep the user's language.
 - **Correctness first:** fix root causes not symptoms, don't downgrade the algorithm, don't guess APIs/flags/versions — verify.
 - **Full prose where terseness could mislead:** security/data-loss warnings, irreversible-action confirmations, multi-step sequences.
+- Applies to the subagents you spawn.
 <!-- /tokenade-scaffold -->
