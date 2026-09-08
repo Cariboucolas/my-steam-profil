@@ -33,6 +33,8 @@ const BAD_GATEWAY = 502;
 /** Every reason a steam id can be rejected reads the same to a caller. */
 const INVALID_STEAM_ID = { error: "INVALID_STEAM_ID" } as const;
 
+const INVALID_APP_ID = { error: "INVALID_APP_ID" } as const;
+
 /**
  * Five minutes. Long enough to cover the burst of one library open — one
  * request per game the player has ever launched — and short enough that
@@ -85,29 +87,28 @@ type GameHandler = (
 ) => Promise<Response>;
 
 /**
- * The guard for a route about one game: both identifiers are checked before a
- * handler runs, so neither bad steam id nor bad app id costs a Steam call.
- */
-const withGame = (handle: GameHandler) =>
-  withSteamId((context, steamId) => {
-    const appId = parseAppId(context.req.param("appId") ?? "");
-    return appId === null
-      ? Promise.resolve(context.json({ error: "INVALID_APP_ID" }, BAD_REQUEST))
-      : handle(context, steamId, appId);
-  });
-
-/**
- * The guard for a route about a game and no player: there is no steam id in the
- * address to check, which is the whole point of it.
+ * The guard for a route about a game and no player: bad input costs nothing and
+ * cannot be aimed at Steam. There is no steam id in the address to check, which
+ * is the whole point of such a route (ADR-0008).
  */
 const withApp =
   (handle: (context: Context, appId: number) => Promise<Response>) =>
   (context: Context): Promise<Response> => {
     const appId = parseAppId(context.req.param("appId") ?? "");
     return appId === null
-      ? Promise.resolve(context.json({ error: "INVALID_APP_ID" }, BAD_REQUEST))
+      ? Promise.resolve(context.json(INVALID_APP_ID, BAD_REQUEST))
       : handle(context, appId);
   };
+
+/**
+ * The guard for a route about one game *and* one player: the steam id first, so
+ * a malformed one is refused as such rather than as a bad app id, then the same
+ * app id check every game route makes.
+ */
+const withGame = (handle: GameHandler) =>
+  withSteamId((context, steamId) =>
+    withApp((forGame, appId) => handle(forGame, steamId, appId))(context),
+  );
 
 /**
  * The two ways Steam refuses to tally a game, answered the same way by every

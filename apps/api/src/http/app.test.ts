@@ -64,6 +64,24 @@ const steamAnswering = (answers: SteamAnswers): typeof fetch => {
   };
 };
 
+/**
+ * A cache is only observable through what it stops happening, so the caching
+ * suites below are the one place here that counts calls to Steam. Everywhere
+ * else that would be asserting on implementation; there it is the behaviour.
+ */
+const countingSteam = (answers: SteamAnswers) => {
+  const answer = steamAnswering(answers);
+  const calls: string[] = [];
+  const fetchImpl: typeof fetch = (input, init) => {
+    calls.push(String(input));
+    return answer(input, init);
+  };
+  return { fetchImpl, calls };
+};
+
+const appCaching = (fetchImpl: typeof fetch, cache: ResponseCache) =>
+  createApp(createSteamClient({ apiKey: API_KEY, fetch: fetchImpl }), cache);
+
 const profileOf = (steamId: string) => ({
   response: {
     players: [
@@ -698,11 +716,6 @@ describe("GET /api/profile/:steamId/games/:appId/completion", () => {
   });
 });
 
-/**
- * A cache is only observable through what it stops happening, so these are the
- * one place in this suite that counts calls to Steam. Everywhere else that
- * would be asserting on implementation; here it is the behaviour itself.
- */
 describe("caching the library tally", () => {
   const APP_ID = 2066020;
   const OTHER_APP_ID = 25900;
@@ -717,20 +730,6 @@ describe("caching the library tally", () => {
       achievements: [{ apiname: "ACH_0", achieved: 1, unlocktime: 1697568656 }],
     },
   };
-
-  /** Counts what reaches Steam, and answers every call the same way. */
-  const countingSteam = (answers: SteamAnswers) => {
-    const answer = steamAnswering(answers);
-    const calls: string[] = [];
-    const fetchImpl: typeof fetch = (input, init) => {
-      calls.push(String(input));
-      return answer(input, init);
-    };
-    return { fetchImpl, calls };
-  };
-
-  const appCaching = (fetchImpl: typeof fetch, cache: ResponseCache) =>
-    createApp(createSteamClient({ apiKey: API_KEY, fetch: fetchImpl }), cache);
 
   it("asks Steam once for a tally it is asked for twice", async () => {
     const { fetchImpl, calls } = countingSteam({ playerAchievements: [player] });
@@ -934,19 +933,6 @@ describe("caching a game's published rarity", () => {
   const publishedFor = {
     achievementpercentages: { achievements: [{ name: "ACH_0", percent: "12.3" }] },
   };
-
-  const countingSteam = (answers: SteamAnswers) => {
-    const answer = steamAnswering(answers);
-    const calls: string[] = [];
-    const fetchImpl: typeof fetch = (input, init) => {
-      calls.push(String(input));
-      return answer(input, init);
-    };
-    return { fetchImpl, calls };
-  };
-
-  const appCaching = (fetchImpl: typeof fetch, cache: ResponseCache) =>
-    createApp(createSteamClient({ apiKey: API_KEY, fetch: fetchImpl }), cache);
 
   /**
    * The two requests below are two different players' apps asking. Nothing in
