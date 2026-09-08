@@ -45,6 +45,20 @@ SteamID de test : `76561197979269357` — jeu : Halls of Torment (`2218750`), la
 - **Profil privé (détails de jeu)** : **HTTP 403** + corps `{ "playerstats": { "error": "Profile is not public", "success": false } }`.
   → À distinguer du « jeu sans succès » : **403 privé** vs **400 sans-stats**, messages différents.
 
+## GetGlobalAchievementPercentagesForApp (rareté — ce que TOUT LE MONDE a)
+_(mesuré le 2026-09-08, pas pendant le spike initial)_
+- Chemin : `achievementpercentages.achievements[]`. Paramètre : **`gameid`** (pas `appid` — seul appel à le nommer ainsi).
+- ⚠️ **Aucune clé API requise** : l'endpoint répond à `?gameid=` seul. C'est le seul appel du service dans ce cas.
+- ⚠️ **`percent` est une CHAÎNE**, pas un nombre : `{"name":"ReachExperienceLevel5","percent":"93.9"}`.
+  483/483 entrées sur 2066020. Les autres appels envoient leurs nombres comme des nombres ; celui-ci non.
+- Arrondi Steam à une décimale → **les ex æquo sont fréquents et réels** : sur 2066020, `62.9`, `53.4`, `53.0`,
+  `52.1`, `49.7` apparaissent chacun deux fois. Un classement qui coupe entre deux valeurs égales coupe sur du bruit.
+- **Jeu sans chiffres publiés** : **HTTP 403** + corps **`{}` nu** — pas d'enveloppe `achievementpercentages` du tout.
+  Vérifié sur 2694490 (jeu sans succès), 24400 et 999999999 (appid inexistant) : les trois répondent 403 `{}`.
+  → À distinguer des autres appels, qui disent « pas de stats » avec un **400**. Ici c'est un **403**.
+- Aucun `percent` à `0` observé sur 2066020 ; un zéro publié resterait néanmoins un chiffre mesuré par Steam.
+- Poids : ~20 Ko pour 483 succès, contre 253,8 Ko pour le schéma du même jeu.
+
 ## Décisions de modélisation qui en découlent
 1. **Clé de jointure schéma ↔ déblocage** : `schema.name === player.apiname` (noms de champ différents !).
    Le backend fusionne et expose un seul `apiName` côté domaine.

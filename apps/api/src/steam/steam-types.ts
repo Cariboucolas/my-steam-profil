@@ -59,16 +59,23 @@ export interface SteamPlayerAchievementsResponse {
 
 /**
  * One Achievement's published share of owners, as `GetGlobalAchievementPercentagesForApp`
- * gives it: 0 to 100, Steam's own base, rounded by Steam.
+ * gives it: 0 to 100, Steam's own base, rounded by Steam to one decimal.
+ *
+ * `percent` is a **string** — `"93.9"`, not `93.9` — on every entry of every
+ * response measured. Steam is alone in doing this here; the other calls send
+ * their numbers as numbers.
  */
 export interface SteamGlobalAchievementPercentage {
   name: string;
-  percent: number;
+  percent: string;
 }
 
+/**
+ * A game Steam publishes no figures for answers 403 with a bare `{}`, so the
+ * envelope itself can be missing — not merely the list inside it.
+ */
 export interface SteamGlobalAchievementPercentagesResponse {
-  /** Steam answers with an empty object for a game it publishes nothing for. */
-  achievementpercentages: {
+  achievementpercentages?: {
     achievements?: SteamGlobalAchievementPercentage[];
   };
 }

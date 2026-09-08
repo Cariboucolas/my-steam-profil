@@ -14,22 +14,17 @@ const FORBIDDEN = 403;
 const INTERNAL_SERVER_ERROR = 500;
 
 /**
- * A 400 is how Steam says "this game defines no stats", on every call that can
- * be asked about a game. It carries a body the mapper reads, so it is an answer
- * rather than a failure.
- */
-const CARRIES_A_GAME_ANSWER = [BAD_REQUEST] as const;
-
-/**
- * The statuses Steam uses to say something true about a game or a player rather
- * than to report a failure: the 400 above, plus 403 for a private profile. Both
- * carry a body the mapper reads.
+ * The only statuses Steam uses to say something true about a game or a player
+ * rather than to report a failure: 400 for a game that defines no stats, 403
+ * for a private profile — and, measured on appIds 2694490 and 24400, 403 again
+ * for a game Steam publishes no global figures for. Each carries a body the
+ * mapper reads.
  *
- * The 403 belongs only to a call that names a player. The rarity call names
- * none and sends no key, so a 403 there is Steam refusing us — an outage, and
- * `CARRIES_A_GAME_ANSWER` is what that call asks for instead.
+ * What keeps a real outage out is the body rather than the status: Steam
+ * answers with its own envelope and fails with an HTML page, and a page is not
+ * JSON, so it raises below rather than reaching the mapper.
  */
-const CARRIES_AN_ANSWER = [...CARRIES_A_GAME_ANSWER, FORBIDDEN] as const;
+const CARRIES_AN_ANSWER = [BAD_REQUEST, FORBIDDEN] as const;
 
 /**
  * The player call says "this app keeps no stats" with a 400 for most games and
@@ -181,7 +176,7 @@ export const createSteamClient = (config: SteamClientConfig): SteamGateway => {
         "/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/",
         // Steam names the parameter `gameid` on this call alone.
         { gameid: String(appId) },
-        { carriesAnAnswer: CARRIES_A_GAME_ANSWER, keyed: false },
+        { carriesAnAnswer: CARRIES_AN_ANSWER, keyed: false },
       ),
   };
 };

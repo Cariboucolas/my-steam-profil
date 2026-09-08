@@ -353,9 +353,10 @@ describe("mapGameRarity", () => {
   });
 
   it("maps each published share to the achievement it belongs to", () => {
+    // Steam sends these as strings: `"percent":"48.7"`, measured on 2066020.
     const raw = published([
-      { name: "ACH_BOSS_1", percent: 48.7 },
-      { name: "ACH_BOSS_2", percent: 0.4 },
+      { name: "ACH_BOSS_1", percent: "48.7" },
+      { name: "ACH_BOSS_2", percent: "0.4" },
     ]);
 
     expect(mapGameRarity(raw)).toEqual([
@@ -369,8 +370,32 @@ describe("mapGameRarity", () => {
    * thing the player owns.
    */
   it("publishes nothing for a game Steam publishes nothing for", () => {
+    // Measured: a 403 with a bare `{}`, not an envelope holding an empty list.
+    expect(mapGameRarity({})).toEqual([]);
     expect(mapGameRarity({ achievementpercentages: {} })).toEqual([]);
     expect(mapGameRarity(published([]))).toEqual([]);
+  });
+
+  /**
+   * The rule with teeth now that the figure arrives as text: anything that does
+   * not parse is left out, never handed on as the zero `Number("")` gives —
+   * which would rank it the rarest thing the player owns.
+   */
+  it("leaves out a figure it cannot read, rather than calling it zero", () => {
+    const raw = published([
+      { name: "ACH_GOOD", percent: "1.5" },
+      { name: "ACH_EMPTY", percent: "" },
+      { name: "ACH_JUNK", percent: "n/a" },
+    ]);
+
+    expect(mapGameRarity(raw)).toEqual([{ apiName: "ACH_GOOD", rarity: 1.5 }]);
+  });
+
+  /** A published zero is a figure Steam measured, and it stays. */
+  it("keeps a published zero", () => {
+    expect(mapGameRarity(published([{ name: "ACH_0", percent: "0" }]))).toEqual([
+      { apiName: "ACH_0", rarity: 0 },
+    ]);
   });
 
   /**
@@ -380,8 +405,8 @@ describe("mapGameRarity", () => {
    */
   it("leaves two equally published shares exactly equal", () => {
     const raw = published([
-      { name: "ACH_A", percent: 12.3 },
-      { name: "ACH_B", percent: 12.3 },
+      { name: "ACH_A", percent: "12.3" },
+      { name: "ACH_B", percent: "12.3" },
     ]);
 
     const [first, second] = mapGameRarity(raw);

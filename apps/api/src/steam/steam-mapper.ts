@@ -21,6 +21,7 @@ import {
   type SteamPlayerAchievement,
   type SteamPlayerAchievementsResponse,
   type SteamGlobalAchievementPercentagesResponse,
+  type SteamGlobalAchievementPercentage,
 } from "./steam-types";
 
 export type MapProfileError = "NOT_FOUND" | "INVALID_STEAM_ID";
@@ -199,17 +200,32 @@ export interface AchievementRarity {
 }
 
 /**
+ * Steam publishes these figures as text — `"93.9"` — so reading one is a real
+ * step and not a cast. A string that is not a number yields no Rarity at all:
+ * `Number("")` is 0, and a zero smuggled in that way would rank the achievement
+ * the rarest thing in the player's library.
+ */
+const figureIn = (published: SteamGlobalAchievementPercentage): number | null => {
+  const figure = Number(published.percent);
+  // Number("") is 0 and Number(" ") is 0, so emptiness is refused by hand.
+  return published.percent.trim() !== "" && Number.isFinite(figure)
+    ? figure
+    : null;
+};
+
+/**
  * What Steam publishes about a whole Game's Achievements, without an API key
  * and without the schema.
  *
- * An Achievement Steam publishes no figure for is simply absent, which is the
- * only honest way to say it: a Rarity of zero would rank it the rarest thing in
- * the player's library.
+ * An Achievement Steam publishes no readable figure for is simply absent, which
+ * is the only honest way to say it. A Game it publishes nothing about arrives
+ * as a bare `{}` — no envelope, not an empty list — and is an empty answer for
+ * the same reason (ADR-0008).
  */
 export const mapGameRarity = (
   raw: SteamGlobalAchievementPercentagesResponse,
 ): AchievementRarity[] =>
-  (raw.achievementpercentages.achievements ?? []).map((published) => ({
-    apiName: published.name,
-    rarity: published.percent,
-  }));
+  (raw.achievementpercentages?.achievements ?? []).flatMap((published) => {
+    const rarity = figureIn(published);
+    return rarity === null ? [] : [{ apiName: published.name, rarity }];
+  });
