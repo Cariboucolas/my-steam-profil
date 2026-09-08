@@ -352,6 +352,50 @@ describe("useLibraryTallies", () => {
     expect(asked).toEqual([2, 3, 1]);
   });
 
+  /**
+   * What the rarest-unlocks tab waits on. Nothing is outstanding either side of
+   * a load, so the outstanding set alone cannot tell "not started yet" from
+   * "counted through" — and starting a second load on the first reading would
+   * spend its waves against a library nobody has counted yet.
+   */
+  it("says the library is not counted until the last wave has landed", async () => {
+    const { client, release } = heldClient([7, 8]);
+    const { result } = renderTallies(client);
+
+    await waitFor(() => expect(result.current.pending).toEqual(new Set([7, 8])));
+    expect(result.current.counted).toBe(false);
+
+    await release();
+
+    await waitFor(() => expect(result.current.counted).toBe(true));
+  });
+
+  /** A library with nothing worth counting is counted through, not pending. */
+  it("counts an empty library through at once", async () => {
+    const { result } = renderTallies(clientAsking(refuse), []);
+
+    await waitFor(() => expect(result.current.counted).toBe(true));
+  });
+
+  it("has counted nothing while no profile is chosen", async () => {
+    const { result } = renderTallies(undefined);
+
+    await waitFor(() => expect(result.current.frozenOrder).toBeNull());
+
+    expect(result.current.counted).toBe(false);
+  });
+
+  /** The next library is uncounted the moment it arrives, however far the previous one got. */
+  it("stops calling a library counted once another one takes its place", async () => {
+    const previous = eagerClient();
+    const { result, rerender } = renderTallies(previous.client);
+    await waitFor(() => expect(result.current.counted).toBe(true));
+
+    rerender({ client: heldClient([500]).client, games: OTHER_GAMES });
+
+    expect(result.current.counted).toBe(false);
+  });
+
   it("has nothing to report before a load has started", () => {
     const { result } = renderTallies(undefined);
 
