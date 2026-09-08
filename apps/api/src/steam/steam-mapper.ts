@@ -20,6 +20,7 @@ import {
   type SteamSchemaResponse,
   type SteamPlayerAchievement,
   type SteamPlayerAchievementsResponse,
+  type SteamGlobalAchievementPercentagesResponse,
 } from "./steam-types";
 
 export type MapProfileError = "NOT_FOUND" | "INVALID_STEAM_ID";
@@ -184,3 +185,31 @@ export const mapGameProgress = (
     timeline: buildTimeline(achievements),
   });
 };
+
+/**
+ * One Achievement's Rarity: the share of the Game's owners who have unlocked
+ * it, as Steam publishes it. Held beside its apiName rather than on the
+ * Achievement itself, because this call answers without the schema — there is
+ * no Achievement here to hang it on, only the name it is known by.
+ */
+export interface AchievementRarity {
+  readonly apiName: string;
+  /** 0 to 100, Steam's own figure. Lower is rarer. */
+  readonly rarity: number;
+}
+
+/**
+ * What Steam publishes about a whole Game's Achievements, without an API key
+ * and without the schema.
+ *
+ * An Achievement Steam publishes no figure for is simply absent, which is the
+ * only honest way to say it: a Rarity of zero would rank it the rarest thing in
+ * the player's library.
+ */
+export const mapGameRarity = (
+  raw: SteamGlobalAchievementPercentagesResponse,
+): AchievementRarity[] =>
+  (raw.achievementpercentages.achievements ?? []).map((published) => ({
+    apiName: published.name,
+    rarity: published.percent,
+  }));
