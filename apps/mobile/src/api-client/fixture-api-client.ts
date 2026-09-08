@@ -1,4 +1,5 @@
 import { ok, err, type Result } from "@steam/domain";
+import { byWhenUnlocked } from "@steam/contracts";
 import type {
   GameDto,
   GameProgressDto,
@@ -56,11 +57,7 @@ const unlocksIn = (progress: GameProgressDto): readonly UnlockDto[] =>
         ? Math.floor(Date.parse(achievement.unlockedAt) / MS_PER_SECOND)
         : null,
     }))
-    .sort((a, b) => {
-      if (a.at === null) return b.at === null ? 0 : 1;
-      if (b.at === null) return -1;
-      return a.at - b.at;
-    });
+    .sort(byWhenUnlocked);
 
   return {
     getProfile: () => Promise.resolve(ok(data.profile)),
