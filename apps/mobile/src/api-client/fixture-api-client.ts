@@ -2,6 +2,7 @@ import { ok, err, type Result } from "@steam/domain";
 import type {
   GameDto,
   GameProgressDto,
+  GameRarityDto,
   GameTallyDto,
   ProfileDto,
 } from "@steam/contracts";
@@ -15,6 +16,12 @@ export type FixtureData = {
   readonly games: readonly GameDto[];
   /** Keyed by appId; only the games the spike actually fetched are present. */
   readonly progress: Readonly<Record<number, GameProgressDto>>;
+  /**
+   * Keyed by appId. Optional, and empty in the generated set: the spike never
+   * called the Steam endpoint that publishes rarity, so there is nothing to
+   * store yet. A set that carries some is what lets a ranking be exercised.
+   */
+  readonly rarity?: Readonly<Record<number, GameRarityDto>>;
 };
 
 /**
@@ -62,5 +69,15 @@ export const createFixtureApiClient = (data: FixtureData): ApiClient => {
           : progress,
       );
     },
+
+    /**
+     * Answers for any game asked about, exactly as the backend does: the rarity
+     * route checks no library, because ownership is the caller's to know
+     * (ADR-0004). A game with nothing stored answers with nothing, which is
+     * what "Steam publishes no figures for this game" looks like — never a
+     * refusal, and never a list of zeroes.
+     */
+    getGameRarity: (appId) =>
+      Promise.resolve(ok<GameRarityDto>(data.rarity?.[appId] ?? [])),
   };
 };
