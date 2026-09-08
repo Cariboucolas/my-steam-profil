@@ -4,12 +4,15 @@ import {
   mapGames,
   mapGameProgress,
   mapGameTally,
+  mapGameRarity,
 } from "./steam-mapper";
 import {
   type SteamPlayerSummariesResponse,
   type SteamOwnedGamesResponse,
   type SteamSchemaResponse,
   type SteamPlayerAchievementsResponse,
+  type SteamGlobalAchievementPercentagesResponse,
+  type SteamGlobalAchievementPercentage,
 } from "./steam-types";
 
 const summaries = (
@@ -335,5 +338,54 @@ describe("mapGameTally", () => {
       ok: false,
       error: "NO_ACHIEVEMENTS",
     });
+  });
+});
+
+/**
+ * Rarity belongs to the Game, never to whoever is asking: nothing here takes a
+ * player, and nothing here can tell two players apart.
+ */
+describe("mapGameRarity", () => {
+  const published = (
+    achievements: readonly SteamGlobalAchievementPercentage[],
+  ): SteamGlobalAchievementPercentagesResponse => ({
+    achievementpercentages: { achievements: [...achievements] },
+  });
+
+  it("maps each published share to the achievement it belongs to", () => {
+    const raw = published([
+      { name: "ACH_BOSS_1", percent: 48.7 },
+      { name: "ACH_BOSS_2", percent: 0.4 },
+    ]);
+
+    expect(mapGameRarity(raw)).toEqual([
+      { apiName: "ACH_BOSS_1", rarity: 48.7 },
+      { apiName: "ACH_BOSS_2", rarity: 0.4 },
+    ]);
+  });
+  /**
+   * The rule ADR-0008 rests on: nothing published is answered as nothing, and
+   * never as a set of zeroes, which would rank every one of them the rarest
+   * thing the player owns.
+   */
+  it("publishes nothing for a game Steam publishes nothing for", () => {
+    expect(mapGameRarity({ achievementpercentages: {} })).toEqual([]);
+    expect(mapGameRarity(published([]))).toEqual([]);
+  });
+
+  /**
+   * Steam rounds, so two Achievements really can be published exactly equal.
+   * Downstream cuts a top ten on these figures and has to see the tie to
+   * extend past it, so nothing here may nudge them apart.
+   */
+  it("leaves two equally published shares exactly equal", () => {
+    const raw = published([
+      { name: "ACH_A", percent: 12.3 },
+      { name: "ACH_B", percent: 12.3 },
+    ]);
+
+    const [first, second] = mapGameRarity(raw);
+
+    expect(first?.rarity).toBe(second?.rarity);
   });
 });
