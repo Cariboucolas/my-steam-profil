@@ -14,6 +14,7 @@ import {
   ok,
   err,
 } from "@steam/domain";
+import { byWhenUnlocked } from "@steam/contracts";
 import {
   type SteamPlayerSummariesResponse,
   type SteamOwnedGamesResponse,
@@ -117,17 +118,6 @@ const unlockIn = (entry: SteamPlayerAchievement): Unlock => ({
   apiName: entry.apiname,
   at: entry.unlocktime > 0 ? entry.unlocktime : null,
 });
-
-/**
- * Dated unlocks earliest first, undated ones last. An undated unlock has no
- * place on the scale the others share, and putting it at either end of that
- * scale would state a day Steam refused to state.
- */
-const byWhenUnlocked = (a: Unlock, b: Unlock): number => {
-  if (a.at === null) return b.at === null ? 0 : 1;
-  if (b.at === null) return -1;
-  return a.at - b.at;
-};
 
 /**
  * How far a player has got in a game and when they got there, counted without
