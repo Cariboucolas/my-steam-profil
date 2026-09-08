@@ -24,6 +24,10 @@ _Avoid_: Hours played, Duration, Time spent
 A single award a Game defines — display name, description, icons, and whether it is hidden until earned. Identified by its apiName **within its Game**; the same apiName means different awards in two different games.
 _Avoid_: Trophy, Badge (a distinct Steam concept), Stat
 
+**Rarity**:
+Of the players who own a Game, the share who have unlocked one of its Achievements, as Steam publishes it — the base is Valve's, and we neither compute it nor audit it. Rarity belongs to the Achievement rather than to whoever is looking at it: every player reads the same figure. It runs 0 to 100 and reads backwards to every other percentage here — 0.4 is a trophy almost nobody holds, where a CompletionRate of 0.4 is a player who has barely started. Steam rounds it, so two Achievements can be published exactly equal, and a ranking that cuts between them cuts on nothing. An Achievement Steam publishes no figure for has no Rarity at all — not a Rarity of zero, which would rank it the rarest thing a player owns.
+_Avoid_: Difficulty (Rarity is the proxy for it, never the thing), Popularity (the inverse), GlobalCompletion, Percentage
+
 **UnlockState**:
 Whether a player has earned an Achievement, and when. Exactly two shapes: unlocked with a date, or locked.
 _Avoid_: Achieved, Completed, Status
