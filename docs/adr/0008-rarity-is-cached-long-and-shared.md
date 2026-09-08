@@ -53,14 +53,22 @@ player and needs no key, so it now sends none — a call says whether the key be
 secret that buys nothing is one more place it can be logged, and it would be an odd thing to
 attach to the one request whose answer we deliberately share.
 
-It also changes what a refusal means here. A 400 is Steam saying the Game publishes nothing, and
-carries a body. A 403 is not: there is no profile behind this call to be private, so it stays a
-gateway failure rather than becoming a Game with nothing to show.
+What this call refuses with was **measured, not reasoned** — it is the one Steam call with no
+entry in `tools/steam-spike/FINDINGS.md`, the file `steam-types.ts` calls its empirical contract,
+and reasoning from the sibling calls got it wrong. A Game Steam publishes nothing for answers
+**403 with a bare `{}`**: not the 400 the other calls use for "no stats", and with no
+`achievementpercentages` envelope at all. It is now in FINDINGS.md, and both facts have tests
+naming the appIds they were measured on.
 
 ## Nothing published is answered as nothing
 
-An Achievement Steam publishes no figure for is **absent from the answer**, and a Game it
+An Achievement Steam publishes no readable figure for is **absent from the answer**, and a Game it
 publishes nothing about is an **empty list**. Never zeroes.
+
+"Readable" is doing real work, because Steam sends the figure as **text**: `"percent":"93.9"`, on
+every entry of every response measured. Reading one is a step that can fail, and `Number("")` is
+`0` — so an unreadable figure that was merely coerced would arrive as the rarest achievement in
+the library. It is dropped instead.
 
 This is the rule `CONTEXT.md` states for Rarity, and it is load-bearing rather than tidy. Rarity
 reads backwards to every other percentage in this codebase: 0.4 is a trophy almost nobody holds.
@@ -68,9 +76,11 @@ A missing figure filled in as `0` would therefore rank as the rarest thing the p
 Game answered as a list of zeroes would fill the top of the ranking #31 builds with achievements
 nobody has measured. The absence has to survive to the caller, so it is expressed as absence.
 
-Steam rounds, so two Achievements can be published exactly equal. Nothing here rounds again or
-nudges them apart: the ranking downstream has to see a tie to extend past it, and a tie broken on
-noise is a ranking that misleads without anyone noticing.
+Steam rounds to one decimal, so two Achievements are published exactly equal often rather than
+rarely — on appId 2066020's 483 achievements, `62.9`, `53.4`, `53.0`, `52.1` and `49.7` each
+appear twice. Nothing here rounds again or nudges them apart: the ranking downstream has to see a
+tie to extend past it, and a tie broken on noise is a ranking that misleads without anyone
+noticing.
 
 ## Considered options
 
