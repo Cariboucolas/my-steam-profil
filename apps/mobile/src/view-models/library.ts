@@ -80,6 +80,15 @@ export const formatDay = (iso: string): string => {
 };
 
 /**
+ * `3 games counted`, and `1 game counted`. Shared rather than copied: the
+ * summary and the rarest ranking are two lines of the same screen counting the
+ * same load, and a wording that drifted between them would read as two
+ * different figures.
+ */
+export const gamesCounted = (count: number): string =>
+  `${count} game${count === 1 ? "" : "s"} counted`;
+
+/**
  * Null covers two cases the list draws the same way: no tally was fetched, and
  * the game defines no achievements. Neither has a rate worth showing, and 0 %
  * would read as failure rather than absence.
@@ -232,7 +241,7 @@ export const buildLibrarySummary = (view: LibraryView): LibrarySummary => {
     rateLabel: `${rate}%`,
     // Names what was measured and claims nothing about the rest: the games
     // left out were never launched, so they are excluded rather than missing.
-    fraction: `${unlocked} / ${total} across ${loaded.length} games counted`,
+    fraction: `${unlocked} / ${total} across ${gamesCounted(loaded.length)}`,
     perfectGames: loaded.filter((e) => e.total > 0 && e.unlocked === e.total).length,
     playtimeLabel: formatHours(minutes),
   };

@@ -250,6 +250,22 @@ describe("buildLibrarySummary", () => {
     expect(summary.fraction).toBe("853 / 1007 across 3 games counted");
   });
 
+  /**
+   * One game is one game. The ranking beside this summary counts the same load
+   * in the same words, so the wording is shared rather than written twice.
+   */
+  it("counts a single game in the singular", () => {
+    const summary = buildLibrarySummary({
+      games: [SOULSTONE],
+      tallies: { [SOULSTONE.appId]: tally(353, 483) },
+      sort: "completed",
+      pending: new Set<number>(),
+      frozenOrder: null,
+    });
+
+    expect(summary.fraction).toBe("353 / 483 across 1 game counted");
+  });
+
   it("counts a fully completed game as perfect", () => {
     expect(summary.perfectGames).toBe(1);
   });
