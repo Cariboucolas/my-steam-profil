@@ -56,3 +56,19 @@ export interface SteamPlayerAchievementsResponse {
     achievements?: SteamPlayerAchievement[];
   };
 }
+
+/**
+ * One Achievement's published share of owners, as `GetGlobalAchievementPercentagesForApp`
+ * gives it: 0 to 100, Steam's own base, rounded by Steam.
+ */
+export interface SteamGlobalAchievementPercentage {
+  name: string;
+  percent: number;
+}
+
+export interface SteamGlobalAchievementPercentagesResponse {
+  /** Steam answers with an empty object for a game it publishes nothing for. */
+  achievementpercentages: {
+    achievements?: SteamGlobalAchievementPercentage[];
+  };
+}

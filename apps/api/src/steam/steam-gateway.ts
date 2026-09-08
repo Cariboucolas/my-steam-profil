@@ -3,6 +3,7 @@ import type {
   SteamOwnedGamesResponse,
   SteamSchemaResponse,
   SteamPlayerAchievementsResponse,
+  SteamGlobalAchievementPercentagesResponse,
 } from "./steam-types";
 
 /**
@@ -21,6 +22,13 @@ export interface SteamGateway {
     steamId: string,
     appId: number,
   ): Promise<SteamPlayerAchievementsResponse>;
+  /**
+   * The share of owners who have unlocked each of a game's achievements. The
+   * only method here that names no player: the answer is the same for everyone.
+   */
+  getGlobalAchievementPercentages(
+    appId: number,
+  ): Promise<SteamGlobalAchievementPercentagesResponse>;
 }
 
 /**
