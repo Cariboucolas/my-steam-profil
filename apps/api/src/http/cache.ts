@@ -23,15 +23,6 @@ export const noCache: ResponseCache = {
   put: () => Promise.resolve(),
 };
 
-/**
- * Five minutes. Long enough to cover the burst of one library open — one
- * request per game the player has ever launched — and short enough that
- * backing out of a game and looking again usually shows a fresh tally.
- *
- * A guess, not a measurement: there is no usage to measure yet (ADR-0005).
- */
-export const CACHE_SECONDS = 300;
-
 /** A cached answer is served with mutable headers, so CORS can still be applied. */
 const reusable = (response: Response): Response =>
   new Response(response.body, response);
@@ -43,9 +34,17 @@ const OK = 200;
  * it is not. Only a 200 is stored: a refusal describes a state that can change
  * — a profile can be made public, Steam can come back — and keeping it would
  * outlast the reason for it.
+ *
+ * How long an answer stays good is the route's own statement, in seconds, not
+ * something this helper decides: how fast an answer goes stale is a property of
+ * what it says, and two routes here have nothing in common on that count.
  */
 export const cached =
-  (cache: ResponseCache, handle: (context: Context) => Promise<Response>) =>
+  (
+    cache: ResponseCache,
+    seconds: number,
+    handle: (context: Context) => Promise<Response>,
+  ) =>
   async (context: Context): Promise<Response> => {
     // The Hono context carries the original Request, which is the cache key:
     // it is the full URL, so it already separates players and games.
@@ -62,7 +61,7 @@ export const cached =
     }
 
     const storable = reusable(answer);
-    storable.headers.set("Cache-Control", `max-age=${CACHE_SECONDS}`);
+    storable.headers.set("Cache-Control", `max-age=${seconds}`);
     await cache.put(request, storable.clone());
     return storable;
   };

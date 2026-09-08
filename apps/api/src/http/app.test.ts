@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createApp } from "./app";
+import { createApp, TALLY_CACHE_SECONDS } from "./app";
 import { createSteamClient } from "../steam/steam-client";
-import { CACHE_SECONDS, type ResponseCache } from "./cache";
+import { type ResponseCache } from "./cache";
 
 const API_KEY = "TEST_KEY";
 const STEAM_ID = "76561197979269357";
@@ -827,7 +827,7 @@ describe("caching the library tally", () => {
 
     const response = await app.request(completionUrl(STEAM_ID, APP_ID));
 
-    expect(response.headers.get("cache-control")).toBe(`max-age=${CACHE_SECONDS}`);
+    expect(response.headers.get("cache-control")).toBe(`max-age=${TALLY_CACHE_SECONDS}`);
   });
 
   it("remembers nothing when built without a cache", async () => {

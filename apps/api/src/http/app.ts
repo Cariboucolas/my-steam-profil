@@ -31,6 +31,17 @@ const BAD_GATEWAY = 502;
 /** Every reason a steam id can be rejected reads the same to a caller. */
 const INVALID_STEAM_ID = { error: "INVALID_STEAM_ID" } as const;
 
+/**
+ * Five minutes. Long enough to cover the burst of one library open — one
+ * request per game the player has ever launched — and short enough that
+ * backing out of a game and looking again usually shows a fresh tally.
+ *
+ * A guess, not a measurement: there is no usage to measure yet (ADR-0005). It
+ * belongs to this one route: what a tally is worth after five minutes says
+ * nothing about any other answer the API gives.
+ */
+export const TALLY_CACHE_SECONDS = 300;
+
 type Handler = (context: Context, steamId: SteamId) => Promise<Response>;
 
 /**
@@ -189,7 +200,7 @@ export const createApp = (
    */
   app.get(
     "/api/profile/:steamId/games/:appId/completion",
-    cached(cache, serveGameTally(gateway)),
+    cached(cache, TALLY_CACHE_SECONDS, serveGameTally(gateway)),
   );
 
   /**
