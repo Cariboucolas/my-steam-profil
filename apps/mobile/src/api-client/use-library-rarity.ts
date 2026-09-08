@@ -11,7 +11,11 @@ const NO_RARITY: RarityByAppId = {};
 /** How much of a load has been asked for and how much has come back. */
 type Progress = {
   readonly asked: number;
-  readonly landed: number;
+  /**
+   * How many of those are no longer coming — the ones that landed and the ones
+   * that failed alike, since neither is worth waiting for any longer.
+   */
+  readonly answered: number;
   /**
    * Every answer that is coming has come. Not the same as nothing outstanding:
    * a load that has not started has nothing outstanding either.
@@ -19,7 +23,7 @@ type Progress = {
   readonly done: boolean;
 };
 
-const NOTHING_ASKED: Progress = { asked: 0, landed: 0, done: false };
+const NOTHING_ASKED: Progress = { asked: 0, answered: 0, done: false };
 
 /**
  * A library that has been counted through, and the client that counted it.
@@ -67,6 +71,21 @@ export type LibraryRarity = {
 };
 
 /**
+ * The three silences told apart. With nothing armed, what the tab is waiting
+ * on is the reader if they have not opened it, and the count if they have.
+ */
+const statusOf = (
+  armed: CountedLibrary | null,
+  active: boolean,
+  library: CountedLibrary | null,
+  done: boolean,
+): RarityStatus => {
+  if (armed !== null) return done ? "ready" : "loading";
+  if (!active) return "idle";
+  return library === null ? "counting" : "loading";
+};
+
+/**
  * The games worth asking about: the ones holding at least one unlock.
  *
  * No game is excluded by playtime. The rarest unlock hides statistically in a
@@ -77,16 +96,6 @@ export type LibraryRarity = {
  * The order is nobody's: unlike the tallies, no row on screen is waiting on a
  * particular game, and the ranking is only true once every answer is in.
  */
-const statusOf = (
-  opened: boolean,
-  library: CountedLibrary | null,
-  done: boolean,
-): RarityStatus => {
-  if (!opened) return "idle";
-  if (library === null) return "counting";
-  return done ? "ready" : "loading";
-};
-
 const gamesHoldingAnUnlock = (tallies: TallyByAppId): readonly number[] =>
   Object.entries(tallies)
     .filter(([, tally]) => tally.unlocks.length > 0)
@@ -102,10 +111,11 @@ const gamesHoldingAnUnlock = (tallies: TallyByAppId): readonly number[] =>
  * politeness — it is where the games holding an unlock come from, and it is
  * using the same six connections this load needs (see `request-waves`).
  *
- * Once opened, the tab stays opened: a load carries on while the reader is
- * looking at something else, and coming back shows what has landed rather than
- * starting again. The answer belongs to the session, and only a new library
- * throws it away.
+ * A tab opened once stays opened for as long as that library lasts: a load
+ * carries on while the reader is looking at something else, and coming back
+ * shows what has landed rather than starting again. A new library disarms it
+ * again — a reader who opened the tab for one player has not asked for the
+ * next player's library to be fetched behind their back.
  *
  * One thing is asked of a caller: `library` must keep a stable identity across
  * renders — a fresh object each render restarts the load — and must be null
@@ -118,43 +128,54 @@ export const useLibraryRarity = (
   const [rarity, setRarity] = useState<RarityByAppId>(NO_RARITY);
   const [progress, setProgress] = useState<Progress>(NOTHING_ASKED);
   /**
-   * Sticky: what starts a load is the tab having been opened, never its being
-   * open now. Were the load to hang on `active`, leaving the tab mid-load
-   * would abandon it where it stood and coming back would not resume it.
+   * The library the tab was opened for, and the whole of what starts a load.
+   * Sticky in one direction only: leaving the tab does not disarm it, or a
+   * load would be abandoned where the reader left it and never resumed.
    */
-  const [opened, setOpened] = useState(false);
+  const [armed, setArmed] = useState<CountedLibrary | null>(null);
 
+  // Declared before the arming below, so that on the commit where a library is
+  // replaced under a reader who is watching, this clears and that re-arms.
   useEffect(() => {
-    if (active) setOpened(true);
-  }, [active]);
+    // Another profile's rarity must never be crossed with this one's unlocks:
+    // two libraries share appIds, so stale figures would not even look wrong.
+    setRarity(NO_RARITY);
+    setProgress(NOTHING_ASKED);
+    setArmed(null);
+  }, [library]);
+
+  // Arming the tab is the reader's doing, and re-doing it for a library they
+  // never asked about is not. Setting the same library twice changes nothing,
+  // which is why leaving the tab and coming back fetches nothing again.
+  useEffect(() => {
+    if (active && library !== null) setArmed(library);
+  }, [active, library]);
 
   useEffect(() => {
     let cancelled = false;
 
-    // Another profile's rarity must never be crossed with this one's unlocks,
-    // and a library still being counted has nothing to show yet.
-    setRarity(NO_RARITY);
-    setProgress(NOTHING_ASKED);
-
-    if (library !== null && opened) {
-      const wanted = gamesHoldingAnUnlock(library.tallies);
-      setProgress({ asked: wanted.length, landed: 0, done: false });
+    if (armed !== null) {
+      const wanted = gamesHoldingAnUnlock(armed.tallies);
+      setProgress({ asked: wanted.length, answered: 0, done: false });
 
       void (async () => {
         await askInWaves(
           wanted,
-          (appId) => library.client.getGameRarity(appId),
+          (appId) => armed.client.getGameRarity(appId),
           (landed, asked) => {
             if (cancelled) return;
             setRarity((known) => ({ ...known, ...landed }));
             // Counted for everything asked, not just what landed: a game that
             // failed is not coming, and the bar must not stop short of the end.
-            setProgress((far) => ({ ...far, landed: far.landed + asked.length }));
+            setProgress((reached) => ({
+              ...reached,
+              answered: reached.answered + asked.length,
+            }));
           },
           () => !cancelled,
         );
 
-        if (!cancelled) setProgress((far) => ({ ...far, done: true }));
+        if (!cancelled) setProgress((reached) => ({ ...reached, done: true }));
       })();
     }
 
@@ -163,13 +184,13 @@ export const useLibraryRarity = (
     return () => {
       cancelled = true;
     };
-  }, [library, opened]);
+  }, [armed]);
 
-  const outstanding = progress.asked - progress.landed;
+  const outstanding = progress.asked - progress.answered;
 
   return {
     rarity,
-    status: statusOf(opened, library, progress.done),
-    loaded: outstanding === 0 ? null : progress.landed / progress.asked,
+    status: statusOf(armed, active, library, progress.done),
+    loaded: outstanding === 0 ? null : progress.answered / progress.asked,
   };
 };

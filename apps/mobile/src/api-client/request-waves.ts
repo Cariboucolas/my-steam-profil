@@ -13,7 +13,7 @@ import type { Result } from "@steam/domain";
  * would only queue somewhere less visible. Stated once because it is one
  * budget: two loads each helping themselves to six would halve both.
  */
-export const CONCURRENT_REQUESTS = 6;
+const CONCURRENT_REQUESTS = 6;
 
 /** What one wave brought back, by appId. A game that failed is absent. */
 export type Landed<T> = Readonly<Record<number, T>>;
