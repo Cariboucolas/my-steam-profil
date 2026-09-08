@@ -1,0 +1,416 @@
+import type { GameDto, GameRarityDto, UnlockDto } from "@steam/contracts";
+
+import type { LibraryView } from "./library";
+import {
+  buildRarestUnlocks,
+  type RarityByAppId,
+  type RarestUnlocks,
+} from "./rarest-unlocks";
+
+const SOULSTONE = 2066020;
+const HALLS = 2218750;
+const EXILE = 2694490;
+
+const NAMES: Readonly<Record<number, string>> = {
+  [SOULSTONE]: "Soulstone Survivors",
+  [HALLS]: "Halls of Torment",
+  [EXILE]: "Path of Exile",
+};
+
+const game = (appId: number): GameDto => ({
+  appId,
+  name: NAMES[appId] ?? `Game ${appId}`,
+  playtimeMinutes: 120,
+  playtimeLabel: "2 h",
+  iconUrl: `https://icon/${appId}.jpg`,
+  lastPlayedAt: null,
+});
+
+/** Epoch seconds, written as a day so a fixture reads as one. */
+const at = (iso: string): number => Date.parse(iso) / 1000;
+
+/**
+ * What one game holds: the achievements the player unlocked, each with the day
+ * it fell on, and what Steam publishes about that game's achievements.
+ *
+ * The two are written apart because that is how they arrive — the unlocks with
+ * the tally, the figures from a route that knows no player — and every rule
+ * here is about what happens where the two do not line up.
+ */
+type Held = {
+  readonly unlocked?: Readonly<Record<string, string | null>>;
+  readonly published?: Readonly<Record<string, number>>;
+};
+
+const unlocksOf = (held: Held): readonly UnlockDto[] =>
+  Object.entries(held.unlocked ?? {}).map(([apiName, day]) => ({
+    apiName,
+    at: day === null ? null : at(day),
+  }));
+
+const publishedOf = (held: Held): GameRarityDto | undefined =>
+  held.published &&
+  Object.entries(held.published).map(([apiName, rarity]) => ({
+    apiName,
+    rarity,
+  }));
+
+/**
+ * A counted library and the rarity that came back for it. A game named without
+ * `published` is one Steam publishes nothing about; a game absent from the
+ * rarity altogether is one that was never asked about.
+ */
+const libraryHolding = (
+  held: Readonly<Record<number, Held>>,
+): { view: LibraryView; rarity: RarityByAppId } => {
+  const appIds = Object.keys(held).map(Number);
+
+  return {
+    view: {
+      games: appIds.map(game),
+      tallies: Object.fromEntries(
+        appIds.map((appId) => {
+          const unlocks = unlocksOf(held[appId] ?? {});
+          return [
+            appId,
+            {
+              completion: {
+                unlocked: unlocks.length,
+                total: 100,
+                percentage: unlocks.length,
+              },
+              unlocks,
+            },
+          ];
+        }),
+      ),
+      sort: "completed",
+      pending: new Set<number>(),
+      frozenOrder: null,
+    },
+    rarity: Object.fromEntries(
+      appIds
+        .map((appId) => [appId, publishedOf(held[appId] ?? {})] as const)
+        .filter((entry): entry is readonly [number, GameRarityDto] =>
+          entry[1] !== undefined,
+        ),
+    ),
+  };
+};
+
+const rank = (held: Readonly<Record<number, Held>>): RarestUnlocks => {
+  const { view, rarity } = libraryHolding(held);
+  return buildRarestUnlocks(view, rarity);
+};
+
+/** The achievements a ranking named, rarest first. */
+const named = (ranking: RarestUnlocks): readonly string[] =>
+  ranking.rows.map((row) => row.apiName);
+
+/** `count` achievements of one game, all published at the same figure. */
+const tiedAt = (
+  rarity: number,
+  count: number,
+  prefix: string,
+): { unlocked: Record<string, string>; published: Record<string, number> } => {
+  const unlocked: Record<string, string> = {};
+  const published: Record<string, number> = {};
+  for (let index = 0; index < count; index += 1) {
+    unlocked[`${prefix}_${index}`] = "2026-01-01T00:00:00Z";
+    published[`${prefix}_${index}`] = rarity;
+  }
+  return { unlocked, published };
+};
+
+describe("buildRarestUnlocks", () => {
+  it("puts the rarest unlock first", () => {
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: { COMMON: "2026-01-01T00:00:00Z", RARE: "2026-01-01T00:00:00Z" },
+        published: { COMMON: 42.5, RARE: 0.4 },
+      },
+      [HALLS]: {
+        unlocked: { MIDDLING: "2026-01-01T00:00:00Z" },
+        published: { MIDDLING: 12 },
+      },
+    });
+
+    expect(named(ranking)).toEqual(["RARE", "MIDDLING", "COMMON"]);
+  });
+
+  it("says which game each unlock came from, and how rare it is", () => {
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: { RARE: "2026-01-01T00:00:00Z" },
+        published: { RARE: 0.4 },
+      },
+    });
+
+    expect(ranking.rows[0]).toEqual({
+      appId: SOULSTONE,
+      gameName: "Soulstone Survivors",
+      apiName: "RARE",
+      rarity: 0.4,
+      rarityLabel: "0.4%",
+    });
+  });
+
+  /**
+   * Steam publishes a figure it has already rounded, and rounding it again
+   * invents nothing. A whole number keeps no decimal, as every other rate on
+   * this screen is written.
+   */
+  it("writes the figure as the row shows it", () => {
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: { A: null, B: null, C: null },
+        published: { A: 0.44444, B: 12, C: 0.02 },
+      },
+    });
+
+    expect(ranking.rows.map((row) => row.rarityLabel)).toEqual([
+      // Rarer than a tenth of a percent, and saying "0%" of something the
+      // player is holding would be a plain untruth.
+      "<0.1%",
+      "0.4%",
+      "12%",
+    ]);
+  });
+
+  it("keeps ten rows out of a library holding more", () => {
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: Object.fromEntries(
+          Array.from({ length: 30 }, (_, index) => [
+            `ACH_${index}`,
+            "2026-01-01T00:00:00Z",
+          ]),
+        ),
+        published: Object.fromEntries(
+          Array.from({ length: 30 }, (_, index) => [`ACH_${index}`, index + 1]),
+        ),
+      },
+    });
+
+    expect(ranking.rows).toHaveLength(10);
+    expect(named(ranking)[9]).toBe("ACH_9");
+  });
+
+  /**
+   * Steam rounds, so the tenth and the eleventh can be published at exactly the
+   * same figure. Cutting between two equal values is the one place this
+   * ranking can mislead without anyone noticing, so it does not cut there.
+   */
+  it("keeps everything published at the same figure as the tenth", () => {
+    const tie = tiedAt(5, 4, "TIED");
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: {
+          ...Object.fromEntries(
+            Array.from({ length: 8 }, (_, index) => [
+              `RARER_${index}`,
+              "2026-01-01T00:00:00Z",
+            ]),
+          ),
+          ...tie.unlocked,
+        },
+        published: {
+          ...Object.fromEntries(
+            Array.from({ length: 8 }, (_, index) => [
+              `RARER_${index}`,
+              (index + 1) / 10,
+            ]),
+          ),
+          ...tie.published,
+        },
+      },
+      [HALLS]: {
+        unlocked: { COMMONER: "2026-01-01T00:00:00Z" },
+        published: { COMMONER: 6 },
+      },
+    });
+
+    // Eight rarer than the tie, then all four of it: twelve rows, and the
+    // commoner one still left out.
+    expect(ranking.rows).toHaveLength(12);
+    expect(named(ranking)).not.toContain("COMMONER");
+  });
+
+  it("puts the newest of two equally rare unlocks first", () => {
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: {
+          OLDER: "2024-03-02T10:00:00Z",
+          NEWER: "2026-03-02T10:00:00Z",
+          MIDDLE: "2025-03-02T10:00:00Z",
+        },
+        published: { OLDER: 0.4, NEWER: 0.4, MIDDLE: 0.4 },
+      },
+    });
+
+    expect(named(ranking)).toEqual(["NEWER", "MIDDLE", "OLDER"]);
+  });
+
+  /**
+   * An unlock Steam will not date is a real unlock (ADR-0009). It ranks on its
+   * rarity like any other and simply has nothing to break a tie with, so it
+   * follows the ones that can be placed in time rather than leading them.
+   */
+  it("ranks an unlock Steam will not date, behind its dated equals", () => {
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: { UNDATED: null, DATED: "2020-01-01T00:00:00Z" },
+        published: { UNDATED: 0.4, DATED: 0.4 },
+      },
+    });
+
+    expect(named(ranking)).toEqual(["DATED", "UNDATED"]);
+  });
+
+  it("never names an achievement the player has not unlocked", () => {
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: { HELD: "2026-01-01T00:00:00Z" },
+        published: { ALMOST_NOBODY_HAS_THIS: 0.1, HELD: 40 },
+      },
+    });
+
+    expect(named(ranking)).toEqual(["HELD"]);
+  });
+
+  /**
+   * Steam can publish figures for a game and say nothing about one of its
+   * achievements. That unlock is dropped rather than given a zero, which would
+   * rank it the rarest thing the player owns — the same line CONTEXT.md draws:
+   * no figure at all is not a figure of zero.
+   */
+  it("leaves out an unlock Steam publishes no figure for", () => {
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: { UNPUBLISHED: "2026-01-01T00:00:00Z", KNOWN: "2026-01-01T00:00:00Z" },
+        published: { KNOWN: 40 },
+      },
+    });
+
+    expect(named(ranking)).toEqual(["KNOWN"]);
+  });
+
+  /**
+   * A game Steam publishes nothing about is left out rather than parked at the
+   * bottom: the bottom is where the commonest unlocks are, and how common these
+   * are is exactly what is not known.
+   */
+  it("leaves out a game whose rarity Steam does not publish", () => {
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: { RARE: "2026-01-01T00:00:00Z" },
+        published: { RARE: 0.4 },
+      },
+      [HALLS]: { unlocked: { UNKNOWN: "2026-01-01T00:00:00Z" }, published: {} },
+      [EXILE]: { unlocked: { NEVER_ASKED: "2026-01-01T00:00:00Z" } },
+    });
+
+    expect(named(ranking)).toEqual(["RARE"]);
+  });
+
+  it("states how many games it ranked across", () => {
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: { RARE: "2026-01-01T00:00:00Z" },
+        published: { RARE: 0.4 },
+      },
+      [HALLS]: {
+        unlocked: { OTHER: "2026-01-01T00:00:00Z" },
+        published: { OTHER: 8 },
+      },
+      [EXILE]: { unlocked: { UNKNOWN: "2026-01-01T00:00:00Z" }, published: {} },
+    });
+
+    expect(ranking.countedLabel).toBe("rarest 2 across 2 games counted");
+  });
+
+  it("counts a game it could rank nothing in, having been told about it", () => {
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: { RARE: "2026-01-01T00:00:00Z" },
+        published: { RARE: 0.4 },
+      },
+      [HALLS]: { unlocked: {}, published: { NOT_HELD: 2 } },
+    });
+
+    expect(ranking.countedLabel).toBe("rarest 1 across 2 games counted");
+  });
+
+  it("ranks nothing rather than failing on a library holding no unlock", () => {
+    const ranking = rank({
+      [SOULSTONE]: { unlocked: {}, published: { NOT_HELD: 2 } },
+    });
+
+    expect(ranking.rows).toEqual([]);
+    expect(ranking.countedLabel).toBe("nothing to rank across 1 game counted");
+  });
+
+  it("ranks nothing rather than failing on a library nothing is known about", () => {
+    const ranking = rank({ [SOULSTONE]: { unlocked: {} } });
+
+    expect(ranking.rows).toEqual([]);
+    expect(ranking.countedLabel).toBe("nothing to rank across 0 games counted");
+  });
+
+  /**
+   * A game the library no longer holds is not the player's to rank, exactly as
+   * the summary beside it counts only what the library holds.
+   */
+  it("ranks only the games the library holds", () => {
+    const { view, rarity } = libraryHolding({
+      [SOULSTONE]: {
+        unlocked: { RARE: "2026-01-01T00:00:00Z" },
+        published: { RARE: 0.4 },
+      },
+      [HALLS]: {
+        unlocked: { RARER: "2026-01-01T00:00:00Z" },
+        published: { RARER: 0.1 },
+      },
+    });
+
+    const ranking = buildRarestUnlocks(
+      { ...view, games: view.games.filter((one) => one.appId === SOULSTONE) },
+      rarity,
+    );
+
+    expect(named(ranking)).toEqual(["RARE"]);
+  });
+
+  /**
+   * Two unlocks can be equal on the figure and on the day, and something still
+   * has to be drawn first. The library's own order decides it, then the name —
+   * so a rebuild of the same load draws the same list rather than whichever
+   * order the answers happened to land in.
+   */
+  it("orders what nothing else separates by the game, then by the name", () => {
+    const day = "2026-01-01T00:00:00Z";
+    const ranking = rank({
+      [HALLS]: {
+        unlocked: { SECOND: day, FIRST: day },
+        published: { SECOND: 0.4, FIRST: 0.4 },
+      },
+      [SOULSTONE]: { unlocked: { ALSO: day }, published: { ALSO: 0.4 } },
+    });
+
+    expect(named(ranking)).toEqual(["ALSO", "FIRST", "SECOND"]);
+  });
+
+  /**
+   * Built over and over as the tab loads, and the same inputs must draw the
+   * same pixels: nothing here reads a clock, and no two rows are left in an
+   * order the input did not decide.
+   */
+  it("answers the same thing twice", () => {
+    const held = {
+      [SOULSTONE]: tiedAt(0.4, 6, "TIED"),
+      [HALLS]: tiedAt(0.4, 6, "ALSO"),
+    };
+
+    expect(rank(held)).toEqual(rank(held));
+  });
+});
