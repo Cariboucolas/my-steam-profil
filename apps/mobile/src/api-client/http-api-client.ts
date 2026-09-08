@@ -2,6 +2,7 @@ import { ok, err } from "@steam/domain";
 import type {
   GameDto,
   GameProgressDto,
+  GameRarityDto,
   GameTallyDto,
   ProfileDto,
 } from "@steam/contracts";
@@ -45,12 +46,14 @@ const failureFor = (status: number): ApiError => {
  */
 export const createHttpApiClient = (config: HttpApiClientConfig): ApiClient => {
   const request = config.fetch ?? globalThis.fetch;
-  const root = `${config.baseUrl.replace(/\/+$/, "")}/api/profile/${config.steamId}`;
+  const api = `${config.baseUrl.replace(/\/+$/, "")}/api`;
+  /** Everything the backend knows about this one player, and nothing else. */
+  const root = `${api}/profile/${config.steamId}`;
 
-  const get = async <T>(path: string) => {
+  const getAt = async <T>(url: string) => {
     let response: Response;
     try {
-      response = await request(`${root}${path}`);
+      response = await request(url);
     } catch {
       return err<ApiError>("UNAVAILABLE");
     }
@@ -66,10 +69,17 @@ export const createHttpApiClient = (config: HttpApiClientConfig): ApiClient => {
     }
   };
 
+  /** A question about the configured player. Most of them are. */
+  const get = <T>(path: string) => getAt<T>(`${root}${path}`);
+
   return {
     getProfile: () => get<ProfileDto>(""),
     getGames: () => get<readonly GameDto[]>("/games"),
     getGameProgress: (appId) => get<GameProgressDto>(`/games/${appId}/progress`),
     getGameTally: (appId) => get<GameTallyDto>(`/games/${appId}/completion`),
+
+    // Off `api` rather than `root`: no steam id in this address, which is what
+    // lets the backend answer every player from one cached entry (ADR-0008).
+    getGameRarity: (appId) => getAt<GameRarityDto>(`${api}/games/${appId}/rarity`),
   };
 };

@@ -1,4 +1,9 @@
-import type { GameDto, GameProgressDto, ProfileDto } from "@steam/contracts";
+import type {
+  GameDto,
+  GameProgressDto,
+  GameRarityDto,
+  ProfileDto,
+} from "@steam/contracts";
 
 import { createFixtureApiClient } from "./fixture-api-client";
 
@@ -106,5 +111,39 @@ describe("createFixtureApiClient", () => {
       ok: false,
       error: "NOT_LOADED",
     });
+  });
+});
+
+/**
+ * Rarity is not in the fixture build: the spike never made the Steam call that
+ * publishes it. A fixture set can carry it and usually does not, and a set
+ * without it says the honest thing — Steam publishes nothing for this game.
+ */
+describe("createFixtureApiClient (rarity)", () => {
+  const rarity: GameRarityDto = [
+    { apiName: "BOSS_1", rarity: 48.7 },
+    { apiName: "BOSS_2", rarity: 0.4 },
+  ];
+
+  it("serves the rarity a fixture set carries", async () => {
+    const withRarity = createFixtureApiClient({
+      profile,
+      games,
+      progress: { 2066020: progress },
+      rarity: { 2066020: rarity },
+    });
+
+    expect(await withRarity.getGameRarity(2066020)).toEqual({
+      ok: true,
+      value: rarity,
+    });
+  });
+
+  /**
+   * Never a NOT_FOUND, and never a list of zeroes: "Steam publishes nothing
+   * about this game" is a true answer, and the backend gives the same one.
+   */
+  it("answers with nothing for a game it carries no rarity for", async () => {
+    expect(await client.getGameRarity(2066020)).toEqual({ ok: true, value: [] });
   });
 });

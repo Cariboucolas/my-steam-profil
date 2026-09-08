@@ -2,6 +2,7 @@ import type { Result } from "@steam/domain";
 import type {
   GameDto,
   GameProgressDto,
+  GameRarityDto,
   GameTallyDto,
   ProfileDto,
 } from "@steam/contracts";
@@ -39,4 +40,14 @@ export interface ApiClient {
    * (ADR-0005), and the unlock dates ride along on it (ADR-0006).
    */
   getGameTally(appId: number): Promise<Result<GameTallyDto, ProgressError>>;
+  /**
+   * What share of a game's owners holds each of its achievements, as Steam
+   * publishes it. The only question here that is not about the configured
+   * player: every player gets the same answer, and the backend caches it under
+   * an address that names none of them (ADR-0008).
+   *
+   * A game Steam publishes nothing about answers with an empty list, which is a
+   * real answer and not a failure.
+   */
+  getGameRarity(appId: number): Promise<Result<GameRarityDto, ApiError>>;
 }

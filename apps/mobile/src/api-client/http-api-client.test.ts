@@ -65,6 +65,17 @@ describe("createHttpApiClient (addresses)", () => {
     );
   });
 
+  /**
+   * The one address the app asks that names no player. Rarity is the same for
+   * everyone, and the backend caches on the URL, so a steam id here would give
+   * every player a private copy of an answer they all share (ADR-0008).
+   */
+  it("asks for a game's rarity at an address that names no player", async () => {
+    const [url] = await urlsAsked((client) => client.getGameRarity(APP_ID));
+    expect(url).toBe(`${BASE_URL}/api/games/${APP_ID}/rarity`);
+    expect(url).not.toContain(STEAM_ID);
+  });
+
   it("does not mind a base url with a trailing slash", async () => {
     const client = createHttpApiClient({
       baseUrl: `${BASE_URL}/`,
