@@ -203,10 +203,15 @@ describe("createSteamClient (Steam's meaningful 4xx)", () => {
     expect(await client.getSchemaForGame(APP_ID)).toEqual({ game: {} });
   });
 
+  /**
+   * Measured: appId 2694490 and 24400, both games Steam publishes no figures
+   * for, answer 403 with a bare `{}`. Not the 400 the sibling calls use — this
+   * endpoint says "nothing to show you here" with the status the others keep
+   * for a private profile.
+   */
   it("returns the empty body Steam sends for a game it publishes nothing about", async () => {
-    const body = { achievementpercentages: {} };
-    const client = clientWith(stubFetch(() => jsonResponse(body, BAD_REQUEST)));
-    expect(await client.getGlobalAchievementPercentages(APP_ID)).toEqual(body);
+    const client = clientWith(stubFetch(() => jsonResponse({}, FORBIDDEN)));
+    expect(await client.getGlobalAchievementPercentages(APP_ID)).toEqual({});
   });
 });
 
@@ -240,19 +245,6 @@ describe("createSteamClient (4xx everywhere else)", () => {
     );
   });
 
-  /**
-   * There is no profile behind the rarity call and no key on it, so a 403 there
-   * cannot mean "this player is private". It means we are being refused, which
-   * is an outage and must not read as a game that publishes nothing.
-   */
-  it("raises when the rarity call is refused, which no game state explains", async () => {
-    const client = clientWith(
-      stubFetch(() => jsonResponse({ achievementpercentages: {} }, FORBIDDEN)),
-    );
-    await expect(
-      client.getGlobalAchievementPercentages(APP_ID),
-    ).rejects.toBeInstanceOf(SteamGatewayError);
-  });
 });
 
 /**

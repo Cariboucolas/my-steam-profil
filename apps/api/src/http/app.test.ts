@@ -839,12 +839,13 @@ describe("caching the library tally", () => {
  */
 describe("GET /api/games/:appId/rarity", () => {
   const APP_ID = 2066020;
-  const BAD_REQUEST_FROM_STEAM = 400;
+  const FORBIDDEN_FROM_STEAM = 403;
 
   const url = `/api/games/${APP_ID}/rarity`;
 
+  /** Steam publishes the figure as text, so a stub that sends a number lies. */
   const publishing = (
-    achievements: readonly { name: string; percent: number }[],
+    achievements: readonly { name: string; percent: string }[],
   ) => ({ achievementpercentages: { achievements } });
 
   it("answers with the share of owners holding each achievement", async () => {
@@ -852,8 +853,8 @@ describe("GET /api/games/:appId/rarity", () => {
       steamAnswering({
         globalPercentages: [
           publishing([
-            { name: "ACH_BOSS_1", percent: 48.7 },
-            { name: "ACH_BOSS_2", percent: 0.4 },
+            { name: "ACH_BOSS_1", percent: "48.7" },
+            { name: "ACH_BOSS_2", percent: "0.4" },
           ]),
         ],
       }),
@@ -874,10 +875,9 @@ describe("GET /api/games/:appId/rarity", () => {
    * every achievement of a game nobody measures at the top of the list.
    */
   it("answers with nothing for a game Steam publishes nothing about", async () => {
+    // Measured on 2694490 and 24400: a 403 with a bare `{}`, no envelope.
     const app = appReaching(
-      steamAnswering({
-        globalPercentages: [{ achievementpercentages: {} }, BAD_REQUEST_FROM_STEAM],
-      }),
+      steamAnswering({ globalPercentages: [{}, FORBIDDEN_FROM_STEAM] }),
     );
 
     const response = await app.request(url);
@@ -889,7 +889,9 @@ describe("GET /api/games/:appId/rarity", () => {
   /** A figure of zero is a figure: Steam measured it and published it. */
   it("keeps a published zero, which is not the same as nothing published", async () => {
     const app = appReaching(
-      steamAnswering({ globalPercentages: [publishing([{ name: "ACH_0", percent: 0 }])] }),
+      steamAnswering({
+        globalPercentages: [publishing([{ name: "ACH_0", percent: "0" }])],
+      }),
     );
 
     expect(await (await app.request(url)).json()).toEqual([
@@ -930,7 +932,7 @@ describe("caching a game's published rarity", () => {
   const rarityUrl = (appId: number) => `/api/games/${appId}/rarity`;
 
   const publishedFor = {
-    achievementpercentages: { achievements: [{ name: "ACH_0", percent: 12.3 }] },
+    achievementpercentages: { achievements: [{ name: "ACH_0", percent: "12.3" }] },
   };
 
   const countingSteam = (answers: SteamAnswers) => {
