@@ -29,23 +29,26 @@ const reusable = (response: Response): Response =>
 
 const OK = 200;
 
+/** What Hono asks a route for — and what a cached route still is. */
+type RouteHandler = (context: Context) => Promise<Response>;
+
 /**
  * Serves a handler's answer from the cache when it is there, and stores it when
  * it is not. Only a 200 is stored: a refusal describes a state that can change
  * — a profile can be made public, Steam can come back — and keeping it would
  * outlast the reason for it.
  *
- * How long an answer stays good is the route's own statement, in seconds, not
- * something this helper decides: how fast an answer goes stale is a property of
- * what it says, and two routes here have nothing in common on that count.
+ * How long an answer stays good is the route's own statement, in seconds,
+ * rather than something decided here: how fast an answer goes stale is a
+ * property of what that answer says, and this helper never sees it.
  */
 export const cached =
   (
     cache: ResponseCache,
     seconds: number,
-    handle: (context: Context) => Promise<Response>,
-  ) =>
-  async (context: Context): Promise<Response> => {
+    handle: RouteHandler,
+  ): RouteHandler =>
+  async (context) => {
     // The Hono context carries the original Request, which is the cache key:
     // it is the full URL, so it already separates players and games.
     const request = context.req.raw;

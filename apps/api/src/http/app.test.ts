@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createApp, TALLY_CACHE_SECONDS } from "./app";
 import { createSteamClient } from "../steam/steam-client";
-import { type ResponseCache } from "./cache";
+import type { ResponseCache } from "./cache";
+import { mapCache } from "./cache.test-support";
 
 const API_KEY = "TEST_KEY";
 const STEAM_ID = "76561197979269357";
@@ -724,21 +725,6 @@ describe("caching the library tally", () => {
       return answer(input, init);
     };
     return { fetchImpl, calls };
-  };
-
-  /** A cache with the Cloudflare Cache API's shape and a Map behind it. */
-  const mapCache = (): ResponseCache => {
-    const entries = new Map<string, Response>();
-    return {
-      match: (request) => {
-        const hit = entries.get(request.url);
-        return Promise.resolve(hit ? hit.clone() : undefined);
-      },
-      put: (request, response) => {
-        entries.set(request.url, response.clone());
-        return Promise.resolve();
-      },
-    };
   };
 
   const appCaching = (fetchImpl: typeof fetch, cache: ResponseCache) =>
