@@ -6,8 +6,14 @@ import type {
   GameCompletionDto,
   GameProgressDto,
   GameTallyDto,
+  AchievementRarityDto,
+  GameRarityDto,
 } from "@steam/contracts";
-import type { GameProgress, GameTally } from "../steam/steam-mapper";
+import type {
+  GameProgress,
+  GameTally,
+  AchievementRarity,
+} from "../steam/steam-mapper";
 
 export const toProfileDto = (profile: Profile): ProfileDto => ({
   steamId: profile.steamId.value,
@@ -52,6 +58,19 @@ export const toGameTallyDto = (tally: GameTally): GameTallyDto => ({
   completion: toGameCompletionDto(tally.completion),
   unlockedAt: tally.unlockedAt,
 });
+
+export const toAchievementRarityDto = (
+  rarity: AchievementRarity,
+): AchievementRarityDto => ({
+  apiName: rarity.apiName,
+  // Unrounded: Steam has already rounded, and rounding twice invents ties.
+  rarity: rarity.rarity,
+});
+
+/** What Steam publishes about a Game, in the order Steam published it. */
+export const toGameRarityDto = (
+  rarities: readonly AchievementRarity[],
+): GameRarityDto => rarities.map(toAchievementRarityDto);
 
 export const toGameProgressDto = (data: GameProgress): GameProgressDto => ({
   completion: toGameCompletionDto(data.completion),
