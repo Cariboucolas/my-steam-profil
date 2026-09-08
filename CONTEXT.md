@@ -32,6 +32,10 @@ _Avoid_: Difficulty (Rarity is the proxy for it, never the thing), Popularity (t
 Whether a player has earned an Achievement, and when. Exactly two shapes: unlocked with a date, or locked.
 _Avoid_: Achieved, Completed, Status
 
+**Unlock**:
+One Achievement a player has earned, as the GameTally carries it: which one, and when. The date is missing where Steam flags the achievement earned and will not say when — that is Steam not knowing, never a January morning in 1970, and never a reason to leave the unlock out. Distinct from an UnlockState, which is the same fact seen from the Achievement and has no name of its own to give.
+_Avoid_: Achievement (an Unlock is the earning of one, not the thing), Trophy, Entry
+
 **Timeline**:
 A player's unlocked achievements for one Game, ordered by when they were earned.
 _Avoid_: History, Chronology, Feed
@@ -45,8 +49,8 @@ The tally: how many achievements a player has unlocked, out of how many **the Ga
 _Avoid_: Progress, Stats, Summary
 
 **GameTally**:
-What the app asks for per Game while it is counting a whole library: a GameCompletion, and the instants that Game's unlocked achievements fell on. Two named parts rather than one widened shape — a GameCompletion **is** the tally itself, and a tally carrying three hundred dates is no longer one (ADR-0006).
-_Avoid_: widening GameCompletion, Progress, Unlocks, History
+What the app asks for per Game while it is counting a whole library: a GameCompletion, and the Unlocks it was counted from. Two named parts rather than one widened shape — a GameCompletion **is** the tally itself, and a tally carrying three hundred unlocks is no longer one (ADR-0006). It carried bare instants until ADR-0009 gave each one its name, without which a player's unlocks cannot be crossed with what Steam publishes about them.
+_Avoid_: widening GameCompletion, Progress, History, Unlocks as a name for the whole (it names one of the two parts, never the tally)
 
 **GameProgress**:
 Everything there is to say about one player in one Game: its GameCompletion, its achievements with their UnlockState, and their Timeline.
