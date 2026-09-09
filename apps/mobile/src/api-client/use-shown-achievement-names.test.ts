@@ -242,4 +242,52 @@ describe("useShownAchievementNames", () => {
 
     await expect(release()).resolves.toBeUndefined();
   });
+
+  /**
+   * A row whose game has not answered yet has nothing to show, and the apiName
+   * it was ranked under is not nothing — it looks like an answer. Which rows
+   * may say so is per game, not per load: `loading` is true while any game is
+   * outstanding, and the rows of the games that have answered are finished.
+   */
+  it("names the games still outstanding, not merely that some are", async () => {
+    // Seven, so the answers land in two waves and a ranking is half named.
+    const WIDE = [1, 2, 3, 4, 5, 6, 7];
+    const { client, release } = heldClient([7]);
+    const { result } = renderNames(shown(client, WIDE));
+
+    await waitFor(() => expect(result.current.names[1]).toBeDefined());
+
+    expect(result.current.loading).toBe(true);
+    expect([...result.current.pending]).toEqual([7]);
+
+    await release();
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    expect([...result.current.pending]).toEqual([]);
+  });
+
+  /**
+   * A game that answered without naming the row is finished, not waiting. The
+   * row keeps the apiName it was ranked under, and must stop pulsing to say so.
+   */
+  it("stops waiting on a game that could not be named", async () => {
+    const { client } = heldClient([], () => err<ApiError>("UNAVAILABLE"));
+    const { result } = renderNames(shown(client, [SOULSTONE]));
+
+    await waitFor(() => expect(result.current.loading).toBe(false));
+
+    expect(result.current.names[SOULSTONE]).toBeUndefined();
+    expect([...result.current.pending]).toEqual([]);
+  });
+
+  /** Another player's rows are not waiting on this player's schemas. */
+  it("waits on nothing once the player has changed", async () => {
+    const previous = heldClient([SOULSTONE]);
+    const { result, rerender } = renderNames(shown(previous.client, [SOULSTONE]));
+    await waitFor(() => expect([...result.current.pending]).toEqual([SOULSTONE]));
+
+    rerender({ games: null });
+
+    expect([...result.current.pending]).toEqual([]);
+  });
 });

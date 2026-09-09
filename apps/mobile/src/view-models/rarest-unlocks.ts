@@ -205,6 +205,16 @@ export type NamedUnlock = RarestUnlock & {
   readonly displayName: string;
   /** The unlocked icon, or null where the game has named nothing for it. */
   readonly icon: string | null;
+  /**
+   * Whether this row's game has yet to answer — the row has nothing to show,
+   * as against having been shown there is nothing.
+   *
+   * The two cannot share a drawing. An apiName is a key, and a row wearing one
+   * does not look like a row that is waiting: it looks like a game that names
+   * its achievements ACH_ASCEND_10. So a row still waiting is drawn as waiting,
+   * and only a row whose game has answered settles for the apiName (#57).
+   */
+  readonly pending: boolean;
 };
 
 /**
@@ -226,10 +236,15 @@ export const gamesShownIn = (
  * Steam published and a day the player unlocked it, and an answer about its
  * name cannot take that back — so an achievement its game says nothing about
  * keeps the apiName it was ranked under. A poor name is not a blank row.
+ *
+ * `pending` is the games still to answer, and is not derivable from `names`: a
+ * game absent from there is one that was never asked and one that could not be
+ * named alike, and those two rows are drawn differently.
  */
 export const nameUnlocks = (
   rows: readonly RarestUnlock[],
   names: NamesByAppId,
+  pending: ReadonlySet<number>,
 ): readonly NamedUnlock[] =>
   rows.map((row) => {
     const named = names[row.appId]?.find(
@@ -241,6 +256,7 @@ export const nameUnlocks = (
       // an empty row, which is worse than the key the row was ranked under.
       displayName: named?.displayName || row.apiName,
       icon: named?.icon ?? null,
+      pending: pending.has(row.appId),
     };
   });
 

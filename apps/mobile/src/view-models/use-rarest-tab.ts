@@ -90,11 +90,11 @@ export const useRarestTab = (
         : { client: library.client, appIds },
     [library, status, appIds],
   );
-  const { names, loading } = useShownAchievementNames(shown);
+  const { names, loading, pending } = useShownAchievementNames(shown);
 
   const rows = useMemo(
-    () => nameUnlocks(ranking.rows, names),
-    [ranking.rows, names],
+    () => nameUnlocks(ranking.rows, names, pending),
+    [ranking.rows, names, pending],
   );
 
   return {
