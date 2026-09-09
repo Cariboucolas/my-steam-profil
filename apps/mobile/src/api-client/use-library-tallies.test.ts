@@ -63,6 +63,7 @@ const clientAsking = (answer: (appId: number) => Promise<Tally>): ApiClient => (
   getGameProgress: refuse,
   getGameTally: answer,
   getGameRarity: refuse,
+  getGameAchievements: refuse,
 });
 
 /** Answers every game at once, and records the order it was asked in. */

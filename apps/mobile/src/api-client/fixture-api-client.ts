@@ -1,6 +1,8 @@
 import { ok, err, type Result } from "@steam/domain";
 import { byWhenUnlocked } from "@steam/contracts";
 import type {
+  AchievementNameDto,
+  GameAchievementsDto,
   GameDto,
   GameProgressDto,
   GameRarityDto,
@@ -25,6 +27,16 @@ export type FixtureData = {
    */
   readonly rarity?: Readonly<Record<number, GameRarityDto>>;
 };
+
+/** How the stored progress names a game's achievements, schema order kept. */
+const namesIn = (
+  progress: GameProgressDto | undefined,
+): readonly AchievementNameDto[] =>
+  (progress?.achievements ?? []).map((achievement) => ({
+    apiName: achievement.apiName,
+    displayName: achievement.displayName,
+    icon: achievement.icon,
+  }));
 
 /**
  * Serves the DTOs the fixture build produced. Data is injected rather than
@@ -96,5 +108,16 @@ const unlocksIn = (progress: GameProgressDto): readonly UnlockDto[] =>
      */
     getGameRarity: (appId) =>
       Promise.resolve(ok<GameRarityDto>(data.rarity?.[appId] ?? [])),
+
+    /**
+     * Read back out of stored progress, which carries what the schema said: the
+     * real client asks a route of its own, and both answer the same shape.
+     *
+     * Every achievement the game defines is named, locked ones included. What a
+     * game calls an award does not depend on whether this player has earned it,
+     * and the backend answers the same list.
+     */
+    getGameAchievements: (appId) =>
+      Promise.resolve(ok<GameAchievementsDto>(namesIn(data.progress[appId]))),
   };
 };

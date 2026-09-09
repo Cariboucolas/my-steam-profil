@@ -1,5 +1,6 @@
 import type { Result } from "@steam/domain";
 import type {
+  GameAchievementsDto,
   GameDto,
   GameProgressDto,
   GameRarityDto,
@@ -50,4 +51,18 @@ export interface ApiClient {
    * real answer and not a failure.
    */
   getGameRarity(appId: number): Promise<Result<GameRarityDto, ApiError>>;
+  /**
+   * What a game calls each of its achievements, and the icon it draws them
+   * with. The other question that is not about the configured player: a name is
+   * the game's, not the asker's, so the backend keeps this under an address
+   * naming nobody either (ADR-0008).
+   *
+   * Asked only for the handful of games carrying the rows a ranking actually
+   * shows. Behind it is the schema, the heavy payload ADR-0005 keeps out of the
+   * library's path — three to six calls, never one per game owned.
+   *
+   * A game that defines no achievements answers with an empty list, which is a
+   * real answer and not a failure.
+   */
+  getGameAchievements(appId: number): Promise<Result<GameAchievementsDto, ApiError>>;
 }
