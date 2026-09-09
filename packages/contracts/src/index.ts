@@ -9,4 +9,8 @@ export type {
   GameProgressDto,
 } from "./game-progress";
 export type { AchievementRarityDto, GameRarityDto } from "./rarity";
+export type {
+  AchievementNameDto,
+  GameAchievementsDto,
+} from "./game-achievements";
 export { byWhenUnlocked } from "./unlock-order";

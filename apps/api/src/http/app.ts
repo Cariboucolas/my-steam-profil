@@ -11,6 +11,7 @@ import {
   mapGameProgress,
   mapGameTally,
   mapGameRarity,
+  mapGameAchievements,
   type AchievementsError,
 } from "../steam/steam-mapper";
 import {
@@ -19,6 +20,7 @@ import {
   toGameProgressDto,
   toGameTallyDto,
   toGameRarityDto,
+  toGameAchievementsDto,
   emptyGameProgressDto,
   emptyGameTallyDto,
 } from "./presenters";
@@ -56,6 +58,17 @@ export const TALLY_CACHE_SECONDS = 300;
  * tally, where a fresh unlock is the whole point (ADR-0008).
  */
 export const RARITY_CACHE_SECONDS = 86_400;
+
+/**
+ * Twenty-four hours, the same day a Rarity is kept for and for the same reason
+ * (ADR-0008): how a Game names its Achievements belongs to the Game, and a game
+ * renames one about as often as a player base moves a published share.
+ *
+ * Written as its own constant rather than shared with the rarity route, because
+ * what one answer is worth after a day says nothing about the other — which is
+ * the whole point of a route stating its own lifetime.
+ */
+export const ACHIEVEMENTS_CACHE_SECONDS = 86_400;
 
 type Handler = (context: Context, steamId: SteamId) => Promise<Response>;
 
@@ -209,6 +222,25 @@ const serveGameRarity = (
   });
 
 /**
+ * How a Game names its own Achievements: what a row shows, for the handful of
+ * games that carry the rows actually shown. One Steam call, no player, and the
+ * heaviest payload the service fetches — which is exactly why it is asked for
+ * three to six games rather than for a whole library (ADR-0005), and why the
+ * answer is worth keeping for a day under an address every player shares
+ * (ADR-0008).
+ *
+ * A game that defines no achievements answers with an empty list: a true thing
+ * to say about a real game, and nothing a ranking could have a row from.
+ */
+const serveGameAchievements = (
+  gateway: SteamGateway,
+): ((c: Context) => Promise<Response>) =>
+  withApp(async (context, appId) => {
+    const schema = await gateway.getSchemaForGame(appId);
+    return context.json(toGameAchievementsDto(mapGameAchievements(schema)));
+  });
+
+/**
  * Builds the API around a way out to Steam, and somewhere to keep the answers
  * worth keeping. Both are parameters rather than things it reaches for, so a
  * test can build a fully working app without any configuration, and the cache
@@ -255,6 +287,14 @@ export const createApp = (
   app.get(
     "/api/games/:appId/rarity",
     cached(cache, RARITY_CACHE_SECONDS, serveGameRarity(gateway)),
+  );
+  /**
+   * The second address that names no player, on the same reasoning: what a Game
+   * calls its Achievements is the Game's, not the asker's (ADR-0008).
+   */
+  app.get(
+    "/api/games/:appId/achievements",
+    cached(cache, ACHIEVEMENTS_CACHE_SECONDS, serveGameAchievements(gateway)),
   );
 
   /**
