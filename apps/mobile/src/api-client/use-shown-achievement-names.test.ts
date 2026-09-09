@@ -89,8 +89,6 @@ describe("useShownAchievementNames", () => {
     const { client, asked } = eagerClient();
     const { result, rerender } = renderNames(null);
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
     expect(asked).toEqual([]);
     expect(result.current.names).toEqual({});
 
@@ -125,7 +123,7 @@ describe("useShownAchievementNames", () => {
 
     await waitFor(() => expect(asked).toEqual([SOULSTONE]));
     rerender({ games: shown(client, [SOULSTONE]) });
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect(result.current.names[SOULSTONE]).toBeDefined());
 
     expect(asked).toEqual([SOULSTONE]);
   });
@@ -164,7 +162,7 @@ describe("useShownAchievementNames", () => {
         [HALLS]: naming(HALLS),
       }),
     );
-    expect(result.current.loading).toBe(false);
+    expect([...result.current.pending]).toEqual([]);
   });
 
   /**
@@ -177,9 +175,11 @@ describe("useShownAchievementNames", () => {
     );
     const { result } = renderNames(shown(client, [SOULSTONE, HALLS]));
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() =>
+      expect(result.current.names).toEqual({ [SOULSTONE]: naming(SOULSTONE) }),
+    );
 
-    expect(result.current.names).toEqual({ [SOULSTONE]: naming(SOULSTONE) });
+    expect([...result.current.pending]).toEqual([]);
   });
 
   /**
@@ -202,35 +202,35 @@ describe("useShownAchievementNames", () => {
   });
 
   /**
-   * The load the tab draws its bar from: on while an answer is outstanding.
-   *
    * A ranking's three to six games fit in one wave of six, so they land
    * together — one slow game holds the names of the others, and the rows show
    * the apiNames they were ranked under until it answers.
    */
-  it("says it is loading until every game asked about has answered", async () => {
+  it("waits on every game asked about until it has answered", async () => {
     const { client, release } = heldClient([HALLS]);
     const { result } = renderNames(shown(client, [SOULSTONE, HALLS]));
 
-    await waitFor(() => expect(result.current.loading).toBe(true));
+    await waitFor(() =>
+      expect([...result.current.pending]).toEqual([SOULSTONE, HALLS]),
+    );
     expect(result.current.names).toEqual({});
 
     await release();
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect([...result.current.pending]).toEqual([]));
     expect(result.current.names).toEqual({
       [SOULSTONE]: naming(SOULSTONE),
       [HALLS]: naming(HALLS),
     });
   });
 
-  it("is not loading once there is nothing left to ask about", async () => {
+  it("waits on nothing once there is nothing left to ask about", async () => {
     const { client } = eagerClient();
     const { result } = renderNames(shown(client, [SOULSTONE]));
 
     await waitFor(() => expect(result.current.names[SOULSTONE]).toBeDefined());
 
-    expect(result.current.loading).toBe(false);
+    expect([...result.current.pending]).toEqual([]);
   });
 
   /** An answer landing after the screen is gone is a state update on nothing. */
@@ -246,8 +246,8 @@ describe("useShownAchievementNames", () => {
   /**
    * A row whose game has not answered yet has nothing to show, and the apiName
    * it was ranked under is not nothing — it looks like an answer. Which rows
-   * may say so is per game, not per load: `loading` is true while any game is
-   * outstanding, and the rows of the games that have answered are finished.
+   * may say so is per game, not per load: a wave holds the names of every game
+   * in it, and the rows of the games that have answered are finished.
    */
   it("names the games still outstanding, not merely that some are", async () => {
     // Seven, so the answers land in two waves and a ranking is half named.
@@ -257,13 +257,11 @@ describe("useShownAchievementNames", () => {
 
     await waitFor(() => expect(result.current.names[1]).toBeDefined());
 
-    expect(result.current.loading).toBe(true);
     expect([...result.current.pending]).toEqual([7]);
 
     await release();
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
-    expect([...result.current.pending]).toEqual([]);
+    await waitFor(() => expect([...result.current.pending]).toEqual([]));
   });
 
   /**
@@ -271,13 +269,17 @@ describe("useShownAchievementNames", () => {
    * row keeps the apiName it was ranked under, and must stop pulsing to say so.
    */
   it("stops waiting on a game that could not be named", async () => {
-    const { client } = heldClient([], () => err<ApiError>("UNAVAILABLE"));
+    const { client, release } = heldClient([SOULSTONE], () =>
+      err<ApiError>("UNAVAILABLE"),
+    );
     const { result } = renderNames(shown(client, [SOULSTONE]));
 
-    await waitFor(() => expect(result.current.loading).toBe(false));
+    await waitFor(() => expect([...result.current.pending]).toEqual([SOULSTONE]));
 
+    await release();
+
+    await waitFor(() => expect([...result.current.pending]).toEqual([]));
     expect(result.current.names[SOULSTONE]).toBeUndefined();
-    expect([...result.current.pending]).toEqual([]);
   });
 
   /** Another player's rows are not waiting on this player's schemas. */
