@@ -2,21 +2,20 @@ import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
 
 import type { AchievementRow as Row } from "../../view-models/game-progress";
-import { colors, fonts, radius, spacing } from "../../theme/tokens";
+import { colors, fonts } from "../../theme/tokens";
+import { achievementRowGeometry } from "./achievement-row-geometry";
 
 export const ACHIEVEMENT_TILE_TEST_ID = "achievement-tile";
-
-const TILE = 44;
 
 type Props = { readonly row: Row };
 
 export function AchievementRow({ row }: Props) {
   return (
-    <View style={styles.row}>
+    <View style={achievementRowGeometry.row}>
       <View
         testID={ACHIEVEMENT_TILE_TEST_ID}
         style={{
-          ...styles.tile,
+          ...achievementRowGeometry.tile,
           backgroundColor: row.unlocked ? colors.accentSoft : colors.tileEmpty,
           borderColor: row.unlocked ? colors.accentBorder : colors.hairline,
           // Locked icons are already grey; the mock dims them a little further.
@@ -25,23 +24,23 @@ export function AchievementRow({ row }: Props) {
       >
         <Image
           source={{ uri: row.iconUrl }}
-          style={styles.icon}
+          style={achievementRowGeometry.icon}
           contentFit="cover"
           cachePolicy="disk"
         />
       </View>
 
-      <View style={styles.middle}>
+      <View style={achievementRowGeometry.middle}>
         <Text
           numberOfLines={1}
           style={{
-            ...styles.name,
+            ...achievementRowGeometry.name,
             color: row.unlocked ? colors.text : colors.textMuted,
           }}
         >
           {row.name}
         </Text>
-        <Text numberOfLines={1} style={styles.description}>
+        <Text numberOfLines={1} style={achievementRowGeometry.subLine}>
           {row.description}
         </Text>
       </View>
@@ -59,38 +58,7 @@ export function AchievementRow({ row }: Props) {
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 13,
-    paddingVertical: 13,
-    paddingHorizontal: spacing.xl,
-  },
-  tile: {
-    width: TILE,
-    height: TILE,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  icon: {
-    width: "100%",
-    height: "100%",
-  },
-  middle: {
-    flex: 1,
-    minWidth: 0,
-    gap: 3,
-  },
-  name: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 13.5,
-  },
-  description: {
-    fontFamily: fonts.sans,
-    fontSize: 11.5,
-    color: colors.textDim,
-  },
+  /** This row's own end: a RarestRow closes on a figure instead. */
   date: {
     fontFamily: fonts.mono,
     fontSize: 10.5,

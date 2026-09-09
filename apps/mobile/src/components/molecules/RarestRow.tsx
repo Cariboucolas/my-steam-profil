@@ -2,17 +2,12 @@ import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { NamedUnlock } from "../../view-models/rarest-unlocks";
-import { colors, fonts, radius, spacing } from "../../theme/tokens";
+import { colors } from "../../theme/tokens";
 import { Skeleton } from "../atoms/Skeleton";
 import { StatBlock } from "../atoms/StatBlock";
+import { achievementRowGeometry } from "./achievement-row-geometry";
 
 export const RAREST_ICON_TEST_ID = "rarest-row-icon";
-
-/**
- * Kept at an AchievementRow's 44, and by hand: the two rows are drawn on the
- * same skeleton (#31) but neither owns the other, so nothing enforces it.
- */
-const TILE = 44;
 
 /**
  * What the figure is a share of. `0.4%` alone would read as a completion rate
@@ -33,9 +28,10 @@ type Props = {
 /**
  * One line of the rarest-unlocks ranking.
  *
- * The skeleton is an AchievementRow's — 44 pt tile, name, a line under it — with
- * the game's name where the description would be: across a whole library, which
- * game a trophy came from places it and its flavour text does not.
+ * The shape is an AchievementRow's, read from the geometry the two share — tile,
+ * name, a line under it — with the game's name where the description would be:
+ * across a whole library, which game an unlock came from places it and its
+ * flavour text does not.
  *
  * Pressable because the list right above it is. A row naming a game the player
  * owns, sitting under rows that open, would not be understood as inert.
@@ -45,7 +41,7 @@ export function RarestRow({ row, onPress }: Props) {
     <Pressable
       onPress={() => onPress(row.appId)}
       accessibilityRole="button"
-      style={styles.row}
+      style={achievementRowGeometry.row}
     >
       <View style={styles.tile}>
         {/* Null where the game named nothing for it: the row keeps its place
@@ -54,14 +50,14 @@ export function RarestRow({ row, onPress }: Props) {
           <Image
             testID={RAREST_ICON_TEST_ID}
             source={{ uri: row.icon }}
-            style={styles.icon}
+            style={achievementRowGeometry.icon}
             contentFit="cover"
             cachePolicy="disk"
           />
         )}
       </View>
 
-      <View style={styles.middle}>
+      <View style={achievementRowGeometry.middle}>
         {/* The apiName is a key, not a name: a row wearing one reads as a game
             that calls its achievements ACH_ASCEND_10, not as a row waiting on
             its schema. It pulses in the space the name will fill instead —
@@ -75,7 +71,7 @@ export function RarestRow({ row, onPress }: Props) {
             {row.displayName}
           </Text>
         )}
-        <Text numberOfLines={1} style={styles.game}>
+        <Text numberOfLines={1} style={achievementRowGeometry.subLine}>
           {row.gameName}
         </Text>
       </View>
@@ -88,36 +84,15 @@ export function RarestRow({ row, onPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 13,
-    paddingVertical: 13,
-    paddingHorizontal: spacing.xl,
-  },
   tile: {
-    width: TILE,
-    height: TILE,
-    borderRadius: radius.md,
-    borderWidth: 1,
+    ...achievementRowGeometry.tile,
     // These rows are unlocks, every one of them, so the tile never wears the
     // locked look an AchievementRow has to carry.
     backgroundColor: colors.accentSoft,
     borderColor: colors.accentBorder,
-    overflow: "hidden",
-  },
-  icon: {
-    width: "100%",
-    height: "100%",
-  },
-  middle: {
-    flex: 1,
-    minWidth: 0,
-    gap: 3,
   },
   name: {
-    fontFamily: fonts.sansMedium,
-    fontSize: 13.5,
+    ...achievementRowGeometry.name,
     color: colors.text,
   },
   // Holds the pulse at the name's own line height, so the row keeps its
@@ -125,10 +100,5 @@ const styles = StyleSheet.create({
   nameSkeleton: {
     height: 17,
     justifyContent: "center",
-  },
-  game: {
-    fontFamily: fonts.sans,
-    fontSize: 11.5,
-    color: colors.textDim,
   },
 });
