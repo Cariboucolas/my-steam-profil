@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { NamedUnlock } from "../../view-models/rarest-unlocks";
 import { colors, fonts, radius, spacing } from "../../theme/tokens";
+import { Skeleton } from "../atoms/Skeleton";
 import { StatBlock } from "../atoms/StatBlock";
 
 export const RAREST_ICON_TEST_ID = "rarest-row-icon";
@@ -19,6 +20,10 @@ const TILE = 44;
  * in this app — 0.4 is a trophy almost nobody holds.
  */
 const OF_PLAYERS = "of players";
+
+/** Sized to the name it stands in for, so nothing shifts when it lands. */
+const NAME_SKELETON_WIDTH = 132;
+const NAME_SKELETON_HEIGHT = 11;
 
 type Props = {
   readonly row: NamedUnlock;
@@ -57,9 +62,19 @@ export function RarestRow({ row, onPress }: Props) {
       </View>
 
       <View style={styles.middle}>
-        <Text numberOfLines={1} style={styles.name}>
-          {row.displayName}
-        </Text>
+        {/* The apiName is a key, not a name: a row wearing one reads as a game
+            that calls its achievements ACH_ASCEND_10, not as a row waiting on
+            its schema. It pulses in the space the name will fill instead —
+            and settles for the key only once its game has answered (#57). */}
+        {row.pending ? (
+          <View style={styles.nameSkeleton}>
+            <Skeleton width={NAME_SKELETON_WIDTH} height={NAME_SKELETON_HEIGHT} />
+          </View>
+        ) : (
+          <Text numberOfLines={1} style={styles.name}>
+            {row.displayName}
+          </Text>
+        )}
         <Text numberOfLines={1} style={styles.game}>
           {row.gameName}
         </Text>
@@ -104,6 +119,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sansMedium,
     fontSize: 13.5,
     color: colors.text,
+  },
+  // Holds the pulse at the name's own line height, so the row keeps its
+  // height and the game name below it does not step up and down.
+  nameSkeleton: {
+    height: 17,
+    justifyContent: "center",
   },
   game: {
     fontFamily: fonts.sans,

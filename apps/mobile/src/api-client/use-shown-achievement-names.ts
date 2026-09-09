@@ -7,6 +7,9 @@ import type { NamesByAppId } from "../view-models/rarest-unlocks";
 /** Shared, so a load that learns nothing re-renders nothing. */
 const NO_NAMES: NamesByAppId = {};
 
+/** Shared for the same reason: nothing outstanding is one empty set, not many. */
+const NOTHING_OUTSTANDING: ReadonlySet<number> = new Set();
+
 /**
  * The games carrying the rows a ranking actually shows, and the client that
  * ranked them.
@@ -31,6 +34,18 @@ export type ShownAchievementNames = {
   readonly names: NamesByAppId;
   /** An answer is outstanding: some row on screen is still to be named. */
   readonly loading: boolean;
+  /**
+   * The games asked about whose answer has not come back — the rows that have
+   * nothing to show yet, told apart from the rows that are finished having
+   * nothing.
+   *
+   * Per game rather than per load, because that is the grain a row is drawn at:
+   * with three to six games in one wave, `loading` would hold every row of
+   * every game hostage to the slowest of them. A game drops out of here the
+   * moment it answers, named or not — an answer that names nothing is still an
+   * answer, and its rows keep the apiName they were ranked under (#57).
+   */
+  readonly pending: ReadonlySet<number>;
 };
 
 /**
@@ -53,6 +68,7 @@ export const useShownAchievementNames = (
 ): ShownAchievementNames => {
   const [names, setNames] = useState<NamesByAppId>(NO_NAMES);
   const [loading, setLoading] = useState(false);
+  const [pending, setPending] = useState<ReadonlySet<number>>(NOTHING_OUTSTANDING);
 
   const client = shown?.client ?? null;
   const appIds = shown?.appIds ?? [];
@@ -88,6 +104,7 @@ export const useShownAchievementNames = (
     asked.current = new Set();
     setNames(NO_NAMES);
     setLoading(false);
+    setPending(NOTHING_OUTSTANDING);
 
     return () => {
       forThisPlayer.cancelled = true;
@@ -107,14 +124,22 @@ export const useShownAchievementNames = (
     const load = live.current;
     load.running += 1;
     setLoading(true);
+    setPending((waiting) => new Set([...waiting, ...missing]));
 
     void (async () => {
       await askInWaves(
         missing,
         (appId) => client.getAchievementNames(appId),
-        (landed) => {
+        (landed, asked) => {
           if (load.cancelled) return;
           setNames((known) => ({ ...known, ...landed }));
+          // Cleared for everything asked, not just what landed: a game that
+          // failed is not coming, and its rows are finished having no name.
+          setPending((waiting) => {
+            const left = new Set(waiting);
+            for (const appId of asked) left.delete(appId);
+            return left;
+          });
         },
         () => !load.cancelled,
       );
@@ -127,5 +152,5 @@ export const useShownAchievementNames = (
     // `wanted` stands in for `appIds`, whose identity changes on every render.
   }, [client, wanted]);
 
-  return { names, loading };
+  return { names, loading, pending };
 };

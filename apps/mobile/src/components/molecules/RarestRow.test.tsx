@@ -1,6 +1,8 @@
 import { render, fireEvent } from "@testing-library/react-native";
 
+import { letTheDeviceAnswer } from "../../accessibility/reduce-motion.test-support";
 import type { NamedUnlock } from "../../view-models/rarest-unlocks";
+import { SKELETON_TEST_ID } from "../atoms/Skeleton";
 import { RarestRow, RAREST_ICON_TEST_ID } from "./RarestRow";
 
 const row = (over: Partial<NamedUnlock> = {}): NamedUnlock => ({
@@ -11,6 +13,7 @@ const row = (over: Partial<NamedUnlock> = {}): NamedUnlock => ({
   rarityLabel: "0.4%",
   displayName: "Ascendant",
   icon: "https://media.steampowered.com/ach/ascend.jpg",
+  pending: false,
   ...over,
 });
 
@@ -71,5 +74,49 @@ describe("RarestRow", () => {
     const { getByTestId } = render(<RarestRow row={row()} onPress={() => {}} />);
 
     expect(getByTestId(RAREST_ICON_TEST_ID)).toBeTruthy();
+  });
+
+  /**
+   * The window between the ranking and the names. An apiName is a key, and a
+   * row wearing one does not read as a row that is waiting — it reads as a game
+   * that names its achievements ACH_ASCEND_10.
+   */
+  it("pulses instead of showing the key it was ranked under", async () => {
+    const { getByTestId, queryByText } = render(
+      <RarestRow
+        row={row({ displayName: "ACH_ASCEND_10", icon: null, pending: true })}
+        onPress={() => {}}
+      />,
+    );
+    await letTheDeviceAnswer();
+
+    expect(getByTestId(SKELETON_TEST_ID)).toBeTruthy();
+    expect(queryByText("ACH_ASCEND_10")).toBeNull();
+  });
+
+  /**
+   * The figure is what the row was ranked on and it is already in: only the
+   * name is being waited for, so the rest of the row must not flicker.
+   */
+  it("keeps its figure and its game while it waits", () => {
+    const { getByText } = render(
+      <RarestRow row={row({ pending: true })} onPress={() => {}} />,
+    );
+
+    expect(getByText("0.4%")).toBeTruthy();
+    expect(getByText("Soulstone Survivors")).toBeTruthy();
+  });
+
+  /** A game that answered without naming the row is finished, not waiting. */
+  it("shows no skeleton once its game has answered", () => {
+    const { queryByTestId, getByText } = render(
+      <RarestRow
+        row={row({ displayName: "ACH_ASCEND_10", icon: null })}
+        onPress={() => {}}
+      />,
+    );
+
+    expect(queryByTestId(SKELETON_TEST_ID)).toBeNull();
+    expect(getByText("ACH_ASCEND_10")).toBeTruthy();
   });
 });

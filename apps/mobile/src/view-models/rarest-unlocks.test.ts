@@ -518,6 +518,9 @@ describe("gamesShownIn", () => {
  * figures and dates, and a name cannot move a row.
  */
 describe("nameUnlocks", () => {
+  /** Every game behind these rows has answered, named or not. */
+  const ANSWERED: ReadonlySet<number> = new Set();
+
   const RANKING = rank({
     [SOULSTONE]: {
       unlocked: { BOSS_1: "2026-01-01T00:00:00Z" },
@@ -542,7 +545,7 @@ describe("nameUnlocks", () => {
     const rows = nameUnlocks(RANKING.rows, {
       [SOULSTONE]: namesFor({ BOSS_1: ["Soulstone Slayer", "https://icon/boss1.jpg"] }),
       [HALLS]: namesFor({ HALL_1: ["Torment Endured", "https://icon/hall1.jpg"] }),
-    });
+    }, ANSWERED);
 
     expect(rows).toEqual([
       expect.objectContaining({
@@ -569,7 +572,7 @@ describe("nameUnlocks", () => {
   it("keeps the apiName where the game names nothing for it", () => {
     const rows = nameUnlocks(RANKING.rows, {
       [SOULSTONE]: namesFor({ SOMETHING_ELSE: ["Another award", "https://icon/x.jpg"] }),
-    });
+    }, ANSWERED);
 
     expect(rows[0]).toMatchObject({
       apiName: "BOSS_1",
@@ -580,7 +583,7 @@ describe("nameUnlocks", () => {
 
   /** A game still being asked about, or one that failed: the same row, unnamed. */
   it("keeps every row while no game has been asked about yet", () => {
-    const rows = nameUnlocks(RANKING.rows, {});
+    const rows = nameUnlocks(RANKING.rows, {}, ANSWERED);
 
     expect(rows.map((row) => row.displayName)).toEqual(["BOSS_1", "HALL_1"]);
     expect(rows.map((row) => row.icon)).toEqual([null, null]);
@@ -590,7 +593,7 @@ describe("nameUnlocks", () => {
   it("keeps the apiName where the game names it with nothing", () => {
     const rows = nameUnlocks(RANKING.rows, {
       [SOULSTONE]: namesFor({ BOSS_1: ["", "https://icon/boss1.jpg"] }),
-    });
+    }, ANSWERED);
 
     expect(rows[0]).toMatchObject({
       displayName: "BOSS_1",
@@ -601,7 +604,7 @@ describe("nameUnlocks", () => {
   it("leaves the ranking in the order it was decided", () => {
     const rows = nameUnlocks(RANKING.rows, {
       [HALLS]: namesFor({ HALL_1: ["Torment Endured", "https://icon/hall1.jpg"] }),
-    });
+    }, ANSWERED);
 
     expect(rows.map((row) => row.apiName)).toEqual(
       RANKING.rows.map((row) => row.apiName),
@@ -630,5 +633,42 @@ describe("namedShare", () => {
    */
   it("reports no load at all where there is nothing to name", () => {
     expect(namedShare([], {})).toBeNull();
+  });
+});
+
+/**
+ * The window between a ranking and its names. A row whose game has not answered
+ * has nothing to show, and the apiName it was ranked under is not nothing — it
+ * reads as the name the game gave it.
+ */
+describe("nameUnlocks, while a game has yet to answer", () => {
+  const RANKING = rank({
+    [SOULSTONE]: {
+      unlocked: { BOSS_1: "2026-01-01T00:00:00Z" },
+      published: { BOSS_1: 0.4 },
+    },
+    [HALLS]: {
+      unlocked: { HALL_1: "2026-01-03T00:00:00Z" },
+      published: { HALL_1: 0.9 },
+    },
+  });
+
+  it("marks the rows of a game that has not answered, and no others", () => {
+    const rows = nameUnlocks(RANKING.rows, {}, new Set([SOULSTONE]));
+
+    expect(rows.find((row) => row.appId === SOULSTONE)?.pending).toBe(true);
+    expect(rows.find((row) => row.appId === HALLS)?.pending).toBe(false);
+  });
+
+  /**
+   * The one distinction this field exists for: a game that answered without
+   * naming the row is finished, and #57 keeps that row on its apiName. Only a
+   * row still waiting may be drawn as waiting.
+   */
+  it("does not mark a row its game answered about without naming", () => {
+    const rows = nameUnlocks(RANKING.rows, {}, new Set());
+
+    expect(rows.every((row) => row.pending)).toBe(false);
+    expect(rows.map((row) => row.displayName)).toEqual(["BOSS_1", "HALL_1"]);
   });
 });
