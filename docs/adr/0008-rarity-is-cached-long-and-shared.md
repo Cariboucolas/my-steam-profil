@@ -113,3 +113,44 @@ address in the app that names no player. The fixture client answers it from data
 have: the spike never called this Steam endpoint, so a fixture set carries rarity only if a test
 puts it there, and a set without it answers with nothing. That is the same answer the backend
 gives for a Game Steam publishes nothing about, so no screen learns to tell the two clients apart.
+
+## The same rule, applied to the game schema (extended 2026-09-09, #57)
+
+`GET /api/games/:appId/achievements` answers what a Game calls each of its Achievements and the
+icon it draws them with. It is cached for the same twenty-four hours, under an address carrying no
+SteamId, and it needs no argument of its own: **how a Game names an award does not belong to the
+player asking**, exactly as a Rarity does not. Everything above holds word for word with *Rarity*
+read as *the name a Game gives*.
+
+Reusing `…/progress`, which already fetches the schema, was considered and rejected. That route is
+the 253 KB answer partitioned by player — it crosses the schema with one player's unlocks — so it
+could never sit under a shared key, and reaching for it here would have put back into a secondary
+tab the cost ADR-0005 was written to remove.
+
+Two things do differ, and neither changes the decision:
+
+**The API key stays on this call.** `GetSchemaForGame` requires it where
+`GetGlobalAchievementPercentagesForApp` does not. The key is about what Steam will answer, not
+about who is asking us: what makes an entry shareable is that no player is named in the question,
+and there is none in this one either.
+
+**Only three of the schema's seven fields are forwarded** — `apiName`, `displayName`, `icon`. The
+schema is the payload ADR-0005 removed from the library's hot path, and its caller here is a ranked
+row that shows a name over a game name. `description`, `hidden` and the grey icon belong to the
+game screen, which fetches the schema itself through `…/progress` and is not cached at all. So the
+entry kept for a day is a fraction of what Steam sent, and the heavy payload never becomes
+something the service stores.
+
+## What bounds the cost, since a shared key does not
+
+A cache makes the second ask free; it is the number of first asks that had to be bounded, and the
+address cannot do that. What does is **when** the question is asked: the ranking is decided on the
+published figures alone, and only then are the three to six games carrying the rows *actually
+shown* asked to name them. Which games are worth the schema is a property of the answer, not of the
+library — so this fetch can never precede a ranking, and never grows with the 267 games a library
+holds (#31).
+
+An Achievement its Game says nothing about keeps the apiName it was ranked under. A row earned its
+place on a figure Steam published and a day the player unlocked it, and a later answer about its
+name cannot take that back — a poor name is not a blank row, and a dropped one would make the
+ranking disagree with itself between two loads.
