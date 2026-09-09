@@ -227,7 +227,8 @@ export default function LibraryScreen() {
         summary={summary}
         gameCount={games.length}
         // Both of the screen's loads report through the card's one bar: the
-        // count first, and then the two phases behind the rarest ranking.
+        // count first, and then the figures the rarest ranking is built on.
+        // The naming phase behind it reports nothing — see `RarestTab.loaded`.
         loaded={loaded ?? rarest.loaded}
       />
       <UnlockCalendarCard calendar={calendar} />

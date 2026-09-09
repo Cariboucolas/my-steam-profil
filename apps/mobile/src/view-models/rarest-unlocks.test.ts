@@ -10,8 +10,6 @@ import {
   buildRarestUnlocks,
   gamesShownIn,
   nameUnlocks,
-  namedShare,
-  type NamesByAppId,
   type RarityByAppId,
   type RarestUnlocks,
 } from "./rarest-unlocks";
@@ -609,30 +607,6 @@ describe("nameUnlocks", () => {
     expect(rows.map((row) => row.apiName)).toEqual(
       RANKING.rows.map((row) => row.apiName),
     );
-  });
-});
-
-/**
- * What phase two has to report while it runs. It is three to six calls with no
- * finer structure to show, so the share is the games that have answered.
- */
-describe("namedShare", () => {
-  it("reports the share of the shown games that have answered", () => {
-    const names: NamesByAppId = {
-      [SOULSTONE]: [{ apiName: "BOSS_1", displayName: "Boss", icon: "boss.jpg" }],
-    };
-
-    expect(namedShare([SOULSTONE, HALLS], names)).toBe(0.5);
-    expect(namedShare([SOULSTONE], names)).toBe(1);
-    expect(namedShare([HALLS], names)).toBe(0);
-  });
-
-  /**
-   * No rows to name is no load at all, which the tab draws as no bar — where a
-   * share of nought would draw an empty bar and announce a wait nobody is on.
-   */
-  it("reports no load at all where there is nothing to name", () => {
-    expect(namedShare([], {})).toBeNull();
   });
 });
 
