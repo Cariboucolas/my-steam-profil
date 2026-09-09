@@ -15,7 +15,6 @@ import {
   buildRarestUnlocks,
   gamesShownIn,
   nameUnlocks,
-  namedShare,
   type NamedUnlock,
 } from "./rarest-unlocks";
 
@@ -31,10 +30,14 @@ export type RarestTab = {
   /** `rarest 10 across 214 games counted`, and what it excludes. */
   readonly countedLabel: string;
   /**
-   * How far whichever phase is running has got, between 0 and 1, or null when
-   * nobody is waiting on either. One figure for both, so the tab draws one load
-   * bar: a second bar for phase two would announce a second wait, when what the
-   * reader is waiting on throughout is one answer.
+   * How far phase one has got, between 0 and 1, or null when nothing of it is
+   * outstanding.
+   *
+   * Phase one alone, because phase two is three to six schemas in one wave: a
+   * share of it would be 0 for the whole of it, so the bar would fill, vanish,
+   * come back empty and vanish again. And the rows say which of them are
+   * waiting, each in the space its name will fill — a bar saying only that
+   * something somewhere is outstanding adds nothing to that (#66).
    */
   readonly loaded: number | null;
   /**
@@ -90,7 +93,7 @@ export const useRarestTab = (
         : { client: library.client, appIds },
     [library, status, appIds],
   );
-  const { names, loading, pending } = useShownAchievementNames(shown);
+  const { names, pending } = useShownAchievementNames(shown);
 
   const rows = useMemo(
     () => nameUnlocks(ranking.rows, names, pending),
@@ -101,9 +104,7 @@ export const useRarestTab = (
     status,
     rows,
     countedLabel: ranking.countedLabel,
-    // Phase one first: it cannot be running at the same time as phase two,
-    // which has nothing to be asked about until phase one's ranking exists.
-    loaded: loaded ?? (loading ? namedShare(appIds, names) : null),
+    loaded,
     anyUnlock:
       library !== null && gamesHoldingAnUnlock(library.tallies).length > 0,
   };

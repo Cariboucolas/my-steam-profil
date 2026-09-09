@@ -259,20 +259,3 @@ export const nameUnlocks = (
       pending: pending.has(row.appId),
     };
   });
-
-/**
- * The share of the games behind the shown rows that have said what they call
- * their achievements, 0 to 1 — or null where there are no rows to name, which
- * is not a load at nought but no load at all.
- *
- * Phase two is three to six calls, so what it has to report is which of the
- * shown games have answered rather than any finer progress.
- */
-export const namedShare = (
-  appIds: readonly number[],
-  names: NamesByAppId,
-): number | null =>
-  appIds.length === 0
-    ? null
-    : appIds.filter((appId) => names[appId] !== undefined).length /
-      appIds.length;

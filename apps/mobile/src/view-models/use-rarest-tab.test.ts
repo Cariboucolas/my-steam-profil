@@ -193,6 +193,7 @@ describe("useRarestTab", () => {
 
     expect(asked.rarity).toEqual([]);
     expect(result.current.rows).toEqual([]);
+    expect(result.current.loaded).toBeNull();
   });
 
   it("ranks the rarest first and names each row from its own game", async () => {
@@ -250,18 +251,35 @@ describe("useRarestTab", () => {
   });
 
   /**
-   * One share for both phases, so the tab draws one load bar rather than one
-   * per phase. Phase two is the half that would otherwise go unreported: it
-   * starts the moment phase one's own share stops existing.
+   * Phase one is the two hundred games the reader is made to wait on, and its
+   * share is the whole of what the stats card's load bar draws.
    */
-  it("still reports a share while the second phase is outstanding", async () => {
+  it("reports phase one's share while the figures are still landing", async () => {
+    const { view: wide, tallies, published } = overOneWave();
+    const held = client({ rarity: [18] }, published);
+    const { result } = renderTab({ client: held.api, tallies }, true, wide);
+
+    await waitFor(() => expect(result.current.status).toBe("loading"));
+    await waitFor(() => expect(result.current.loaded).toBeGreaterThan(0));
+    expect(result.current.loaded).toBeLessThan(1);
+
+    await held.release();
+  });
+
+  /**
+   * Phase two reports nothing, for the reasons `RarestTab.loaded` gives: the
+   * rows say which of them are waiting, and a share of one wave would be 0 for
+   * the whole of it (#66).
+   */
+  it("reports no share while only the second phase is outstanding", async () => {
     const held = client({ names: [1, 2] });
     const { result } = renderTab({ client: held.api, tallies: TALLIES });
 
     // Phase one is over — its rows are ranked — and the wait is not.
     await waitFor(() => expect(result.current.status).toBe("ready"));
     await waitFor(() => expect(result.current.rows).toHaveLength(2));
-    expect(result.current.loaded).toBe(0);
+    expect(result.current.rows.map((row) => row.pending)).toEqual([true, true]);
+    expect(result.current.loaded).toBeNull();
 
     await held.release();
 
