@@ -1,8 +1,15 @@
-import type { GameDto, GameRarityDto, UnlockDto } from "@steam/contracts";
+import type {
+  GameAchievementsDto,
+  GameDto,
+  GameRarityDto,
+  UnlockDto,
+} from "@steam/contracts";
 
 import type { LibraryView } from "./library";
 import {
   buildRarestUnlocks,
+  gamesShownIn,
+  nameUnlocks,
   type RarityByAppId,
   type RarestUnlocks,
 } from "./rarest-unlocks";
@@ -449,5 +456,130 @@ describe("buildRarestUnlocks", () => {
     };
 
     expect(rank(held)).toEqual(rank(held));
+  });
+});
+
+/**
+ * Phase two, and the order it has to run in: a ranking is decided on figures
+ * alone, and only once it exists is it known which three to six games are worth
+ * the schema (ADR-0005). So the games shown are read off the rows.
+ */
+describe("gamesShownIn", () => {
+  it("names each game the rows come from, once", () => {
+    const ranking = rank({
+      [SOULSTONE]: {
+        unlocked: { BOSS_1: "2026-01-01T00:00:00Z", BOSS_2: "2026-01-02T00:00:00Z" },
+        published: { BOSS_1: 0.4, BOSS_2: 1.2 },
+      },
+      [HALLS]: {
+        unlocked: { HALL_1: "2026-01-03T00:00:00Z" },
+        published: { HALL_1: 0.9 },
+      },
+    });
+
+    // Three rows — BOSS_1, HALL_1, BOSS_2 — out of two games, so two calls.
+    expect(ranking.rows).toHaveLength(3);
+    expect(gamesShownIn(ranking.rows)).toEqual([SOULSTONE, HALLS]);
+  });
+
+  it("names nothing for a ranking with no rows in it", () => {
+    expect(gamesShownIn([])).toEqual([]);
+  });
+});
+
+/**
+ * What the rows were ranked as, and what a reader is owed: an apiName is a key,
+ * not a name. Nothing here reorders anything — the ranking was settled on
+ * figures and dates, and a name cannot move a row.
+ */
+describe("nameUnlocks", () => {
+  const RANKING = rank({
+    [SOULSTONE]: {
+      unlocked: { BOSS_1: "2026-01-01T00:00:00Z" },
+      published: { BOSS_1: 0.4 },
+    },
+    [HALLS]: {
+      unlocked: { HALL_1: "2026-01-03T00:00:00Z" },
+      published: { HALL_1: 0.9 },
+    },
+  });
+
+  const namesFor = (
+    achievements: Readonly<Record<string, readonly [string, string]>>,
+  ): GameAchievementsDto =>
+    Object.entries(achievements).map(([apiName, [displayName, icon]]) => ({
+      apiName,
+      displayName,
+      icon,
+    }));
+
+  it("gives each row the name and icon its game gives it", () => {
+    const rows = nameUnlocks(RANKING.rows, {
+      [SOULSTONE]: namesFor({ BOSS_1: ["Soulstone Slayer", "https://icon/boss1.jpg"] }),
+      [HALLS]: namesFor({ HALL_1: ["Torment Endured", "https://icon/hall1.jpg"] }),
+    });
+
+    expect(rows).toEqual([
+      expect.objectContaining({
+        apiName: "BOSS_1",
+        displayName: "Soulstone Slayer",
+        icon: "https://icon/boss1.jpg",
+        gameName: "Soulstone Survivors",
+        rarityLabel: "0.4%",
+      }),
+      expect.objectContaining({
+        apiName: "HALL_1",
+        displayName: "Torment Endured",
+        icon: "https://icon/hall1.jpg",
+        gameName: "Halls of Torment",
+      }),
+    ]);
+  });
+
+  /**
+   * The rule this whole step is bounded by: a row was ranked on a figure Steam
+   * published, and no answer about its name can take it back off the list. The
+   * key it was ranked under is a poor name and a true one.
+   */
+  it("keeps the apiName where the game names nothing for it", () => {
+    const rows = nameUnlocks(RANKING.rows, {
+      [SOULSTONE]: namesFor({ SOMETHING_ELSE: ["Another award", "https://icon/x.jpg"] }),
+    });
+
+    expect(rows[0]).toMatchObject({
+      apiName: "BOSS_1",
+      displayName: "BOSS_1",
+      icon: null,
+    });
+  });
+
+  /** A game still being asked about, or one that failed: the same row, unnamed. */
+  it("keeps every row while no game has been asked about yet", () => {
+    const rows = nameUnlocks(RANKING.rows, {});
+
+    expect(rows.map((row) => row.displayName)).toEqual(["BOSS_1", "HALL_1"]);
+    expect(rows.map((row) => row.icon)).toEqual([null, null]);
+  });
+
+  /** A name Steam sends empty would draw an empty row, which is worse than a key. */
+  it("keeps the apiName where the game names it with nothing", () => {
+    const rows = nameUnlocks(RANKING.rows, {
+      [SOULSTONE]: namesFor({ BOSS_1: ["", "https://icon/boss1.jpg"] }),
+    });
+
+    expect(rows[0]).toMatchObject({
+      displayName: "BOSS_1",
+      icon: "https://icon/boss1.jpg",
+    });
+  });
+
+  it("leaves the ranking in the order it was decided", () => {
+    const rows = nameUnlocks(RANKING.rows, {
+      [HALLS]: namesFor({ HALL_1: ["Torment Endured", "https://icon/hall1.jpg"] }),
+    });
+
+    expect(rows.map((row) => row.apiName)).toEqual(
+      RANKING.rows.map((row) => row.apiName),
+    );
   });
 });

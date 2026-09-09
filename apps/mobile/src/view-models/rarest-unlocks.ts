@@ -1,4 +1,9 @@
-import type { GameDto, GameRarityDto, UnlockDto } from "@steam/contracts";
+import type {
+  GameAchievementsDto,
+  GameDto,
+  GameRarityDto,
+  UnlockDto,
+} from "@steam/contracts";
 
 import { gamesCounted, type LibraryView } from "./library";
 
@@ -182,3 +187,57 @@ export const buildRarestUnlocks = (
 
   return { rows, countedLabel: labelFor(rows.length, counted) };
 };
+
+/**
+ * How each game names its own achievements, keyed by appId. A game absent has
+ * not been asked about — which is every game until a ranking exists, since what
+ * to ask about is read off the rows.
+ */
+export type NamesByAppId = Readonly<Record<number, GameAchievementsDto>>;
+
+/**
+ * A ranked row once its game has named it. The name and the icon arrive after
+ * the ranking, from a second fetch the ranking itself decides the shape of, so
+ * they are held apart from what a row was ranked on.
+ */
+export type NamedUnlock = RarestUnlock & {
+  /** What the game calls it, or the apiName until the game has said. */
+  readonly displayName: string;
+  /** The unlocked icon, or null where the game has named nothing for it. */
+  readonly icon: string | null;
+};
+
+/**
+ * The games the shown rows come from, each once, in the order the rows show
+ * them — three to six of them for a ten-row ranking.
+ *
+ * This is what bounds phase two. The schema is the 253 KB payload ADR-0005 took
+ * out of the library's path, and it can only be asked for once the ranking
+ * exists: which games matter is a property of the answer, not of the library.
+ */
+export const gamesShownIn = (
+  rows: readonly RarestUnlock[],
+): readonly number[] => [...new Set(rows.map((row) => row.appId))];
+
+/**
+ * The rows as a reader should see them: named, iconed, and otherwise untouched.
+ *
+ * Nothing is dropped and nothing moves. A row earned its place on a figure
+ * Steam published and a day the player unlocked it, and an answer about its
+ * name cannot take that back — so an achievement its game says nothing about
+ * keeps the apiName it was ranked under. A poor name is not a blank row.
+ */
+export const nameUnlocks = (
+  rows: readonly RarestUnlock[],
+  names: NamesByAppId,
+): readonly NamedUnlock[] =>
+  rows.map((row) => {
+    const named = names[row.appId]?.find(
+      (achievement) => achievement.apiName === row.apiName,
+    );
+    return {
+      ...row,
+      displayName: named?.displayName || row.apiName,
+      icon: named?.icon ?? null,
+    };
+  });
