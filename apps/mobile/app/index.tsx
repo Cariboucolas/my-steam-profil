@@ -10,6 +10,7 @@ import type { CountedLibrary } from "../src/api-client/use-library-rarity";
 import { useLibraryTallies } from "../src/api-client/use-library-tallies";
 import { Tabs } from "../src/components/atoms/Tabs";
 import { GameListItem } from "../src/components/molecules/GameListItem";
+import { RarestEmpty } from "../src/components/molecules/RarestEmpty";
 import { RarestRow } from "../src/components/molecules/RarestRow";
 import { SortChips } from "../src/components/molecules/SortChips";
 import { ErrorState } from "../src/components/organisms/ErrorState";
@@ -25,7 +26,7 @@ import {
   type LibrarySort,
   type LibraryView,
 } from "../src/view-models/library";
-import { useRarestTab, type RarestTab } from "../src/view-models/use-rarest-tab";
+import { useRarestTab } from "../src/view-models/use-rarest-tab";
 import { useUnlockCalendar } from "../src/view-models/use-unlock-calendar";
 
 type Loaded = {
@@ -54,36 +55,6 @@ const NO_GAMES: readonly GameDto[] = [];
 const TABS = ["Completion", "Rarest"] as const;
 const COMPLETION = 0;
 const RAREST = 1;
-
-/**
- * What stands in for the ranking while there is none, told apart because the
- * two silences are not the same news. A tab still waiting on the count would
- * otherwise look exactly like a player who has unlocked nothing anywhere.
- *
- * Phase one running with nothing ranked yet says nothing at all: the card's
- * load bar is already saying it, and a message that appeared for a second
- * between two states would only be read as a third.
- */
-const rarestEmptyFor = (status: RarestTab["status"]) => {
-  if (status === "counting") {
-    return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyTitle}>Counting your library first</Text>
-        <Text style={styles.emptyHint}>
-          the rarest unlocks are ranked across every game you have played
-        </Text>
-      </View>
-    );
-  }
-  if (status === "ready") {
-    return (
-      <View style={styles.empty}>
-        <Text style={styles.emptyTitle}>Nothing unlocked in any game yet</Text>
-      </View>
-    );
-  }
-  return null;
-};
 
 export default function LibraryScreen() {
   const router = useRouter();
@@ -264,11 +235,12 @@ export default function LibraryScreen() {
 
       {/* The chips order the library, which is Completion's list and no other.
           A control with one sensible option is not a control, so on Rarest they
-          give their place to what the ranking was ranked across. */}
+          give their place to what the ranking was ranked across — which is an
+          assertion about a finished ranking, and waits for one. */}
       {tab === COMPLETION ? (
         <SortChips active={sort} onSelect={chooseSort} />
       ) : (
-        rarest.status !== "counting" && (
+        rarest.status === "ready" && (
           <Text style={styles.counted}>{rarest.countedLabel}</Text>
         )
       )}
@@ -285,7 +257,9 @@ export default function LibraryScreen() {
         renderItem={({ item }) => <RarestRow row={item} onPress={openGame} />}
         contentContainerStyle={padding}
         ListHeaderComponent={header}
-        ListEmptyComponent={rarestEmptyFor(rarest.status)}
+        ListEmptyComponent={
+          <RarestEmpty status={rarest.status} anyUnlock={rarest.anyUnlock} />
+        }
       />
     );
   }
@@ -327,24 +301,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.lg,
     paddingBottom: 6,
-  },
-  empty: {
-    alignItems: "center",
-    gap: 10,
-    paddingVertical: 40,
-    paddingHorizontal: spacing.xxl,
-  },
-  emptyTitle: {
-    fontFamily: fonts.sans,
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: "center",
-  },
-  emptyHint: {
-    fontFamily: fonts.mono,
-    fontSize: 10.5,
-    color: colors.textFaint,
-    textAlign: "center",
-    maxWidth: 250,
   },
 });

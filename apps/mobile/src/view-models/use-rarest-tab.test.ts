@@ -63,7 +63,10 @@ type Asked = { readonly rarity: number[]; readonly names: number[] };
  * A client answering both phases, recording what each was asked about, and
  * holding back the games named so a load can be looked at while it is still on.
  */
-const client = (hold: { rarity?: readonly number[]; names?: readonly number[] } = {}) => {
+const client = (
+  hold: { rarity?: readonly number[]; names?: readonly number[] } = {},
+  published: Readonly<Record<number, GameRarityDto>> = RARITY,
+) => {
   const asked: Asked = { rarity: [], names: [] };
   const gates: Array<() => void> = [];
 
@@ -83,11 +86,11 @@ const client = (hold: { rarity?: readonly number[]; names?: readonly number[] } 
     getGameTally: refuse,
     getGameRarity: (appId) => {
       asked.rarity.push(appId);
-      const published = RARITY[appId];
+      const figures = published[appId];
       return answer(
         hold.rarity ?? [],
         appId,
-        published ? ok(published) : err<ApiError>("UNAVAILABLE"),
+        figures ? ok(figures) : err<ApiError>("UNAVAILABLE"),
       );
     },
     getAchievementNames: (appId) => {
@@ -126,11 +129,44 @@ type Props = {
   readonly active: boolean;
 };
 
-const renderTab = (library: CountedLibrary | null, active = true) =>
+const renderTab = (
+  library: CountedLibrary | null,
+  active = true,
+  shownView: LibraryView = view(),
+) =>
   renderHook(
     ({ library: l, view: v, active: a }: Props) => useRarestTab(l, v, a),
-    { initialProps: { library, view: view(), active } },
+    { initialProps: { library, view: shownView, active } },
   );
+
+/**
+ * More games holding an unlock than one wave carries, so a ranking exists and
+ * is still wrong while the load runs — which is the state phase two must not
+ * be started from.
+ */
+const OVER_ONE_WAVE = [11, 12, 13, 14, 15, 16, 17, 18] as const;
+
+const overOneWave = () => {
+  const tallies: TallyByAppId = Object.fromEntries(
+    OVER_ONE_WAVE.map((appId) => [appId, tally([`ACH_${appId}`])]),
+  );
+  const games: readonly GameDto[] = OVER_ONE_WAVE.map((appId) => ({
+    appId,
+    name: `Game ${appId}`,
+    playtimeMinutes: 60,
+    playtimeLabel: "1 h",
+    iconUrl: `https://example.test/${appId}.jpg`,
+    lastPlayedAt: null,
+  }));
+  const published: Readonly<Record<number, GameRarityDto>> = Object.fromEntries(
+    OVER_ONE_WAVE.map((appId, index) => [
+      appId,
+      [{ apiName: `ACH_${appId}`, rarity: index + 1 }],
+    ]),
+  );
+
+  return { tallies, view: view({ games, tallies }), published };
+};
 
 describe("useRarestTab", () => {
   /** A secondary tab that nobody has opened costs nothing. */
@@ -190,6 +226,30 @@ describe("useRarestTab", () => {
   });
 
   /**
+   * The games worth a schema are the ones the *finished* ranking shows. A
+   * ranking half-way through a load shows whatever the waves so far happened to
+   * hold, and every game it passes through is asked for and remembered — so
+   * starting phase two early spends 253 KB on games that then drop out, which
+   * is the whole of the cost ADR-0005 took out of this screen.
+   */
+  it("asks for no schema until every figure is in", async () => {
+    const { view: wide, tallies, published } = overOneWave();
+    const held = client({ rarity: [18] }, published);
+    const { result } = renderTab({ client: held.api, tallies }, true, wide);
+
+    // The first wave has landed, so there is a ranking — and it is not the one.
+    await waitFor(() => expect(result.current.rows).toHaveLength(6));
+    expect(result.current.status).toBe("loading");
+    expect(held.asked.names).toEqual([]);
+
+    await held.release();
+
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    await waitFor(() => expect(held.asked.names).toHaveLength(8));
+    expect([...new Set(held.asked.names)]).toHaveLength(8);
+  });
+
+  /**
    * One share for both phases, so the tab draws one load bar rather than one
    * per phase. Phase two is the half that would otherwise go unreported: it
    * starts the moment phase one's own share stops existing.
@@ -246,5 +306,22 @@ describe("useRarestTab", () => {
     expect(result.current.rows).toEqual([]);
     expect(result.current.countedLabel).toBe("nothing to rank across 0 games counted");
     expect(result.current.loaded).toBeNull();
+    expect(result.current.anyUnlock).toBe(false);
+  });
+
+  /**
+   * An empty ranking means two different things, and only one of them is about
+   * the player: a library with no unlock in it, and a library Steam publishes
+   * no figure for. Telling the second player they have unlocked nothing is a
+   * plain untruth, and they are the ones holding the trophies.
+   */
+  it("does not call a library Steam says nothing about an empty one", async () => {
+    const { api } = client({}, {});
+    const { result } = renderTab({ client: api, tallies: TALLIES });
+
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    expect(result.current.rows).toEqual([]);
+    expect(result.current.anyUnlock).toBe(true);
   });
 });
