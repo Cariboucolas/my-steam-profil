@@ -96,7 +96,9 @@ const statusOf = (
  * The order is nobody's: unlike the tallies, no row on screen is waiting on a
  * particular game, and the ranking is only true once every answer is in.
  */
-const gamesHoldingAnUnlock = (tallies: TallyByAppId): readonly number[] =>
+export const gamesHoldingAnUnlock = (
+  tallies: TallyByAppId,
+): readonly number[] =>
   Object.entries(tallies)
     .filter(([, tally]) => tally.unlocks.length > 0)
     .map(([appId]) => Number(appId));

@@ -7,7 +7,10 @@ import { StatBlock } from "../atoms/StatBlock";
 
 export const RAREST_ICON_TEST_ID = "rarest-row-icon";
 
-/** The same tile as an AchievementRow: one ranking, one row skeleton. */
+/**
+ * Kept at an AchievementRow's 44, and by hand: the two rows are drawn on the
+ * same skeleton (#31) but neither owns the other, so nothing enforces it.
+ */
 const TILE = 44;
 
 /**
