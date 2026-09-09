@@ -1,5 +1,6 @@
 import { ok, err } from "@steam/domain";
 import type {
+  GameAchievementsDto,
   GameDto,
   GameProgressDto,
   GameRarityDto,
@@ -81,5 +82,8 @@ export const createHttpApiClient = (config: HttpApiClientConfig): ApiClient => {
     // Off `api` rather than `root`: no steam id in this address, which is what
     // lets the backend answer every player from one cached entry (ADR-0008).
     getGameRarity: (appId) => getAt<GameRarityDto>(`${api}/games/${appId}/rarity`),
+
+    getGameAchievements: (appId) =>
+      getAt<GameAchievementsDto>(`${api}/games/${appId}/achievements`),
   };
 };

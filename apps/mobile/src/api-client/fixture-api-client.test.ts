@@ -173,3 +173,32 @@ describe("createFixtureApiClient (rarity)", () => {
     expect(await client.getGameRarity(2066020)).toEqual({ ok: true, value: [] });
   });
 });
+
+/**
+ * The fixture build stored whole progress, and progress carries what the schema
+ * said: a name and an icon per achievement. So this client answers the naming
+ * question out of data it already holds, where the real one asks a route of its
+ * own — and no screen learns to tell the two apart.
+ */
+describe("createFixtureApiClient (achievements)", () => {
+  it("names every achievement the stored progress defines, unlocked or not", async () => {
+    expect(await client.getGameAchievements(2066020)).toEqual({
+      ok: true,
+      value: [
+        { apiName: "BOSS_2", displayName: "BOSS_2", icon: "https://icon/a.jpg" },
+        { apiName: "BOSS_1", displayName: "BOSS_1", icon: "https://icon/a.jpg" },
+        { apiName: "BOSS_3", displayName: "BOSS_3", icon: "https://icon/a.jpg" },
+        { apiName: "BOSS_4", displayName: "BOSS_4", icon: "https://icon/a.jpg" },
+      ],
+    });
+  });
+
+  /**
+   * Never a refusal: a game with nothing stored is answered exactly as the
+   * backend answers a game that defines no achievements. A row from it keeps
+   * the name it was ranked under rather than going blank.
+   */
+  it("names nothing for a game it has no progress for", async () => {
+    expect(await client.getGameAchievements(440)).toEqual({ ok: true, value: [] });
+  });
+});
