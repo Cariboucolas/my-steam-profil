@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { createApp, TALLY_CACHE_SECONDS, RARITY_CACHE_SECONDS } from "./app";
+import {
+  createApp,
+  TALLY_CACHE_SECONDS,
+  RARITY_CACHE_SECONDS,
+  ACHIEVEMENTS_CACHE_SECONDS,
+} from "./app";
 import { createSteamClient } from "../steam/steam-client";
 import type { ResponseCache } from "./cache";
 import { mapCache } from "./cache.test-support";
@@ -979,5 +984,148 @@ describe("caching a game's published rarity", () => {
       `max-age=${RARITY_CACHE_SECONDS}`,
     );
     expect(RARITY_CACHE_SECONDS).toBeGreaterThan(TALLY_CACHE_SECONDS);
+  });
+});
+
+/**
+ * How a Game names its own Achievements. Same address shape as the rarity
+ * route and for the same reason: there is no player in the question, so there
+ * is no SteamId in the address, and the cache keyed on the URL answers every
+ * player from one Steam call (ADR-0008).
+ */
+describe("GET /api/games/:appId/achievements", () => {
+  const APP_ID = 2066020;
+  const NO_STATS_FROM_STEAM = 400;
+
+  const url = `/api/games/${APP_ID}/achievements`;
+
+  const defining = (achievements: readonly unknown[]) => ({
+    game: { gameName: "Soulstone Survivors", availableGameStats: { achievements } },
+  });
+
+  const BOSS = {
+    name: "ACH_BOSS_1",
+    displayName: "First boss",
+    description: "Beat the first boss.",
+    hidden: 0,
+    icon: "https://icons/boss.jpg",
+    icongray: "https://icons/boss_gray.jpg",
+  };
+
+  it("answers with the name and icon of each achievement the game defines", async () => {
+    const app = appReaching(steamAnswering({ schemaForGame: [defining([BOSS])] }));
+
+    const response = await app.request(url);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([
+      {
+        apiName: "ACH_BOSS_1",
+        displayName: "First boss",
+        icon: "https://icons/boss.jpg",
+      },
+    ]);
+  });
+
+  /**
+   * Measured on 2694490: a 400 carrying `{ "game": {} }`. A game with nothing
+   * to earn is a normal answer, and the ranking upstream simply has no row from
+   * it to name.
+   */
+  it("answers with nothing for a game that defines no achievements", async () => {
+    const app = appReaching(
+      steamAnswering({ schemaForGame: [{ game: {} }, NO_STATS_FROM_STEAM] }),
+    );
+
+    const response = await app.request(url);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([]);
+  });
+
+  it("refuses an app id that is not a whole number above zero", async () => {
+    const response = await appReaching(unreachableSteam).request(
+      "/api/games/not-an-app/achievements",
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: "INVALID_APP_ID" });
+  });
+
+  it("is a 502 when Steam cannot be reached", async () => {
+    const app = appReaching(() => {
+      throw new TypeError("network down");
+    });
+
+    const response = await app.request(url);
+
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({ error: "STEAM_UNAVAILABLE" });
+  });
+});
+
+/**
+ * The same cache ADR-0008 argues for, applied to the other answer that names no
+ * player. A schema is the heaviest payload this service fetches, so it is also
+ * the one where a shared entry saves the most.
+ */
+describe("caching how a game names its achievements", () => {
+  const APP_ID = 2066020;
+  const OTHER_APP_ID = 25900;
+
+  const achievementsUrl = (appId: number) => `/api/games/${appId}/achievements`;
+
+  const definedFor = {
+    game: {
+      availableGameStats: {
+        achievements: [
+          {
+            name: "ACH_BOSS_1",
+            displayName: "First boss",
+            hidden: 0,
+            icon: "https://icons/boss.jpg",
+            icongray: "https://icons/boss_gray.jpg",
+          },
+        ],
+      },
+    },
+  };
+
+  it("asks Steam once for a game two players both ask about", async () => {
+    const { fetchImpl, calls } = countingSteam({ schemaForGame: [definedFor] });
+    const app = appCaching(fetchImpl, mapCache());
+
+    const forOnePlayer = await app.request(achievementsUrl(APP_ID));
+    const forAnother = await app.request(achievementsUrl(APP_ID));
+
+    expect(calls).toHaveLength(1);
+    expect(await forOnePlayer.json()).toEqual(await forAnother.json());
+  });
+
+  it("never serves one game's achievements for another", async () => {
+    const { fetchImpl, calls } = countingSteam({ schemaForGame: [definedFor] });
+    const app = appCaching(fetchImpl, mapCache());
+
+    await app.request(achievementsUrl(APP_ID));
+    await app.request(achievementsUrl(OTHER_APP_ID));
+
+    expect(calls).toHaveLength(2);
+  });
+
+  /**
+   * A game renames an achievement about as often as a player base moves a
+   * published share, which is to say almost never. The two answers that name no
+   * player are kept for the same day.
+   */
+  it("keeps a game's achievements as long as its published rarity", async () => {
+    const { fetchImpl } = countingSteam({ schemaForGame: [definedFor] });
+    const app = appCaching(fetchImpl, mapCache());
+
+    const response = await app.request(achievementsUrl(APP_ID));
+
+    expect(response.headers.get("cache-control")).toBe(
+      `max-age=${ACHIEVEMENTS_CACHE_SECONDS}`,
+    );
+    expect(ACHIEVEMENTS_CACHE_SECONDS).toBe(RARITY_CACHE_SECONDS);
   });
 });

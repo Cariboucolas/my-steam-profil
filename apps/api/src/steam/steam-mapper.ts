@@ -238,3 +238,43 @@ export const mapGameRarity = (
     const rarity = figureIn(published);
     return rarity === null ? [] : [{ apiName: published.name, rarity }];
   });
+
+/**
+ * How a Game names one of its Achievements. Held apart from `Achievement`,
+ * which carries an UnlockState and so belongs to one player: this names the
+ * award itself, and reads the same to everyone (ADR-0008).
+ */
+export interface AchievementName {
+  readonly apiName: string;
+  readonly displayName: string;
+  /** The unlocked icon; the grey one draws a locked row, and none is ranked here. */
+  readonly icon: string;
+}
+
+/**
+ * What a Game calls its Achievements, and nothing about any player.
+ *
+ * Only three of the schema's seven fields survive. The schema is the 253 KB
+ * payload ADR-0005 removed from the library's path, and the caller of this one
+ * is a row that shows a name and an icon — forwarding the rest would put the
+ * weight back for something nothing draws.
+ *
+ * A Game that defines no achievements answers `{ "game": {} }`, measured on
+ * 2694490. That is a real game saying it has nothing to earn, so it maps to an
+ * empty list rather than to a failure. `availableGameStats` also carries the
+ * game's statistics, which are not achievements and are not read here.
+ *
+ * The envelope itself is read defensively, unlike in `mapGameProgress`: that
+ * one is reached for a game the player owns, where this route names any app id
+ * a caller cares to send. An app id Steam knows nothing about has never been
+ * measured here, and an answer with no `game` in it should be a game that names
+ * nothing rather than a 500.
+ */
+export const mapGameAchievements = (
+  schema: SteamSchemaResponse,
+): AchievementName[] =>
+  (schema.game?.availableGameStats?.achievements ?? []).map((definition) => ({
+    apiName: definition.name,
+    displayName: definition.displayName,
+    icon: definition.icon,
+  }));

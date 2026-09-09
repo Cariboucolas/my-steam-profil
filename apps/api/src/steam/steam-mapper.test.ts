@@ -5,11 +5,13 @@ import {
   mapGameProgress,
   mapGameTally,
   mapGameRarity,
+  mapGameAchievements,
 } from "./steam-mapper";
 import {
   type SteamPlayerSummariesResponse,
   type SteamOwnedGamesResponse,
   type SteamSchemaResponse,
+  type SteamSchemaAchievement,
   type SteamPlayerAchievementsResponse,
   type SteamGlobalAchievementPercentagesResponse,
   type SteamGlobalAchievementPercentage,
@@ -439,5 +441,93 @@ describe("mapGameRarity", () => {
     const [first, second] = mapGameRarity(raw);
 
     expect(first?.rarity).toBe(second?.rarity);
+  });
+});
+
+/**
+ * How a Game names its own Achievements — the half of a ranked row that the
+ * published figures cannot give. Nothing here takes a player either: two
+ * players asking about one Game ask the same question (ADR-0008).
+ */
+describe("mapGameAchievements", () => {
+  const defining = (
+    achievements: readonly SteamSchemaAchievement[],
+  ): SteamSchemaResponse => ({
+    game: { gameName: "Demo", availableGameStats: { achievements: [...achievements] } },
+  });
+
+  const BOSS: SteamSchemaAchievement = {
+    name: "ACH_BOSS_1",
+    displayName: "First boss",
+    description: "Beat the first boss.",
+    hidden: 0,
+    icon: "https://icons/boss.jpg",
+    icongray: "https://icons/boss_gray.jpg",
+  };
+
+  it("names each achievement the game defines", () => {
+    expect(mapGameAchievements(defining([BOSS]))).toEqual([
+      {
+        apiName: "ACH_BOSS_1",
+        displayName: "First boss",
+        icon: "https://icons/boss.jpg",
+      },
+    ]);
+  });
+
+  /**
+   * These rows are unlocks, every one of them earned. The grey icon is what a
+   * locked achievement is drawn with, so carrying it here would be carrying a
+   * picture no row on this screen can use.
+   */
+  it("carries the unlocked icon, and neither the grey one nor the flavour text", () => {
+    const [named] = mapGameAchievements(defining([BOSS]));
+
+    expect(named).not.toHaveProperty("icongray");
+    expect(named).not.toHaveProperty("description");
+    expect(named).not.toHaveProperty("hidden");
+  });
+
+  /**
+   * Measured on 2694490: a game that defines no achievements answers `{ "game":
+   * {} }` — no `availableGameStats` at all. That is a true answer about a real
+   * game, so it is an empty list rather than a failure.
+   */
+  it("names nothing for a game that defines nothing", () => {
+    expect(mapGameAchievements({ game: {} })).toEqual([]);
+    expect(mapGameAchievements(defining([]))).toEqual([]);
+  });
+
+  /**
+   * This route names any app id a caller sends, including one Steam has never
+   * heard of. What such an answer looks like has not been measured, so an
+   * envelope with nothing in it names nothing rather than failing the request.
+   */
+  it("names nothing when Steam answers without a game at all", () => {
+    expect(mapGameAchievements({} as SteamSchemaResponse)).toEqual([]);
+  });
+
+  /**
+   * `availableGameStats` holds two lists, and only one of them is achievements:
+   * on 2066020 there are 38 stats beside the 483 achievements. Reading the
+   * wrong one would name rows after game statistics.
+   */
+  it("reads the achievements a game defines, not its statistics", () => {
+    const raw = {
+      game: {
+        availableGameStats: {
+          stats: [{ name: "TIMES_DIED", defaultvalue: 0 }],
+          achievements: [BOSS],
+        },
+      },
+    } as SteamSchemaResponse;
+
+    expect(mapGameAchievements(raw)).toEqual([
+      {
+        apiName: "ACH_BOSS_1",
+        displayName: "First boss",
+        icon: "https://icons/boss.jpg",
+      },
+    ]);
   });
 });

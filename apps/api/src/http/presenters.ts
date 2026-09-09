@@ -8,11 +8,14 @@ import type {
   GameTallyDto,
   AchievementRarityDto,
   GameRarityDto,
+  AchievementNameDto,
+  GameAchievementsDto,
 } from "@steam/contracts";
 import type {
   GameProgress,
   GameTally,
   AchievementRarity,
+  AchievementName,
 } from "../steam/steam-mapper";
 
 export const toProfileDto = (profile: Profile): ProfileDto => ({
@@ -71,6 +74,19 @@ export const toAchievementRarityDto = (
 export const toGameRarityDto = (
   rarities: readonly AchievementRarity[],
 ): GameRarityDto => rarities.map(toAchievementRarityDto);
+
+export const toAchievementNameDto = (
+  named: AchievementName,
+): AchievementNameDto => ({
+  apiName: named.apiName,
+  displayName: named.displayName,
+  icon: named.icon,
+});
+
+/** How a Game names its Achievements, in the order the Game defines them. */
+export const toGameAchievementsDto = (
+  named: readonly AchievementName[],
+): GameAchievementsDto => named.map(toAchievementNameDto);
 
 export const toGameProgressDto = (data: GameProgress): GameProgressDto => ({
   completion: toGameCompletionDto(data.completion),
