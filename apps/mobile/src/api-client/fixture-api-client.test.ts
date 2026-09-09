@@ -182,7 +182,7 @@ describe("createFixtureApiClient (rarity)", () => {
  */
 describe("createFixtureApiClient (achievements)", () => {
   it("names every achievement the stored progress defines, unlocked or not", async () => {
-    expect(await client.getGameAchievements(2066020)).toEqual({
+    expect(await client.getAchievementNames(2066020)).toEqual({
       ok: true,
       value: [
         { apiName: "BOSS_2", displayName: "BOSS_2", icon: "https://icon/a.jpg" },
@@ -199,6 +199,6 @@ describe("createFixtureApiClient (achievements)", () => {
    * the name it was ranked under rather than going blank.
    */
   it("names nothing for a game it has no progress for", async () => {
-    expect(await client.getGameAchievements(440)).toEqual({ ok: true, value: [] });
+    expect(await client.getAchievementNames(440)).toEqual({ ok: true, value: [] });
   });
 });

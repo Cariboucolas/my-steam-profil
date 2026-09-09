@@ -3,7 +3,7 @@ import {
   createApp,
   TALLY_CACHE_SECONDS,
   RARITY_CACHE_SECONDS,
-  ACHIEVEMENTS_CACHE_SECONDS,
+  ACHIEVEMENT_NAMES_CACHE_SECONDS,
 } from "./app";
 import { createSteamClient } from "../steam/steam-client";
 import type { ResponseCache } from "./cache";
@@ -1124,8 +1124,8 @@ describe("caching how a game names its achievements", () => {
     const response = await app.request(achievementsUrl(APP_ID));
 
     expect(response.headers.get("cache-control")).toBe(
-      `max-age=${ACHIEVEMENTS_CACHE_SECONDS}`,
+      `max-age=${ACHIEVEMENT_NAMES_CACHE_SECONDS}`,
     );
-    expect(ACHIEVEMENTS_CACHE_SECONDS).toBe(RARITY_CACHE_SECONDS);
+    expect(ACHIEVEMENT_NAMES_CACHE_SECONDS).toBe(RARITY_CACHE_SECONDS);
   });
 });

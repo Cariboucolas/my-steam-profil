@@ -5,7 +5,7 @@ import {
   mapGameProgress,
   mapGameTally,
   mapGameRarity,
-  mapGameAchievements,
+  mapAchievementNames,
 } from "./steam-mapper";
 import {
   type SteamPlayerSummariesResponse,
@@ -449,7 +449,7 @@ describe("mapGameRarity", () => {
  * published figures cannot give. Nothing here takes a player either: two
  * players asking about one Game ask the same question (ADR-0008).
  */
-describe("mapGameAchievements", () => {
+describe("mapAchievementNames", () => {
   const defining = (
     achievements: readonly SteamSchemaAchievement[],
   ): SteamSchemaResponse => ({
@@ -466,7 +466,7 @@ describe("mapGameAchievements", () => {
   };
 
   it("names each achievement the game defines", () => {
-    expect(mapGameAchievements(defining([BOSS]))).toEqual([
+    expect(mapAchievementNames(defining([BOSS]))).toEqual([
       {
         apiName: "ACH_BOSS_1",
         displayName: "First boss",
@@ -481,7 +481,7 @@ describe("mapGameAchievements", () => {
    * picture no row on this screen can use.
    */
   it("carries the unlocked icon, and neither the grey one nor the flavour text", () => {
-    const [named] = mapGameAchievements(defining([BOSS]));
+    const [named] = mapAchievementNames(defining([BOSS]));
 
     expect(named).not.toHaveProperty("icongray");
     expect(named).not.toHaveProperty("description");
@@ -494,8 +494,8 @@ describe("mapGameAchievements", () => {
    * game, so it is an empty list rather than a failure.
    */
   it("names nothing for a game that defines nothing", () => {
-    expect(mapGameAchievements({ game: {} })).toEqual([]);
-    expect(mapGameAchievements(defining([]))).toEqual([]);
+    expect(mapAchievementNames({ game: {} })).toEqual([]);
+    expect(mapAchievementNames(defining([]))).toEqual([]);
   });
 
   /**
@@ -504,7 +504,7 @@ describe("mapGameAchievements", () => {
    * envelope with nothing in it names nothing rather than failing the request.
    */
   it("names nothing when Steam answers without a game at all", () => {
-    expect(mapGameAchievements({} as SteamSchemaResponse)).toEqual([]);
+    expect(mapAchievementNames({} as SteamSchemaResponse)).toEqual([]);
   });
 
   /**
@@ -522,7 +522,7 @@ describe("mapGameAchievements", () => {
       },
     } as SteamSchemaResponse;
 
-    expect(mapGameAchievements(raw)).toEqual([
+    expect(mapAchievementNames(raw)).toEqual([
       {
         apiName: "ACH_BOSS_1",
         displayName: "First boss",

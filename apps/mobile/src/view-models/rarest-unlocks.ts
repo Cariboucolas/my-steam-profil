@@ -1,5 +1,5 @@
 import type {
-  GameAchievementsDto,
+  AchievementNamesDto,
   GameDto,
   GameRarityDto,
   UnlockDto,
@@ -193,7 +193,7 @@ export const buildRarestUnlocks = (
  * not been asked about — which is every game until a ranking exists, since what
  * to ask about is read off the rows.
  */
-export type NamesByAppId = Readonly<Record<number, GameAchievementsDto>>;
+export type NamesByAppId = Readonly<Record<number, AchievementNamesDto>>;
 
 /**
  * A ranked row once its game has named it. The name and the icon arrive after
@@ -237,6 +237,8 @@ export const nameUnlocks = (
     );
     return {
       ...row,
+      // `||` rather than `??`, and deliberately: a name Steam sent empty draws
+      // an empty row, which is worse than the key the row was ranked under.
       displayName: named?.displayName || row.apiName,
       icon: named?.icon ?? null,
     };

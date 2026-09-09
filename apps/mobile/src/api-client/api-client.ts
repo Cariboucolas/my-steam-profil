@@ -1,6 +1,6 @@
 import type { Result } from "@steam/domain";
 import type {
-  GameAchievementsDto,
+  AchievementNamesDto,
   GameDto,
   GameProgressDto,
   GameRarityDto,
@@ -64,5 +64,5 @@ export interface ApiClient {
    * A game that defines no achievements answers with an empty list, which is a
    * real answer and not a failure.
    */
-  getGameAchievements(appId: number): Promise<Result<GameAchievementsDto, ApiError>>;
+  getAchievementNames(appId: number): Promise<Result<AchievementNamesDto, ApiError>>;
 }

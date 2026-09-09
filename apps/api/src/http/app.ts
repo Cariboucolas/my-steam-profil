@@ -11,7 +11,7 @@ import {
   mapGameProgress,
   mapGameTally,
   mapGameRarity,
-  mapGameAchievements,
+  mapAchievementNames,
   type AchievementsError,
 } from "../steam/steam-mapper";
 import {
@@ -20,7 +20,7 @@ import {
   toGameProgressDto,
   toGameTallyDto,
   toGameRarityDto,
-  toGameAchievementsDto,
+  toAchievementNamesDto,
   emptyGameProgressDto,
   emptyGameTallyDto,
 } from "./presenters";
@@ -68,7 +68,7 @@ export const RARITY_CACHE_SECONDS = 86_400;
  * what one answer is worth after a day says nothing about the other — which is
  * the whole point of a route stating its own lifetime.
  */
-export const ACHIEVEMENTS_CACHE_SECONDS = 86_400;
+export const ACHIEVEMENT_NAMES_CACHE_SECONDS = 86_400;
 
 type Handler = (context: Context, steamId: SteamId) => Promise<Response>;
 
@@ -232,12 +232,12 @@ const serveGameRarity = (
  * A game that defines no achievements answers with an empty list: a true thing
  * to say about a real game, and nothing a ranking could have a row from.
  */
-const serveGameAchievements = (
+const serveAchievementNames = (
   gateway: SteamGateway,
 ): ((c: Context) => Promise<Response>) =>
   withApp(async (context, appId) => {
     const schema = await gateway.getSchemaForGame(appId);
-    return context.json(toGameAchievementsDto(mapGameAchievements(schema)));
+    return context.json(toAchievementNamesDto(mapAchievementNames(schema)));
   });
 
 /**
@@ -294,7 +294,7 @@ export const createApp = (
    */
   app.get(
     "/api/games/:appId/achievements",
-    cached(cache, ACHIEVEMENTS_CACHE_SECONDS, serveGameAchievements(gateway)),
+    cached(cache, ACHIEVEMENT_NAMES_CACHE_SECONDS, serveAchievementNames(gateway)),
   );
 
   /**
