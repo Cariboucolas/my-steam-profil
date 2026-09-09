@@ -1,20 +1,23 @@
 import type { GameDto, ProfileDto } from "@steam/contracts";
 import { Redirect, useRouter } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ActivityIndicator, FlatList, StyleSheet, View } from "react-native";
+import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ApiClient } from "../src/api-client/api-client";
 import { useApiClient } from "../src/api-client/use-api-client";
+import type { CountedLibrary } from "../src/api-client/use-library-rarity";
 import { useLibraryTallies } from "../src/api-client/use-library-tallies";
+import { Tabs } from "../src/components/atoms/Tabs";
 import { GameListItem } from "../src/components/molecules/GameListItem";
+import { RarestRow } from "../src/components/molecules/RarestRow";
 import { SortChips } from "../src/components/molecules/SortChips";
 import { ErrorState } from "../src/components/organisms/ErrorState";
 import { LibraryStatsCard } from "../src/components/organisms/LibraryStatsCard";
 import { ProfileHeader } from "../src/components/organisms/ProfileHeader";
 import { UnlockCalendarCard } from "../src/components/organisms/UnlockCalendarCard";
 import { useSteamId } from "../src/settings/steam-id-store";
-import { colors, spacing } from "../src/theme/tokens";
+import { colors, fonts, spacing } from "../src/theme/tokens";
 import { messageFor } from "../src/view-models/api-errors";
 import {
   buildLibraryRows,
@@ -22,6 +25,7 @@ import {
   type LibrarySort,
   type LibraryView,
 } from "../src/view-models/library";
+import { useRarestTab, type RarestTab } from "../src/view-models/use-rarest-tab";
 import { useUnlockCalendar } from "../src/view-models/use-unlock-calendar";
 
 type Loaded = {
@@ -42,6 +46,45 @@ type State =
  */
 const NO_GAMES: readonly GameDto[] = [];
 
+/**
+ * The two things this screen can be a list of. Completion is the library and
+ * the tab the screen opens on; Rarest ranks what the player has unlocked across
+ * all of it, and costs a load nobody has asked for until they open it.
+ */
+const TABS = ["Completion", "Rarest"] as const;
+const COMPLETION = 0;
+const RAREST = 1;
+
+/**
+ * What stands in for the ranking while there is none, told apart because the
+ * two silences are not the same news. A tab still waiting on the count would
+ * otherwise look exactly like a player who has unlocked nothing anywhere.
+ *
+ * Phase one running with nothing ranked yet says nothing at all: the card's
+ * load bar is already saying it, and a message that appeared for a second
+ * between two states would only be read as a third.
+ */
+const rarestEmptyFor = (status: RarestTab["status"]) => {
+  if (status === "counting") {
+    return (
+      <View style={styles.empty}>
+        <Text style={styles.emptyTitle}>Counting your library first</Text>
+        <Text style={styles.emptyHint}>
+          the rarest unlocks are ranked across every game you have played
+        </Text>
+      </View>
+    );
+  }
+  if (status === "ready") {
+    return (
+      <View style={styles.empty}>
+        <Text style={styles.emptyTitle}>Nothing unlocked in any game yet</Text>
+      </View>
+    );
+  }
+  return null;
+};
+
 export default function LibraryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -49,6 +92,7 @@ export default function LibraryScreen() {
   const apiClient = useApiClient();
   const [state, setState] = useState<State>({ status: "loading" });
   const [sort, setSort] = useState<LibrarySort>("completed");
+  const [tab, setTab] = useState(COMPLETION);
   // Bumped to re-run the load when nothing else about the request changed —
   // a backend that was down and may now be up. The api client is memoised on
   // the steam id, so without this a retry with the same profile is a no-op.
@@ -114,10 +158,8 @@ export default function LibraryScreen() {
   // Where the tallies have got to. Fetching them, bounding them, abandoning
   // them on a profile switch and holding the list still while they land are
   // all its concern, and none of them are state this screen keeps.
-  const { tallies, pending, loaded, frozenOrder, repin } = useLibraryTallies(
-    apiClient,
-    gamesToCount,
-  );
+  const { tallies, pending, counted, loaded, frozenOrder, repin } =
+    useLibraryTallies(apiClient, gamesToCount);
 
   // Named, now that both builders read it: a missing field fails to compile
   // rather than quietly satisfying one caller and not the other.
@@ -131,6 +173,22 @@ export default function LibraryScreen() {
   // and not this screen's: it is the calendar's half of what `frozenOrder` is
   // to the list below.
   const calendar = useUnlockCalendar(view, today);
+
+  /**
+   * The pair the rarest ranking is fetched against, and null until there is
+   * one. Which games hold an unlock is what the count delivers, and the two
+   * loads share the same six connections — so this stays null until the count
+   * is through, which is the whole of what makes the tab wait.
+   *
+   * The tallies stop changing once `counted` is true, so this identity holds
+   * still afterwards, which is what the loads behind it are started off.
+   */
+  const countedLibrary = useMemo<CountedLibrary | null>(
+    () =>
+      counted && apiClient !== undefined ? { client: apiClient, tallies } : null,
+    [counted, apiClient, tallies],
+  );
+  const rarest = useRarestTab(countedLibrary, view, tab === RAREST);
 
   /**
    * Choosing an order is a request to see things move, so the list re-sorts at
@@ -182,29 +240,64 @@ export default function LibraryScreen() {
     );
   }
 
+  const padding = {
+    paddingTop: insets.top + spacing.lg,
+    paddingBottom: insets.bottom + 40,
+  };
+
+  const header = (
+    <>
+      <ProfileHeader
+        profile={state.data.profile}
+        gameCount={games.length}
+        onChangeProfile={() => router.push("/setup")}
+      />
+      <LibraryStatsCard
+        summary={summary}
+        gameCount={games.length}
+        // Both of the screen's loads report through the card's one bar: the
+        // count first, and then the two phases behind the rarest ranking.
+        loaded={loaded ?? rarest.loaded}
+      />
+      <UnlockCalendarCard calendar={calendar} />
+      <Tabs labels={TABS} activeIndex={tab} onSelect={setTab} />
+
+      {/* The chips order the library, which is Completion's list and no other.
+          A control with one sensible option is not a control, so on Rarest they
+          give their place to what the ranking was ranked across. */}
+      {tab === COMPLETION ? (
+        <SortChips active={sort} onSelect={chooseSort} />
+      ) : (
+        rarest.status !== "counting" && (
+          <Text style={styles.counted}>{rarest.countedLabel}</Text>
+        )
+      )}
+    </>
+  );
+
+  if (tab === RAREST) {
+    return (
+      <FlatList
+        style={styles.screen}
+        data={rarest.rows}
+        // An apiName is unique within its game and only within it.
+        keyExtractor={(row) => `${row.appId}:${row.apiName}`}
+        renderItem={({ item }) => <RarestRow row={item} onPress={openGame} />}
+        contentContainerStyle={padding}
+        ListHeaderComponent={header}
+        ListEmptyComponent={rarestEmptyFor(rarest.status)}
+      />
+    );
+  }
+
   return (
     <FlatList
       style={styles.screen}
       data={rows}
       keyExtractor={(row) => String(row.appId)}
       renderItem={({ item }) => <GameListItem row={item} onPress={openGame} />}
-      contentContainerStyle={{ paddingTop: insets.top + spacing.lg, paddingBottom: insets.bottom + 40 }}
-      ListHeaderComponent={
-        <>
-          <ProfileHeader
-            profile={state.data.profile}
-            gameCount={games.length}
-            onChangeProfile={() => router.push("/setup")}
-          />
-          <LibraryStatsCard
-            summary={summary}
-            gameCount={games.length}
-            loaded={loaded}
-          />
-          <UnlockCalendarCard calendar={calendar} />
-          <SortChips active={sort} onSelect={chooseSort} />
-        </>
-      }
+      contentContainerStyle={padding}
+      ListHeaderComponent={header}
       // Hundreds of rows: only what is on screen gets mounted.
       initialNumToRender={12}
       windowSize={7}
@@ -224,5 +317,34 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: colors.bg,
     padding: spacing.xxl,
+  },
+  // Sits where the sort chips sit on the other tab, and reads like the stats
+  // card's own fraction rather than like a heading.
+  counted: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.textDim,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
+    paddingBottom: 6,
+  },
+  empty: {
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 40,
+    paddingHorizontal: spacing.xxl,
+  },
+  emptyTitle: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: "center",
+  },
+  emptyHint: {
+    fontFamily: fonts.mono,
+    fontSize: 10.5,
+    color: colors.textFaint,
+    textAlign: "center",
+    maxWidth: 250,
   },
 });
