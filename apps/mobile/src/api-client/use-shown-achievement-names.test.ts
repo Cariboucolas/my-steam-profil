@@ -1,17 +1,17 @@
-import type { GameAchievementsDto } from "@steam/contracts";
+import type { AchievementNamesDto } from "@steam/contracts";
 import { err, ok, type Result } from "@steam/domain";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 
 import type { ApiClient, ApiError } from "./api-client";
-import { useShownAchievements, type ShownGames } from "./use-shown-achievements";
+import { useShownAchievementNames, type ShownGames } from "./use-shown-achievement-names";
 
-type Named = Result<GameAchievementsDto, ApiError>;
+type Named = Result<AchievementNamesDto, ApiError>;
 
 const SOULSTONE = 2066020;
 const HALLS = 2218750;
 const EXILE = 2694490;
 
-const naming = (appId: number): GameAchievementsDto => [
+const naming = (appId: number): AchievementNamesDto => [
   {
     apiName: `ACH_${appId}`,
     displayName: `Achievement of ${appId}`,
@@ -19,7 +19,7 @@ const naming = (appId: number): GameAchievementsDto => [
   },
 ];
 
-/** Only getGameAchievements is exercised; anything else is a bug in the hook. */
+/** Only getAchievementNames is exercised; anything else is a bug in the hook. */
 const refuse = () => {
   throw new Error("naming the rows should not have called this");
 };
@@ -30,7 +30,7 @@ const clientAsking = (answer: (appId: number) => Promise<Named>): ApiClient => (
   getGameProgress: refuse,
   getGameTally: refuse,
   getGameRarity: refuse,
-  getGameAchievements: answer,
+  getAchievementNames: answer,
 });
 
 /** Answers every game at once, and records what it was asked about. */
@@ -76,11 +76,11 @@ const shown = (client: ApiClient, appIds: readonly number[]): ShownGames => ({
 });
 
 const renderNames = (initial: ShownGames | null) =>
-  renderHook(({ games }: { games: ShownGames | null }) => useShownAchievements(games), {
+  renderHook(({ games }: { games: ShownGames | null }) => useShownAchievementNames(games), {
     initialProps: { games: initial },
   });
 
-describe("useShownAchievements", () => {
+describe("useShownAchievementNames", () => {
   /**
    * Which games are worth the schema is a property of the ranking, not of the
    * library: until there are rows, there is nothing to name and nothing to ask.
@@ -140,6 +140,31 @@ describe("useShownAchievements", () => {
 
     await waitFor(() => expect(asked).toEqual([SOULSTONE, HALLS]));
     expect(result.current.names[SOULSTONE]).toEqual(naming(SOULSTONE));
+  });
+
+  /**
+   * The case the ranking makes routine: a figure lands, a new game enters the
+   * ranking, and the set of games to name grows while the first answer is
+   * still in flight. That answer must still count — a game asked about once and
+   * then dropped would leave its rows under an apiName Steam had already named.
+   */
+  it("keeps an answer that lands after the ranking grew under it", async () => {
+    const { client, asked, release } = heldClient([SOULSTONE]);
+    const { result, rerender } = renderNames(shown(client, [SOULSTONE]));
+
+    await waitFor(() => expect(asked).toEqual([SOULSTONE]));
+    rerender({ games: shown(client, [SOULSTONE, HALLS]) });
+    await waitFor(() => expect(asked).toEqual([SOULSTONE, HALLS]));
+
+    await release();
+
+    await waitFor(() =>
+      expect(result.current.names).toEqual({
+        [SOULSTONE]: naming(SOULSTONE),
+        [HALLS]: naming(HALLS),
+      }),
+    );
+    expect(result.current.loading).toBe(false);
   });
 
   /**

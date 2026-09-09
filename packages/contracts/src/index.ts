@@ -11,6 +11,6 @@ export type {
 export type { AchievementRarityDto, GameRarityDto } from "./rarity";
 export type {
   AchievementNameDto,
-  GameAchievementsDto,
-} from "./game-achievements";
+  AchievementNamesDto,
+} from "./achievement-names";
 export { byWhenUnlocked } from "./unlock-order";

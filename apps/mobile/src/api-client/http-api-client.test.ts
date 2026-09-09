@@ -81,7 +81,7 @@ describe("createHttpApiClient (addresses)", () => {
    * game calls its achievements is the game's, not the asker's (ADR-0008).
    */
   it("asks for a game's achievements at an address that names no player", async () => {
-    const [url] = await urlsAsked((client) => client.getGameAchievements(APP_ID));
+    const [url] = await urlsAsked((client) => client.getAchievementNames(APP_ID));
     expect(url).toBe(`${BASE_URL}/api/games/${APP_ID}/achievements`);
     expect(url).not.toContain(STEAM_ID);
   });

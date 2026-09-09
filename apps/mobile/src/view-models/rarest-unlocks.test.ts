@@ -1,5 +1,5 @@
 import type {
-  GameAchievementsDto,
+  AchievementNamesDto,
   GameDto,
   GameRarityDto,
   UnlockDto,
@@ -485,6 +485,29 @@ describe("gamesShownIn", () => {
   it("names nothing for a ranking with no rows in it", () => {
     expect(gamesShownIn([])).toEqual([]);
   });
+
+  /**
+   * The bound the whole phase rests on: the schema is asked for per row shown,
+   * never per game owned (ADR-0005). A library of twenty games holding unlocks
+   * still shows ten rows, so it is asked at most ten questions.
+   */
+  it("names at most as many games as there are rows, never a whole library", () => {
+    const library = Object.fromEntries(
+      Array.from({ length: 20 }, (_, index) => [
+        1000 + index,
+        {
+          unlocked: { [`ACH_${index}`]: "2026-01-01T00:00:00Z" },
+          published: { [`ACH_${index}`]: index + 1 },
+        },
+      ]),
+    );
+
+    const ranking = rank(library);
+
+    expect(Object.keys(library)).toHaveLength(20);
+    expect(gamesShownIn(ranking.rows)).toHaveLength(ranking.rows.length);
+    expect(gamesShownIn(ranking.rows).length).toBeLessThanOrEqual(10);
+  });
 });
 
 /**
@@ -506,7 +529,7 @@ describe("nameUnlocks", () => {
 
   const namesFor = (
     achievements: Readonly<Record<string, readonly [string, string]>>,
-  ): GameAchievementsDto =>
+  ): AchievementNamesDto =>
     Object.entries(achievements).map(([apiName, [displayName, icon]]) => ({
       apiName,
       displayName,

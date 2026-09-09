@@ -270,7 +270,7 @@ export interface AchievementName {
  * measured here, and an answer with no `game` in it should be a game that names
  * nothing rather than a 500.
  */
-export const mapGameAchievements = (
+export const mapAchievementNames = (
   schema: SteamSchemaResponse,
 ): AchievementName[] =>
   (schema.game?.availableGameStats?.achievements ?? []).map((definition) => ({

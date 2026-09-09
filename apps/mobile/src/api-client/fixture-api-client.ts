@@ -2,7 +2,7 @@ import { ok, err, type Result } from "@steam/domain";
 import { byWhenUnlocked } from "@steam/contracts";
 import type {
   AchievementNameDto,
-  GameAchievementsDto,
+  AchievementNamesDto,
   GameDto,
   GameProgressDto,
   GameRarityDto,
@@ -117,7 +117,7 @@ const unlocksIn = (progress: GameProgressDto): readonly UnlockDto[] =>
      * game calls an award does not depend on whether this player has earned it,
      * and the backend answers the same list.
      */
-    getGameAchievements: (appId) =>
-      Promise.resolve(ok<GameAchievementsDto>(namesIn(data.progress[appId]))),
+    getAchievementNames: (appId) =>
+      Promise.resolve(ok<AchievementNamesDto>(namesIn(data.progress[appId]))),
   };
 };

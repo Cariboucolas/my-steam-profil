@@ -22,4 +22,4 @@ export interface AchievementNameDto {
  * A Game that defines none is an empty list, exactly as a Game Steam publishes
  * no figures for is: both are true answers, and neither is a failure.
  */
-export type GameAchievementsDto = readonly AchievementNameDto[];
+export type AchievementNamesDto = readonly AchievementNameDto[];

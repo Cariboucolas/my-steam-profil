@@ -9,7 +9,7 @@ import type {
   AchievementRarityDto,
   GameRarityDto,
   AchievementNameDto,
-  GameAchievementsDto,
+  AchievementNamesDto,
 } from "@steam/contracts";
 import type {
   GameProgress,
@@ -84,9 +84,9 @@ export const toAchievementNameDto = (
 });
 
 /** How a Game names its Achievements, in the order the Game defines them. */
-export const toGameAchievementsDto = (
+export const toAchievementNamesDto = (
   named: readonly AchievementName[],
-): GameAchievementsDto => named.map(toAchievementNameDto);
+): AchievementNamesDto => named.map(toAchievementNameDto);
 
 export const toGameProgressDto = (data: GameProgress): GameProgressDto => ({
   completion: toGameCompletionDto(data.completion),

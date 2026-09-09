@@ -48,7 +48,7 @@ const clientAsking = (answer: (appId: number) => Promise<Rarity>): ApiClient => 
   getGameProgress: refuse,
   getGameTally: refuse,
   getGameRarity: answer,
-  getGameAchievements: refuse,
+  getAchievementNames: refuse,
 });
 
 /** Answers every game at once, and records what it was asked about. */
