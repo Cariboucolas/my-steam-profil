@@ -12,6 +12,8 @@ import {
   TALLY_LOAD_BAR_TEST_ID,
 } from "../atoms/TallyLoadBar";
 import {
+  headlineRoom,
+  HEADLINE_REQUIRED_WIDTH,
   LibraryStatsCard,
   LIBRARY_STATS_CARD_TEST_ID,
 } from "./LibraryStatsCard";
@@ -91,3 +93,21 @@ describe("LibraryStatsCard", () => {
   });
 });
 
+/**
+ * The count of a player's unlocks is the one figure on this screen that must
+ * never break across two lines: a wrapped `4 127` reads as two numbers. The
+ * headline row flexes, so nothing in the rendered tree says how much width it
+ * was left — `headlineRoom` works that out from the card's own margins,
+ * padding, gaps and ring, and 375 px is the narrowest phone the app serves.
+ *
+ * Both sides are read from the card, never written down here: the room from
+ * the layout, the demand from the size and letter spacing the headline is
+ * actually painted at, plus the margin the width model is allowed. Widen a
+ * gap, restore the old padding, enlarge the ring or raise the font size and
+ * this goes red.
+ */
+describe("headlineRoom", () => {
+  it("holds the widest promised figure on one line on the narrowest phone", () => {
+    expect(headlineRoom(375)).toBeGreaterThanOrEqual(HEADLINE_REQUIRED_WIDTH);
+  });
+});
