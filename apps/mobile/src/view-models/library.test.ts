@@ -247,7 +247,24 @@ describe("buildLibrarySummary", () => {
   });
 
   it("names what it measured, without implying the rest is missing", () => {
-    expect(summary.fraction).toBe("853 / 1007 across 3 games counted");
+    expect(summary.fraction).toBe("853 / 1 007 across 3 games counted");
+  });
+
+  /**
+   * The headline above this line is allowed to shorten itself, and this is
+   * where the exact count survives that. A fraction that ran its thousands
+   * together would be a poor place for it to survive.
+   */
+  it("groups the thousands on both halves", () => {
+    const summary = buildLibrarySummary({
+      games: [SOULSTONE],
+      tallies: { [SOULSTONE.appId]: tally(45500, 120000) },
+      sort: "completed",
+      pending: new Set<number>(),
+      frozenOrder: null,
+    });
+
+    expect(summary.fraction).toBe("45 500 / 120 000 across 1 game counted");
   });
 
   /**
