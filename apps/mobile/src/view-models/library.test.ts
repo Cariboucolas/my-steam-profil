@@ -5,6 +5,7 @@ import {
   buildLibrarySummary,
   formatDay,
   formatHours,
+  formatUnlockHeadline,
   type LibrarySort,
   type TallyByAppId,
 } from "./library";
@@ -72,6 +73,66 @@ describe("formatHours", () => {
 describe("formatDay", () => {
   it("writes a short English date", () => {
     expect(formatDay("2026-06-25T12:16:14.000Z")).toBe("25 Jun 2026");
+  });
+});
+
+/**
+ * ADR-0011: the headline is written in the most informative form that fits the
+ * budget it is given, and no threshold decides it. The budget is a character
+ * count rather than a width because the headline is monospaced, so every glyph
+ * — the separator included — advances the same.
+ */
+describe("formatUnlockHeadline", () => {
+  it("writes the figure in full whenever it fits", () => {
+    expect(formatUnlockHeadline(45_500, 6)).toBe("45 500");
+    expect(formatUnlockHeadline(9_999, 5)).toBe("9 999");
+    expect(formatUnlockHeadline(0, 5)).toBe("0");
+  });
+
+  it("keeps a decimal when the full figure does not fit", () => {
+    expect(formatUnlockHeadline(45_500, 5)).toBe("45.5K");
+    expect(formatUnlockHeadline(10_200, 5)).toBe("10.2K");
+  });
+
+  /**
+   * A decimal that says nothing costs two characters. `10.0K` claims a
+   * precision the rounding did not have.
+   */
+  it("drops a decimal that is only a zero", () => {
+    expect(formatUnlockHeadline(10_000, 5)).toBe("10K");
+    expect(formatUnlockHeadline(1_000_000, 5)).toBe("1M");
+  });
+
+  /**
+   * Six characters, and the narrowest phone the app serves holds five. This is
+   * the case a single "shorten past 9 999" rule would have missed.
+   */
+  it("gives up the decimal too rather than overflow", () => {
+    expect(formatUnlockHeadline(123_400, 6)).toBe("123.4K");
+    expect(formatUnlockHeadline(123_400, 5)).toBe("123K");
+  });
+
+  it("rounds to the nearest, as the other figures on this screen do", () => {
+    expect(formatUnlockHeadline(45_550, 5)).toBe("45.6K");
+    expect(formatUnlockHeadline(45_540, 5)).toBe("45.5K");
+  });
+
+  /**
+   * The unit is chosen after the rounding, not before: rounding 999.95 up to
+   * 1000.0 makes it a million, and `1000K` would be five characters of the
+   * wrong unit.
+   */
+  it("promotes the unit when rounding overflows it", () => {
+    expect(formatUnlockHeadline(999_950, 5)).toBe("1M");
+  });
+
+  /**
+   * Below a thousand there is no honest shorter form, so the budget cannot be
+   * met by shortening. The layout's job is to make this unreachable; the
+   * formatter's job is to return the truth rather than a fiction that fits.
+   */
+  it("writes the figure in full when nothing shorter exists", () => {
+    expect(formatUnlockHeadline(127, 2)).toBe("127");
   });
 });
 

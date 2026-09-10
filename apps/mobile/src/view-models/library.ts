@@ -81,6 +81,66 @@ export const formatHours = (minutes: number): string => {
 };
 
 /**
+ * Largest first, because the unit is chosen after the rounding: 999 950 rounds
+ * to 1000.0 thousand, which is a million, and `1000K` would be the right digits
+ * under the wrong unit.
+ */
+const HEADLINE_UNITS = [
+  { suffix: "M", divisor: 1_000_000 },
+  { suffix: "K", divisor: 1_000 },
+] as const;
+
+const ONE_DECIMAL = 1;
+const NO_DECIMAL = 0;
+
+const roundTo = (value: number, decimals: number): number => {
+  const scale = 10 ** decimals;
+  return Math.round(value * scale) / scale;
+};
+
+/**
+ * The figure under a unit, or null when it has not reached the smallest one —
+ * `0.1K` is not a shorter way of writing 127, it is a worse one.
+ *
+ * A trailing zero is dropped by writing the number rather than the digits:
+ * 10.0 comes back as `10`. The locale is written into the call (ADR-0010), so
+ * the decimal mark is the app's and never the device's; translating the app
+ * changes this argument, and nothing else here.
+ */
+const underUnit = (value: number, decimals: number): string | null => {
+  for (const { suffix, divisor } of HEADLINE_UNITS) {
+    const scaled = roundTo(value / divisor, decimals);
+    if (scaled >= 1) {
+      return `${scaled.toLocaleString("en-US")}${suffix}`;
+    }
+  }
+  return null;
+};
+
+/**
+ * The unlock count as the library card should write it in `maxChars` or fewer:
+ * in full while that fits, then with one decimal and a unit, then with neither
+ * (ADR-0011). No threshold decides it — the caller measures the room the screen
+ * leaves and the most informative form that fits is the one drawn.
+ *
+ * `maxChars` rather than a width because the headline is monospaced: every
+ * glyph advances the same, so the character count is the whole truth about how
+ * wide the result will be.
+ *
+ * Below a thousand nothing shorter exists, so a budget too small to hold the
+ * figure cannot be met. The shortest honest form is returned rather than a
+ * truncation: the layout guarantees five characters at the narrowest width it
+ * serves, which is what keeps this unreachable.
+ */
+export const formatUnlockHeadline = (unlocked: number, maxChars: number): string => {
+  const full = group(unlocked);
+  const forms = [full, underUnit(unlocked, ONE_DECIMAL), underUnit(unlocked, NO_DECIMAL)]
+    .filter((form): form is string => form !== null);
+
+  return forms.find((form) => form.length <= maxChars) ?? forms[forms.length - 1] ?? full;
+};
+
+/**
  * "25 Jun 2026", in the device's own time zone. Built by hand rather than with
  * Intl so the wording stays the same whatever locale the device is set to.
  * Tests pin TZ=UTC so they do not depend on where they run.
