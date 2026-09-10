@@ -1,3 +1,4 @@
+import * as ReactNative from "react-native";
 import { render, waitFor } from "@testing-library/react-native";
 
 import {
@@ -11,7 +12,10 @@ import {
   TALLY_LOAD_BAR_FILL_TEST_ID,
   TALLY_LOAD_BAR_TEST_ID,
 } from "../atoms/TallyLoadBar";
+import { formatUnlockHeadline } from "../../view-models/library";
 import {
+  headlineFits,
+  headlineMaxChars,
   headlineRoom,
   HEADLINE_REQUIRED_WIDTH,
   LibraryStatsCard,
@@ -20,13 +24,25 @@ import {
 
 const summary = (over: Partial<LibrarySummary> = {}): LibrarySummary => ({
   unlocked: 1284,
+  unlockedScreenReaderLabel: "1 284 achievements unlocked",
   total: 3471,
   rateLabel: "37%",
-  fraction: "1 284 / 3 471",
+  fraction: "1 284 / 3 471 across 267 games counted",
   perfectGames: 12,
   playtimeLabel: "3 128 h",
   ...over,
 });
+
+/**
+ * The card reads the screen's width to know how much of the figure it can
+ * write, so a test that cares about the headline has to say which phone it is
+ * on. Everything else renders at whatever the preset provides.
+ */
+const onAPhone = (width: number) => {
+  jest
+    .spyOn(ReactNative.Dimensions, "get")
+    .mockReturnValue({ width, height: 812, scale: 2, fontScale: 1 });
+};
 
 beforeEach(() => {
   deviceIsFineWithMotion();
@@ -107,7 +123,74 @@ describe("LibraryStatsCard", () => {
  * this goes red.
  */
 describe("headlineRoom", () => {
-  it("holds the widest promised figure on one line on the narrowest phone", () => {
+  it("holds the figure the cascade cannot shorten, on the narrowest phone", () => {
     expect(headlineRoom(375)).toBeGreaterThanOrEqual(HEADLINE_REQUIRED_WIDTH);
+  });
+});
+
+/** Every width the app serves, from the narrowest phone to a tablet. */
+const SERVED_WIDTHS = [375, 390, 393, 402, 414, 430, 768, 834, 1024];
+
+/**
+ * The promise itself, stated once over the whole space rather than sampled:
+ * whatever count a player reaches and whatever phone they hold, what the card
+ * writes fits the room the card leaves. Both sides are read from the card —
+ * `headlineFits` is the very function the budget is searched with — so this
+ * goes red if a gap widens, the ring grows, the font size rises, or the
+ * cascade in `formatUnlockHeadline` loses a form.
+ */
+describe("the headline always fits", () => {
+  it.each(SERVED_WIDTHS)("at %i px, for any count a player can reach", (width) => {
+    const budget = headlineMaxChars(width);
+
+    for (let unlocked = 0; unlocked <= 1_000_000; unlocked += 137) {
+      const written = formatUnlockHeadline(unlocked, budget);
+      expect({ unlocked, written, fits: headlineFits(written.length, width) }).toEqual({
+        unlocked,
+        written,
+        fits: true,
+      });
+    }
+  });
+});
+
+/**
+ * The same promise as the reader meets it, on the two phones where the answer
+ * differs. 45 500 is six characters: it fits at 430 px and does not at 375.
+ */
+describe("the headline, on a real phone", () => {
+  const player = summary({
+    unlocked: 45_500,
+    unlockedScreenReaderLabel: "45 500 achievements unlocked",
+  });
+
+  it("writes the figure in full when the phone is wide enough", async () => {
+    onAPhone(430);
+    const { getByText } = render(
+      <LibraryStatsCard summary={player} gameCount={267} loaded={null} />,
+    );
+    await letTheDeviceAnswer();
+
+    expect(getByText("45 500")).toBeTruthy();
+  });
+
+  it("writes it short when it is not", async () => {
+    onAPhone(375);
+    const { getByText } = render(
+      <LibraryStatsCard summary={player} gameCount={267} loaded={null} />,
+    );
+    await letTheDeviceAnswer();
+
+    expect(getByText("45.5K")).toBeTruthy();
+  });
+
+  it("gives a screen reader the exact count, however it was written", async () => {
+    onAPhone(375);
+    const { getByLabelText } = render(
+      <LibraryStatsCard summary={player} gameCount={267} loaded={null} />,
+    );
+    await letTheDeviceAnswer();
+
+    expect(getByLabelText("45 500 achievements unlocked")).toBeTruthy();
   });
 });

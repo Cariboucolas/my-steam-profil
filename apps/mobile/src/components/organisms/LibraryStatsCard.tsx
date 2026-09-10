@@ -1,7 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
-import { StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
-import type { LibrarySummary } from "../../view-models/library";
+import { formatUnlockHeadline, type LibrarySummary } from "../../view-models/library";
 import { colors, fonts, radius, spacing } from "../../theme/tokens";
 import { CompletionRing } from "../atoms/CompletionRing";
 import { TallyLoadBar } from "../atoms/TallyLoadBar";
@@ -46,13 +46,26 @@ const HEADLINE_LETTER_SPACING = -2;
 const MONO_ADVANCE = 0.6;
 
 /**
- * The most characters the headline is promised to keep on one line. Five is
- * the widest figure written out in full, `9 999`; past that the glossary sends
- * the figure to be written short (`45.5K`), which is five characters again.
- * That shortening is not written yet, so today the promise binds up to `9 999`
- * and the constant is already the one the shortened form will need.
+ * The fewest characters the layout must leave room for at any width the app
+ * serves. Not a ceiling: the headline shortens itself to whatever the screen
+ * can hold (ADR-0011), so a wide phone draws more than five. It is a floor,
+ * and the one place the cascade cannot help — below `10 000` there is no
+ * honest shorter form than `9 999`, which is five characters. Give the
+ * headline less than this and there is a figure it cannot write at all.
  */
-const HEADLINE_MAX_CHARS = 5;
+const HEADLINE_GUARANTEED_CHARS = 5;
+
+/**
+ * The longest a figure could conceivably be, written out in full: `1 000 000`
+ * is nine characters, and a player cannot unlock more than Steam publishes.
+ * Only the search below reads it, as the point past which asking is pointless.
+ */
+const HEADLINE_SEARCH_LIMIT = 9;
+
+const CANDIDATE_LENGTHS = Array.from(
+  { length: HEADLINE_SEARCH_LIMIT },
+  (_, index) => index + 1,
+);
 
 /**
  * The width the layout is asked to keep over what the headline is measured to
@@ -76,10 +89,11 @@ const headlineTextWidth = (chars: number): number =>
 
 /**
  * The room the headline has to fit into, model and margin together: what
- * `headlineRoom` must leave behind at every width the app serves.
+ * `headlineRoom` must leave behind at every width the app serves, or the
+ * cascade in `formatUnlockHeadline` runs out of forms to offer.
  */
 export const HEADLINE_REQUIRED_WIDTH =
-  headlineTextWidth(HEADLINE_MAX_CHARS) + HEADLINE_SLACK;
+  headlineTextWidth(HEADLINE_GUARANTEED_CHARS) + HEADLINE_SLACK;
 
 /**
  * How much width the headline is left on a phone this many pixels across. The
@@ -96,6 +110,24 @@ export const headlineRoom = (screenWidth: number): number =>
   HEADLINE_GAP -
   CAPTION_WIDTH;
 
+/**
+ * Whether a figure of this many characters fits the room a phone this wide
+ * leaves. The one place both halves of the model meet, so a test can ask the
+ * question the card promises an answer to.
+ */
+export const headlineFits = (chars: number, screenWidth: number): boolean =>
+  headlineTextWidth(chars) + HEADLINE_SLACK <= headlineRoom(screenWidth);
+
+/**
+ * How long a figure this phone can hold, which is the budget the headline is
+ * written to (ADR-0011). Found by asking `headlineFits` rather than by
+ * inverting its arithmetic by hand: the demand grows with every character, so
+ * counting the lengths that fit gives the longest one, and there is no second
+ * formula to drift from the first when a gap or a font size moves.
+ */
+export const headlineMaxChars = (screenWidth: number): number =>
+  CANDIDATE_LENGTHS.filter((chars) => headlineFits(chars, screenWidth)).length;
+
 type Props = {
   readonly summary: LibrarySummary;
   readonly gameCount: number;
@@ -110,6 +142,15 @@ type Props = {
 export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
   const rate = summary.total === 0 ? null : Number.parseInt(summary.rateLabel, 10);
 
+  /**
+   * Read rather than measured: the width is known before the card is painted,
+   * so the headline is never drawn in a form it has to abandon a frame later.
+   * A rotation or a split-screen resize re-renders and the figure may change
+   * form, which is the honest consequence of fitting it to the screen.
+   */
+  const { width } = useWindowDimensions();
+  const headline = formatUnlockHeadline(summary.unlocked, headlineMaxChars(width));
+
   return (
     <LinearGradient
       colors={[colors.surfaceGradientFrom, colors.surfaceGradientTo]}
@@ -122,8 +163,12 @@ export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
 
       <View style={styles.top}>
         <View style={styles.figures}>
-          <View style={styles.headline}>
-            <Text style={styles.big}>{summary.unlocked.toLocaleString("en-US").replace(/,/g, " ")}</Text>
+          <View
+            style={styles.headline}
+            accessible
+            accessibilityLabel={summary.unlockedScreenReaderLabel}
+          >
+            <Text style={styles.big}>{headline}</Text>
             <Text style={styles.caption}>{"achievements\nunlocked"}</Text>
           </View>
           <Text style={styles.fraction}>{summary.fraction}</Text>
