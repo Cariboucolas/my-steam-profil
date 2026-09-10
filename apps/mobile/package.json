@@ -56,7 +56,8 @@
       "**/app/**/*.test.tsx"
     ],
     "collectCoverageFrom": [
-      "src/**/*.{ts,tsx}"
+      "src/**/*.{ts,tsx}",
+      "app/**/*.{ts,tsx}"
     ],
     "coverageThreshold": {
       "global": {
@@ -64,6 +65,12 @@
         "branches": 90,
         "functions": 96,
         "lines": 96
+      },
+      "./app/": {
+        "branches": 0,
+        "functions": 0,
+        "lines": 0,
+        "statements": 0
       }
     }
   }
