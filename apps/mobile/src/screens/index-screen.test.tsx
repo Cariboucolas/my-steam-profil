@@ -1,5 +1,6 @@
 import type { AchievementDto, GameDto, GameProgressDto, ProfileDto } from "@steam/contracts";
 import { err } from "@steam/domain";
+import { useLocalSearchParams } from "expo-router";
 import {
   act,
   fireEvent,
@@ -55,7 +56,18 @@ const storage = (stored?: string): SteamIdStorage => ({
   forget: () => Promise.resolve(),
 });
 
-const Stub = () => <Text>elsewhere</Text>;
+/**
+ * The two routes this screen can leave for. They say which one they are, and
+ * the game one says what it was asked about: expo-router publishes no types for
+ * its own matchers in this version, and a stub that names itself asserts more
+ * than a pathname would anyway.
+ */
+const SetupStub = () => <Text>setup screen</Text>;
+
+const GameStub = () => {
+  const { appId } = useLocalSearchParams<{ appId: string }>();
+  return <Text>{`game screen ${appId}`}</Text>;
+};
 
 const library = (): ApiClient =>
   createFixtureApiClient({ profile, games, progress: {} });
@@ -187,7 +199,7 @@ const renderAt = (
 ) => {
   mockClients = clients;
   return renderRouter(
-    { index: LibraryScreen, setup: Stub, "game/[appId]": Stub },
+    { index: LibraryScreen, setup: SetupStub, "game/[appId]": GameStub },
     {
       initialUrl: "/",
       wrapper: ({ children }) => (
@@ -237,7 +249,7 @@ describe("library screen", () => {
   it("sends a device that remembers no profile to setup", async () => {
     renderWithoutProfile();
 
-    await waitFor(() => expect(screen.getByText("elsewhere")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("setup screen")).toBeTruthy());
   });
 
   it("shows no library while it is still asking for one", async () => {
@@ -260,7 +272,9 @@ describe("library screen", () => {
 
     fireEvent.press(await screen.findByText("Soulstone Survivors"));
 
-    await waitFor(() => expect(screen).toHavePathname("/game/2066020"));
+    await waitFor(() =>
+      expect(screen.getByText("game screen 2066020")).toBeTruthy(),
+    );
   });
 
   describe("when the backend refuses", () => {
@@ -373,7 +387,7 @@ describe("library screen", () => {
 
     fireEvent.press(await screen.findByLabelText("Change profile"));
 
-    await waitFor(() => expect(screen).toHavePathname("/setup"));
+    await waitFor(() => expect(screen.getByText("setup screen")).toBeTruthy());
   });
 
   /**

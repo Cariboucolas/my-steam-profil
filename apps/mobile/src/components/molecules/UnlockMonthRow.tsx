@@ -13,8 +13,14 @@ export const UNLOCK_MONTH_LABEL_TEST_ID = "unlock-month-label";
 export const UNLOCK_MONTH_TOTAL_TEST_ID = "unlock-month-total";
 
 /**
- * The label column, so every row's days start on the same vertical line. Wide
- * enough for the longest month a heavy player can write there — `DEC 1024`.
+ * The label column, so every row's days start on the same vertical line.
+ *
+ * It takes no growth at all from the reader's text size — 44 px holds seven
+ * mono characters at 9.5 pt with a pixel to spare, so any multiplier above
+ * 1.03 wraps the label and pushes its own row out of the grid. The label opts
+ * out rather than taking a cap that would round to 1 (ADR-0012). Widening it
+ * is not the alternative it looks like: every pixel taken here comes out of
+ * the day cells, as `GRID_INSET` below explains.
  */
 const LABEL_WIDTH = 44;
 const CELL_RADIUS = 1;
@@ -87,6 +93,7 @@ export function UnlockMonthRow({ month }: Props) {
     >
       <Text
         {...CONTENTS_NOT_READ}
+        allowFontScaling={false}
         testID={UNLOCK_MONTH_LABEL_TEST_ID}
         style={{
           ...styles.label,

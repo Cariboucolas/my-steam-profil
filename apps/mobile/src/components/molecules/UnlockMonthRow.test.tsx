@@ -107,6 +107,22 @@ describe("UnlockMonthRow", () => {
     );
   });
 
+  /**
+   * The label column is 44 px wide so every row's days start on the same line,
+   * and at 9.5 pt it can take no growth at all before it wraps — a wrapped
+   * label pushes its own row out of the grid. It opts out of the system text
+   * size rather than taking a cap that would round to 1 (ADR-0012). Nothing is
+   * lost to a reader who cannot read it: the row is one screen-reader stop,
+   * and it spells the month and its total out in full.
+   */
+  it("keeps the label out of the system text size", () => {
+    const { getByTestId } = render(<UnlockMonthRow month={month(30)} />);
+
+    expect(getByTestId(UNLOCK_MONTH_LABEL_TEST_ID, PAINTED).props.allowFontScaling).toBe(
+      false,
+    );
+  });
+
   it("states the month's total beside its name", () => {
     const { getByText } = render(
       <UnlockMonthRow month={month(30, { 5: held(3, 1), 11: held(55, 4) })} />,
