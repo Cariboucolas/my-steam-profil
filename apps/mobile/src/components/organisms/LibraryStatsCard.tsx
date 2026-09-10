@@ -45,6 +45,9 @@ const HEADLINE_LETTER_SPACING = -2;
  */
 const MONO_ADVANCE = 0.6;
 
+/** A reader who has left the system text size where it was. */
+const UNSCALED = 1;
+
 /**
  * The fewest characters the layout must leave room for at any width the app
  * serves. Not a ceiling: the headline shortens itself to whatever the screen
@@ -83,40 +86,99 @@ const HEADLINE_SLACK = 8;
  * is asked for. Letter spacing falls between glyphs only: the conservative
  * reading, which never under-counts the width.
  */
-const headlineTextWidth = (chars: number): number =>
-  chars * HEADLINE_FONT_SIZE * MONO_ADVANCE +
+const headlineTextWidth = (chars: number, textScale: number): number =>
+  chars * HEADLINE_FONT_SIZE * MONO_ADVANCE * textScale +
   (chars - 1) * HEADLINE_LETTER_SPACING;
 
 /**
  * The room the headline has to fit into, model and margin together: what
  * `headlineRoom` must leave behind at every width the app serves, or the
- * cascade in `formatUnlockHeadline` runs out of forms to offer.
+ * cascade in `formatUnlockHeadline` runs out of forms to offer. Read at the
+ * unscaled size, because it is the layout's own promise rather than a
+ * prediction about any one reader's settings.
  */
 export const HEADLINE_REQUIRED_WIDTH =
-  headlineTextWidth(HEADLINE_GUARANTEED_CHARS) + HEADLINE_SLACK;
+  headlineTextWidth(HEADLINE_GUARANTEED_CHARS, UNSCALED) + HEADLINE_SLACK;
 
 /**
- * How much width the headline is left on a phone this many pixels across. The
- * headline row flexes, so this predicts rather than sets — but it predicts
- * from the constants the card is laid out with, so widening a gap, restoring
- * the padding or enlarging the ring all show up here.
+ * How much width the headline is left on a phone this many pixels across, at
+ * this text scale. The headline row flexes, so this predicts rather than sets
+ * — but it predicts from the constants the card is laid out with, so widening
+ * a gap, restoring the padding or enlarging the ring all show up here.
+ *
+ * The caption shrinks the room as it grows, because `CAPTION_WIDTH` is a
+ * measured width of text and text is what the reader's setting scales. That is
+ * why capping the headline alone would not have held the promise (ADR-0012):
+ * the room would have gone on shrinking after the demand stopped growing.
  */
-export const headlineRoom = (screenWidth: number): number =>
+export const headlineRoom = (screenWidth: number, textScale: number): number =>
   screenWidth -
   2 * CARD_MARGIN -
   2 * CARD_PADDING_HORIZONTAL -
   TOP_GAP -
   RING_SIZE -
   HEADLINE_GAP -
-  CAPTION_WIDTH;
+  CAPTION_WIDTH * textScale;
 
 /**
  * Whether a figure of this many characters fits the room a phone this wide
- * leaves. The one place both halves of the model meet, so a test can ask the
- * question the card promises an answer to.
+ * leaves at this text scale. The one place every half of the model meets, so a
+ * test can ask the question the card promises an answer to.
  */
-export const headlineFits = (chars: number, screenWidth: number): boolean =>
-  headlineTextWidth(chars) + HEADLINE_SLACK <= headlineRoom(screenWidth);
+export const headlineFits = (
+  chars: number,
+  screenWidth: number,
+  textScale: number,
+): boolean =>
+  headlineTextWidth(chars, textScale) + HEADLINE_SLACK <=
+  headlineRoom(screenWidth, textScale);
+
+/**
+ * The shortest form the cascade can offer for the band that gives it least to
+ * work with. Between 100 000 and 999 999 all it has is `123K` — four
+ * characters, the decimal already given up. Everywhere else it reaches two or
+ * three, so this is the case the cap below has to survive.
+ */
+const HEADLINE_TIGHTEST_CHARS = 4;
+
+/** The narrowest phone the app serves, and so where the cap is decided. */
+const NARROWEST_SCREEN = 375;
+
+/**
+ * Every multiplier the search below considers, from no growth to double, a
+ * hundredth apart. Built by division rather than by accumulating a step, so
+ * each one is the same double a literal of the same digits would give.
+ */
+const SCALE_CANDIDATES = Array.from(
+  { length: 101 },
+  (_, index) => (100 + index) / 100,
+);
+
+/**
+ * How far the reader's text size may grow the headline and its caption
+ * (ADR-0012). Derived rather than written: the largest multiplier at which the
+ * tightest figure still fits the narrowest phone. Widen a gap, enlarge the
+ * ring or raise the font size and this falls on its own, instead of staying a
+ * number that used to be true.
+ *
+ * It is not a shared token. A cap every constrained box could live with would
+ * be the smallest of them — around 1 — and every tighter box added later would
+ * drag the whole app down with it.
+ */
+export const HEADLINE_MAX_FONT_SCALE =
+  SCALE_CANDIDATES.filter((scale) =>
+    headlineFits(HEADLINE_TIGHTEST_CHARS, NARROWEST_SCREEN, scale),
+  ).at(-1) ?? UNSCALED;
+
+/**
+ * What the headline is really painted at, which is the reader's setting until
+ * the cap takes over. React Native applies `maxFontSizeMultiplier` natively,
+ * so this is the same clamp written a second time — the one duplication the
+ * model cannot absorb. What guards it is the test that the component renders
+ * the multiplier this assumes.
+ */
+export const effectiveTextScale = (fontScale: number): number =>
+  Math.min(fontScale, HEADLINE_MAX_FONT_SCALE);
 
 /**
  * How long a figure this phone can hold, which is the budget the headline is
@@ -125,8 +187,9 @@ export const headlineFits = (chars: number, screenWidth: number): boolean =>
  * counting the lengths that fit gives the longest one, and there is no second
  * formula to drift from the first when a gap or a font size moves.
  */
-export const headlineMaxChars = (screenWidth: number): number =>
-  CANDIDATE_LENGTHS.filter((chars) => headlineFits(chars, screenWidth)).length;
+export const headlineMaxChars = (screenWidth: number, textScale: number): number =>
+  CANDIDATE_LENGTHS.filter((chars) => headlineFits(chars, screenWidth, textScale))
+    .length;
 
 type Props = {
   readonly summary: LibrarySummary;
@@ -148,8 +211,12 @@ export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
    * A rotation or a split-screen resize re-renders and the figure may change
    * form, which is the honest consequence of fitting it to the screen.
    */
-  const { width } = useWindowDimensions();
-  const headline = formatUnlockHeadline(summary.unlocked, headlineMaxChars(width));
+  const { width, fontScale } = useWindowDimensions();
+  const textScale = effectiveTextScale(fontScale);
+  const headline = formatUnlockHeadline(
+    summary.unlocked,
+    headlineMaxChars(width, textScale),
+  );
 
   return (
     <LinearGradient
@@ -168,8 +235,15 @@ export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
             accessible
             accessibilityLabel={summary.unlockedScreenReaderLabel}
           >
-            <Text style={styles.big}>{headline}</Text>
-            <Text style={styles.caption}>{"achievements\nunlocked"}</Text>
+            <Text style={styles.big} maxFontSizeMultiplier={HEADLINE_MAX_FONT_SCALE}>
+              {headline}
+            </Text>
+            <Text
+              style={styles.caption}
+              maxFontSizeMultiplier={HEADLINE_MAX_FONT_SCALE}
+            >
+              {"achievements\nunlocked"}
+            </Text>
           </View>
           <Text style={styles.fraction}>{summary.fraction}</Text>
         </View>

@@ -14,9 +14,11 @@ import {
 } from "../atoms/TallyLoadBar";
 import { formatUnlockHeadline } from "../../view-models/library";
 import {
+  effectiveTextScale,
   headlineFits,
   headlineMaxChars,
   headlineRoom,
+  HEADLINE_MAX_FONT_SCALE,
   HEADLINE_REQUIRED_WIDTH,
   LibraryStatsCard,
   LIBRARY_STATS_CARD_TEST_ID,
@@ -38,10 +40,10 @@ const summary = (over: Partial<LibrarySummary> = {}): LibrarySummary => ({
  * write, so a test that cares about the headline has to say which phone it is
  * on. Everything else renders at whatever the preset provides.
  */
-const onAPhone = (width: number) => {
+const onAPhone = (width: number, fontScale = 1) => {
   jest
     .spyOn(ReactNative.Dimensions, "get")
-    .mockReturnValue({ width, height: 812, scale: 2, fontScale: 1 });
+    .mockReturnValue({ width, height: 812, scale: 2, fontScale });
 };
 
 beforeEach(() => {
@@ -124,12 +126,19 @@ describe("LibraryStatsCard", () => {
  */
 describe("headlineRoom", () => {
   it("holds the figure the cascade cannot shorten, on the narrowest phone", () => {
-    expect(headlineRoom(375)).toBeGreaterThanOrEqual(HEADLINE_REQUIRED_WIDTH);
+    expect(headlineRoom(375, 1)).toBeGreaterThanOrEqual(HEADLINE_REQUIRED_WIDTH);
   });
 });
 
 /** Every width the app serves, from the narrowest phone to a tablet. */
 const SERVED_WIDTHS = [375, 390, 393, 402, 414, 430, 768, 834, 1024];
+
+/**
+ * No growth, the cap itself, and a setting well past it. The last is what
+ * proves the cap bites: at every scale below it the clamp is doing nothing,
+ * so a property tested only there would pass with the cap removed.
+ */
+const SERVED_SCALES = [1, HEADLINE_MAX_FONT_SCALE, 2];
 
 /**
  * The promise itself, stated once over the whole space rather than sampled:
@@ -140,17 +149,55 @@ const SERVED_WIDTHS = [375, 390, 393, 402, 414, 430, 768, 834, 1024];
  * cascade in `formatUnlockHeadline` loses a form.
  */
 describe("the headline always fits", () => {
-  it.each(SERVED_WIDTHS)("at %i px, for any count a player can reach", (width) => {
-    const budget = headlineMaxChars(width);
+  const cases = SERVED_WIDTHS.flatMap((width) =>
+    SERVED_SCALES.map((fontScale) => [width, fontScale] as const),
+  );
+
+  it.each(cases)("at %i px and a text size of %s", (width, fontScale) => {
+    const scale = effectiveTextScale(fontScale);
+    const budget = headlineMaxChars(width, scale);
 
     for (let unlocked = 0; unlocked <= 1_000_000; unlocked += 137) {
       const written = formatUnlockHeadline(unlocked, budget);
-      expect({ unlocked, written, fits: headlineFits(written.length, width) }).toEqual({
-        unlocked,
-        written,
-        fits: true,
-      });
+      const fits = headlineFits(written.length, width, scale);
+      expect({ unlocked, written, fits }).toEqual({ unlocked, written, fits: true });
     }
+  });
+});
+
+/**
+ * The clamp exists twice: here, and natively in React Native's own
+ * `maxFontSizeMultiplier` (ADR-0012). Nothing can collapse the two, so this
+ * pins them together — if the card ever renders a multiplier the model does
+ * not assume, the model goes on predicting for a size nobody is painting.
+ */
+describe("the cap the model assumes", () => {
+  it("is the one both halves of the headline row are drawn under", async () => {
+    onAPhone(375);
+    const { getByText } = render(
+      <LibraryStatsCard summary={summary()} gameCount={267} loaded={null} />,
+    );
+    await letTheDeviceAnswer();
+
+    for (const node of [getByText("1 284"), getByText("achievements\nunlocked")]) {
+      expect(node.props.maxFontSizeMultiplier).toBe(HEADLINE_MAX_FONT_SCALE);
+    }
+  });
+
+  it("stops the figure growing past what the narrowest phone can hold", () => {
+    expect(effectiveTextScale(2)).toBe(HEADLINE_MAX_FONT_SCALE);
+    expect(effectiveTextScale(1)).toBe(1);
+  });
+
+  /**
+   * The one figure in this file written down rather than derived, and it is
+   * written down in ADR-0012 too. Pinned so the two cannot part company: this
+   * going red means the cap moved, and the ADR's table needs the same edit —
+   * not that the number here should be updated to match.
+   */
+  it("is the 1.13 the decision was recorded with", () => {
+    expect(HEADLINE_MAX_FONT_SCALE).toBe(1.13);
+    expect(headlineMaxChars(375, HEADLINE_MAX_FONT_SCALE)).toBe(4);
   });
 });
 

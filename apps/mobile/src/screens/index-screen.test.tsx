@@ -327,7 +327,9 @@ describe("library screen", () => {
 
       fireEvent.press(await screen.findByLabelText("Change profile"));
 
-      await waitFor(() => expect(screen).toHavePathname("/setup"));
+      await waitFor(() =>
+        expect(screen.getByText("setup screen")).toBeTruthy(),
+      );
     });
   });
 
