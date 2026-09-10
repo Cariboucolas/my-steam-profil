@@ -79,3 +79,7 @@ _Avoid_: Timeline (that is one Game's, and it names its achievements), Heatmap a
 **LastYearsTotal**:
 How many achievements the player unlocked in the whole of the previous calendar year. Set beside the year in progress it is a target, not a measurement — a finished year against a running one, deliberately. Written "all of 2025" wherever it is shown, because the two spans are unequal on purpose and must not be read like for like.
 _Avoid_: YearOverYear (it promises equal spans), UnlockPace, Trend
+
+**UnlockHeadline**:
+The count of a player's unlocks across their whole library, as the library card writes it. Not the count itself — that is `LibrarySummary.unlocked` — but the promise made about writing it: it never breaks across two lines and is never truncated, because `4 127` split over two lines reads as two numbers and `4 1…` reads as a wrong one. It holds five characters at the narrowest width the app serves, which is what sends a figure past `9 999` to be written short (`45.5K`), in the app's own language and never the device's (ADR-0010). Nothing is lost by shortening it: the fraction beneath states both halves in full.
+_Avoid_: LibraryTally (GameTally already names the per-game shape, and this widens nothing), Total, Count, BigNumber
