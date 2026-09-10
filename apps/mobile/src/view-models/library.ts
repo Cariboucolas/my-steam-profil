@@ -57,15 +57,27 @@ export const MONTHS = [
 ] as const;
 
 /**
- * Hours with a thin space between thousands, as the mock writes them
- * ("3 128 h"). Anything under an hour stays in minutes.
+ * Thousands separated by a space, as the mock writes them ("3 128"). The
+ * locale is written into the call rather than read from the device (ADR-0010),
+ * and the separator is a plain U+0020 rather than the thin space the design
+ * would suggest: the library card measures its headline assuming IBM Plex Mono
+ * advances every glyph equally, which holds for U+0020 and need not hold for
+ * U+2009 (ADR-0011). Shared rather than copied — three figures on the library
+ * screen group their thousands, and a separator that drifted between them
+ * would read as three conventions.
+ */
+const group = (value: number): string =>
+  value.toLocaleString("en-US").replace(/,/g, " ");
+
+/**
+ * Hours with their thousands grouped, as the mock writes them ("3 128 h").
+ * Anything under an hour stays in minutes.
  */
 export const formatHours = (minutes: number): string => {
   if (minutes < MINUTES_PER_HOUR) {
     return `${minutes} min`;
   }
-  const hours = Math.round(minutes / MINUTES_PER_HOUR);
-  return `${hours.toLocaleString("en-US").replace(/,/g, " ")} h`;
+  return `${group(Math.round(minutes / MINUTES_PER_HOUR))} h`;
 };
 
 /**
@@ -241,7 +253,7 @@ export const buildLibrarySummary = (view: LibraryView): LibrarySummary => {
     rateLabel: `${rate}%`,
     // Names what was measured and claims nothing about the rest: the games
     // left out were never launched, so they are excluded rather than missing.
-    fraction: `${unlocked} / ${total} across ${gamesCounted(loaded.length)}`,
+    fraction: `${group(unlocked)} / ${group(total)} across ${gamesCounted(loaded.length)}`,
     perfectGames: loaded.filter((e) => e.total > 0 && e.unlocked === e.total).length,
     playtimeLabel: formatHours(minutes),
   };
