@@ -344,6 +344,16 @@ describe("buildLibrarySummary", () => {
     expect(summary.fraction).toBe("353 / 483 across 1 game counted");
   });
 
+  /**
+   * The headline may be drawn as `45.5K`, which a screen reader would say
+   * literally. The constraint that shortens it is a visual one, and a listener
+   * is under none of it — so the exact count is spoken whatever is drawn, and
+   * not only when something was given up.
+   */
+  it("spells the exact count out for a screen reader", () => {
+    expect(summary.unlockedScreenReaderLabel).toBe("853 achievements unlocked");
+  });
+
   it("counts a fully completed game as perfect", () => {
     expect(summary.perfectGames).toBe(1);
   });

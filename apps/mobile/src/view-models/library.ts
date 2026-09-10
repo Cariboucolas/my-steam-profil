@@ -37,6 +37,13 @@ export type LibraryView = {
 
 export type LibrarySummary = {
   readonly unlocked: number;
+  /**
+   * The headline spoken rather than drawn. The card may write `45.5K`, which a
+   * screen reader would read out as it stands; the width that forces the
+   * shortening constrains the eye and not the ear, so the exact count is
+   * spoken whatever is drawn. Named for who reads it, as the calendar's is.
+   */
+  readonly unlockedScreenReaderLabel: string;
   readonly total: number;
   readonly rateLabel: string;
   readonly fraction: string;
@@ -309,6 +316,7 @@ export const buildLibrarySummary = (view: LibraryView): LibrarySummary => {
 
   return {
     unlocked,
+    unlockedScreenReaderLabel: `${group(unlocked)} achievements unlocked`,
     total,
     rateLabel: `${rate}%`,
     // Names what was measured and claims nothing about the rest: the games
