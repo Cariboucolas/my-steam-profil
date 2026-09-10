@@ -2,12 +2,16 @@ import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 
+import { testFilesTheRouterWouldPublish } from "./published-tests";
 import {
   packagesWhoseTestsNeverRun,
   type SurveyedPackage,
 } from "./uncollected-tests";
 
 const TEST_FILE = /\.test\.[cm]?[jt]sx?$/;
+
+/** The one marker that names an Expo Router app without naming this app. */
+const ROUTER_ENTRY = "expo-router/entry";
 
 type ListedPackage = { readonly name: string; readonly path: string };
 
@@ -18,6 +22,9 @@ const listedPackages = (): readonly ListedPackage[] =>
       encoding: "utf8",
     }),
   ) as readonly ListedPackage[];
+
+const manifestOf = (directory: string): { readonly main?: string; readonly scripts?: Record<string, string> } =>
+  JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
 
 /**
  * Counts test files belonging to this package alone: a nested package is
@@ -44,18 +51,12 @@ const countTestFilesUnder = (directory: string): number => {
 };
 
 const survey = (root: string): readonly SurveyedPackage[] =>
-  listedPackages().map((listed) => {
-    const manifest = JSON.parse(
-      readFileSync(join(listed.path, "package.json"), "utf8"),
-    ) as { readonly scripts?: Record<string, string> };
-
-    return {
-      name: listed.name,
-      directory: relative(root, listed.path) || ".",
-      runsTests: typeof manifest.scripts?.test === "string",
-      testFileCount: countTestFilesUnder(listed.path),
-    };
-  });
+  listedPackages().map((listed) => ({
+    name: listed.name,
+    directory: relative(root, listed.path) || ".",
+    runsTests: typeof manifestOf(listed.path).scripts?.test === "string",
+    testFileCount: countTestFilesUnder(listed.path),
+  }));
 
 const shortestPath = (packages: readonly ListedPackage[]): string =>
   packages.reduce(
@@ -63,18 +64,62 @@ const shortestPath = (packages: readonly ListedPackage[]): string =>
     packages[0]?.path ?? process.cwd(),
   );
 
-const uncollected = packagesWhoseTestsNeverRun(survey(shortestPath(listedPackages())));
+/** The `app` directory of every package that boots through expo-router. */
+const routerRoots = (packages: readonly ListedPackage[]): readonly string[] =>
+  packages
+    .filter((one) => manifestOf(one.path).main === ROUTER_ENTRY)
+    .map((one) => join(one.path, "app"))
+    .filter(existsSync);
 
-if (uncollected.length === 0) {
-  console.log("Every package carrying tests declares a test script.");
-  process.exit(0);
-}
-
-console.error("These packages carry tests that `pnpm -r test` would never run:");
-for (const one of uncollected) {
-  console.error(
-    `  ${one.name} (${one.directory}) — ${one.testFileCount} test file(s), no "test" script`,
+const filesUnder = (directory: string, prefix = ""): readonly string[] =>
+  readdirSync(directory, { withFileTypes: true }).flatMap((entry) =>
+    entry.isDirectory()
+      ? filesUnder(join(directory, entry.name), `${prefix}${entry.name}/`)
+      : [`${prefix}${entry.name}`],
   );
-}
-console.error('\nAdd a "test" script to each, or move the tests into a package that has one.');
-process.exit(1);
+
+/** Each reporter prints its own finding and answers whether it found one. */
+const reportUncollected = (root: string): boolean => {
+  const uncollected = packagesWhoseTestsNeverRun(survey(root));
+
+  if (uncollected.length === 0) {
+    console.log("Every package carrying tests declares a test script.");
+    return false;
+  }
+
+  console.error("These packages carry tests that `pnpm -r test` would never run:");
+  for (const one of uncollected) {
+    console.error(
+      `  ${one.name} (${one.directory}) — ${one.testFileCount} test file(s), no "test" script`,
+    );
+  }
+  console.error('\nAdd a "test" script to each, or move the tests into a package that has one.');
+  return true;
+};
+
+const reportPublished = (root: string, routerRoot: string): boolean => {
+  const where = relative(root, routerRoot);
+  const published = testFilesTheRouterWouldPublish(filesUnder(routerRoot));
+
+  if (published.length === 0) {
+    console.log(`No test file sits in ${where}, where the router would publish it.`);
+    return false;
+  }
+
+  console.error(`These test files sit under ${where}, which expo-router publishes as routes:`);
+  for (const one of published) console.error(`  ${join(where, one)}`);
+  console.error(
+    "\nMove them out of the router root. A test file left there ships to users inside the bundle, and nothing runs it.",
+  );
+  return true;
+};
+
+const packages = listedPackages();
+const root = shortestPath(packages);
+
+const findings = [
+  reportUncollected(root),
+  ...routerRoots(packages).map((routerRoot) => reportPublished(root, routerRoot)),
+];
+
+process.exit(findings.some(Boolean) ? 1 : 0);
