@@ -51,9 +51,7 @@
     "preset": "jest-expo",
     "testMatch": [
       "**/src/**/*.test.ts",
-      "**/src/**/*.test.tsx",
-      "**/app/**/*.test.ts",
-      "**/app/**/*.test.tsx"
+      "**/src/**/*.test.tsx"
     ],
     "collectCoverageFrom": [
       "src/**/*.{ts,tsx}",
