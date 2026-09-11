@@ -65,10 +65,10 @@
         "lines": 96
       },
       "./app/": {
-        "branches": 0,
-        "functions": 0,
-        "lines": 0,
-        "statements": 0
+        "branches": 32,
+        "functions": 45,
+        "lines": 41,
+        "statements": 41
       }
     }
   }
