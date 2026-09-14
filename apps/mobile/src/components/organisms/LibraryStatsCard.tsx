@@ -2,7 +2,14 @@ import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 import { formatUnlockHeadline, type LibrarySummary } from "../../view-models/library";
-import { colors, fonts, MONO_ADVANCE, radius, spacing } from "../../theme/tokens";
+import {
+  colors,
+  fonts,
+  MONO_ADVANCE,
+  NARROWEST_SCREEN,
+  radius,
+  spacing,
+} from "../../theme/tokens";
 import { CompletionRing } from "../atoms/CompletionRing";
 import { TallyLoadBar } from "../atoms/TallyLoadBar";
 import { StatBlock } from "../atoms/StatBlock";
@@ -133,9 +140,6 @@ export const headlineFits = (
  * three, so this is the case the cap below has to survive.
  */
 const HEADLINE_TIGHTEST_CHARS = 4;
-
-/** The narrowest phone the app serves, and so where the cap is decided. */
-const NARROWEST_SCREEN = 375;
 
 /**
  * Every multiplier the search below considers, from no growth to double, a

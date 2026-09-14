@@ -86,6 +86,20 @@ export const radius = {
 } as const;
 
 /**
+ * The narrowest screen the app serves. Less a choice about phones than the
+ * consequence of one promise: the library card's headline holds five mono
+ * characters at 44 pt, and 375 is where the room for them runs out — it fits
+ * there by nothing at all, and 360 leaves it fifteen pixels short.
+ *
+ * It sits here because two components read it and would otherwise each keep
+ * their own answer, which is how the calendar came to have floors that said
+ * nothing about what they were floors for. A layout may hold a screen
+ * narrower than this — the unlock calendar holds 360 — but none may promise
+ * one (#83).
+ */
+export const NARROWEST_SCREEN = 375;
+
+/**
  * The mock uses IBM Plex Sans for prose and IBM Plex Mono for every number, so
  * figures line up in columns. Font files load in the root layout.
  */
