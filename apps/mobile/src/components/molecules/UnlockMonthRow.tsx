@@ -87,7 +87,19 @@ const LABEL_WIDTH =
   labelTextWidth(TOTAL_GUARANTEED_CHARS) +
   LABEL_SLACK;
 const CELL_RADIUS = 1;
-const CELL_GAP = 1;
+/**
+ * What sits between two days. Half a pixel rather than one, which is where the
+ * grid found the room to hold 360 dp: thirty gutters give fifteen pixels back,
+ * and a day cell at 360 becomes 9.17 px — the very width 375 had before this.
+ * Nothing was extrapolated to get there; 360 inherits a width the prototype's
+ * floor was already met at (#83).
+ *
+ * Every width gets the same half pixel back, so this is not a concession made
+ * to the narrow phone. What it costs is a gutter that does not land on a whole
+ * pixel at every density, and that is the trade to weigh before restoring it
+ * to 1 — which would take 360 back under the floor #29 measured.
+ */
+const CELL_GAP = 0.5;
 
 /**
  * All the row holds the grid off the screen edge by. The band it sits in
