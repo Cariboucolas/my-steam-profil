@@ -193,8 +193,20 @@ describe("UnlockMonthRow", () => {
  * four tones cannot be told apart at 6-7px, and 9px is the smallest that reads
  * (`prototype/activity-grid-width`, verdict on #29). These are the widths the
  * label and the gutter are allowed to leave behind.
+ *
+ * The lowest of them is narrower than the app promises. `NARROWEST_SCREEN` is
+ * 375 because that is where the library card's headline stops fitting, and it
+ * fits there by nothing at all, so 360 cannot be promised without reopening
+ * that card. But 360 is the portrait width of the Galaxy A and S ranges and
+ * one of the three commonest viewports there are: the grid holds it, and
+ * saying so here is what keeps the next widening of the label from taking it
+ * away in silence, the way ADR-0013's label took it away once (#83).
  */
 describe("dayCellWidth", () => {
+  it("leaves a day at least nine pixels on a 360 px phone", () => {
+    expect(dayCellWidth(360)).toBeGreaterThanOrEqual(9);
+  });
+
   it("leaves a day at least nine pixels on a 375 px phone", () => {
     expect(dayCellWidth(375)).toBeGreaterThanOrEqual(9);
   });
