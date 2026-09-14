@@ -354,6 +354,28 @@ describe("useLibraryTallies", () => {
   });
 
   /**
+   * Playtime is a separate Steam privacy setting from achievements, so a
+   * profile can withhold every hour it has played and still publish every
+   * unlock. Measured on the public profile 76561197985221153: all 100 of its
+   * games carry neither playtime nor a last-played time, while the player call
+   * answers 57 of 147 on Counter-Strike: Source, dated 2010 to 2014.
+   *
+   * A library that says nothing anywhere is Steam refusing to say, not a
+   * hundred games nobody ever launched, and the filter has no grounds to
+   * exclude anything from it.
+   */
+  it("counts every game when the whole library carries no playtime signal", async () => {
+    const { client, asked } = eagerClient();
+    const withheld = [game(1, null, 0), game(2, null, 0), game(3, null, 0)];
+    const { result } = renderTallies(client, withheld);
+
+    await waitFor(() => expect(result.current.frozenOrder).toBeNull());
+
+    expect([...asked].sort()).toEqual([1, 2, 3]);
+    expect(result.current.tallies[1]).toEqual(tally(1));
+  });
+
+  /**
    * What the rarest-unlocks tab waits on. Nothing is outstanding either side of
    * a load, so the outstanding set alone cannot tell "not started yet" from
    * "counted through" — and starting a second load on the first reading would

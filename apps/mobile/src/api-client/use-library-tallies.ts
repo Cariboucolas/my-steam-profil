@@ -48,12 +48,23 @@ const recognisedFirst = (a: GameDto, b: GameDto): number => {
  * A game never opened cannot hold an unlock, so asking about it buys a
  * guaranteed zero — 100 of the 367 games on the library this was measured
  * against.
+ *
+ * That holds only while Steam is saying something. Playtime is governed by its
+ * own privacy setting, separate from the one over achievements, so a profile
+ * can withhold every hour it has played and still publish every unlock: on the
+ * public profile 76561197985221153 all 100 games carry neither playtime nor a
+ * last-played time, and Counter-Strike: Source still answers 57 of 147, dated
+ * 2010 to 2014. A library silent throughout is Steam refusing to say rather
+ * than a hundred games nobody launched, and there the filter is reading an
+ * absence it has no grounds to read, so every game is counted.
  */
-const gamesWorthTallying = (games: readonly GameDto[]): readonly number[] =>
-  games
-    .filter(everOpened)
+const gamesWorthTallying = (games: readonly GameDto[]): readonly number[] => {
+  const opened = games.filter(everOpened);
+  return (opened.length === 0 ? games : opened)
+    .slice()
     .sort(recognisedFirst)
     .map((game) => game.appId);
+};
 
 /** Where a library's tallies have got to, and the one lever over that. */
 export type LibraryTallies = {
