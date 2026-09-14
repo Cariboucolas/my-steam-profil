@@ -95,10 +95,11 @@ describe("UnlockCalendarCard", () => {
       <UnlockCalendarCard calendar={calendar} />,
     );
 
-    // A label carries its month's total, so it reads "JAN —" for a month
-    // that held nothing.
-    expect(getByText("JAN —", PAINTED)).toBeTruthy();
-    expect(getByText("MAR —", PAINTED)).toBeTruthy();
+    // Which rows exist, asked of the one thing a row always writes. What the
+    // label puts beside the month is `UnlockMonthRow`'s own business, and its
+    // tests are where that is pinned.
+    expect(getByText("JAN", PAINTED)).toBeTruthy();
+    expect(getByText("MAR", PAINTED)).toBeTruthy();
     // April has not begun, so it has no row rather than an empty one.
     expect(queryByText(/^APR/, PAINTED)).toBeNull();
   });
@@ -247,8 +248,8 @@ describe("a year the card holds whole", () => {
       <UnlockCalendarCard calendar={yearTo(6)} />,
     );
 
-    expect(getByText("JAN —", PAINTED)).toBeTruthy();
-    expect(getByText("JUN —", PAINTED)).toBeTruthy();
+    expect(getByText("JAN", PAINTED)).toBeTruthy();
+    expect(getByText("JUN", PAINTED)).toBeTruthy();
     expect(queryByTestId(UNLOCK_CALENDAR_GRID_TEST_ID)).toBeNull();
     expect(queryAllByTestId(UNLOCK_HALF_DOT_TEST_ID)).toHaveLength(0);
     expect(queryByTestId(UNLOCK_FADE_BOTTOM_TEST_ID)).toBeNull();

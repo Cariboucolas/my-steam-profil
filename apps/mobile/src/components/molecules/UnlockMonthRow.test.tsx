@@ -1,4 +1,4 @@
-import { render } from "@testing-library/react-native";
+import { render, within } from "@testing-library/react-native";
 
 import { colors, unlockToneFills } from "../../theme/tokens";
 import type {
@@ -11,6 +11,7 @@ import {
   UNLOCK_DAY_TEST_ID,
   UNLOCK_DAYS_TEST_ID,
   UNLOCK_MONTH_LABEL_TEST_ID,
+  UNLOCK_MONTH_NAME_TEST_ID,
   UNLOCK_MONTH_TOTAL_TEST_ID,
 } from "./UnlockMonthRow";
 
@@ -94,7 +95,7 @@ describe("UnlockMonthRow", () => {
       <UnlockMonthRow month={month(17, {}, true)} />,
     );
 
-    expect(getByTestId(UNLOCK_MONTH_LABEL_TEST_ID, PAINTED).props.style.color).toBe(
+    expect(getByTestId(UNLOCK_MONTH_NAME_TEST_ID, PAINTED).props.style.color).toBe(
       colors.accent,
     );
   });
@@ -102,35 +103,40 @@ describe("UnlockMonthRow", () => {
   it("leaves any other month's label quiet", () => {
     const { getByTestId } = render(<UnlockMonthRow month={month(30)} />);
 
-    expect(getByTestId(UNLOCK_MONTH_LABEL_TEST_ID, PAINTED).props.style.color).toBe(
+    expect(getByTestId(UNLOCK_MONTH_NAME_TEST_ID, PAINTED).props.style.color).toBe(
       colors.textDim,
     );
   });
 
   /**
-   * The label column is 44 px wide so every row's days start on the same line,
-   * and at 9.5 pt it can take no growth at all before it wraps — a wrapped
-   * label pushes its own row out of the grid. It opts out of the system text
+   * The label column is sized to the longest label it promises to hold, and at
+   * 9.5 pt it can take no growth at all before it wraps — a wrapped label
+   * pushes its own row out of the grid. Both halves opt out of the system text
    * size rather than taking a cap that would round to 1 (ADR-0012). Nothing is
    * lost to a reader who cannot read it: the row is one screen-reader stop,
    * and it spells the month and its total out in full.
    */
-  it("keeps the label out of the system text size", () => {
+  it("keeps both halves of the label out of the system text size", () => {
     const { getByTestId } = render(<UnlockMonthRow month={month(30)} />);
 
-    expect(getByTestId(UNLOCK_MONTH_LABEL_TEST_ID, PAINTED).props.allowFontScaling).toBe(
-      false,
-    );
+    for (const half of [UNLOCK_MONTH_NAME_TEST_ID, UNLOCK_MONTH_TOTAL_TEST_ID]) {
+      expect(getByTestId(half, PAINTED).props.allowFontScaling).toBe(false);
+    }
   });
 
   it("states the month's total beside its name", () => {
-    const { getByText } = render(
+    const { getByTestId } = render(
       <UnlockMonthRow month={month(30, { 5: held(3, 1), 11: held(55, 4) })} />,
     );
 
-    // One reading line: the name and the figure, with no separate column at
-    // the end of the row to carry the total.
-    expect(getByText("APR 58", PAINTED)).toBeTruthy();
+    // One reading line: the name and the figure share the label's own box,
+    // with no separate column at the end of the row to carry the total. They
+    // are two texts rather than one because what separates them is a gap — a
+    // space would be a glyph, and the column has no glyph to spare.
+    const label = within(getByTestId(UNLOCK_MONTH_LABEL_TEST_ID, PAINTED));
+
+    expect(label.getByText("APR", PAINTED)).toBeTruthy();
+    expect(label.getByText("58", PAINTED)).toBeTruthy();
   });
 
   it("writes the month's total in the accent", () => {
@@ -173,9 +179,11 @@ describe("UnlockMonthRow", () => {
   });
 
   it("writes what the builder gave it for a month that held nothing", () => {
-    const { getByText } = render(<UnlockMonthRow month={month(30)} />);
+    const { getByTestId } = render(<UnlockMonthRow month={month(30)} />);
+    const label = within(getByTestId(UNLOCK_MONTH_LABEL_TEST_ID, PAINTED));
 
-    expect(getByText("APR —", PAINTED)).toBeTruthy();
+    expect(label.getByText("APR", PAINTED)).toBeTruthy();
+    expect(label.getByText("—", PAINTED)).toBeTruthy();
   });
 });
 

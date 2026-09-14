@@ -1,6 +1,12 @@
 import { StyleSheet, Text, View } from "react-native";
 
-import { colors, fonts, spacing, unlockToneFills } from "../../theme/tokens";
+import {
+  colors,
+  fonts,
+  MONO_ADVANCE,
+  spacing,
+  unlockToneFills,
+} from "../../theme/tokens";
 import {
   COLUMNS,
   type UnlockDay,
@@ -10,19 +16,76 @@ import {
 export const UNLOCK_DAY_TEST_ID = "unlock-day";
 export const UNLOCK_DAYS_TEST_ID = "unlock-days";
 export const UNLOCK_MONTH_LABEL_TEST_ID = "unlock-month-label";
+export const UNLOCK_MONTH_NAME_TEST_ID = "unlock-month-name";
 export const UNLOCK_MONTH_TOTAL_TEST_ID = "unlock-month-total";
+
+/** The size the label is painted at, and the width model reads. */
+const LABEL_FONT_SIZE = 9.5;
+
+/** `DEC` — every month writes its abbreviation in three characters. */
+const MONTH_CHARS = 3;
+/**
+ * What holds the total off the month's name. It is a gap rather than a space,
+ * and that is where this column found the room for a fourth digit: a space is
+ * a glyph, and in a monospaced face a glyph costs as much as a digit. Two
+ * pixels read as the same separation for a third of the price (ADR-0013).
+ *
+ * Not a spacing token: the scale is for laying out boxes, and a token free to
+ * move for reasons of its own has no business in a formula this column has two
+ * pixels of room left in.
+ */
+const SEPARATOR_GAP = 2;
+/**
+ * The longest total the column promises to write out in full. Four digits is
+ * 9 999 unlocks in a single month, which is three hundred and thirty-three a
+ * day held for thirty days: the point past which the figure stops being one a
+ * player could produce. The figure is never shortened and never truncated, so
+ * this is the one constant that says how far that promise reaches.
+ */
+const TOTAL_GUARANTEED_CHARS = 4;
+
+/**
+ * How wide this many characters are drawn, read from the very size the label
+ * is painted at, so raising it raises what the column asks for. There is no
+ * letter-spacing term because the label carries no letter spacing: at 9.5 pt
+ * it is what a fourth digit was spent on, and adding any back is a widening
+ * this column has to ask the grid to pay for.
+ */
+const labelTextWidth = (chars: number): number =>
+  chars * LABEL_FONT_SIZE * MONO_ADVANCE;
+
+/**
+ * What the column keeps over what the model predicts. Half a glyph, because
+ * that is what it protects against: the model gives the width of the text and
+ * the platform rounds it to whole pixels, and a single pixel over is a label
+ * that wraps. Derived rather than chosen, so enlarging the type widens the
+ * margin with it.
+ */
+const LABEL_SLACK = 0.5 * LABEL_FONT_SIZE * MONO_ADVANCE;
 
 /**
  * The label column, so every row's days start on the same vertical line.
  *
- * It takes no growth at all from the reader's text size — 44 px holds seven
- * mono characters at 9.5 pt with a pixel to spare, so any multiplier above
- * 1.03 wraps the label and pushes its own row out of the grid. The label opts
- * out rather than taking a cap that would round to 1 (ADR-0012). Widening it
- * is not the alternative it looks like: every pixel taken here comes out of
- * the day cells, as `GRID_INSET` below explains.
+ * What it promises is exact: four digits written out, never shortened and
+ * never truncated, bought from this label's own typography rather than from
+ * the day cells (ADR-0013).
+ *
+ * It is derived rather than written: the width is whatever the longest label
+ * the column promises to hold demands. Raise the type, widen the spacing or
+ * lengthen the guarantee and the column widens on its own — and it is then the
+ * day cells that run out of room, which is where `dayCellWidth` below and the
+ * floors that pin it say so.
+ *
+ * It takes no growth at all from the reader's text size: the separator is a
+ * gap and does not scale, so a multiplier of any size the reader could pick
+ * wraps the label and pushes its own row out of the grid. The label opts out
+ * rather than taking a cap that would round to 1 (ADR-0012).
  */
-const LABEL_WIDTH = 44;
+const LABEL_WIDTH =
+  labelTextWidth(MONTH_CHARS) +
+  SEPARATOR_GAP +
+  labelTextWidth(TOTAL_GUARANTEED_CHARS) +
+  LABEL_SLACK;
 const CELL_RADIUS = 1;
 const CELL_GAP = 1;
 
@@ -91,20 +154,29 @@ export function UnlockMonthRow({ month }: Props) {
       accessibilityLabel={month.screenReaderLabel}
       style={styles.row}
     >
-      <Text
+      <View
         {...CONTENTS_NOT_READ}
-        allowFontScaling={false}
         testID={UNLOCK_MONTH_LABEL_TEST_ID}
-        style={{
-          ...styles.label,
-          color: month.current ? colors.accent : colors.textDim,
-        }}
+        style={styles.label}
       >
-        {month.label}
-        <Text testID={UNLOCK_MONTH_TOTAL_TEST_ID} style={styles.total}>
-          {` ${month.totalLabel}`}
+        <Text
+          allowFontScaling={false}
+          testID={UNLOCK_MONTH_NAME_TEST_ID}
+          style={{
+            ...styles.name,
+            color: month.current ? colors.accent : colors.textDim,
+          }}
+        >
+          {month.label}
         </Text>
-      </Text>
+        <Text
+          allowFontScaling={false}
+          testID={UNLOCK_MONTH_TOTAL_TEST_ID}
+          style={styles.total}
+        >
+          {month.totalLabel}
+        </Text>
+      </View>
 
       <View
         {...CONTENTS_NOT_READ}
@@ -133,12 +205,20 @@ const styles = StyleSheet.create({
     paddingHorizontal: GRID_INSET,
   },
   label: {
-    fontFamily: fonts.monoMedium,
-    fontSize: 9.5,
-    letterSpacing: 0.5,
     width: LABEL_WIDTH,
+    flexDirection: "row",
+    // The month and its figure sit on one line, so they sit on one baseline:
+    // centring two boxes works only while both are painted at the same size.
+    alignItems: "baseline",
+    gap: SEPARATOR_GAP,
+  },
+  name: {
+    fontFamily: fonts.monoMedium,
+    fontSize: LABEL_FONT_SIZE,
   },
   total: {
+    fontFamily: fonts.monoMedium,
+    fontSize: LABEL_FONT_SIZE,
     color: colors.accent,
   },
   days: {
