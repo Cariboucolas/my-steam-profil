@@ -24,12 +24,19 @@ the real ones, so its floor was conservative by an unknown amount.
 
 ## What replaces it
 
-A measuring screen, `app/measure/floor.tsx` on `test/measure-legible-floor`, importing
-`unlockToneFills` and the row's geometry rather than copying either. One trial shows a real
+A measuring screen, built for this and thrown away after — expo-router publishes everything under
+`app/`, so an instrument cannot live there, and a branch kept alive only so a document can point at
+it is a reference that rots. It is described here in full instead, which is what anyone rebuilding
+it would need anyway.
+
+It imports `unlockToneFills` and the row's geometry rather than copying either: the prototype of
+#29 copied both, and that is why nothing it showed transferred. One trial draws a real
 thirty-one-column row with two cells ticked and lettered, carrying **two neighbouring tones of the
 ramp** — the only comparisons in it that are hard — and asks which is paler. The row stays in view,
 there is no clock, and nothing has to be remembered. Every trial also records what it cost: easy,
-effort, or guess.
+effort, or guess. Widths are shuffled and never named on screen, and the width the phone actually
+paints is read from `dayCellWidth(useWindowDimensions().width)` and mixed in as the positive
+control.
 
 Twenty trials: five widths — 3, 4, 5, 6, and the 10.23 the phone ships — by the four neighbouring
 pairs.
