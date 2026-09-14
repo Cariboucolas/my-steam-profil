@@ -7,6 +7,7 @@ import {
   letTheDeviceAnswer,
 } from "../../accessibility/reduce-motion.test-support";
 
+import { NARROWEST_SCREEN } from "../../theme/tokens";
 import type { LibrarySummary } from "../../view-models/library";
 import {
   TALLY_LOAD_BAR_FILL_TEST_ID,
@@ -126,12 +127,12 @@ describe("LibraryStatsCard", () => {
  */
 describe("headlineRoom", () => {
   it("holds the figure the cascade cannot shorten, on the narrowest phone", () => {
-    expect(headlineRoom(375, 1)).toBeGreaterThanOrEqual(HEADLINE_REQUIRED_WIDTH);
+    expect(headlineRoom(NARROWEST_SCREEN, 1)).toBeGreaterThanOrEqual(HEADLINE_REQUIRED_WIDTH);
   });
 });
 
 /** Every width the app serves, from the narrowest phone to a tablet. */
-const SERVED_WIDTHS = [375, 390, 393, 402, 414, 430, 768, 834, 1024];
+const SERVED_WIDTHS = [NARROWEST_SCREEN, 390, 393, 402, 414, 430, 768, 834, 1024];
 
 /**
  * No growth, the cap itself, and a setting well past it. The last is what
@@ -173,7 +174,7 @@ describe("the headline always fits", () => {
  */
 describe("the cap the model assumes", () => {
   it("is the one both halves of the headline row are drawn under", async () => {
-    onAPhone(375);
+    onAPhone(NARROWEST_SCREEN);
     const { getByText } = render(
       <LibraryStatsCard summary={summary()} gameCount={267} loaded={null} />,
     );
@@ -197,7 +198,7 @@ describe("the cap the model assumes", () => {
    */
   it("is the 1.13 the decision was recorded with", () => {
     expect(HEADLINE_MAX_FONT_SCALE).toBe(1.13);
-    expect(headlineMaxChars(375, HEADLINE_MAX_FONT_SCALE)).toBe(4);
+    expect(headlineMaxChars(NARROWEST_SCREEN, HEADLINE_MAX_FONT_SCALE)).toBe(4);
   });
 });
 
@@ -222,7 +223,7 @@ describe("the headline, on a real phone", () => {
   });
 
   it("writes it short when it is not", async () => {
-    onAPhone(375);
+    onAPhone(NARROWEST_SCREEN);
     const { getByText } = render(
       <LibraryStatsCard summary={player} gameCount={267} loaded={null} />,
     );
@@ -232,7 +233,7 @@ describe("the headline, on a real phone", () => {
   });
 
   it("gives a screen reader the exact count, however it was written", async () => {
-    onAPhone(375);
+    onAPhone(NARROWEST_SCREEN);
     const { getByLabelText } = render(
       <LibraryStatsCard summary={player} gameCount={267} loaded={null} />,
     );
