@@ -1,11 +1,10 @@
 import { render, within } from "@testing-library/react-native";
 
 import { colors, unlockToneFills } from "../../theme/tokens";
-import type {
-  UnlockDay,
-  UnlockMonth,
-} from "../../view-models/unlock-calendar";
+import type { UnlockDay, UnlockMonth } from "../../view-models/unlock-calendar";
+import { NARROWEST_SCREEN } from "../../theme/tokens";
 import {
+  CELL_GAP,
   dayCellWidth,
   UnlockMonthRow,
   UNLOCK_DAY_TEST_ID,
@@ -65,7 +64,8 @@ describe("UnlockMonthRow", () => {
     );
 
     expect(
-      getAllByTestId(UNLOCK_DAY_TEST_ID, PAINTED)[3]?.props.style.backgroundColor,
+      getAllByTestId(UNLOCK_DAY_TEST_ID, PAINTED)[3]?.props.style
+        .backgroundColor,
     ).toBe(colors.tileEmpty);
   });
 
@@ -95,17 +95,17 @@ describe("UnlockMonthRow", () => {
       <UnlockMonthRow month={month(17, {}, true)} />,
     );
 
-    expect(getByTestId(UNLOCK_MONTH_NAME_TEST_ID, PAINTED).props.style.color).toBe(
-      colors.accent,
-    );
+    expect(
+      getByTestId(UNLOCK_MONTH_NAME_TEST_ID, PAINTED).props.style.color,
+    ).toBe(colors.accent);
   });
 
   it("leaves any other month's label quiet", () => {
     const { getByTestId } = render(<UnlockMonthRow month={month(30)} />);
 
-    expect(getByTestId(UNLOCK_MONTH_NAME_TEST_ID, PAINTED).props.style.color).toBe(
-      colors.textDim,
-    );
+    expect(
+      getByTestId(UNLOCK_MONTH_NAME_TEST_ID, PAINTED).props.style.color,
+    ).toBe(colors.textDim);
   });
 
   /**
@@ -119,7 +119,10 @@ describe("UnlockMonthRow", () => {
   it("keeps both halves of the label out of the system text size", () => {
     const { getByTestId } = render(<UnlockMonthRow month={month(30)} />);
 
-    for (const half of [UNLOCK_MONTH_NAME_TEST_ID, UNLOCK_MONTH_TOTAL_TEST_ID]) {
+    for (const half of [
+      UNLOCK_MONTH_NAME_TEST_ID,
+      UNLOCK_MONTH_TOTAL_TEST_ID,
+    ]) {
       expect(getByTestId(half, PAINTED).props.allowFontScaling).toBe(false);
     }
   });
@@ -144,9 +147,9 @@ describe("UnlockMonthRow", () => {
       <UnlockMonthRow month={month(30, { 5: held(3, 1) })} />,
     );
 
-    expect(getByTestId(UNLOCK_MONTH_TOTAL_TEST_ID, PAINTED).props.style.color).toBe(
-      colors.accent,
-    );
+    expect(
+      getByTestId(UNLOCK_MONTH_TOTAL_TEST_ID, PAINTED).props.style.color,
+    ).toBe(colors.accent);
   });
 
   /**
@@ -189,29 +192,54 @@ describe("UnlockMonthRow", () => {
 
 /**
  * Thirty-one columns have to fit a phone with no horizontal scroll, and a cell
- * stops being legible before it stops fitting. The prototype measured it:
- * four tones cannot be told apart at 6-7px, and 9px is the smallest that reads
- * (`prototype/activity-grid-width`, verdict on #29). These are the widths the
- * label and the gutter are allowed to leave behind.
+ * stops being legible before it stops fitting. Where it stops was measured on
+ * a phone, by an observer told which two cells to compare and asked which was
+ * the paler, over every neighbouring pair of the ramp and every width down to
+ * 3 px: **six** (ADR-0014).
  *
- * The lowest of them is narrower than the app promises. `NARROWEST_SCREEN` is
- * 375 because that is where the library card's headline stops fitting, and it
- * fits there by nothing at all, so 360 cannot be promised without reopening
- * that card. But 360 is the portrait width of the Galaxy A and S ranges and
- * one of the three commonest viewports there are: the grid holds it, and
- * saying so here is what keeps the next widening of the label from taking it
- * away in silence, the way ADR-0013's label took it away once (#83).
+ * Six is not where the tones become indistinguishable — nothing in that run
+ * was ever answered wrongly, down to 3 px. It is where telling them apart
+ * stops costing the reader anything, which is the only threshold a calendar
+ * read at a glance can be held to.
+ *
+ * It replaces the nine this file carried, which came from #29 and was the
+ * narrowest of three sampled layouts rather than a floor anybody looked for.
  */
 describe("dayCellWidth", () => {
-  it("leaves a day at least nine pixels on a 360 px phone", () => {
-    expect(dayCellWidth(360)).toBeGreaterThanOrEqual(9);
+  it("leaves a day the six pixels a reader needs, on the narrowest screen the app promises", () => {
+    expect(dayCellWidth(NARROWEST_SCREEN)).toBeGreaterThanOrEqual(6);
   });
 
-  it("leaves a day at least nine pixels on a 375 px phone", () => {
-    expect(dayCellWidth(375)).toBeGreaterThanOrEqual(9);
+  /**
+   * 360 is the portrait width of the Galaxy A and S ranges and one of the
+   * three commonest viewports there are. The app does not promise it —
+   * `NARROWEST_SCREEN` is 375, where the library card's headline stops
+   * fitting — but the grid holds it, and saying so here is what keeps the next
+   * widening of the label from taking it away in silence, the way ADR-0013's
+   * label took it away once (#83).
+   */
+  it("holds the floor on the 360 px phones it serves without promising them", () => {
+    expect(dayCellWidth(360)).toBeGreaterThanOrEqual(6);
   });
 
-  it("leaves a day at least ten pixels on a 402 px phone", () => {
-    expect(dayCellWidth(402)).toBeGreaterThanOrEqual(10);
+  /**
+   * The floor alone no longer protects much: the grid clears it by more than
+   * three pixels, so a label could widen a long way before any test noticed.
+   * This freezes what the geometry actually yields, so that a change to the
+   * label, the inset or the gutter has to be meant rather than merely allowed.
+   */
+  it("yields the width its own constants predict, and rejects a silent drift", () => {
+    expect(dayCellWidth(NARROWEST_SCREEN)).toBeCloseTo(9.65, 2);
+    expect(dayCellWidth(360)).toBeCloseTo(9.17, 2);
+  });
+
+  /**
+   * What separates two days of the same tone. 0.25 px was still counted
+   * correctly in the same run, so this is not the edge of legibility — it is
+   * the edge of what has been looked at, and nothing thinner may ship without
+   * looking again.
+   */
+  it("keeps the gutter no thinner than the measurement went", () => {
+    expect(CELL_GAP).toBeGreaterThanOrEqual(0.5);
   });
 });
