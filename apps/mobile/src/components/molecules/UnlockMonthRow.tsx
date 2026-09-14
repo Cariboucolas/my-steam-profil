@@ -88,27 +88,16 @@ const LABEL_WIDTH =
   LABEL_SLACK;
 const CELL_RADIUS = 1;
 /**
- * What sits between two days. Half a pixel rather than one: thirty gutters
- * give fifteen pixels back, and a day at 360 dp goes from 8.69 to 9.17 px of
- * column pitch.
- *
- * That pitch is not the quantity #29 measured. The prototype reported
- * `(width - gap * (cols - 1)) / cols` — the width a day is actually painted,
- * its gutter already taken out — and its three variants each carried a
- * different gutter, so the 9 px it called a floor is a painted width. Against
- * it the grid paints 8.67 px at 360 dp and 9.15 at 375; before this halving,
- * 375 painted 8.17 and had never met that floor at all.
- *
- * So the halving did not hand 360 a width the floor was already met at, the
- * way this comment first put it. It carried 375 over the floor, and left 360
- * under it — in the band between the 6.1 px the prototype found unreadable
- * and the 9.1 px it found readable, where nobody has looked yet (#85).
+ * What sits between two days. Half a pixel rather than one, which is where the
+ * grid found the room to hold 360 dp: thirty gutters give fifteen pixels back,
+ * and a day cell at 360 becomes 9.17 px — the very width 375 had before this.
+ * Nothing was extrapolated to get there; 360 inherits a width the prototype's
+ * floor was already met at (#83).
  *
  * Every width gets the same half pixel back, so this is not a concession made
  * to the narrow phone. What it costs is a gutter that does not land on a whole
- * pixel at every density. Restoring it to 1 would take 375 back to 8.17 px
- * painted, under the floor — that is the trade to weigh, and it is a trade
- * about 375, not about 360.
+ * pixel at every density, and that is the trade to weigh before restoring it
+ * to 1 — which would take 360 back under the floor #29 measured.
  */
 const CELL_GAP = 0.5;
 
