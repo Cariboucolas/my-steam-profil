@@ -97,3 +97,12 @@ export const fonts = {
   monoMedium: "IBMPlexMono_500Medium",
   monoSemiBold: "IBMPlexMono_600SemiBold",
 } as const;
+
+/**
+ * How far one glyph of IBM Plex Mono advances, as a share of the font size:
+ * its `hmtx` table gives 600 units on a 1000-unit em, at every weight named
+ * above. It sits beside the faces it describes because it is a fact about the
+ * files the app loads rather than a decision any one layout made — and a
+ * second copy is a copy that would not learn of a change of face.
+ */
+export const MONO_ADVANCE = 0.6;

@@ -2,7 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 import { formatUnlockHeadline, type LibrarySummary } from "../../view-models/library";
-import { colors, fonts, radius, spacing } from "../../theme/tokens";
+import { colors, fonts, MONO_ADVANCE, radius, spacing } from "../../theme/tokens";
 import { CompletionRing } from "../atoms/CompletionRing";
 import { TallyLoadBar } from "../atoms/TallyLoadBar";
 import { StatBlock } from "../atoms/StatBlock";
@@ -37,13 +37,6 @@ const CAPTION_WIDTH = 76;
  */
 const HEADLINE_FONT_SIZE = 44;
 const HEADLINE_LETTER_SPACING = -2;
-
-/**
- * How far one glyph advances, as a share of the font size. IBM Plex Mono is
- * monospaced, so this is every glyph at every weight the headline might take:
- * its `hmtx` table gives 600 units on a 1000-unit em.
- */
-const MONO_ADVANCE = 0.6;
 
 /** A reader who has left the system text size where it was. */
 const UNSCALED = 1;
