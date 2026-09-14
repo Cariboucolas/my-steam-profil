@@ -176,25 +176,45 @@ const percentageOf = (tally: GameCompletionDto | undefined): number | null =>
   tally && tally.total > 0 ? Math.round(tally.percentage) : null;
 
 /**
+ * Whether this library says anything at all about when or how long it was
+ * played. Playtime has its own Steam privacy setting, separate from the one
+ * over achievements, so a profile can withhold every hour and still publish
+ * every unlock: on the public profile 76561197985221153 all 100 games carry
+ * neither figure, and three of them hold unlocks dated 2010 to 2014.
+ *
+ * Asked of the library rather than of a game, because one game with nothing is
+ * a game never launched while a library with nothing is Steam declining to
+ * say — and only the library can tell those apart.
+ */
+const saysWhenItWasPlayed = (games: readonly GameDto[]): boolean =>
+  games.some((game) => game.lastPlayedAt !== null || game.playtimeMinutes > 0);
+
+/**
  * When the player last opened it, where that can be said at all.
  *
  * Steam does not always send a last-played time — on the public profile
  * 76561197997989573 not one of its 99 games carries one, while 80 carry
  * playtime. "never played" beside 149 hours is simply untrue, so a game with
  * playtime and no date says nothing about when rather than something false.
- * Only a game with neither was really never opened.
+ * Only a game with neither, in a library where others have one, was really
+ * never opened.
  */
-const whenFor = (game: GameDto): string | null => {
+const whenFor = (game: GameDto, libraryAnswers: boolean): string | null => {
   if (game.lastPlayedAt) return formatDay(game.lastPlayedAt);
+  if (!libraryAnswers) return null;
   return game.playtimeMinutes === 0 ? "never played" : null;
 };
 
 const joined = (parts: readonly (string | null)[]): string =>
   parts.filter((part): part is string => part !== null).join(" · ");
 
-const metaFor = (game: GameDto, tally: GameCompletionDto | undefined): string => {
+const metaFor = (
+  game: GameDto,
+  tally: GameCompletionDto | undefined,
+  libraryAnswers: boolean,
+): string => {
   const played = formatHours(game.playtimeMinutes);
-  const when = whenFor(game);
+  const when = whenFor(game, libraryAnswers);
 
   if (!tally) {
     return joined([played, when]);
@@ -282,6 +302,8 @@ export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
     ? orderedBy(games, frozenOrder)
     : [...games].sort(comparatorFor(sort, tallies));
 
+  const libraryAnswers = saysWhenItWasPlayed(games);
+
   return ordered.map((game) => {
     const tally = tallies[game.appId]?.completion;
     const percentage = percentageOf(tally);
@@ -290,7 +312,7 @@ export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
       name: game.name,
       percentage,
       rateLabel: percentage === null ? "—" : `${percentage}%`,
-      meta: metaFor(game, tally),
+      meta: metaFor(game, tally, libraryAnswers),
       pending: pending.has(game.appId) && tally === undefined,
     };
   });

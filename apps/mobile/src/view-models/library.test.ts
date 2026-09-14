@@ -185,6 +185,25 @@ describe("buildLibraryRows", () => {
     expect(rows[0]?.meta).toContain("150 h");
   });
 
+  /**
+   * Playtime has its own Steam privacy setting, separate from the one over
+   * achievements, so a profile can withhold every hour and still publish every
+   * unlock. On the public profile 76561197985221153 all 100 games carry neither
+   * playtime nor a date, and three of them answer with unlocks dated 2010 to
+   * 2014. Reading that library game by game calls all 100 never played.
+   */
+  it("says nothing about when, rather than never, where a whole library is silent", () => {
+    const withheld = [
+      game(240, "Counter-Strike: Source", 0, null),
+      game(220, "Half-Life 2", 0, null),
+    ];
+    const rows = buildLibraryRows(
+      settled("completed", { 240: tally(57, 147) }, withheld),
+    );
+
+    expect(rows.every((row) => !row.meta.includes("never"))).toBe(true);
+  });
+
   it("leaves the games it was given untouched", () => {
     const order = GAMES.map((g) => g.appId);
     buildLibraryRows(settled("playtime"));
