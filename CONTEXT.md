@@ -17,7 +17,7 @@ A title in a player's owned library, identified by its Steam appId, carrying the
 _Avoid_: App, Title, Product
 
 **Playtime**:
-Total time a player has spent in a Game. Held in minutes, never negative.
+Total time a player has spent in a Game. Held in minutes, never negative. Steam governs its visibility on its own, separately from the Profile's and from the Achievements' — a public Profile can publish every Unlock and withhold every hour — so a Playtime Steam declines to report is absent rather than zero. Zero minutes is a Game that was never launched; absent is a Game whose hours are not ours to know, and neither may be read as the other: a withheld hour reported as zero calls a Game unplayed beside the Unlocks that prove it was played. Steam withholds across a whole library rather than one Game at a time, so which of the two a bare zero is can only be told from the library it sits in. The line Rarity draws over a figure Steam publishes for nobody, and Unlock over a date Steam will not give.
 _Avoid_: Hours played, Duration, Time spent
 
 **Achievement**:
