@@ -90,13 +90,17 @@ const shelved = (): ApiClient =>
   createFixtureApiClient({ profile, games: shelf, progress: {} });
 
 /**
- * The same two games as Steam sends them for a profile whose playtime is
+ * The same two games as they reach a client for a profile whose playtime is
  * private: no hours, no dates, on every one. Measured on 76561197985221153.
+ *
+ * The hours are absent rather than zero — Steam sends zeroes, and whoever maps
+ * the library reads them as withheld, because that is the only place holding
+ * the whole library the reading depends on (CONTEXT.md, Playtime).
  */
 const withheldShelf: readonly GameDto[] = shelf.map((game) => ({
   ...game,
-  playtimeMinutes: 0,
-  playtimeLabel: "0 min",
+  playtimeMinutes: null,
+  playtimeLabel: null,
   lastPlayedAt: null,
 }));
 

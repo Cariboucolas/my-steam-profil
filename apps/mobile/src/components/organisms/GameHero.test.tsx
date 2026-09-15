@@ -21,6 +21,25 @@ describe("GameHero", () => {
     expect(getByText("353/483 · 83 h")).toBeTruthy();
   });
 
+  /**
+   * Where Steam withholds the hours and sends no date there is nothing true to
+   * say under the title, and an empty line still takes up room and still reads
+   * as a figure that failed to load.
+   */
+  it("draws no line at all when there is nothing to say", () => {
+    const { queryByTestId } = render(
+      <GameHero appId={240} name="Counter-Strike: Source" meta="" topInset={0} onBack={() => {}} />,
+    );
+
+    expect(queryByTestId("game-hero-meta")).toBeNull();
+  });
+
+  it("names the line it does draw", () => {
+    const { getByTestId } = render(hero());
+
+    expect(getByTestId("game-hero-meta")).toBeTruthy();
+  });
+
   it("goes back when asked", () => {
     const onBack = jest.fn();
     const { getByLabelText } = render(hero(onBack));

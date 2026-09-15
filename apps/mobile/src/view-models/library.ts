@@ -85,8 +85,17 @@ export type LibrarySummary = {
   readonly rateLabel: string;
   readonly fraction: string;
   readonly perfectGames: number;
+  /** The library's hours, or a dash where Steam publishes none of them. */
   readonly playtimeLabel: string;
 };
+
+/**
+ * What a figure that is not there is drawn as. Shared by the rate and by the
+ * playtime total, which are absent for different reasons and are absent the
+ * same way: a zero would read as failure — 0 %, `0 min` — rather than as
+ * nothing having been said.
+ */
+const ABSENT = "—";
 
 const MINUTES_PER_HOUR = 60;
 const PERFECT = 100;
@@ -220,14 +229,17 @@ const percentageOf = (tally: GameCompletionDto | undefined): number | null =>
  * Unlock and withhold every hour, and a withheld Playtime is absent rather
  * than zero (see CONTEXT.md). Steam withholds across a whole library rather
  * than one Game at a time, so which of the two a bare zero is can only be told
- * from the library it sits in: that is why this is asked of the library and
- * cannot be asked of a Game.
+ * from the library it sits in — and that reading is already done, once, by
+ * whoever mapped the library: a Game arrives carrying either a figure or an
+ * absence. So this counts absences rather than re-deriving them, and a game
+ * measured at zero minutes is a library publishing its hours and saying they
+ * are none.
  *
  * Measured on 76561197985221153, whose 100 games carry no hours at all while
  * three of them hold unlocks dated 2010 to 2014.
  */
 export const publishesPlaytime = (games: readonly GameDto[]): boolean =>
-  games.some((game) => game.playtimeMinutes > 0);
+  games.some((game) => game.playtimeMinutes !== null);
 
 /**
  * Whether Steam publishes when this library was last played.
@@ -241,6 +253,23 @@ export const publishesLastPlayed = (games: readonly GameDto[]): boolean =>
   games.some((game) => game.lastPlayedAt !== null);
 
 /**
+ * Whether the player never opened this Game at all.
+ *
+ * Only a measured zero says so, and here a zero always is one: a playtime
+ * Steam withheld arrives absent rather than as a zero, so a Game with no hours
+ * on it says nothing either way about whether it was ever launched. That is
+ * what lets this be asked of a Game, where it once had to be asked of the
+ * library the Game sits in.
+ *
+ * Shared rather than copied: the library row writes the answer as `never
+ * played` and the game screen as `last played never`, two wordings of one
+ * rule, and a rule that drifted between them would call the same game two
+ * different things on two screens.
+ */
+export const neverLaunched = (game: GameDto): boolean =>
+  game.lastPlayedAt === null && game.playtimeMinutes === 0;
+
+/**
  * When the player last opened it, where that can be said at all.
  *
  * Steam does not always send a last-played time — on the public profile
@@ -248,33 +277,34 @@ export const publishesLastPlayed = (games: readonly GameDto[]): boolean =>
  * playtime. "never played" beside 149 hours is simply untrue, so a game with
  * playtime and no date says nothing about when rather than something false.
  *
- * The claim rests on playtime being published: only there does a zero mean a
- * Game that was never launched. Where Steam withholds the hours, a zero is
- * absent rather than measured and says nothing about whether the game was ever
- * opened.
  */
-const whenFor = (game: GameDto, playtimeIsPublished: boolean): string | null => {
+const whenFor = (game: GameDto): string | null => {
   if (game.lastPlayedAt) return formatDay(game.lastPlayedAt);
-  if (!playtimeIsPublished) return null;
-  return game.playtimeMinutes === 0 ? "never played" : null;
+  return neverLaunched(game) ? "never played" : null;
 };
 
-const joined = (parts: readonly (string | null)[]): string =>
+/**
+ * The parts of a line that are actually there, in the mock's separator.
+ * Shared rather than copied: the library row and the game screen's caption are
+ * two writings of the same figures, and a separator that drifted between them
+ * would read as two conventions.
+ */
+export const joined = (parts: readonly (string | null)[]): string =>
   parts.filter((part): part is string => part !== null).join(" · ");
 
-const metaFor = (
-  game: GameDto,
-  tally: GameCompletionDto | undefined,
-  playtimeIsPublished: boolean,
-): string => {
-  const played = formatHours(game.playtimeMinutes);
-  const when = whenFor(game, playtimeIsPublished);
+/** The hours as a row writes them, or nothing at all where Steam withheld them. */
+const playedFor = (game: GameDto): string | null =>
+  game.playtimeMinutes === null ? null : formatHours(game.playtimeMinutes);
+
+const metaFor = (game: GameDto, tally: GameCompletionDto | undefined): string => {
+  const played = playedFor(game);
+  const when = whenFor(game);
 
   if (!tally) {
     return joined([played, when]);
   }
   if (tally.total === 0) {
-    return `no achievements · ${played}`;
+    return joined(["no achievements", played]);
   }
   return joined([`${tally.unlocked}/${tally.total}`, played, when]);
 };
@@ -324,7 +354,9 @@ const comparatorFor = (
   tallies: TallyByAppId,
 ): ((a: GameDto, b: GameDto) => number) => {
   if (sort === "playtime") {
-    return (a, b) => b.playtimeMinutes - a.playtimeMinutes;
+    // Only offered where the library publishes its hours, so the fallback is
+    // unreachable rather than a stand-in figure — see `availableSorts`.
+    return (a, b) => (b.playtimeMinutes ?? 0) - (a.playtimeMinutes ?? 0);
   }
   if (sort === "recent") {
     const played = (game: GameDto) =>
@@ -356,8 +388,6 @@ export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
     ? orderedBy(games, frozenOrder)
     : [...games].sort(comparatorFor(sort, tallies));
 
-  const playtimeIsPublished = publishesPlaytime(games);
-
   return ordered.map((game) => {
     const tally = tallies[game.appId]?.completion;
     const percentage = percentageOf(tally);
@@ -365,8 +395,8 @@ export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
       appId: game.appId,
       name: game.name,
       percentage,
-      rateLabel: percentage === null ? "—" : `${percentage}%`,
-      meta: metaFor(game, tally, playtimeIsPublished),
+      rateLabel: percentage === null ? ABSENT : `${percentage}%`,
+      meta: metaFor(game, tally),
       pending: pending.has(game.appId) && tally === undefined,
     };
   });
@@ -387,7 +417,7 @@ export const buildLibrarySummary = (view: LibraryView): LibrarySummary => {
 
   const unlocked = loaded.reduce((sum, e) => sum + e.unlocked, 0);
   const total = loaded.reduce((sum, e) => sum + e.total, 0);
-  const minutes = games.reduce((sum, game) => sum + game.playtimeMinutes, 0);
+  const minutes = games.reduce((sum, game) => sum + (game.playtimeMinutes ?? 0), 0);
   const rate = total === 0 ? 0 : Math.round((unlocked / total) * PERFECT);
 
   return {
@@ -399,6 +429,6 @@ export const buildLibrarySummary = (view: LibraryView): LibrarySummary => {
     // left out were never launched, so they are excluded rather than missing.
     fraction: `${group(unlocked)} / ${group(total)} across ${gamesCounted(loaded.length)}`,
     perfectGames: loaded.filter((e) => e.total > 0 && e.unlocked === e.total).length,
-    playtimeLabel: formatHours(minutes),
+    playtimeLabel: publishesPlaytime(games) ? formatHours(minutes) : ABSENT,
   };
 };

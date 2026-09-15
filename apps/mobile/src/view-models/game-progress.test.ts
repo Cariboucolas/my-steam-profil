@@ -185,6 +185,34 @@ describe("buildGameSummary", () => {
     expect(untouched.meta).toBe("0 min played · last played never");
   });
 
+  /**
+   * The 76561197985221153 case, on the screen that holds one Game. Steam
+   * withholds the hours across the whole library, so this Game arrives with an
+   * absent playtime rather than a zero — and `0 min played · last played never`
+   * above unlocks dated 2010 to 2014 is a sentence the app made up.
+   *
+   * The zero is told from the absence in the contract rather than here, which
+   * is what lets a screen holding one Game read it at all: the library the
+   * distinction can only be drawn from is held by whoever mapped it.
+   */
+  it("says nothing about playtime where Steam withheld the hours", () => {
+    const withheld = buildGameSummary(
+      { ...GAME, lastPlayedAt: null, playtimeMinutes: null, playtimeLabel: null },
+      PROGRESS,
+    );
+
+    expect(withheld.meta).toBe("");
+  });
+
+  it("still says when it was last played where only the hours are withheld", () => {
+    const withheld = buildGameSummary(
+      { ...GAME, playtimeMinutes: null, playtimeLabel: null },
+      PROGRESS,
+    );
+
+    expect(withheld.meta).toBe("last played 25 Jun 2026");
+  });
+
   it("still describes playtime for a game never fetched", () => {
     expect(buildGameSummary(GAME, null).meta).toBe(
       "82 h 57 played · last played 25 Jun 2026",

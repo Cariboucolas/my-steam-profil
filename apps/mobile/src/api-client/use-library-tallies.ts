@@ -20,7 +20,7 @@ const NOTHING_OUTSTANDING: ReadonlySet<number> = new Set();
  * and left every row of that library blank.
  */
 const everOpened = (game: GameDto): boolean =>
-  game.playtimeMinutes > 0 || game.lastPlayedAt !== null;
+  (game.playtimeMinutes ?? 0) > 0 || game.lastPlayedAt !== null;
 
 /**
  * Most recently played first, because that is the order a player recognises, so
@@ -39,7 +39,7 @@ const recognisedFirst = (a: GameDto, b: GameDto): number => {
   if (left !== null && right !== null) return right - left;
   if (left !== null) return -1;
   if (right !== null) return 1;
-  return b.playtimeMinutes - a.playtimeMinutes;
+  return (b.playtimeMinutes ?? 0) - (a.playtimeMinutes ?? 0);
 };
 
 /**
@@ -54,9 +54,8 @@ const recognisedFirst = (a: GameDto, b: GameDto): number => {
  * can withhold every hour it has played and still publish every unlock: on the
  * public profile 76561197985221153 all 100 games carry neither playtime nor a
  * last-played time, and Counter-Strike: Source still answers 57 of 147, dated
- * 2010 to 2014. A library silent throughout is Steam refusing to say rather
- * than a hundred games nobody launched, and there the filter is reading an
- * absence it has no grounds to read, so every game is counted.
+ * 2010 to 2014. There the hours arrive absent rather than as zeroes, so no
+ * game passes the filter and every one of them is counted instead.
  */
 const gamesWorthTallying = (games: readonly GameDto[]): readonly number[] => {
   const opened = games.filter(everOpened);

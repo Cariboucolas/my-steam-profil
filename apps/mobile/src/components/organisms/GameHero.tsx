@@ -11,6 +11,12 @@ const BACK = 34;
 type Props = {
   readonly appId: number;
   readonly name: string;
+  /**
+   * The figures under the title, empty where there are none to give. Steam can
+   * withhold a library's hours and send no last-played date either, and there
+   * nothing true is left to write — an empty line still holds its space and
+   * still reads as a figure that failed to load, so none is drawn at all.
+   */
   readonly meta: string;
   readonly topInset: number;
   readonly onBack: () => void;
@@ -45,7 +51,11 @@ export function GameHero({ appId, name, meta, topInset, onBack }: Props) {
         <Text numberOfLines={2} style={styles.name}>
           {name}
         </Text>
-        <Text style={styles.meta}>{meta}</Text>
+        {meta === "" ? null : (
+          <Text testID="game-hero-meta" style={styles.meta}>
+            {meta}
+          </Text>
+        )}
       </View>
     </View>
   );
