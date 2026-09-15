@@ -15,6 +15,7 @@ import type { ApiClient, ApiError } from "../api-client/api-client";
 import { createFixtureApiClient } from "../api-client/fixture-api-client";
 import { UNLOCK_CALENDAR_CARD_TEST_ID } from "../components/organisms/UnlockCalendarCard";
 import type { SteamIdStorage } from "../settings/steam-id-storage";
+import { colors } from "../theme/tokens";
 import { SteamIdProvider, useSteamId } from "../settings/steam-id-store";
 import LibraryScreen from "../../app/index";
 
@@ -87,6 +88,17 @@ const shelf: readonly GameDto[] = [
 
 const shelved = (): ApiClient =>
   createFixtureApiClient({ profile, games: shelf, progress: {} });
+
+/**
+ * The same two games as Steam sends them for a profile whose playtime is
+ * private: no hours, no dates, on every one. Measured on 76561197985221153.
+ */
+const withheldShelf: readonly GameDto[] = shelf.map((game) => ({
+  ...game,
+  playtimeMinutes: 0,
+  playtimeLabel: "0 min",
+  lastPlayedAt: null,
+}));
 
 /** The names the list is drawing, in the order it draws them. */
 const drawnNames = (): readonly string[] =>
@@ -369,6 +381,57 @@ describe("library screen", () => {
 
     await waitFor(() =>
       expect(drawnNames()).toEqual(["Team Fortress 2", "Soulstone Survivors"]),
+    );
+  });
+
+  /**
+   * Measured on 76561197985221153: Steam publishes neither figure for any of
+   * its 100 games, so both orders over them would sort on all-equal keys —
+   * stable, and therefore Steam's own arbitrary order under a chip that looks
+   * selected. An order that cannot be produced is not offered, and the reason
+   * is given, because a control that vanishes otherwise makes one profile's
+   * screen differ from another's for no stated cause.
+   */
+  it("offers no order over a figure Steam withholds, and says why", async () => {
+    renderLibrary(
+      createFixtureApiClient({ profile, games: withheldShelf, progress: {} }),
+    );
+    await screen.findByText("Soulstone Survivors");
+
+    expect(screen.getByText("Completed first")).toBeTruthy();
+    expect(screen.queryByText("Most played")).toBeNull();
+    expect(screen.queryByText("Recently played")).toBeNull();
+    expect(
+      screen.getByText(/Steam does not publish this profile's playtime/),
+    ).toBeTruthy();
+  });
+
+  /**
+   * The order outliving its chip: pick one that reads playtime, then change to
+   * a profile that withholds it. Without a fallback the list stays sorted by a
+   * figure that is gone, under no chip at all — nothing on screen would say
+   * which order the rows are in.
+   */
+  it("falls back to an order it can produce when the next profile withholds one", async () => {
+    renderAt(
+      {
+        [STEAM_ID]: shelved(),
+        [OTHER_STEAM_ID]: createFixtureApiClient({
+          profile,
+          games: withheldShelf,
+          progress: {},
+        }),
+      },
+      STEAM_ID,
+    );
+    await screen.findByText("Soulstone Survivors");
+    fireEvent.press(screen.getByText("Most played"));
+
+    fireEvent.press(screen.getByLabelText("switch profile"));
+
+    await waitFor(() => expect(screen.queryByText("Most played")).toBeNull());
+    expect(screen.getByText("Completed first").props.style.color).toBe(
+      colors.accent,
     );
   });
 
