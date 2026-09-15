@@ -13,6 +13,7 @@ import { GameListItem } from "../src/components/molecules/GameListItem";
 import { RarestEmpty } from "../src/components/molecules/RarestEmpty";
 import { RarestRow } from "../src/components/molecules/RarestRow";
 import { SortChips } from "../src/components/molecules/SortChips";
+import { WithheldFiguresNote } from "../src/components/molecules/WithheldFiguresNote";
 import { ErrorState } from "../src/components/organisms/ErrorState";
 import { LibraryStatsCard } from "../src/components/organisms/LibraryStatsCard";
 import { ProfileHeader } from "../src/components/organisms/ProfileHeader";
@@ -21,10 +22,14 @@ import { useSteamId } from "../src/settings/steam-id-store";
 import { colors, fonts, spacing } from "../src/theme/tokens";
 import { messageFor } from "../src/view-models/api-errors";
 import {
+  availableSorts,
   buildLibraryRows,
   buildLibrarySummary,
+  publishesLastPlayed,
+  publishesPlaytime,
   type LibrarySort,
   type LibraryView,
+  type PublishedFigures,
 } from "../src/view-models/library";
 import { useRarestTab } from "../src/view-models/use-rarest-tab";
 import { useUnlockCalendar } from "../src/view-models/use-unlock-calendar";
@@ -62,7 +67,7 @@ export default function LibraryScreen() {
   const { state: steamId } = useSteamId();
   const apiClient = useApiClient();
   const [state, setState] = useState<State>({ status: "loading" });
-  const [sort, setSort] = useState<LibrarySort>("completed");
+  const [chosenSort, setChosenSort] = useState<LibrarySort>("completed");
   const [tab, setTab] = useState(COMPLETION);
   // Bumped to re-run the load when nothing else about the request changed —
   // a backend that was down and may now be up. The api client is memoised on
@@ -132,6 +137,27 @@ export default function LibraryScreen() {
   const { tallies, pending, counted, loaded, frozenOrder, repin } =
     useLibraryTallies(apiClient, gamesToCount);
 
+  // What Steam publishes about this library, which decides which orders exist
+  // at all. Its own memo rather than part of `view`: it is read by the chips
+  // and by the fallback below, neither of which builds rows.
+  const published = useMemo<PublishedFigures>(
+    () => ({
+      playtime: publishesPlaytime(games),
+      lastPlayed: publishesLastPlayed(games),
+    }),
+    [games],
+  );
+
+  // An order cannot outlive the chip that offers it. Choose "Most played",
+  // change to a profile whose playtime Steam withholds, and the chosen order
+  // is over a figure that is gone — the list would sort on all-equal keys with
+  // nothing on screen saying which order it is in. Derived rather than
+  // corrected in state: a reader who moves back to a profile that publishes
+  // the figure gets the order they chose, still chosen.
+  const sort = availableSorts(published).includes(chosenSort)
+    ? chosenSort
+    : "completed";
+
   // Named, now that both builders read it: a missing field fails to compile
   // rather than quietly satisfying one caller and not the other.
   const view = useMemo<LibraryView>(
@@ -169,7 +195,7 @@ export default function LibraryScreen() {
    */
   const chooseSort = useCallback(
     (next: LibrarySort) => {
-      setSort(next);
+      setChosenSort(next);
       repin(
         buildLibraryRows({ ...view, sort: next, frozenOrder: null }).map(
           (row) => row.appId,
@@ -239,7 +265,10 @@ export default function LibraryScreen() {
           give their place to what the ranking was ranked across — which is an
           assertion about a finished ranking, and waits for one. */}
       {tab === COMPLETION ? (
-        <SortChips active={sort} onSelect={chooseSort} />
+        <>
+          <SortChips active={sort} onSelect={chooseSort} published={published} />
+          <WithheldFiguresNote published={published} />
+        </>
       ) : (
         rarest.status === "ready" && (
           <Text style={styles.counted}>{rarest.countedLabel}</Text>
