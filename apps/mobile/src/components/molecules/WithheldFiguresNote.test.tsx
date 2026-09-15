@@ -1,11 +1,13 @@
 import { render, fireEvent } from "@testing-library/react-native";
-import { openURL } from "expo-linking";
 
+import { openExternalUrl } from "./open-external-url";
 import { WithheldFiguresNote, STEAM_PRIVACY_URL } from "./WithheldFiguresNote";
 
-jest.mock("expo-linking", () => ({ openURL: jest.fn(() => Promise.resolve(true)) }));
+jest.mock("./open-external-url", () => ({
+  openExternalUrl: jest.fn(() => Promise.resolve()),
+}));
 
-const openedUrl = openURL as jest.MockedFunction<typeof openURL>;
+const openedUrl = openExternalUrl as jest.MockedFunction<typeof openExternalUrl>;
 
 beforeEach(() => openedUrl.mockClear());
 
@@ -58,6 +60,26 @@ describe("WithheldFiguresNote", () => {
     fireEvent.press(getByRole("link"));
 
     expect(openedUrl).toHaveBeenCalledWith(STEAM_PRIVACY_URL);
+  });
+
+  /**
+   * The link is the way out for whoever can take it, so pressing it never
+   * withdraws it. Nothing better can be offered in its place, and the note
+   * stands whatever came of the attempt — which is why this asserts the link
+   * survives rather than asserting anything about the outcome. Whether opening
+   * can fail at all is `openExternalUrl`'s own contract, and pinned there: it
+   * resolves either way, so there is no rejection for this to handle.
+   */
+  it("keeps its link when it has already been pressed", () => {
+    const { getByRole } = render(
+      <WithheldFiguresNote published={{ playtime: false, lastPlayed: false }} />,
+    );
+
+    fireEvent.press(getByRole("link"));
+    fireEvent.press(getByRole("link"));
+
+    expect(getByRole("link")).toBeTruthy();
+    expect(openedUrl).toHaveBeenCalledTimes(2);
   });
 
   it("does not tell a reader it is their own profile", () => {
