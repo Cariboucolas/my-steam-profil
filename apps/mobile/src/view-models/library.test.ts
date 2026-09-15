@@ -6,6 +6,8 @@ import {
   formatDay,
   formatHours,
   formatUnlockHeadline,
+  publishesLastPlayed,
+  publishesPlaytime,
   type LibrarySort,
   type TallyByAppId,
 } from "./library";
@@ -55,6 +57,42 @@ const settled = (
   tallies: TallyByAppId = TALLIES,
   games: readonly GameDto[] = GAMES,
 ) => ({ games, tallies, sort, pending: new Set<number>(), frozenOrder: null });
+
+/**
+ * Steam governs playtime's visibility on its own, and the two figures do not
+ * fall together. On the public profile 76561197997989573, 82 of 101 games
+ * carry playtime and not one carries a last-played time; on 76561197985221153
+ * all 100 carry neither. An order can only be offered over a figure Steam
+ * publishes, so each is asked about separately.
+ */
+describe("what a library publishes about when it was played", () => {
+  const PLAYED = game(1, "Counter-Strike: Source", 8975, null);
+  const DATED = game(2, "Halls of Torment", 14286, "2025-03-06T10:00:00.000Z");
+  const WITHHELD = game(3, "Half-Life 2", 0, null);
+
+  it("publishes playtime when a game carries hours", () => {
+    expect(publishesPlaytime([WITHHELD, PLAYED])).toBe(true);
+  });
+
+  it("publishes no playtime when every game reads zero", () => {
+    expect(publishesPlaytime([WITHHELD, game(4, "Day of Defeat", 0, null)])).toBe(false);
+  });
+
+  it("publishes a last-played time when a game carries a date", () => {
+    expect(publishesLastPlayed([WITHHELD, DATED])).toBe(true);
+  });
+
+  /** The measured 76561197997989573 case: hours throughout, never a date. */
+  it("publishes no last-played time where only playtime is sent", () => {
+    expect(publishesLastPlayed([PLAYED])).toBe(false);
+    expect(publishesPlaytime([PLAYED])).toBe(true);
+  });
+
+  it("publishes neither for an empty library", () => {
+    expect(publishesPlaytime([])).toBe(false);
+    expect(publishesLastPlayed([])).toBe(false);
+  });
+});
 
 describe("formatHours", () => {
   it("groups thousands with a space, as the mock does", () => {

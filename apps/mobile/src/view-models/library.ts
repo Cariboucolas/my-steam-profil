@@ -5,6 +5,43 @@ export type TallyByAppId = Readonly<Record<number, GameTallyDto>>;
 
 export type LibrarySort = "completed" | "recent" | "playtime";
 
+/** What a library must publish for an order over it to be produced at all. */
+export type PublishedFigures = {
+  readonly playtime: boolean;
+  readonly lastPlayed: boolean;
+};
+
+/**
+ * Which figure each order reads. The default reads tallies, which are ours
+ * rather than Steam's, so it is always available.
+ */
+const SORT_READS: Readonly<Record<LibrarySort, keyof PublishedFigures | null>> = {
+  completed: null,
+  recent: "lastPlayed",
+  playtime: "playtime",
+};
+
+const EVERY_SORT = Object.keys(SORT_READS) as readonly LibrarySort[];
+
+/**
+ * The orders this library can actually be put in.
+ *
+ * An order over a figure Steam withholds is not a worse order, it is no order:
+ * every key is equal, so the sort is stable and hands back Steam's own
+ * arbitrary sequence. Measured on 76561197985221153, where both such orders
+ * produced the same untouched list under a chip that looked selected.
+ *
+ * Held here, beside the comparators that read the figures, so the chips that
+ * offer an order and the screen that falls back off one read a single answer.
+ */
+export const availableSorts = (
+  published: PublishedFigures,
+): readonly LibrarySort[] =>
+  EVERY_SORT.filter((sort) => {
+    const reads = SORT_READS[sort];
+    return reads === null || published[reads];
+  });
+
 export type GameRow = {
   readonly appId: number;
   readonly name: string;
@@ -176,18 +213,32 @@ const percentageOf = (tally: GameCompletionDto | undefined): number | null =>
   tally && tally.total > 0 ? Math.round(tally.percentage) : null;
 
 /**
- * Whether this library says anything at all about when or how long it was
- * played. Playtime has its own Steam privacy setting, separate from the one
- * over achievements, so a profile can withhold every hour and still publish
- * every unlock: on the public profile 76561197985221153 all 100 games carry
- * neither figure, and three of them hold unlocks dated 2010 to 2014.
+ * Whether Steam publishes how long this library was played.
  *
- * Asked of the library rather than of a game, because one game with nothing is
- * a game never launched while a library with nothing is Steam declining to
- * say — and only the library can tell those apart.
+ * Steam governs playtime's visibility on its own, separately from the
+ * Profile's and from the Achievements' — a public Profile can publish every
+ * Unlock and withhold every hour, and a withheld Playtime is absent rather
+ * than zero (see CONTEXT.md). Steam withholds across a whole library rather
+ * than one Game at a time, so which of the two a bare zero is can only be told
+ * from the library it sits in: that is why this is asked of the library and
+ * cannot be asked of a Game.
+ *
+ * Measured on 76561197985221153, whose 100 games carry no hours at all while
+ * three of them hold unlocks dated 2010 to 2014.
  */
-const saysWhenItWasPlayed = (games: readonly GameDto[]): boolean =>
-  games.some((game) => game.lastPlayedAt !== null || game.playtimeMinutes > 0);
+export const publishesPlaytime = (games: readonly GameDto[]): boolean =>
+  games.some((game) => game.playtimeMinutes > 0);
+
+/**
+ * Whether Steam publishes when this library was last played.
+ *
+ * Its own question, because the two figures do not fall together: on the
+ * public profile 76561197997989573, 82 of 101 games carry playtime and not one
+ * carries a last-played time. A library can therefore be ordered by hours and
+ * not by recency, which is why each figure is asked about separately.
+ */
+export const publishesLastPlayed = (games: readonly GameDto[]): boolean =>
+  games.some((game) => game.lastPlayedAt !== null);
 
 /**
  * When the player last opened it, where that can be said at all.
@@ -196,12 +247,15 @@ const saysWhenItWasPlayed = (games: readonly GameDto[]): boolean =>
  * 76561197997989573 not one of its 99 games carries one, while 80 carry
  * playtime. "never played" beside 149 hours is simply untrue, so a game with
  * playtime and no date says nothing about when rather than something false.
- * Only a game with neither, in a library where others have one, was really
- * never opened.
+ *
+ * The claim rests on playtime being published: only there does a zero mean a
+ * Game that was never launched. Where Steam withholds the hours, a zero is
+ * absent rather than measured and says nothing about whether the game was ever
+ * opened.
  */
-const whenFor = (game: GameDto, libraryAnswers: boolean): string | null => {
+const whenFor = (game: GameDto, playtimeIsPublished: boolean): string | null => {
   if (game.lastPlayedAt) return formatDay(game.lastPlayedAt);
-  if (!libraryAnswers) return null;
+  if (!playtimeIsPublished) return null;
   return game.playtimeMinutes === 0 ? "never played" : null;
 };
 
@@ -211,10 +265,10 @@ const joined = (parts: readonly (string | null)[]): string =>
 const metaFor = (
   game: GameDto,
   tally: GameCompletionDto | undefined,
-  libraryAnswers: boolean,
+  playtimeIsPublished: boolean,
 ): string => {
   const played = formatHours(game.playtimeMinutes);
-  const when = whenFor(game, libraryAnswers);
+  const when = whenFor(game, playtimeIsPublished);
 
   if (!tally) {
     return joined([played, when]);
@@ -302,7 +356,7 @@ export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
     ? orderedBy(games, frozenOrder)
     : [...games].sort(comparatorFor(sort, tallies));
 
-  const libraryAnswers = saysWhenItWasPlayed(games);
+  const playtimeIsPublished = publishesPlaytime(games);
 
   return ordered.map((game) => {
     const tally = tallies[game.appId]?.completion;
@@ -312,7 +366,7 @@ export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
       name: game.name,
       percentage,
       rateLabel: percentage === null ? "—" : `${percentage}%`,
-      meta: metaFor(game, tally, libraryAnswers),
+      meta: metaFor(game, tally, playtimeIsPublished),
       pending: pending.has(game.appId) && tally === undefined,
     };
   });
