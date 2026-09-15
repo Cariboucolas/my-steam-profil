@@ -56,6 +56,19 @@ describe("toGameDto", () => {
     lastPlayed: new Date(LAST_PLAYED_SECONDS * SECONDS_TO_MS),
   };
 
+  /**
+   * A playtime Steam declines to report crosses the wire as absent, the way a
+   * Rarity Steam publishes for nobody and an Unlock date Steam will not give
+   * already do (CONTEXT.md). A zero here would call the game unplayed on every
+   * screen that reads it.
+   */
+  it("writes a withheld playtime as absent rather than as a zero", () => {
+    const withheld: Game = { ...game, playtime: Playtime.absent() };
+
+    expect(toGameDto(withheld).playtimeMinutes).toBeNull();
+    expect(toGameDto(withheld).playtimeLabel).toBeNull();
+  });
+
   it("exposes both raw minutes and a human label for playtime", () => {
     expect(toGameDto(game)).toEqual({
       appId: 440,

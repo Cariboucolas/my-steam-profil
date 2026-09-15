@@ -53,15 +53,50 @@ const ICON_BASE =
 const lastPlayedFromSteam = (seconds: number | undefined): Date | null =>
   seconds ? new Date(seconds * SECONDS_TO_MS) : null;
 
+/**
+ * Whether Steam published this library's hours at all.
+ *
+ * Playtime has its own Steam privacy setting, separate from the one over
+ * achievements, so a public profile can publish every unlock and withhold
+ * every hour. Where it withholds, every game comes back at `playtime_forever:
+ * 0`, which is the same thing Steam sends for a game that was really never
+ * launched — so the two can only be told apart by looking at the library
+ * whole, and one that carries no hours anywhere is Steam refusing to say
+ * rather than a hundred games nobody opened.
+ *
+ * Measured on the public profile 76561197985221153, whose 100 games carry no
+ * hours at all while three of them hold unlocks dated 2010 to 2014.
+ */
+const publishesPlaytime = (
+  ownedGames: SteamOwnedGamesResponse["response"]["games"] = [],
+): boolean => ownedGames.some((ownedGame) => ownedGame.playtime_forever > 0);
+
+/**
+ * The library, with each Playtime already known to be measured or absent.
+ *
+ * This is the only place that holds the library whole, and the distinction can
+ * be drawn nowhere else (CONTEXT.md, Playtime). Drawing it here is what lets
+ * the game screen, which holds one Game, read an absence it could never have
+ * worked out for itself.
+ */
 export const mapGames = (raw: SteamOwnedGamesResponse): Game[] => {
   const ownedGames = raw.response.games ?? [];
-  return ownedGames.map((ownedGame) => ({
-    appId: ownedGame.appid,
-    name: ownedGame.name,
-    playtime: Playtime.fromMinutes(ownedGame.playtime_forever),
-    iconUrl: `${ICON_BASE}/${ownedGame.appid}/${ownedGame.img_icon_url}.jpg`,
-    lastPlayed: lastPlayedFromSteam(ownedGame.rtime_last_played),
-  }));
+  const published = publishesPlaytime(ownedGames);
+
+  return ownedGames.map((ownedGame) => {
+    // Built whether or not it survives: a negative playtime breaks a domain
+    // invariant and must still throw (ADR-0002), and a figure discarded
+    // unvalidated would let impossible data pass as a withheld one.
+    const measured = Playtime.fromMinutes(ownedGame.playtime_forever);
+
+    return {
+      appId: ownedGame.appid,
+      name: ownedGame.name,
+      playtime: published ? measured : Playtime.absent(),
+      iconUrl: `${ICON_BASE}/${ownedGame.appid}/${ownedGame.img_icon_url}.jpg`,
+      lastPlayed: lastPlayedFromSteam(ownedGame.rtime_last_played),
+    };
+  });
 };
 
 export interface GameProgress {

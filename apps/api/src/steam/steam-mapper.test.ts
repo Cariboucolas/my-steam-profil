@@ -74,6 +74,43 @@ describe("mapGames", () => {
     expect(mapGames({ response: {} })).toEqual([]);
   });
 
+  /**
+   * Steam withholds playtime across a whole library rather than one game at a
+   * time, so which of the two a bare zero is can only be told from the library
+   * it sits in (CONTEXT.md, Playtime). This is the only place that holds the
+   * library whole, so this is where the two are told apart.
+   *
+   * Measured on the public profile 76561197985221153, whose 100 games carry no
+   * hours at all while three of them hold unlocks dated 2010 to 2014.
+   */
+  it("reads a library with no hours anywhere as a withheld figure", () => {
+    const games = mapGames({
+      response: {
+        games: [
+          { appid: 240, name: "Counter-Strike: Source", playtime_forever: 0, img_icon_url: "a" },
+          { appid: 220, name: "Half-Life 2", playtime_forever: 0, img_icon_url: "b" },
+        ],
+      },
+    });
+
+    expect(games[0]?.playtime.minutes).toBeNull();
+    expect(games[1]?.playtime.minutes).toBeNull();
+  });
+
+  it("keeps a zero measured where the library publishes hours elsewhere", () => {
+    const games = mapGames({
+      response: {
+        games: [
+          { appid: 440, name: "Team Fortress 2", playtime_forever: 405, img_icon_url: "a" },
+          { appid: 978520, name: "Legend of Keepers", playtime_forever: 0, img_icon_url: "b" },
+        ],
+      },
+    });
+
+    expect(games[0]?.playtime.minutes).toBe(405);
+    expect(games[1]?.playtime.minutes).toBe(0);
+  });
+
   it("maps the last played timestamp, which Steam sends in seconds", () => {
     const games = mapGames({
       response: {

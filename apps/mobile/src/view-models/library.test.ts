@@ -12,16 +12,17 @@ import {
   type TallyByAppId,
 } from "./library";
 
+/** Null minutes is a playtime Steam withheld, not a game never launched. */
 const game = (
   appId: number,
   name: string,
-  playtimeMinutes: number,
+  playtimeMinutes: number | null,
   lastPlayedAt: string | null,
 ): GameDto => ({
   appId,
   name,
   playtimeMinutes,
-  playtimeLabel: `${playtimeMinutes} min`,
+  playtimeLabel: playtimeMinutes === null ? null : `${playtimeMinutes} min`,
   iconUrl: `https://icon/${appId}.jpg`,
   lastPlayedAt,
 });
@@ -45,6 +46,16 @@ const CIV5 = game(8930, "Sid Meier's Civilization V", 38496, "2017-08-24T10:00:0
 const KEEPERS = game(978520, "Legend of Keepers", 0, null);
 
 const GAMES = [SOULSTONE, HALLS, CIV5, KEEPERS] as const;
+
+/**
+ * The measured 76561197985221153 case: Steam withholds the hours across the
+ * whole library, so every game arrives with an absent playtime rather than a
+ * zero, and three of them still answer with unlocks dated 2010 to 2014.
+ */
+const WITHHELD_LIBRARY: readonly GameDto[] = [
+  game(240, "Counter-Strike: Source", null, null),
+  game(220, "Half-Life 2", null, null),
+];
 const TALLIES: TallyByAppId = {
   2066020: tally(353, 483),
   2218750: tally(500, 500),
@@ -68,14 +79,24 @@ const settled = (
 describe("what a library publishes about when it was played", () => {
   const PLAYED = game(1, "Counter-Strike: Source", 8975, null);
   const DATED = game(2, "Halls of Torment", 14286, "2025-03-06T10:00:00.000Z");
-  const WITHHELD = game(3, "Half-Life 2", 0, null);
+  const WITHHELD = game(3, "Half-Life 2", null, null);
 
   it("publishes playtime when a game carries hours", () => {
     expect(publishesPlaytime([WITHHELD, PLAYED])).toBe(true);
   });
 
-  it("publishes no playtime when every game reads zero", () => {
-    expect(publishesPlaytime([WITHHELD, game(4, "Day of Defeat", 0, null)])).toBe(false);
+  it("publishes no playtime when no game carries a figure at all", () => {
+    expect(publishesPlaytime([WITHHELD, game(4, "Day of Defeat", null, null)])).toBe(
+      false,
+    );
+  });
+
+  /**
+   * A measured zero is a game that was never launched, which is a library
+   * publishing its hours and saying they are none — not a library withholding.
+   */
+  it("publishes playtime for a game measured at zero minutes", () => {
+    expect(publishesPlaytime([game(5, "Legend of Keepers", 0, null)])).toBe(true);
   });
 
   it("publishes a last-played time when a game carries a date", () => {
@@ -231,15 +252,31 @@ describe("buildLibraryRows", () => {
    * 2014. Reading that library game by game calls all 100 never played.
    */
   it("says nothing about when, rather than never, where a whole library is silent", () => {
-    const withheld = [
-      game(240, "Counter-Strike: Source", 0, null),
-      game(220, "Half-Life 2", 0, null),
-    ];
     const rows = buildLibraryRows(
-      settled("completed", { 240: tally(57, 147) }, withheld),
+      settled("completed", { 240: tally(57, 147) }, WITHHELD_LIBRARY),
     );
 
     expect(rows.every((row) => !row.meta.includes("never"))).toBe(true);
+  });
+
+  /**
+   * Nor does it write the hours as zero. `0 min` beside 57 of 147 unlocks
+   * dated 2010 to 2014 is a figure the app invented; the honest line has no
+   * hours on it at all (CONTEXT.md, Playtime).
+   */
+  it("writes no hours at all where Steam withheld them", () => {
+    const rows = buildLibraryRows(
+      settled("completed", { 240: tally(57, 147) }, WITHHELD_LIBRARY),
+    );
+
+    expect(rows[0]?.meta).toBe("57/147");
+    expect(rows.every((row) => !row.meta.includes("min"))).toBe(true);
+  });
+
+  it("still writes the hours of a game measured at zero minutes", () => {
+    const rows = buildLibraryRows(settled("completed", {}, [KEEPERS]));
+
+    expect(rows[0]?.meta).toBe("0 min · never played");
   });
 
   it("leaves the games it was given untouched", () => {
@@ -417,5 +454,15 @@ describe("buildLibrarySummary", () => {
 
   it("totals playtime over the whole library, not just loaded games", () => {
     expect(summary.playtimeLabel).toBe(formatHours(4977 + 14286 + 38496 + 0));
+  });
+
+  /**
+   * A sum of absent playtimes is absent, not `0 min`. Same rule as a row's,
+   * one level up: the card would otherwise headline a figure Steam never gave.
+   */
+  it("has no total at all where Steam withheld the hours", () => {
+    const withheld = buildLibrarySummary(settled("completed", {}, WITHHELD_LIBRARY));
+
+    expect(withheld.playtimeLabel).toBe("—");
   });
 });
