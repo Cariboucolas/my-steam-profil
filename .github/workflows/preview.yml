@@ -1,0 +1,155 @@
+name: Preview
+
+# Every pull request, so a change can be looked at before it is the live site.
+# Reviewing a UI change by reading a diff is reviewing the diff, not the change.
+on: pull_request
+
+# One preview per pull request, and the one in flight IS cancelled — unlike a
+# deployment onto main, where half a rollout is worse than a late one. Here the
+# superseded build is a preview of a commit nobody will look at again.
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+# Checkout reads; the comment writes to the pull request and nothing else. No
+# `contents: write` anywhere: a preview must not be able to move the repository.
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  web:
+    name: web
+    # Same-repository pull requests only. A fork's pull request gets no secrets,
+    # so it could never deploy anyway — but its branch name reaches the deploy
+    # command below, and a fork's branch name is written by whoever opened the
+    # pull request. Refusing the event outright is the only version of this with
+    # no attacker-controlled text in it at all.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      # The branch name ends up inside a command string, so it is checked
+      # against what a branch name may contain before it gets there rather than
+      # trusted. Git allows `;` and `&` in a ref, and the job above is the only
+      # reason this one is not reachable by someone who picks the name — two
+      # guards, because either alone would be the whole of the protection.
+      #
+      # Through the environment, never interpolated into the script: `${{ }}` is
+      # substituted before the shell reads the line, so a quote in the value
+      # would end the string rather than sit inside it.
+      - name: Check the branch name before it reaches a command
+        id: branch
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+
+          case "$HEAD_REF" in
+            *[!A-Za-z0-9._/-]* | "" | -*)
+              echo "::error::Refusing to deploy a preview for branch '$HEAD_REF'"
+              exit 1
+              ;;
+          esac
+
+          printf 'name=%s\n' "$HEAD_REF" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Same guard as the deployment: the address is baked into the bundle, and
+      # an empty one silently falls back to http://localhost:3000 — a preview
+      # that looks right and answers nobody is worse than a failed build.
+      - name: Refuse to build a bundle that points at localhost
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          test -n "$API_URL" || {
+            echo "::error::API_URL is not set. Run: gh variable set API_URL --body <worker url>"
+            exit 1
+          }
+
+      # The preview points at the API already running in production, and no API
+      # is deployed here. That is deliberate rather than a shortcut: a preview
+      # of a change to the app needs the backend the app will actually meet, and
+      # standing up a second Worker would mean a pull request could run
+      # `wrangler secret put` — a preview has no business holding the Steam key.
+      #
+      # A pull request that changes the API therefore gets a preview of the app
+      # against the OLD backend. Worth knowing before trusting one.
+      - name: Build the web bundle
+        run: pnpm build:web
+        env:
+          EXPO_PUBLIC_API_URL: ${{ vars.API_URL }}
+          # Emptied on purpose, as in the deployment: Metro substitutes this
+          # wherever the environment carries it, and a runner that inherited one
+          # would bake a personal SteamID64 into a public bundle.
+          EXPO_PUBLIC_STEAM_ID: ""
+
+      # --branch is what makes this a preview rather than the live site: Pages
+      # treats anything other than the production branch as one, and gives it a
+      # URL of its own. workingDirectory for the same reason as the deployment —
+      # wrangler is installed in the app, not at the workspace root.
+      - name: Deploy a preview to Pages
+        id: preview
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/mobile
+          packageManager: pnpm
+          command: >-
+            pages deploy dist
+            --project-name=steam-achievements
+            --branch=${{ steps.branch.outputs.name }}
+
+      # Read from the action rather than built from the branch name. Pages
+      # slugifies a branch and truncates it, so a name like
+      # `feat/library-offers-only-the-orders-steam-publishes` does not map to a
+      # URL anyone can predict — and a link that 404s is worse than no link.
+      #
+      # The alias is the per-branch address, stable across pushes, which is the
+      # one worth keeping in a comment; the deployment URL below it is pinned to
+      # this commit, for going back to what was reviewed. The alias is empty on
+      # a production-branch deploy, so the commit URL is the fallback.
+      - name: Post the preview where the reviewer will read it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          ALIAS: ${{ steps.preview.outputs.pages-deployment-alias-url }}
+          COMMIT_URL: ${{ steps.preview.outputs.deployment-url }}
+          SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          # Both empty means the action stopped reporting what it reports
+          # today. Better a red job saying so than a comment with a link to
+          # nowhere, which a reviewer would read as the preview being broken.
+          test -n "${ALIAS:-}${COMMIT_URL:-}" || {
+            echo "::error::wrangler-action returned no deployment URL"
+            exit 1
+          }
+
+          BODY="$RUNNER_TEMP/preview.md"
+          {
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Preview | ${ALIAS:-$COMMIT_URL} |"
+            echo "| This commit | $COMMIT_URL |"
+            echo
+            echo "Built against the production API. \`${SHA::7}\`."
+          } > "$BODY"
+
+          # Edited rather than added to: a pull request pushed to six times
+          # should carry one preview link, not six, and the last one is the only
+          # one worth reading. --create-if-none covers the first push.
+          gh pr comment "$PR" --body-file "$BODY" --edit-last --create-if-none
