@@ -1,6 +1,6 @@
-import { openURL } from "expo-linking";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { openExternalUrl } from "./open-external-url";
 import type { PublishedFigures } from "../../view-models/library";
 import { colors, fonts, spacing } from "../../theme/tokens";
 
@@ -48,10 +48,13 @@ export function WithheldFiguresNote({ published }: Props) {
       <Text style={styles.title}>{`Steam does not publish ${figure}`}</Text>
       <Pressable
         accessibilityRole="link"
-        // A link that will not open leaves the note standing and says what is
-        // missing, which is the part that matters. There is nothing else to
-        // offer a reader here, and a raised error would take down the library.
-        onPress={() => void openURL(STEAM_PRIVACY_URL).catch(() => {})}
+        // The link is never withdrawn — not on a platform that opens it
+        // differently, and not because an attempt failed. It is the way out for
+        // whoever can take it, nothing better can be offered in its place, and
+        // the note standing with what is missing is the part that matters.
+        // `openExternalUrl` resolves either way, so a failure changes nothing
+        // here and the link stays pressable.
+        onPress={() => void openExternalUrl(STEAM_PRIVACY_URL)}
       >
         <Text style={styles.link}>if it is yours, open Steam's privacy settings</Text>
       </Pressable>

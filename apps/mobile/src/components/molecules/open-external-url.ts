@@ -1,0 +1,43 @@
+import { openURL } from "expo-linking";
+import { openBrowserAsync } from "expo-web-browser";
+import { Platform } from "react-native";
+
+/**
+ * Opens a page that is not ours, the way each platform should.
+ *
+ * On a device, `Linking.openURL` fires a system intent: it hands the reader to
+ * whichever browser app they have, and coming back is a task switch.
+ * `openBrowserAsync` is a Chrome Custom Tab on Android and a modal
+ * `SFSafariViewController` on iOS, so the reader stays in the app and returns
+ * with one gesture. The Expo v57 documentation names this exact case — "if you
+ * just want to open a webpage (such as your app privacy policy), then use
+ * `WebBrowser.openBrowserAsync`".
+ *
+ * On the web the reverse holds. `openURL` there is `window.open(url, '_blank')`
+ * — a new tab, which is what a link does and which leaves the app where it was.
+ * `openBrowserAsync` would open a popup carrying window features, and a browser
+ * blocks one of those far more readily than a `_blank` from a gesture; that is
+ * what `ERR_WEB_BROWSER_BLOCKED` exists for, and it is web-only.
+ *
+ * Neither is chosen at module scope: read at call time, so a test can say which
+ * platform it is asking about.
+ *
+ * A browser that will not open is not recoverable here, and every caller draws
+ * something whose point is what it says rather than where it leads. So this
+ * resolves either way and the caller keeps its link — nothing is gained by
+ * taking a screen down over a page that did not open. One platform this
+ * genuinely cannot serve is the app inside another app's webview, where the
+ * popup policy belongs to the host.
+ */
+export const openExternalUrl = async (url: string): Promise<void> => {
+  try {
+    if (Platform.OS === "web") {
+      await openURL(url);
+      return;
+    }
+    await openBrowserAsync(url);
+  } catch {
+    // Deliberately not rethrown — see above. There is nothing to tell a reader
+    // that the note they are already looking at does not say better.
+  }
+};
