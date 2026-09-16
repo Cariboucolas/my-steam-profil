@@ -89,14 +89,6 @@ export type LibrarySummary = {
   readonly playtimeLabel: string;
 };
 
-/**
- * What a figure that is not there is drawn as. Shared by the rate and by the
- * playtime total, which are absent for different reasons and are absent the
- * same way: a zero would read as failure — 0 %, `0 min` — rather than as
- * nothing having been said.
- */
-const ABSENT = "—";
-
 const MINUTES_PER_HOUR = 60;
 const PERFECT = 100;
 /**
@@ -265,9 +257,25 @@ export const publishesLastPlayed = (games: readonly GameDto[]): boolean =>
  * played` and the game screen as `last played never`, two wordings of one
  * rule, and a rule that drifted between them would call the same game two
  * different things on two screens.
+ *
+ * The date is asked about as well as the hours, so the answer holds on its own
+ * wherever it is called. Steam can date a launch it recorded no minutes for,
+ * and calling that game never launched would contradict the date beside it.
  */
 export const neverLaunched = (game: GameDto): boolean =>
   game.lastPlayedAt === null && game.playtimeMinutes === 0;
+
+/**
+ * The hours over a whole library, or null where Steam publishes none of them.
+ *
+ * A sum of absent playtimes is absent, not `0 min`: the same rule a row holds,
+ * one level up. Asked before the sum rather than after it, so no total is ever
+ * built out of figures that were never given.
+ */
+const totalMinutes = (games: readonly GameDto[]): number | null =>
+  publishesPlaytime(games)
+    ? games.reduce((sum, game) => sum + (game.playtimeMinutes ?? 0), 0)
+    : null;
 
 /**
  * When the player last opened it, where that can be said at all.
@@ -354,8 +362,10 @@ const comparatorFor = (
   tallies: TallyByAppId,
 ): ((a: GameDto, b: GameDto) => number) => {
   if (sort === "playtime") {
-    // Only offered where the library publishes its hours, so the fallback is
-    // unreachable rather than a stand-in figure — see `availableSorts`.
+    // Where Steam withheld the hours every key is equal, so the sort is stable
+    // and hands the library back in the order it arrived — no invented figure
+    // ranks anything. `availableSorts` is what keeps that order from being
+    // offered; reaching it directly gets the honest degenerate answer.
     return (a, b) => (b.playtimeMinutes ?? 0) - (a.playtimeMinutes ?? 0);
   }
   if (sort === "recent") {
@@ -395,7 +405,7 @@ export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
       appId: game.appId,
       name: game.name,
       percentage,
-      rateLabel: percentage === null ? ABSENT : `${percentage}%`,
+      rateLabel: percentage === null ? "—" : `${percentage}%`,
       meta: metaFor(game, tally),
       pending: pending.has(game.appId) && tally === undefined,
     };
@@ -417,7 +427,7 @@ export const buildLibrarySummary = (view: LibraryView): LibrarySummary => {
 
   const unlocked = loaded.reduce((sum, e) => sum + e.unlocked, 0);
   const total = loaded.reduce((sum, e) => sum + e.total, 0);
-  const minutes = games.reduce((sum, game) => sum + (game.playtimeMinutes ?? 0), 0);
+  const minutes = totalMinutes(games);
   const rate = total === 0 ? 0 : Math.round((unlocked / total) * PERFECT);
 
   return {
@@ -429,6 +439,6 @@ export const buildLibrarySummary = (view: LibraryView): LibrarySummary => {
     // left out were never launched, so they are excluded rather than missing.
     fraction: `${group(unlocked)} / ${group(total)} across ${gamesCounted(loaded.length)}`,
     perfectGames: loaded.filter((e) => e.total > 0 && e.unlocked === e.total).length,
-    playtimeLabel: publishesPlaytime(games) ? formatHours(minutes) : ABSENT,
+    playtimeLabel: minutes === null ? "—" : formatHours(minutes),
   };
 };
