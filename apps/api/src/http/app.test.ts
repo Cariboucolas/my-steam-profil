@@ -253,6 +253,54 @@ describe("GET /api/profile/:steamId/games", () => {
     ]);
   });
 
+  /**
+   * The seam this route exists to close. Steam sends `playtime_forever: 0` on
+   * every game of a library whose hours it withholds — the same thing it sends
+   * for a game that was really never launched — and only something holding the
+   * library whole can tell the two apart (CONTEXT.md, Playtime). That reading
+   * happens here, once, so a client holding a single Game can still know which
+   * of the two it has.
+   *
+   * Measured on the public profile 76561197985221153: 100 games, no hours
+   * anywhere, and Counter-Strike: Source still answering 57 of 147.
+   */
+  it("answers with an absent playtime, not a zero, for a library Steam withholds", async () => {
+    const withheld = {
+      response: {
+        game_count: 2,
+        games: [
+          { appid: 240, name: "Counter-Strike: Source", playtime_forever: 0, img_icon_url: "abc123" },
+          { appid: 220, name: "Half-Life 2", playtime_forever: 0, img_icon_url: "def456" },
+        ],
+      },
+    };
+    const app = appReaching(steamAnswering({ ownedGames: [withheld] }));
+
+    const response = await app.request(`/api/profile/${STEAM_ID}/games`);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([
+      {
+        appId: 240,
+        name: "Counter-Strike: Source",
+        playtimeMinutes: null,
+        playtimeLabel: null,
+        iconUrl:
+          "https://media.steampowered.com/steamcommunity/public/images/apps/240/abc123.jpg",
+        lastPlayedAt: null,
+      },
+      {
+        appId: 220,
+        name: "Half-Life 2",
+        playtimeMinutes: null,
+        playtimeLabel: null,
+        iconUrl:
+          "https://media.steampowered.com/steamcommunity/public/images/apps/220/def456.jpg",
+        lastPlayedAt: null,
+      },
+    ]);
+  });
+
   it("answers with an empty library rather than an error when nothing is owned", async () => {
     const app = appReaching(steamAnswering({ ownedGames: [{ response: {} }] }));
 

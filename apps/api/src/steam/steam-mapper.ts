@@ -66,8 +66,13 @@ const lastPlayedFromSteam = (seconds: number | undefined): Date | null =>
  *
  * Measured on the public profile 76561197985221153, whose 100 games carry no
  * hours at all while three of them hold unlocks dated 2010 to 2014.
+ *
+ * Named apart from the client's `publishesPlaytime`, which asks a different
+ * question of a different thing: this derives the fact from Steam's raw
+ * zeroes, that one reads the answer already carried by a mapped Game. One name
+ * over two rules would invite the second to be re-derived from the first.
  */
-const publishesPlaytime = (
+const steamPublishedHours = (
   ownedGames: SteamOwnedGamesResponse["response"]["games"] = [],
 ): boolean => ownedGames.some((ownedGame) => ownedGame.playtime_forever > 0);
 
@@ -81,7 +86,7 @@ const publishesPlaytime = (
  */
 export const mapGames = (raw: SteamOwnedGamesResponse): Game[] => {
   const ownedGames = raw.response.games ?? [];
-  const published = publishesPlaytime(ownedGames);
+  const published = steamPublishedHours(ownedGames);
 
   return ownedGames.map((ownedGame) => {
     // Built whether or not it survives: a negative playtime breaks a domain
