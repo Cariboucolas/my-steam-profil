@@ -64,7 +64,7 @@ describe("mapGames", () => {
     expect(games).toHaveLength(1);
     expect(games[0]?.appId).toBe(440);
     expect(games[0]?.name).toBe("Team Fortress 2");
-    expect(games[0]?.playtime.format()).toBe("6 h 45");
+    expect(games[0]?.playtime.minutes).toBe(405);
     expect(games[0]?.iconUrl).toBe(
       "https://media.steampowered.com/steamcommunity/public/images/apps/440/abc123.jpg",
     );

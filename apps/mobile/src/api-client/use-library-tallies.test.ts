@@ -16,7 +16,6 @@ const game = (
   appId,
   name: `Game ${appId}`,
   playtimeMinutes,
-  playtimeLabel: playtimeMinutes === null ? null : `${playtimeMinutes} min`,
   iconUrl: `https://icon/${appId}.jpg`,
   lastPlayedAt,
 });

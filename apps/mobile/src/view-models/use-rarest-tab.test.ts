@@ -17,7 +17,6 @@ const GAMES: readonly GameDto[] = [1, 2, 3].map((appId) => ({
   appId,
   name: `Game ${appId}`,
   playtimeMinutes: 60,
-  playtimeLabel: "1 h",
   iconUrl: `https://example.test/${appId}.jpg`,
   lastPlayedAt: null,
 }));
@@ -154,7 +153,6 @@ const overOneWave = () => {
     appId,
     name: `Game ${appId}`,
     playtimeMinutes: 60,
-    playtimeLabel: "1 h",
     iconUrl: `https://example.test/${appId}.jpg`,
     lastPlayedAt: null,
   }));

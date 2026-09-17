@@ -45,7 +45,6 @@ const games: readonly GameDto[] = [
     appId: 2066020,
     name: "Soulstone Survivors",
     playtimeMinutes: 4977,
-    playtimeLabel: "83 h 57",
     iconUrl: "https://icon/2066020.jpg",
     lastPlayedAt: "2026-06-25T12:16:14.000Z",
   },
@@ -80,7 +79,6 @@ const shelf: readonly GameDto[] = [
     appId: 440,
     name: "Team Fortress 2",
     playtimeMinutes: 405,
-    playtimeLabel: "6 h 45",
     iconUrl: "https://icon/440.jpg",
     lastPlayedAt: "2026-08-01T09:00:00.000Z",
   },
@@ -100,7 +98,6 @@ const shelved = (): ApiClient =>
 const withheldShelf: readonly GameDto[] = shelf.map((game) => ({
   ...game,
   playtimeMinutes: null,
-  playtimeLabel: null,
   lastPlayedAt: null,
 }));
 
