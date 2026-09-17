@@ -16,9 +16,11 @@
  * in, so nothing here decides it: a Playtime is handed whichever it already
  * is. `mapGames` is where the two are told apart, because it is the only place
  * that holds a library whole.
+ *
+ * It holds the figure and nothing else. What the figure looks like to a reader
+ * belongs to whoever draws it (ADR-0015), so the writing lives below, in a
+ * free function any process can call.
  */
-const MINUTES_PER_HOUR = 60;
-
 export class Playtime {
   private constructor(
     /** Minutes played, or null where Steam declines to report the figure. */
@@ -36,16 +38,9 @@ export class Playtime {
   static absent(): Playtime {
     return new Playtime(null);
   }
-
-  get hours(): number | null {
-    return this.minutes === null ? null : this.minutes / MINUTES_PER_HOUR;
-  }
-
-  /** The figure as a reader should see it, or null when there is no figure. */
-  format(): string | null {
-    return this.minutes === null ? null : formatPlaytimeExact(this.minutes);
-  }
 }
+
+const MINUTES_PER_HOUR = 60;
 
 /**
  * Minutes as a reader sees them, to the minute: `6 h 45`, `2 h`, `45 min`.

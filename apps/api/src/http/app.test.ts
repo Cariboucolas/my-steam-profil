@@ -236,7 +236,6 @@ describe("GET /api/profile/:steamId/games", () => {
         appId: 2066020,
         name: "Soulstone Survivors",
         playtimeMinutes: 4977,
-        playtimeLabel: "82 h 57",
         iconUrl:
           "https://media.steampowered.com/steamcommunity/public/images/apps/2066020/abc123.jpg",
         lastPlayedAt: new Date(LAST_PLAYED_SECONDS * SECONDS_TO_MS).toISOString(),
@@ -245,7 +244,6 @@ describe("GET /api/profile/:steamId/games", () => {
         appId: 978520,
         name: "Legend of Keepers",
         playtimeMinutes: 0,
-        playtimeLabel: "0 min",
         iconUrl:
           "https://media.steampowered.com/steamcommunity/public/images/apps/978520/def456.jpg",
         lastPlayedAt: null,
@@ -284,7 +282,6 @@ describe("GET /api/profile/:steamId/games", () => {
         appId: 240,
         name: "Counter-Strike: Source",
         playtimeMinutes: null,
-        playtimeLabel: null,
         iconUrl:
           "https://media.steampowered.com/steamcommunity/public/images/apps/240/abc123.jpg",
         lastPlayedAt: null,
@@ -293,7 +290,6 @@ describe("GET /api/profile/:steamId/games", () => {
         appId: 220,
         name: "Half-Life 2",
         playtimeMinutes: null,
-        playtimeLabel: null,
         iconUrl:
           "https://media.steampowered.com/steamcommunity/public/images/apps/220/def456.jpg",
         lastPlayedAt: null,

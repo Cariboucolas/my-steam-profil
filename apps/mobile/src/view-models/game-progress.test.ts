@@ -45,7 +45,6 @@ const GAME: GameDto = {
   appId: 2066020,
   name: "Soulstone Survivors",
   playtimeMinutes: 4977,
-  playtimeLabel: "82 h 57",
   iconUrl: "https://icon/2066020.jpg",
   lastPlayedAt: "2026-06-25T12:16:14.000Z",
 };
@@ -178,7 +177,7 @@ describe("buildGameSummary", () => {
 
   it("still says never for a game with no playtime either", () => {
     const untouched = buildGameSummary(
-      { ...GAME, lastPlayedAt: null, playtimeMinutes: 0, playtimeLabel: "0 min" },
+      { ...GAME, lastPlayedAt: null, playtimeMinutes: 0,  },
       null,
     );
 
@@ -197,7 +196,7 @@ describe("buildGameSummary", () => {
    */
   it("says nothing about playtime where Steam withheld the hours", () => {
     const withheld = buildGameSummary(
-      { ...GAME, lastPlayedAt: null, playtimeMinutes: null, playtimeLabel: null },
+      { ...GAME, lastPlayedAt: null, playtimeMinutes: null,  },
       PROGRESS,
     );
 
@@ -206,7 +205,7 @@ describe("buildGameSummary", () => {
 
   it("still says when it was last played where only the hours are withheld", () => {
     const withheld = buildGameSummary(
-      { ...GAME, playtimeMinutes: null, playtimeLabel: null },
+      { ...GAME, playtimeMinutes: null,  },
       PROGRESS,
     );
 
@@ -225,7 +224,6 @@ describe("gameInLibrary", () => {
     appId,
     name: `Game ${appId}`,
     playtimeMinutes: 10,
-    playtimeLabel: "10 min",
     iconUrl: `https://icon/${appId}.jpg`,
     lastPlayedAt: null,
   });

@@ -66,15 +66,17 @@ describe("toGameDto", () => {
     const withheld: Game = { ...game, playtime: Playtime.absent() };
 
     expect(toGameDto(withheld).playtimeMinutes).toBeNull();
-    expect(toGameDto(withheld).playtimeLabel).toBeNull();
   });
 
-  it("exposes both raw minutes and a human label for playtime", () => {
+  /**
+   * Minutes and no rendering of them: how wide a figure is, and how much of it
+   * survives rounding, are the drawing screen's questions (ADR-0015).
+   */
+  it("carries the figure and nothing that looks like it", () => {
     expect(toGameDto(game)).toEqual({
       appId: 440,
       name: "Team Fortress 2",
       playtimeMinutes: 405,
-      playtimeLabel: "6 h 45",
       iconUrl: "https://icon/440.jpg",
       lastPlayedAt: new Date(LAST_PLAYED_SECONDS * SECONDS_TO_MS).toISOString(),
     });

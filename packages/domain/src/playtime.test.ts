@@ -2,17 +2,8 @@ import { describe, it, expect } from "vitest";
 import { formatPlaytimeExact, Playtime } from "./playtime";
 
 describe("Playtime", () => {
-  it("exposes minutes and hours", () => {
-    const p = Playtime.fromMinutes(405);
-    expect(p.minutes).toBe(405);
-    expect(p.hours).toBeCloseTo(6.75, 2);
-  });
-
-  it("formats as hours and minutes", () => {
-    expect(Playtime.fromMinutes(405).format()).toBe("6 h 45");
-    expect(Playtime.fromMinutes(120).format()).toBe("2 h");
-    expect(Playtime.fromMinutes(45).format()).toBe("45 min");
-    expect(Playtime.fromMinutes(0).format()).toBe("0 min");
+  it("exposes the minutes it was handed", () => {
+    expect(Playtime.fromMinutes(405).minutes).toBe(405);
   });
 
   /**
@@ -26,13 +17,11 @@ describe("Playtime", () => {
     const absent = Playtime.absent();
 
     expect(absent.minutes).toBeNull();
-    expect(absent.hours).toBeNull();
-    expect(absent.format()).toBeNull();
   });
 
   it("tells an absent playtime apart from a measured zero", () => {
     expect(Playtime.fromMinutes(0).minutes).toBe(0);
-    expect(Playtime.fromMinutes(0).format()).toBe("0 min");
+    expect(Playtime.absent().minutes).toBeNull();
   });
 
   it("rejects a negative value", () => {

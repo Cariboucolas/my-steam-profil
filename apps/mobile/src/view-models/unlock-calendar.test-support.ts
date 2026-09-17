@@ -20,7 +20,6 @@ const game = (appId: number): GameDto => ({
   appId,
   name: `Game ${appId}`,
   playtimeMinutes: 120,
-  playtimeLabel: "2 h",
   iconUrl: `https://icon/${appId}.jpg`,
   lastPlayedAt: null,
 });

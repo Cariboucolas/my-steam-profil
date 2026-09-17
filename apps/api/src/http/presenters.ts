@@ -29,7 +29,6 @@ export const toGameDto = (game: Game): GameDto => ({
   appId: game.appId,
   name: game.name,
   playtimeMinutes: game.playtime.minutes,
-  playtimeLabel: game.playtime.format(),
   iconUrl: game.iconUrl,
   lastPlayedAt: game.lastPlayed ? game.lastPlayed.toISOString() : null,
 });
