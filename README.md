@@ -14,7 +14,6 @@ Architecture hexagonale, monorepo pnpm. Voir `docs/superpowers/` (local) pour le
 | `apps/api` | Proxy Steam (ADR-0001) : quatre endpoints, mappers et presenters. |
 | `apps/mobile` | L'app Expo : l'écran de saisie du profil, puis les écrans Library et Game. |
 | `tools/steam-spike` | Récupère les réponses brutes de Steam dans `fixtures/steam-raw/`. |
-| `tools/fixtures-dto` | Transforme ces réponses brutes en DTO pour l'app. |
 
 ## En production
 
@@ -201,19 +200,19 @@ Le trafic passe par un tunnel externe. Pensez alors à mettre la même adresse
 publique dans `EXPO_PUBLIC_API_URL`, sinon l'app joindra Metro mais pas le
 backend.
 
-### Travailler sans backend
+### Capturer des données Steam brutes
 
-`tools/fixtures-dto` génère des fixtures au format DTO, et
-`createFixtureApiClient` les sert. L'app ne s'en sert plus par défaut, mais le
-chemin reste ouvert :
+`tools/steam-spike` récupère les réponses brutes de Steam dans
+`fixtures/steam-raw/`. C'est de là que viennent les cas réels cités dans les
+tests et les commentaires — un profil dont Steam retient les heures, un autre
+qui ne date aucune partie.
 
 ```bash
-pnpm fixtures:build          # génère apps/mobile/src/fixtures/
+pnpm --filter @steam/spike spike   # voir tools/steam-spike/.env.example
 ```
 
-`fixtures/steam-raw/` et `apps/mobile/src/fixtures/` sont hors du dépôt : ils
-contiennent des données de profil personnelles. `pnpm --filter @steam/spike spike`
-récupère les données brutes (voir `tools/steam-spike/.env.example`).
+`fixtures/steam-raw/` est hors du dépôt : il contient des données de profil
+personnelles.
 
 ## Vérifier
 
