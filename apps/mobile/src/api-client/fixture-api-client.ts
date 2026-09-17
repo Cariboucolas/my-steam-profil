@@ -18,12 +18,13 @@ const MS_PER_SECOND = 1000;
 export type FixtureData = {
   readonly profile: ProfileDto;
   readonly games: readonly GameDto[];
-  /** Keyed by appId; only the games the spike actually fetched are present. */
+  /** Keyed by appId; a set carries progress only for the games it is about. */
   readonly progress: Readonly<Record<number, GameProgressDto>>;
   /**
-   * Keyed by appId. Optional, and empty in the generated set: the spike never
-   * called the Steam endpoint that publishes rarity, so there is nothing to
-   * store yet. A set that carries some is what lets a ranking be exercised.
+   * Keyed by appId. Optional: a set that says nothing about rarity leaves it
+   * out, and every game then answers with no figures — which is what "Steam
+   * publishes none for this game" looks like. A set that carries some is what
+   * lets a ranking be exercised.
    */
   readonly rarity?: Readonly<Record<number, GameRarityDto>>;
 };
@@ -39,9 +40,9 @@ const namesIn = (
   }));
 
 /**
- * Serves the DTOs the fixture build produced. Data is injected rather than
- * imported so tests can run without the generated files, which stay out of the
- * repository.
+ * Serves DTOs a caller hands it, as the HTTP client serves DTOs the backend
+ * hands it. The screens cannot tell the two apart, which is what lets a test
+ * state a wire shape and assert what gets drawn from it.
  */
 export const createFixtureApiClient = (data: FixtureData): ApiClient => {
   const progressOf = (
