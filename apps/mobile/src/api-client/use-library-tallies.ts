@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 
 import type { ApiClient } from "./api-client";
 import { askInWaves } from "./request-waves";
-import type { TallyByAppId } from "../view-models/library";
+import { longestFirst, type TallyByAppId } from "../view-models/library";
 
 /** Shared, so resetting a library that is already empty re-renders nothing. */
 const NO_TALLIES: TallyByAppId = {};
@@ -20,7 +20,8 @@ const NOTHING_OUTSTANDING: ReadonlySet<number> = new Set();
  * and left every row of that library blank.
  */
 const everOpened = (game: GameDto): boolean =>
-  (game.playtimeMinutes ?? 0) > 0 || game.lastPlayedAt !== null;
+  (game.playtimeMinutes !== null && game.playtimeMinutes > 0) ||
+  game.lastPlayedAt !== null;
 
 /**
  * Most recently played first, because that is the order a player recognises, so
@@ -39,7 +40,7 @@ const recognisedFirst = (a: GameDto, b: GameDto): number => {
   if (left !== null && right !== null) return right - left;
   if (left !== null) return -1;
   if (right !== null) return 1;
-  return (b.playtimeMinutes ?? 0) - (a.playtimeMinutes ?? 0);
+  return longestFirst(a, b);
 };
 
 /**
