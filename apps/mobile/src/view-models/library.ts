@@ -117,8 +117,16 @@ const group = (value: number): string =>
 /**
  * Hours with their thousands grouped, as the mock writes them ("3 128 h").
  * Anything under an hour stays in minutes.
+ *
+ * Rounded, and named for it: `formatPlaytimeExact` writes the same figure to
+ * the minute ("82 h 57"), and the game screen uses that one. The difference is
+ * not an oversight to be harmonised away — a row and a summary sit in fixed
+ * widths that an exact figure does not fit (ADR-0011, ADR-0013), while a screen
+ * with one Game on it has the room. Named by the precision each keeps, rather
+ * than by who reads it, because this one has two readers: a library row and
+ * the stats card's total.
  */
-export const formatHours = (minutes: number): string => {
+export const formatHoursRounded = (minutes: number): string => {
   if (minutes < MINUTES_PER_HOUR) {
     return `${minutes} min`;
   }
@@ -306,7 +314,7 @@ export const joined = (parts: readonly (string | null)[]): string =>
 
 /** The hours as a row writes them, or nothing at all where Steam withheld them. */
 const playedFor = (game: GameDto): string | null =>
-  game.playtimeMinutes === null ? null : formatHours(game.playtimeMinutes);
+  game.playtimeMinutes === null ? null : formatHoursRounded(game.playtimeMinutes);
 
 const metaFor = (game: GameDto, tally: GameCompletionDto | undefined): string => {
   const played = playedFor(game);
@@ -463,6 +471,6 @@ export const buildLibrarySummary = (view: LibraryView): LibrarySummary => {
     // left out were never launched, so they are excluded rather than missing.
     fraction: `${group(unlocked)} / ${group(total)} across ${gamesCounted(loaded.length)}`,
     perfectGames: loaded.filter((e) => e.total > 0 && e.unlocked === e.total).length,
-    playtimeLabel: minutes === null ? "—" : formatHours(minutes),
+    playtimeLabel: minutes === null ? "—" : formatHoursRounded(minutes),
   };
 };

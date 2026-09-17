@@ -4,7 +4,7 @@ import {
   buildLibraryRows,
   buildLibrarySummary,
   formatDay,
-  formatHours,
+  formatHoursRounded,
   formatUnlockHeadline,
   longestFirst,
   publishesLastPlayed,
@@ -116,17 +116,17 @@ describe("what a library publishes about when it was played", () => {
   });
 });
 
-describe("formatHours", () => {
+describe("formatHoursRounded", () => {
   it("groups thousands with a space, as the mock does", () => {
-    expect(formatHours(187_680)).toBe("3 128 h");
+    expect(formatHoursRounded(187_680)).toBe("3 128 h");
   });
 
   it("stays in minutes below an hour", () => {
-    expect(formatHours(45)).toBe("45 min");
+    expect(formatHoursRounded(45)).toBe("45 min");
   });
 
   it("reads zero as no playtime at all", () => {
-    expect(formatHours(0)).toBe("0 min");
+    expect(formatHoursRounded(0)).toBe("0 min");
   });
 });
 
@@ -454,7 +454,7 @@ describe("buildLibrarySummary", () => {
   });
 
   it("totals playtime over the whole library, not just loaded games", () => {
-    expect(summary.playtimeLabel).toBe(formatHours(4977 + 14286 + 38496 + 0));
+    expect(summary.playtimeLabel).toBe(formatHoursRounded(4977 + 14286 + 38496 + 0));
   });
 
   /**
