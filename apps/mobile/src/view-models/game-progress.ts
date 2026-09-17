@@ -1,4 +1,5 @@
 import type { AchievementDto, GameDto, GameProgressDto } from "@steam/contracts";
+import { formatPlaytimeExact } from "@steam/domain";
 
 import { formatDay, joined, neverLaunched } from "./library";
 
@@ -139,14 +140,19 @@ export const buildGameSummary = (
   // Steam does not always send a last-played time, and "last played never"
   // beside 82 hours is untrue. Where it withholds the date the line says only
   // what is known; only a game with no playtime either was really never opened.
-  // Both halves can be missing, and neither absence is a figure: Steam
-  // withholds playtime across a whole library, so a Game here arrives with its
-  // hours already known to be absent rather than zero (CONTEXT.md, Playtime).
-  // That is what lets this screen — which holds one Game and no library — say
-  // nothing rather than write `0 min played · last played never` over unlocks
-  // dated 2010 to 2014.
+  // Both can be missing, and neither absence is a figure: Steam withholds
+  // playtime across a whole library, so a Game here arrives with its hours
+  // already known to be absent rather than zero (CONTEXT.md, Playtime). That is
+  // what lets this screen — which holds one Game and no library — say nothing
+  // rather than write `0 min played · last played never` over unlocks dated
+  // 2010 to 2014.
+  //
+  // The hours are written here rather than read off the wire: this screen keeps
+  // the figure to the minute, where a library row rounds it to fit (ADR-0015).
   const played =
-    game.playtimeLabel === null ? null : `${game.playtimeLabel} played`;
+    game.playtimeMinutes === null
+      ? null
+      : `${formatPlaytimeExact(game.playtimeMinutes)} played`;
   const lastPlayed = game.lastPlayedAt
     ? formatDay(game.lastPlayedAt)
     : neverLaunched(game)
