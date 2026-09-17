@@ -6,6 +6,7 @@ import {
   formatDay,
   formatHours,
   formatUnlockHeadline,
+  longestFirst,
   publishesLastPlayed,
   publishesPlaytime,
   type LibrarySort,
@@ -464,5 +465,36 @@ describe("buildLibrarySummary", () => {
     const withheld = buildLibrarySummary(settled("completed", {}, WITHHELD_LIBRARY));
 
     expect(withheld.playtimeLabel).toBe("—");
+  });
+});
+
+/**
+ * Steam withholds across a whole library, so a library of some figures and
+ * some absences is not one it sends. The comparator still has to answer for
+ * it, because nothing in its signature says a library was handed over whole,
+ * and the answer has to be an order: an absence that sorted equal to every
+ * figure would make the comparison intransitive.
+ */
+describe("longestFirst", () => {
+  const withHours = (minutes: number | null): GameDto =>
+    game(1, "Half-Life 2", minutes, null);
+
+  it("puts the longer of two measured playtimes first", () => {
+    expect(longestFirst(withHours(60), withHours(8975))).toBeGreaterThan(0);
+    expect(longestFirst(withHours(8975), withHours(60))).toBeLessThan(0);
+  });
+
+  it("ranks a measured playtime above a withheld one, either way round", () => {
+    expect(longestFirst(withHours(60), withHours(null))).toBeLessThan(0);
+    expect(longestFirst(withHours(null), withHours(60))).toBeGreaterThan(0);
+  });
+
+  /** Including a measured zero, which is a figure and outranks no figure. */
+  it("ranks a game never launched above one whose hours were withheld", () => {
+    expect(longestFirst(withHours(0), withHours(null))).toBeLessThan(0);
+  });
+
+  it("leaves two withheld playtimes equal, so their stretch stays as it came", () => {
+    expect(longestFirst(withHours(null), withHours(null))).toBe(0);
   });
 });

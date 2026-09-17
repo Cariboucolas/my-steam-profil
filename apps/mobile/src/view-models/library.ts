@@ -272,10 +272,14 @@ export const neverLaunched = (game: GameDto): boolean =>
  * one level up. Asked before the sum rather than after it, so no total is ever
  * built out of figures that were never given.
  */
-const totalMinutes = (games: readonly GameDto[]): number | null =>
-  publishesPlaytime(games)
-    ? games.reduce((sum, game) => sum + (game.playtimeMinutes ?? 0), 0)
-    : null;
+const totalMinutes = (games: readonly GameDto[]): number | null => {
+  const published = games
+    .map((game) => game.playtimeMinutes)
+    .filter((minutes): minutes is number => minutes !== null);
+  return published.length === 0
+    ? null
+    : published.reduce((sum, minutes) => sum + minutes, 0);
+};
 
 /**
  * When the player last opened it, where that can be said at all.
@@ -357,16 +361,36 @@ const byWhatIsFinished = (
   };
 };
 
+/**
+ * Longest played first, where there are hours to say so.
+ *
+ * A Game whose hours Steam withheld carries no key to rank on, so it ranks
+ * nothing: it never displaces a Game that has a figure, and two of them are
+ * equal to each other, which leaves the sort stable and hands that stretch of
+ * the library back in the order it arrived. Reading the absence as a zero
+ * instead would rank it below every measured figure and above nothing — an
+ * order built out of a number nobody gave.
+ *
+ * Shared rather than copied: the library's playtime order and the tally
+ * fetcher's fallback are the same question asked twice.
+ */
+export const longestFirst = (a: GameDto, b: GameDto): number => {
+  const [left, right] = [a.playtimeMinutes, b.playtimeMinutes];
+  if (left !== null && right !== null) return right - left;
+  if (left !== null) return -1;
+  if (right !== null) return 1;
+  return 0;
+};
+
 const comparatorFor = (
   sort: LibrarySort,
   tallies: TallyByAppId,
 ): ((a: GameDto, b: GameDto) => number) => {
   if (sort === "playtime") {
-    // Where Steam withheld the hours every key is equal, so the sort is stable
-    // and hands the library back in the order it arrived — no invented figure
-    // ranks anything. `availableSorts` is what keeps that order from being
-    // offered; reaching it directly gets the honest degenerate answer.
-    return (a, b) => (b.playtimeMinutes ?? 0) - (a.playtimeMinutes ?? 0);
+    // `availableSorts` is what keeps this order from being offered over a
+    // library that publishes no hours; reaching it directly gets the honest
+    // degenerate answer, which `longestFirst` is what makes honest.
+    return longestFirst;
   }
   if (sort === "recent") {
     const played = (game: GameDto) =>
