@@ -7,15 +7,16 @@ import { useLibraryTallies } from "./use-library-tallies";
 
 type Tally = Result<GameTallyDto, ProgressError>;
 
+/** Null minutes is a playtime Steam withheld, not a game never launched. */
 const game = (
   appId: number,
   lastPlayedAt: string | null,
-  playtimeMinutes = 100,
+  playtimeMinutes: number | null = 100,
 ): GameDto => ({
   appId,
   name: `Game ${appId}`,
   playtimeMinutes,
-  playtimeLabel: "1 h 40",
+  playtimeLabel: playtimeMinutes === null ? null : `${playtimeMinutes} min`,
   iconUrl: `https://icon/${appId}.jpg`,
   lastPlayedAt,
 });
@@ -354,6 +355,25 @@ describe("useLibraryTallies", () => {
   });
 
   /**
+   * The fallback needs a figure to rank on, and a library Steam withholds from
+   * publishes none. Ranking on an invented zero would order the library by
+   * nothing while looking like an order; every key being equal instead leaves
+   * the sort stable and hands the library back as Steam sent it.
+   */
+  it("keeps Steam's own sequence when neither a date nor an hour is published", async () => {
+    const { client, asked } = eagerClient();
+    const { result } = renderTallies(client, [
+      game(3, null, null),
+      game(1, null, null),
+      game(2, null, null),
+    ]);
+
+    await waitFor(() => expect(result.current.frozenOrder).toBeNull());
+
+    expect(asked).toEqual([3, 1, 2]);
+  });
+
+  /**
    * Playtime is a separate Steam privacy setting from achievements, so a
    * profile can withhold every hour it has played and still publish every
    * unlock. Measured on the public profile 76561197985221153: all 100 of its
@@ -366,7 +386,7 @@ describe("useLibraryTallies", () => {
    */
   it("counts every game when the whole library carries no playtime signal", async () => {
     const { client, asked } = eagerClient();
-    const withheld = [game(1, null, 0), game(2, null, 0), game(3, null, 0)];
+    const withheld = [game(1, null, null), game(2, null, null), game(3, null, null)];
     const { result } = renderTallies(client, withheld);
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
