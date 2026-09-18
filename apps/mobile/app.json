@@ -39,7 +39,7 @@
     },
     "owner": "cariboucolas",
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "fingerprint"
     },
     "updates": {
       "url": "https://u.expo.dev/ad797727-8cd1-489d-8198-cc036d9b07c9"
