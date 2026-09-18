@@ -46,4 +46,14 @@ jobs:
           # commit message is attacker-controlled text, and ${{ }} inside a run
           # block is substituted before the shell ever sees it.
           COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
-        run: eas update --channel preview --message "$COMMIT_MESSAGE" --non-interactive
+        # An update message is a one-line label, read in the Expo dashboard
+        # beside a branch and a runtime version — not a place for the prose
+        # bodies this repo writes. EAS caps it at 1024 characters and truncates
+        # what is longer, which is how a commit essay became a sentence cut in
+        # half. `%%$'\n'*` drops everything from the first newline on, leaving
+        # the subject line; the short SHA in front is what lets an update be
+        # matched to a revision, since two commits can share a subject.
+        run: |
+          eas update --channel preview \
+            --message "${GITHUB_SHA:0:7} ${COMMIT_MESSAGE%%$'\n'*}" \
+            --non-interactive
