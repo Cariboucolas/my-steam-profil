@@ -21,3 +21,26 @@ export const resolveInitialSteamId = (raw: string | undefined): string | undefin
   const steamId = SteamId.create(raw?.trim() ?? "");
   return steamId.ok ? steamId.value.value : undefined;
 };
+
+/** How much of a commit is worth reading: what the release tag and the EAS update message already print. */
+const SHORT_SHA = 7;
+
+/** What a build calls itself where it is not the live site. */
+const NOT_LIVE = "dev";
+
+/**
+ * What the running JavaScript says about its own origin (ADR-0016): the commit
+ * it was built from, preceded by `dev` where the build is not the live site,
+ * and `dev` alone where there is no commit to name.
+ *
+ * Both inputs are build-time env, so both are absent by default — and that is
+ * the point: a production workflow that forgets the flag makes production
+ * understate itself, a false alarm someone corrects, rather than letting a
+ * preview pass for the live site. A blank value falls back like a blank
+ * address does, since a workflow writes `""` as readily as it writes nothing.
+ */
+export const resolveRevision = (sha: string | undefined, live: string | undefined): string => {
+  const commit = sha?.trim().slice(0, SHORT_SHA);
+  if (!commit) return NOT_LIVE;
+  return live?.trim() ? commit : `${NOT_LIVE} ${commit}`;
+};
