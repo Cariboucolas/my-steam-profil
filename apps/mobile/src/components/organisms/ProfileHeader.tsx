@@ -6,14 +6,37 @@ import { colors, fonts, spacing } from "../../theme/tokens";
 
 const AVATAR = 44;
 
+export const PROFILE_REVISION_TEST_ID = "profile-revision";
+
+/**
+ * What keeps the revision out of the traversal. It is provenance for whoever
+ * is looking at the screen — and for whoever is listening, three more words
+ * between the count and the way out, every time the header is reached.
+ *
+ * `accessible` alone would not do it: it means `isAccessibilityElement` on iOS
+ * but only `focusable` on Android, so both platforms are told in their own
+ * word, as the calendar's rows are.
+ */
+const NOT_READ = {
+  accessibilityElementsHidden: true,
+  importantForAccessibility: "no-hide-descendants",
+} as const;
+
 type Props = {
   readonly profile: ProfileDto;
   readonly gameCount: number;
+  /**
+   * What the running JavaScript says it was built from: a short commit, or
+   * `dev` (ADR-0016). Handed in rather than read here, so the header stays a
+   * component that writes what it is given and the build-time value is
+   * resolved once, where the screen is assembled.
+   */
+  readonly revision: string;
   /** Required: a screen with no way back to the setup form is a dead end. */
   readonly onChangeProfile: () => void;
 };
 
-export function ProfileHeader({ profile, gameCount, onChangeProfile }: Props) {
+export function ProfileHeader({ profile, gameCount, revision, onChangeProfile }: Props) {
   return (
     <View style={styles.row}>
       <Image
@@ -26,7 +49,14 @@ export function ProfileHeader({ profile, gameCount, onChangeProfile }: Props) {
         <Text numberOfLines={1} style={styles.name}>
           {profile.personaName}
         </Text>
-        <Text style={styles.meta}>{`${gameCount} games`}</Text>
+        <View style={styles.metaRow}>
+          <Text style={styles.meta}>{`${gameCount} games`}</Text>
+          {/* Its own element rather than more of the line above, because what
+              is written and what is read part company here. */}
+          <Text testID={PROFILE_REVISION_TEST_ID} style={styles.meta} {...NOT_READ}>
+            {`· revision ${revision}`}
+          </Text>
+        </View>
       </View>
       <Pressable
         accessibilityRole="button"
@@ -66,6 +96,14 @@ const styles = StyleSheet.create({
     fontSize: 19,
     color: colors.text,
     letterSpacing: -0.2,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 5,
+    // Wraps rather than clips: a revision cut short reads as a different
+    // commit, where one on its own line is only a narrower screen.
+    flexWrap: "wrap",
   },
   meta: {
     fontFamily: fonts.mono,
