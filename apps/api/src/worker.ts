@@ -16,6 +16,13 @@ import { noCache, type ResponseCache } from "./http/cache";
  */
 export type WorkerEnv = {
   readonly STEAM_API_KEY?: string;
+  /**
+   * The commit this Worker was deployed from, posted by `wrangler deploy --var`
+   * rather than written in wrangler.jsonc, which would be one commit stale the
+   * moment it was committed. Absent under `wrangler dev`, where the log says
+   * `dev` — the same answer the app gives about itself (ADR-0016).
+   */
+  readonly COMMIT_SHA?: string;
 };
 
 /**
@@ -81,6 +88,7 @@ export const createFetchHandler = (
     app ??= createApp(
       createGateway(config.value.steamApiKey),
       cacheFrom((globalThis as { caches?: PlatformCaches }).caches),
+      env.COMMIT_SHA,
     );
     return app.fetch(request);
   };

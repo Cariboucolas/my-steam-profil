@@ -41,6 +41,12 @@ erreur facile, et elle coûte un déploiement.
 Worker que le déploiement repose à chaque fois depuis le premier. Elle n'est dans aucun fichier
 du dépôt et dans aucun bundle livré (ADR-0001, ADR-0003).
 
+Quand une requête échoue, le Worker écrit une entrée dans Workers Logs — actif depuis le
+premier déploiement — qui dit **de quelle révision** elle vient, quelle route, et à qui la
+faute : Steam, ou nous. Le commit arrive par `wrangler deploy --var COMMIT_SHA`, jamais
+dans `wrangler.jsonc`, qui serait périmé dès le commit suivant. Sous `wrangler dev`, la
+ligne dit `dev`, comme l'app (ADR-0016).
+
 Le site déployé ne contient **aucun** SteamID : le build de production force
 `EXPO_PUBLIC_STEAM_ID` à vide — explicitement, et non en comptant sur son absence — donc l'app
 demande quel profil afficher, ce qui la rend utilisable par n'importe qui.

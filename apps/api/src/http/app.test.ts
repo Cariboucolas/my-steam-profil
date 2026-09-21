@@ -6,7 +6,7 @@ import {
   ACHIEVEMENT_NAMES_CACHE_SECONDS,
 } from "./app";
 import { createSteamClient } from "../steam/steam-client";
-import type { ResponseCache } from "./cache";
+import { noCache, type ResponseCache } from "./cache";
 import { mapCache } from "./cache.test-support";
 
 const API_KEY = "TEST_KEY";
@@ -513,6 +513,32 @@ describe("when something fails on the way", () => {
     await app.request(`/api/profile/${STEAM_ID}`);
 
     expect(logged).toHaveBeenCalledTimes(1);
+  });
+
+  it("says which revision the failure came from, and which request it was", async () => {
+    // The Worker's logs were never off; what they could not say was which
+    // build answered. A failure nobody can pin to a revision is an anecdote
+    // (ADR-0017), which is the whole reason this field is here.
+    const app = createApp(
+      createSteamClient({
+        apiKey: API_KEY,
+        fetch: steamAnswering({ playerSummaries: [{}, STEAM_SERVER_ERROR] }),
+      }),
+      noCache,
+      "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+    );
+
+    await app.request(`/api/profile/${STEAM_ID}`);
+
+    expect(logged).toHaveBeenCalledWith(
+      expect.objectContaining({
+        revision: "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678",
+        method: "GET",
+        path: `/api/profile/${STEAM_ID}`,
+        kind: "steam",
+      }),
+      expect.anything(),
+    );
   });
 
   it("is a 502 when Steam is unavailable", async () => {
