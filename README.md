@@ -129,6 +129,12 @@ de l'application. Le bouton « Change » de l'en-tête permet d'en changer.
 SteamID à chaque installation neuve. Il n'est **plus obligatoire**, et une valeur invalide
 mène simplement à l'écran de saisie au lieu de bloquer l'app.
 
+L'en-tête de la bibliothèque écrit la **Revision** du bundle : le commit court dont il est
+issu, ou `dev`. Sur votre machine elle dit `dev`, et c'est la seule réponse honnête —
+`EXPO_PUBLIC_COMMIT_SHA` et `EXPO_PUBLIC_LIVE` sont posées par les workflows de publication
+et n'ont rien à faire dans `.env` : les renseigner ferait passer votre bundle pour le site
+live (ADR-0016).
+
 **Expo Go** : le Play Store sert une version figée au SDK 54 et ne se mettra pas
 à jour. Installez le client courant depuis les releases officielles —
 `api.expo.dev/v2/versions/latest` pointe vers `github.com/expo/expo-go-releases`.
