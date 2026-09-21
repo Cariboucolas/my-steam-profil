@@ -46,7 +46,7 @@ export function ProfileHeader({ profile, gameCount, revision, onChangeProfile }:
               screen, and taking it any other way is deliberately unclaimed. */}
           <Text
             testID={PROFILE_REVISION_TEST_ID}
-            style={styles.meta}
+            style={styles.revision}
             selectable={false}
             {...NOT_READ}
           >
@@ -105,6 +105,17 @@ const styles = StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 12,
     color: colors.textDim,
+  },
+  /**
+   * Fainter and smaller than the count it follows: the revision is read on
+   * purpose, by someone who has gone looking for it or is photographing the
+   * screen, and never on the way to something else. It takes the shade the
+   * scale keeps for what is barely there, one step below the metadata.
+   */
+  revision: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    color: colors.textFaint,
   },
   change: {
     paddingHorizontal: spacing.md,
