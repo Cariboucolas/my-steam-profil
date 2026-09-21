@@ -1,9 +1,11 @@
+import { captureException } from "@sentry/react-native";
 import { openURL } from "expo-linking";
 import { openBrowserAsync } from "expo-web-browser";
 import { Platform } from "react-native";
 
 import { openExternalUrl } from "./open-external-url";
 
+jest.mock("@sentry/react-native", () => ({ captureException: jest.fn() }));
 jest.mock("expo-linking", () => ({ openURL: jest.fn(() => Promise.resolve(true)) }));
 jest.mock("expo-web-browser", () => ({
   openBrowserAsync: jest.fn(() => Promise.resolve({ type: "opened" })),
@@ -11,6 +13,7 @@ jest.mock("expo-web-browser", () => ({
 
 const tab = openURL as jest.MockedFunction<typeof openURL>;
 const inApp = openBrowserAsync as jest.MockedFunction<typeof openBrowserAsync>;
+const reported = captureException as jest.MockedFunction<typeof captureException>;
 
 /** Jest runs as ios, so a web test says so and puts it back. */
 const asPlatform = (os: string) => {
@@ -26,6 +29,7 @@ const URL = "https://steamcommunity.com/my/edit/settings";
 beforeEach(() => {
   tab.mockClear();
   inApp.mockClear();
+  reported.mockClear();
 });
 
 describe("openExternalUrl", () => {
@@ -71,5 +75,26 @@ describe("openExternalUrl", () => {
     inApp.mockRejectedValueOnce(new Error("no browser"));
 
     await expect(openExternalUrl(URL)).resolves.toBeUndefined();
+  });
+
+  /**
+   * The guard above is right and this is what was missing from it: a throw
+   * that reaches nobody is indistinguishable from a link nobody pressed. #98
+   * arrived here — a native module the runtime did not have raises at this
+   * exact call — and was found days later by re-reading a ticket.
+   */
+  it("says what it swallowed", async () => {
+    const failure = new Error("no browser");
+    inApp.mockRejectedValueOnce(failure);
+
+    await openExternalUrl(URL);
+
+    expect(reported).toHaveBeenCalledWith(failure);
+  });
+
+  it("says nothing when the browser opened, which is the ordinary case", async () => {
+    await openExternalUrl(URL);
+
+    expect(reported).not.toHaveBeenCalled();
   });
 });
