@@ -50,6 +50,12 @@ describe("resolveRevision", () => {
     expect(resolveRevision(SHA, "  ")).toBe("dev a1b2c3d");
   });
 
+  it("does not read a flag that says false as a build saying it is live", () => {
+    // Read as the word rather than as any text: the one way to write the
+    // claim down as false would otherwise be the loudest way to make it.
+    expect(resolveRevision(SHA, "false")).toBe("dev a1b2c3d");
+  });
+
   it("says dev alone where there is no commit to name", () => {
     expect(resolveRevision(undefined, "true")).toBe("dev");
   });

@@ -23,10 +23,13 @@ export const resolveInitialSteamId = (raw: string | undefined): string | undefin
 };
 
 /** How much of a commit is worth reading: what the release tag and the EAS update message already print. */
-const SHORT_SHA = 7;
+const SHORT_SHA_LENGTH = 7;
 
 /** What a build calls itself where it is not the live site. */
 const NOT_LIVE = "dev";
+
+/** The one value that claims a build is the live site. Anything else is not a claim. */
+const LIVE = "true";
 
 /**
  * What the running JavaScript says about its own origin (ADR-0016): the commit
@@ -36,11 +39,12 @@ const NOT_LIVE = "dev";
  * Both inputs are build-time env, so both are absent by default — and that is
  * the point: a production workflow that forgets the flag makes production
  * understate itself, a false alarm someone corrects, rather than letting a
- * preview pass for the live site. A blank value falls back like a blank
- * address does, since a workflow writes `""` as readily as it writes nothing.
+ * preview pass for the live site. The flag is read as the word `true` and not
+ * as any text at all, so that the one way to write "not live" out loud —
+ * `EXPO_PUBLIC_LIVE=false` — is not read as the opposite of itself.
  */
 export const resolveRevision = (sha: string | undefined, live: string | undefined): string => {
-  const commit = sha?.trim().slice(0, SHORT_SHA);
+  const commit = sha?.trim().slice(0, SHORT_SHA_LENGTH);
   if (!commit) return NOT_LIVE;
-  return live?.trim() ? commit : `${NOT_LIVE} ${commit}`;
+  return live?.trim() === LIVE ? commit : `${NOT_LIVE} ${commit}`;
 };
