@@ -94,6 +94,11 @@ jobs:
           # wherever the environment carries it, and a runner that inherited one
           # would bake a personal SteamID64 into a public bundle.
           EXPO_PUBLIC_STEAM_ID: ""
+          # The head commit of the branch, not the merge commit the checkout
+          # sits on: a preview states a revision someone can `git show`. No
+          # live flag here — a preview is a real deployment that says `dev`,
+          # because it is not the live site (ADR-0016).
+          EXPO_PUBLIC_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
 
       # --branch is what makes this a preview rather than the live site: Pages
       # treats anything other than the production branch as one, and gives it a

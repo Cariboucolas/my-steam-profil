@@ -42,6 +42,12 @@ jobs:
           # Same substitution as the web build: the update carries the address
           # of the deployed API, not localhost.
           EXPO_PUBLIC_API_URL: ${{ vars.API_URL }}
+          # And the commit it was built from, which the update message prints
+          # too — the app can now say it without the Expo dashboard. An update
+          # published from main is the live JavaScript on the preview channel,
+          # so it says so (ADR-0016).
+          EXPO_PUBLIC_COMMIT_SHA: ${{ github.sha }}
+          EXPO_PUBLIC_LIVE: "true"
           # Through the environment, never interpolated into the command: a
           # commit message is attacker-controlled text, and ${{ }} inside a run
           # block is substituted before the shell ever sees it.

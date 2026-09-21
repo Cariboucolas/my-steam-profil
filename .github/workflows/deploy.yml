@@ -103,6 +103,13 @@ jobs:
           # variable wherever the environment carries it, so a runner that
           # inherited one would bake a personal SteamID64 into a public bundle.
           EXPO_PUBLIC_STEAM_ID: ""
+          # What the running app says it was built from (ADR-0016). The flag
+          # is what makes it say it plainly rather than as `dev`, and only the
+          # two production workflows set it: forgetting it here makes the live
+          # site understate itself, where the reverse would let a preview pass
+          # for production.
+          EXPO_PUBLIC_COMMIT_SHA: ${{ github.sha }}
+          EXPO_PUBLIC_LIVE: "true"
 
       # workingDirectory matters more than it looks: without it the action runs
       # at the workspace root, where wrangler is not installed — it then tries
