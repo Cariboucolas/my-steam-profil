@@ -29,7 +29,8 @@
       "expo-image",
       "expo-font",
       "expo-splash-screen",
-      "expo-web-browser"
+      "expo-web-browser",
+      "@sentry/react-native"
     ],
     "extra": {
       "router": {},
