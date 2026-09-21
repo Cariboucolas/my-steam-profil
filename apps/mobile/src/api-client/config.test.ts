@@ -1,4 +1,4 @@
-import { resolveBaseUrl, resolveInitialSteamId } from "./config";
+import { resolveBaseUrl, resolveInitialSteamId, resolveRevision } from "./config";
 
 const STEAM_ID = "76561197979269357";
 
@@ -32,5 +32,29 @@ describe("resolveInitialSteamId", () => {
   it("offers nothing when what it was given is not a steam id", () => {
     // The usual mistake is putting the backend URL in EXPO_PUBLIC_STEAM_ID.
     expect(resolveInitialSteamId("http://localhost:3000")).toBeUndefined();
+  });
+});
+
+describe("resolveRevision", () => {
+  const SHA = "a1b2c3d4e5f60718293a4b5c6d7e8f9012345678";
+
+  it("names the commit a live deployment was built from, shortened as the release tag shortens it", () => {
+    expect(resolveRevision(SHA, "true")).toBe("a1b2c3d");
+  });
+
+  it("marks a deployment that is not the live site, and still names its commit", () => {
+    expect(resolveRevision(SHA, undefined)).toBe("dev a1b2c3d");
+  });
+
+  it("treats a live flag that is only whitespace as not set at all", () => {
+    expect(resolveRevision(SHA, "  ")).toBe("dev a1b2c3d");
+  });
+
+  it("says dev alone where there is no commit to name", () => {
+    expect(resolveRevision(undefined, "true")).toBe("dev");
+  });
+
+  it("treats a commit that is only whitespace as none at all", () => {
+    expect(resolveRevision("   ", "true")).toBe("dev");
   });
 });
