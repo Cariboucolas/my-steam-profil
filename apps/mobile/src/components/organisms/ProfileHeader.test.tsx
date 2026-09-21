@@ -41,10 +41,27 @@ describe("ProfileHeader", () => {
     expect(screen.getByText("· revision a1b2c3d", PAINTED)).toBeTruthy();
   });
 
-  it("keeps the revision out of the traversal, on either platform", () => {
+  it("does not let the revision be dragged out with a selection", () => {
+    render(
+      <ProfileHeader
+        profile={PROFILE}
+        gameCount={367}
+        revision="a1b2c3d"
+        onChangeProfile={jest.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId(PROFILE_REVISION_TEST_ID, PAINTED).props.selectable).toBe(
+      false,
+    );
+  });
+
+  it("keeps the revision out of the traversal, on every platform", () => {
     // Provenance for whoever is looking at the screen, and noise for whoever
     // is listening to it: the header is read as a name, a count and a way out.
-    // `accessible` is only `focusable` on Android, so both words are said.
+    // `accessible` is only `focusable` on Android, and neither native word
+    // reaches the DOM, so all three are said — the web build is the one #106
+    // was about.
     render(
       <ProfileHeader
         profile={PROFILE}
@@ -56,6 +73,7 @@ describe("ProfileHeader", () => {
 
     const { props } = screen.getByTestId(PROFILE_REVISION_TEST_ID, PAINTED);
 
+    expect(props["aria-hidden"]).toBe(true);
     expect(props.accessibilityElementsHidden).toBe(true);
     expect(props.importantForAccessibility).toBe("no-hide-descendants");
     expect(screen.queryByText("· revision a1b2c3d")).toBeNull();

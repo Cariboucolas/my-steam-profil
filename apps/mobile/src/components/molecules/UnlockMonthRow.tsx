@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
 
+import { NOT_READ } from "../../accessibility/not-read";
 import {
   colors,
   fonts,
@@ -127,20 +128,6 @@ export const dayCellWidth = (screenWidth: number): number =>
 const fillFor = (day: UnlockDay | null): string =>
   day === null ? "transparent" : unlockToneFills[day.tone];
 
-/**
- * What keeps a row's own contents out of the traversal, so that the label the
- * row carries is the whole of what is read there.
- *
- * `accessible` alone does not do it. It means `isAccessibilityElement` on iOS
- * but only `focusable` on Android, where TalkBack stays free to stop on a
- * descendant — which would make a row two stops and its days thirty-one.
- * The two platforms have their own word for the same thing, so both are said.
- */
-const CONTENTS_NOT_READ = {
-  accessibilityElementsHidden: true,
-  importantForAccessibility: "no-hide-descendants",
-} as const;
-
 type Props = { readonly month: UnlockMonth };
 
 /**
@@ -167,7 +154,7 @@ export function UnlockMonthRow({ month }: Props) {
       style={styles.row}
     >
       <View
-        {...CONTENTS_NOT_READ}
+        {...NOT_READ}
         testID={UNLOCK_MONTH_LABEL_TEST_ID}
         style={styles.label}
       >
@@ -191,7 +178,7 @@ export function UnlockMonthRow({ month }: Props) {
       </View>
 
       <View
-        {...CONTENTS_NOT_READ}
+        {...NOT_READ}
         testID={UNLOCK_DAYS_TEST_ID}
         style={styles.days}
       >

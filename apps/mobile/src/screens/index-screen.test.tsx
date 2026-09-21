@@ -278,6 +278,12 @@ describe("library screen", () => {
     await waitFor(() => expect(screen.getByText("cariboucolas")).toBeTruthy());
     expect(screen.getByText("1 games")).toBeTruthy();
     expect(screen.getByText("Soulstone Survivors")).toBeTruthy();
+    // What this bundle says it was built from, which under a test runner is
+    // what a developer's machine says. Asked for with the paint, since the
+    // header writes it without reading it aloud.
+    expect(
+      screen.getByText("· revision dev", { includeHiddenElements: true }),
+    ).toBeTruthy();
   });
 
   it("opens the game the reader presses", async () => {
