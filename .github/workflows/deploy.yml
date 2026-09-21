@@ -40,6 +40,11 @@ jobs:
       # Worker yet to attach a secret to, and it fails with an unhelpful
       # "fetch failed". Creating the Worker first costs nothing afterwards —
       # secrets survive every later deploy.
+      #
+      # The commit goes in as a --var rather than into wrangler.jsonc, which
+      # would be one commit stale the moment it was committed. It is what turns
+      # a logged failure from "something 503'd" into "this build 503'd on this
+      # route" — the same provenance the app states about itself (ADR-0016).
       - name: Deploy the Worker
         uses: cloudflare/wrangler-action@v4
         with:
@@ -47,6 +52,7 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: apps/api
           packageManager: pnpm
+          command: deploy --var COMMIT_SHA:${{ github.sha }}
 
       # Re-posted on every deploy, so the running Worker and the repository
       # secret can never drift apart. The value goes in through stdin, never on

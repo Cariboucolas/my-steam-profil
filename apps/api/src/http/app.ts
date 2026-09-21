@@ -25,6 +25,7 @@ import {
   emptyGameTallyDto,
 } from "./presenters";
 import { cached, noCache, type ResponseCache } from "./cache";
+import { describeFailure } from "./failure-log";
 
 const BAD_REQUEST = 400;
 const FORBIDDEN = 403;
@@ -249,6 +250,8 @@ const serveAchievementNames = (
 export const createApp = (
   gateway: SteamGateway,
   cache: ResponseCache = noCache,
+  /** The commit this Worker was deployed from; absent everywhere else. */
+  revision?: string,
 ): Hono => {
   const app = new Hono();
 
@@ -304,7 +307,11 @@ export const createApp = (
    * where only an operator sees it.
    */
   app.onError((error, context) => {
-    console.error(error);
+    // One entry, two arguments. The first is what a query can filter on —
+    // revision, route, whose failure it was — and the second is the error
+    // itself, where the stack lives and which no field replaces. Splitting
+    // them into two calls would be two log entries to correlate by timestamp.
+    console.error(describeFailure(revision, context.req.raw, error), error);
     return error instanceof SteamGatewayError
       ? context.json({ error: "STEAM_UNAVAILABLE" }, BAD_GATEWAY)
       : context.json({ error: "INTERNAL_ERROR" }, INTERNAL_SERVER_ERROR);
