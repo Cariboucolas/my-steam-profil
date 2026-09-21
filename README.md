@@ -51,6 +51,14 @@ Le site déployé ne contient **aucun** SteamID : le build de production force
 `EXPO_PUBLIC_STEAM_ID` à vide — explicitement, et non en comptant sur son absence — donc l'app
 demande quel profil afficher, ce qui la rend utilisable par n'importe qui.
 
+Ce que les deux cibles publiées rapportent quand elles cassent va au projet Sentry
+`cdcraft/steam-achievements`, sous la révision qu'elles affichent déjà. Le DSN est une
+*variable* et non un secret — un DSN client voyage dans le bundle par construction — et
+`deploy.yml` refuse de builder sans lui, parce qu'un bundle de production aveugle ressemble
+exactement à un bundle qui marche. Le vider est l'interrupteur, comme `EAS_ENABLED`. Ce qui
+part, et ce qui ne part pas : ADR-0017. Le secret `SENTRY_AUTH_TOKEN` ne sert qu'à téléverser
+les source maps, sans lesquelles une pile minifiée ne se lit pas.
+
 **Sur téléphone**, le workflow `EAS Update` publie sur le canal `preview` à chaque merge. Il
 reste gardé par la variable `EAS_ENABLED` : la passer à autre chose que `true` arrête les
 publications sans qu'il faille toucher au workflow — un interrupteur, pas une salle d'attente.
@@ -139,7 +147,8 @@ L'en-tête de la bibliothèque écrit la **Revision** du bundle : le commit cour
 issu, ou `dev`. Sur votre machine elle dit `dev`, et c'est la seule réponse honnête —
 `EXPO_PUBLIC_COMMIT_SHA` et `EXPO_PUBLIC_LIVE` sont posées par les workflows de publication
 et n'ont rien à faire dans `.env` : les renseigner ferait passer votre bundle pour le site
-live (ADR-0016).
+live (ADR-0016). `EXPO_PUBLIC_SENTRY_DSN` est de la même famille, et sans effet sans elles :
+une machine de développement ne rapporte rien, faute de se déclarer live.
 
 **Expo Go** : le Play Store sert une version figée au SDK 54 et ne se mettra pas
 à jour. Installez le client courant depuis les releases officielles —
