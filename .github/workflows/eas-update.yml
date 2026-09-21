@@ -48,6 +48,10 @@ jobs:
           # so it says so (ADR-0016).
           EXPO_PUBLIC_COMMIT_SHA: ${{ github.sha }}
           EXPO_PUBLIC_LIVE: "true"
+          # Where an update reports what it cannot handle (ADR-0017). #98 was
+          # published on this channel and stayed silent for days; this is the
+          # variable that ends that, and emptying it is how it is turned off.
+          EXPO_PUBLIC_SENTRY_DSN: ${{ vars.SENTRY_DSN }}
           # Through the environment, never interpolated into the command: a
           # commit message is attacker-controlled text, and ${{ }} inside a run
           # block is substituted before the shell ever sees it.
@@ -63,3 +67,24 @@ jobs:
           eas update --channel preview \
             --message "${GITHUB_SHA:0:7} ${COMMIT_MESSAGE%%$'\n'*}" \
             --non-interactive
+
+      # `eas update` bundles into dist and leaves it there, which is what this
+      # reads. Same guard as the web deploy, and for the same reason: where no
+      # map was produced the upload script skips the asset and still exits zero,
+      # so the only thing standing between a green run and an unreadable stack
+      # is this test.
+      #
+      # After the update rather than before, because dist is what eas update
+      # produced. A failure here is an update already published whose stacks
+      # cannot be read — loud, and re-runnable, which silence was not.
+      - name: Upload the source maps that make a stack readable
+        working-directory: apps/mobile
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$(find dist -name '*.map' -print -quit)" || {
+            echo "::error::The update produced no source maps. Every stack would be unreadable."
+            exit 1
+          }
+          pnpm exec sentry-expo-upload-sourcemaps dist

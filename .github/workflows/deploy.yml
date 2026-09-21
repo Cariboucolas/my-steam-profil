@@ -98,6 +98,20 @@ jobs:
             exit 1
           }
 
+      # A production bundle that cannot report is the state #108 describes, and
+      # it looks exactly like a working one. The DSN is a variable rather than a
+      # secret on purpose — a client DSN ships inside the bundle by construction
+      # (ADR-0017) — so emptying it is how reporting is turned off deliberately,
+      # and this step is what makes that a decision instead of an oversight.
+      - name: Refuse to build a bundle that cannot report
+        env:
+          SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+        run: |
+          test -n "$SENTRY_DSN" || {
+            echo "::error::SENTRY_DSN is not set. Run: gh variable set SENTRY_DSN --body <dsn>"
+            exit 1
+          }
+
       # EXPO_PUBLIC_ variables are substituted into the bundle, not read at
       # runtime: this address is baked into the JavaScript that ships. The
       # steam id is emptied rather than omitted, so the deployed app asks.
@@ -116,6 +130,29 @@ jobs:
           # for production.
           EXPO_PUBLIC_COMMIT_SHA: ${{ github.sha }}
           EXPO_PUBLIC_LIVE: "true"
+          # Where this bundle reports what it cannot handle. Substituted into
+          # the JavaScript like the rest, which is what a client DSN is for.
+          EXPO_PUBLIC_SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+
+      # Before the site goes out, so a failed upload stops a bundle whose stacks
+      # nobody could read rather than publishing one.
+      #
+      # The guard is the point. A bundle and its map are paired by a debug id
+      # the Metro serializer writes into both; where no map was produced the
+      # upload script skips the asset, says so on a line nobody reads, and exits
+      # zero. That is a green workflow over an unreadable stack — the failure
+      # this issue exists to stop.
+      - name: Upload the source maps that make a stack readable
+        working-directory: apps/mobile
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          set -euo pipefail
+          test -n "$(find dist -name '*.map' -print -quit)" || {
+            echo "::error::The export produced no source maps. Every stack would be unreadable."
+            exit 1
+          }
+          pnpm exec sentry-expo-upload-sourcemaps dist
 
       # workingDirectory matters more than it looks: without it the action runs
       # at the workspace root, where wrangler is not installed — it then tries
