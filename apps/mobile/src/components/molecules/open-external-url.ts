@@ -13,6 +13,15 @@ import { Platform } from "react-native";
  * just want to open a webpage (such as your app privacy policy), then use
  * `WebBrowser.openBrowserAsync`".
  *
+ * That describes the intent rather than always the outcome. Android gives a
+ * verified app link priority over any browser, so a steamcommunity.com address
+ * opens the Steam app wherever it is installed — measured on a device, and the
+ * better arrival of the two: the settings page this points at needs a Steam
+ * session, which that app has and a cold Custom Tab does not. The reader comes
+ * back through the recents rather than with one gesture. `browserPackage`
+ * would force the Custom Tab by making the intent explicit, and is deliberately
+ * not passed: a tidier return to a page that asks for a login is a poor trade.
+ *
  * On the web the reverse holds. `openURL` there is `window.open(url, '_blank')`
  * — a new tab, which is what a link does and which leaves the app where it was.
  * `openBrowserAsync` would open a popup carrying window features, and a browser
