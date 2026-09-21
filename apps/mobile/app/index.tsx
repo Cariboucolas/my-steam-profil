@@ -5,6 +5,7 @@ import { ActivityIndicator, FlatList, StyleSheet, Text, View } from "react-nativ
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import type { ApiClient } from "../src/api-client/api-client";
+import { resolveRevision } from "../src/api-client/config";
 import { useApiClient } from "../src/api-client/use-api-client";
 import type { CountedLibrary } from "../src/api-client/use-library-rarity";
 import { useLibraryTallies } from "../src/api-client/use-library-tallies";
@@ -57,6 +58,16 @@ const NO_GAMES: readonly GameDto[] = [];
  * the tab the screen opens on; Rarest ranks what the player has unlocked across
  * all of it, and costs a load nobody has asked for until they open it.
  */
+/**
+ * What this bundle says it was built from. Written out rather than looked up,
+ * and read once at module scope: Metro substitutes EXPO_PUBLIC_ variables at
+ * build time, and only where they appear literally.
+ */
+const revision = resolveRevision(
+  process.env.EXPO_PUBLIC_COMMIT_SHA,
+  process.env.EXPO_PUBLIC_LIVE,
+);
+
 const TABS = ["Completion", "Rarest"] as const;
 const COMPLETION = 0;
 const RAREST = 1;
@@ -247,6 +258,7 @@ export default function LibraryScreen() {
       <ProfileHeader
         profile={state.data.profile}
         gameCount={games.length}
+        revision={revision}
         onChangeProfile={() => router.push("/setup")}
       />
       <LibraryStatsCard
