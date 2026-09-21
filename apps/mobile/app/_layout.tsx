@@ -18,6 +18,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import * as SplashScreen from "expo-splash-screen";
 
 import { resolveInitialSteamId } from "../src/api-client/config";
+import { startReporting } from "../src/reporting/start";
 import { createSteamIdStorage } from "../src/settings/steam-id-storage";
 import { SteamIdProvider } from "../src/settings/steam-id-store";
 import { colors } from "../src/theme/tokens";
@@ -32,6 +33,10 @@ const storage = createSteamIdStorage(AsyncStorage);
 // The build may offer a profile; the device overrides it. Keeps `pnpm start`
 // on this machine as immediate as it was before the setup screen existed.
 const initialSteamId = resolveInitialSteamId(process.env.EXPO_PUBLIC_STEAM_ID);
+
+// Before the first render, so a failure on the way up is reported rather
+// than only seen. Does nothing outside a live build (ADR-0017).
+startReporting();
 
 void SplashScreen.preventAutoHideAsync();
 
