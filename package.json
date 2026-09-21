@@ -7,7 +7,7 @@
     "test": "pnpm -r test",
     "typecheck": "pnpm -r run typecheck",
     "check:tests": "pnpm --filter @steam/repo-checks check",
-    "build:web": "pnpm --filter @steam/mobile exec expo export --platform web",
+    "build:web": "pnpm --filter @steam/mobile exec expo export --platform web --dump-sourcemap",
     "test:domain": "pnpm --filter @steam/domain test",
     "test:api": "pnpm --filter @steam/api test",
     "coverage:domain": "pnpm --filter @steam/domain coverage",

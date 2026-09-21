@@ -20,8 +20,9 @@ describe("resolveReportingConfig", () => {
     });
   });
 
-  it("releases under the whole commit, which is what the source maps are uploaded against", () => {
-    // Shortened is for reading (ADR-0016); a release is matched, not read.
+  it("releases under the whole commit rather than the shortened one", () => {
+    // Shortening is for reading (ADR-0016). A release is matched against the
+    // repository, by Sentry, to name the commit an error is suspected of.
     expect(resolveReportingConfig(live)?.release).toBe(SHA);
   });
 

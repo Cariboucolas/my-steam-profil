@@ -100,6 +100,12 @@ is `0`: performance is not the question this answers.
 is that a notification arriving in it means something, and the fastest way to destroy that is to
 fill it from a laptop.
 
-**A report names its revision.** Sentry releases are the full commit SHA — the same string the app
-already states about itself and the workflows already bake in — so the source maps, the alert, and
-the line on the profile header are one identifier rather than three that can drift.
+**A report names its revision.** The Sentry release is the full commit SHA — the same string the
+app states about itself and the publishing workflows already bake in — so the alert, the release
+and the line under the library header are one identifier rather than three that can drift.
+
+The source maps are paired by something else, and the difference matters. Metro's Sentry
+serializer stamps a debug id into a bundle and into its map alike, and the upload matches them on
+that rather than on the release. So the serializer is not an optional refinement: without it there
+is nothing to pair, and the upload reports success while every stack stays unreadable — the exact
+shape of failure #108 is about.

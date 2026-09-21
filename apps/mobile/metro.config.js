@@ -1,12 +1,15 @@
 // Monorepo setup: @steam/contracts and @steam/domain are consumed as TypeScript
 // source, so Metro has to watch and transpile them from outside this folder.
-const { getDefaultConfig } = require("expo/metro-config");
+const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 const path = require("node:path");
 
 const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, "../..");
 
-const config = getDefaultConfig(projectRoot);
+// Expo's default config, plus the serializer that stamps a matching debug id
+// into every bundle and its source map. Uploading without it leaves the two
+// unrelatable, and a stack unreadable (ADR-0017).
+const config = getSentryExpoConfig(projectRoot);
 
 config.watchFolders = [workspaceRoot];
 config.resolver.nodeModulesPaths = [
