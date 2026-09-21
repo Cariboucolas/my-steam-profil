@@ -2,25 +2,12 @@ import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { ProfileDto } from "@steam/contracts";
+import { NOT_READ } from "../../accessibility/not-read";
 import { colors, fonts, spacing } from "../../theme/tokens";
 
 const AVATAR = 44;
 
 export const PROFILE_REVISION_TEST_ID = "profile-revision";
-
-/**
- * What keeps the revision out of the traversal. It is provenance for whoever
- * is looking at the screen — and for whoever is listening, three more words
- * between the count and the way out, every time the header is reached.
- *
- * `accessible` alone would not do it: it means `isAccessibilityElement` on iOS
- * but only `focusable` on Android, so both platforms are told in their own
- * word, as the calendar's rows are.
- */
-const NOT_READ = {
-  accessibilityElementsHidden: true,
-  importantForAccessibility: "no-hide-descendants",
-} as const;
 
 type Props = {
   readonly profile: ProfileDto;
@@ -52,8 +39,17 @@ export function ProfileHeader({ profile, gameCount, revision, onChangeProfile }:
         <View style={styles.metaRow}>
           <Text style={styles.meta}>{`${gameCount} games`}</Text>
           {/* Its own element rather than more of the line above, because what
-              is written and what is read part company here. */}
-          <Text testID={PROFILE_REVISION_TEST_ID} style={styles.meta} {...NOT_READ}>
+              is written and what is read part company here: the revision is
+              provenance for whoever is looking, and three more words between
+              the count and the way out for whoever is listening. It is not
+              dragged out with a selection either — a commit is read off the
+              screen, and taking it any other way is deliberately unclaimed. */}
+          <Text
+            testID={PROFILE_REVISION_TEST_ID}
+            style={styles.meta}
+            selectable={false}
+            {...NOT_READ}
+          >
             {`· revision ${revision}`}
           </Text>
         </View>
