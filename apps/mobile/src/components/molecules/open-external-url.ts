@@ -1,3 +1,4 @@
+import { captureException } from "@sentry/react-native";
 import { openURL } from "expo-linking";
 import { openBrowserAsync } from "expo-web-browser";
 import { Platform } from "react-native";
@@ -37,6 +38,12 @@ import { Platform } from "react-native";
  * taking a screen down over a page that did not open. One platform this
  * genuinely cannot serve is the app inside another app's webview, where the
  * popup policy belongs to the host.
+ *
+ * It resolves either way, and it says so. A swallowed throw that reaches
+ * nobody is indistinguishable from a link nobody pressed: #98 raised at this
+ * exact call — a native module the runtime did not have — and surfaced days
+ * later by re-reading a ticket. Reporting keeps the guard and removes its
+ * silence; outside a live build it goes nowhere, by construction (ADR-0017).
  */
 export const openExternalUrl = async (url: string): Promise<void> => {
   try {
@@ -45,8 +52,10 @@ export const openExternalUrl = async (url: string): Promise<void> => {
       return;
     }
     await openBrowserAsync(url);
-  } catch {
+  } catch (error) {
     // Deliberately not rethrown — see above. There is nothing to tell a reader
-    // that the note they are already looking at does not say better.
+    // that the note they are already looking at does not say better. Which is
+    // the reason to tell someone else instead.
+    captureException(error);
   }
 };
