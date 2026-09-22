@@ -2,6 +2,9 @@
  * The two lines that reach a phone. One line each, and no embeds: the bridge in
  * `apps/alerts` needs them because it translates a rich object, where there are
  * four facts here and a notification preview is where they should be legible.
+ *
+ * Discord's own link preview is suppressed at the point of sending, for the
+ * same reason — see SUPPRESS_EMBEDS in discord.ts.
  */
 const MINUTE = 60_000;
 const HOUR = 60 * MINUTE;

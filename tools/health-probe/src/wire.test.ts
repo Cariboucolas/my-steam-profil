@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 
-import { announceTo } from "./discord";
+import { announceTo, SUPPRESS_EMBEDS } from "./discord";
 import { attemptWith, TIMEOUT_MS } from "./http";
 import type { Target } from "./targets";
 
@@ -12,13 +12,20 @@ const target: Target = {
 };
 
 describe("posting a line into the channel", () => {
-  it("sends the one field Discord accepts", async () => {
+  it("sends the one field Discord accepts, and suppresses the preview it would add", async () => {
     const send = vi.fn(async () => new Response(null, { status: 204 }));
     await announceTo("https://discord.example/hook", send)("🔴 down");
 
     const [url, init] = send.mock.calls[0] as unknown as [string, RequestInit];
     expect(url).toBe("https://discord.example/hook");
-    expect(JSON.parse(String(init.body))).toEqual({ content: "🔴 down" });
+    expect(JSON.parse(String(init.body))).toEqual({
+      content: "🔴 down",
+      flags: SUPPRESS_EMBEDS,
+    });
+  });
+
+  it("names the flag Discord documents, rather than a bare 4", () => {
+    expect(SUPPRESS_EMBEDS).toBe(1 << 2);
   });
 
   it("fails the run when Discord refuses, rather than losing the alert quietly", async () => {
