@@ -1,0 +1,58 @@
+name: Health
+
+# Nothing else watches these two Workers. A Worker that does not answer produces
+# no errors to report either, so the failure they are built to catch is the one
+# that would otherwise reach nobody (ADR-0019).
+#
+# Off the round hour, and a quarter of an hour apart: GitHub sheds short
+# intervals and round hours first when it is busy, so asking for every ten
+# minutes and receiving every seventeen would make the stated cadence a fiction.
+on:
+  schedule:
+    - cron: "7,22,37,52 * * * *"
+  workflow_dispatch:
+
+# A manual dispatch landing on a scheduled run would otherwise see the same
+# closed incident twice and alert twice. Never cancelled, for deploy.yml's
+# reason: a check half done is worse than a check late.
+concurrency:
+  group: health
+  cancel-in-progress: false
+
+# The only job here that writes to the tracker, because the open incident issues
+# are this monitor's entire memory.
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  probe:
+    name: probe
+    runs-on: ubuntu-latest
+    # Three attempts a minute apart, and the runner's own setup around them.
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # A target being down does not fail this step: the alert has gone out, and
+      # a red run every quarter of an hour would mail the owner beside it. What
+      # fails it is the probe being unable to do its job — a missing variable or
+      # secret, an absent label, a tracker or a channel that refused it. That
+      # failure is itself mailed, which is the backstop under the backstop.
+      - name: Probe what cannot report its own absence
+        env:
+          API_URL: ${{ vars.API_URL }}
+          ALERTS_URL: ${{ vars.ALERTS_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISCORD_HEALTH_WEBHOOK_URL: ${{ secrets.DISCORD_HEALTH_WEBHOOK_URL }}
+        run: pnpm --filter @steam/health-probe run probe
