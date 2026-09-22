@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512"><rect width="512" height="512" fill="#0b0f14"></rect>
+    <g transform="translate(256 256) scale(.82) translate(-256 -256)">
+      <circle cx="256" cy="256" r="132" fill="none" stroke="rgba(233,164,85,.16)" stroke-width="52"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#c98634" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="0.0" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#cb8939" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-23.5" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#cd8d3d" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-47.0" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#cf9042" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-70.5" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#d19347" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-94.1" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#d3974b" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-117.6" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#d59a50" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-141.1" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#d79d55" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-164.6" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#d9a05a" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-188.1" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#dba45e" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-211.6" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#dda763" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-235.2" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#dfaa68" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-258.7" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#e2ae6c" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-282.2" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#e4b171" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-305.7" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#e6b476" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-329.2" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#e8b87a" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-352.8" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#eabb7f" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-376.3" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#ecbe84" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-399.8" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#eec189" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-423.3" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#f0c58d" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-446.8" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#f2c892" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-470.3" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#f4cb97" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-493.8" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#f6cf9b" stroke-width="52" stroke-linecap="round" stroke-dasharray="31.5 830" stroke-dashoffset="-517.4" transform="rotate(-90 256 256)"></circle>
+      <circle cx="256" cy="256" r="132" fill="none" stroke="#f8d2a0" stroke-width="52" stroke-dasharray="23.5 830" stroke-dashoffset="-540.9" transform="rotate(-90 256 256)"></circle>
+      <path d="M256 98 284 124 256 150Z" fill="#f8d2a0" transform="rotate(245 256 256)"></path>
+      <circle cx="256" cy="256" r="30" fill="#e9a455"></circle>
+    </g>
+</svg>
