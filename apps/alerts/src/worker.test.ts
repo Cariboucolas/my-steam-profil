@@ -126,6 +126,10 @@ describe("the alert bridge", () => {
   });
 
   it("answers nothing else than a POST", async () => {
+    // The health probe reads this 405 as proof of life: a Worker that is down
+    // cannot refuse a method. Nothing watches this Worker otherwise, so adding
+    // a GET route here would quietly turn the probe into a different check
+    // (ADR-0019).
     const post = discordAnswering(accepted);
     const get = new Request("https://alerts.example.com/", { method: "GET" });
 
