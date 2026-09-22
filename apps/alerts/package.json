@@ -1,0 +1,20 @@
+{
+  "name": "@steam/alerts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "src/worker.ts",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev:worker": "wrangler dev",
+    "test": "vitest run --coverage",
+    "test:watch": "vitest",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@vitest/coverage-v8": "^2.1.9",
+    "typescript": "^5.5.0",
+    "vitest": "^2.0.0",
+    "wrangler": "^4.125.0"
+  }
+}

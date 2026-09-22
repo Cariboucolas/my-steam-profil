@@ -66,6 +66,35 @@ jobs:
           STEAM_API_KEY: ${{ secrets.STEAM_API_KEY }}
         run: printf '%s' "$STEAM_API_KEY" | pnpm exec wrangler secret put STEAM_API_KEY
 
+  alerts:
+    name: alerts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Its two secrets are posted by hand, once, and survive every later
+      # deploy — unlike STEAM_API_KEY they cannot drift, because nothing else
+      # holds a copy. Deploying before they exist is fine: the Worker answers
+      # 503 and says which one is missing.
+      - name: Deploy the alert bridge
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/alerts
+          packageManager: pnpm
+
   web:
     name: web
     # The bundle is built against the API that was just deployed, so it must
@@ -172,9 +201,9 @@ jobs:
 
   release:
     name: release
-    # Both must have succeeded. A release that names a deployment which failed
-    # is worse than no release at all.
-    needs: [api, web]
+    # All of them must have succeeded. A release that names a deployment which
+    # failed is worse than no release at all.
+    needs: [api, alerts, web]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
