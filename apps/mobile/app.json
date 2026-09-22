@@ -33,7 +33,7 @@
       [
         "@sentry/react-native/expo",
         {
-          "url": "https://sentry.io/",
+          "url": "https://de.sentry.io/",
           "organization": "cdcraft",
           "project": "steam-achievements"
         }

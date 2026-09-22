@@ -83,6 +83,12 @@ surfaced days later by re-reading a ticket.
 
 ## Consequences
 
+**The reports are stored in the EU.** The organisation was created in Sentry's European region,
+so events land in Frankfurt and the API domain is `de.sentry.io` rather than `sentry.io` — which
+the source map upload has to be told, since pointing it at the wrong region fails by looking for
+an organisation that is not there. A choice that cannot be changed later without a new
+organisation, and the right default for a decision about what leaves the device.
+
 **The DSN is public, and that is the intended shape.** A client DSN ships inside the bundle by
 construction; it accepts events and reads nothing. It therefore lives in a repository *variable*,
 `EXPO_PUBLIC_SENTRY_DSN`, beside `API_URL` — not in a secret, which would imply a confidentiality
