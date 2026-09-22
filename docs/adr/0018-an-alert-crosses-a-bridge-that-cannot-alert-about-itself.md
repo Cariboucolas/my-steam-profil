@@ -9,15 +9,23 @@ accepted here with its eyes open.
 ## What it binds
 
 - `apps/alerts`, its two secrets, and the job that deploys it.
-- The Sentry alert rule, which fires on a new issue and on nothing else.
+- The Sentry webhook subscription, which is `issue` and only its `created` action.
 
 ## Why
 
 **The free path speaks the wrong language.** Sentry's own Discord integration needs the Team
-plan, as Slack does. What the Developer plan does allow is a *custom internal integration* with
-an alert rule action — a webhook, posting Sentry's JSON to an address of ours. Discord rejects
-any body without `content` or `embeds`. So the choice was never "Discord or a bridge": it was a
-bridge, or not Discord.
+plan, as Slack does — and so, it turned out, does the alert rule action a custom integration
+would otherwise expose. What the Developer plan does allow is a *custom internal integration*
+subscribed to the `issue` webhook: a POST to an address of ours every time an issue is created
+or changes state. Discord rejects any body without `content` or `embeds`. So the choice was
+never "Discord or a bridge": it was a bridge, or not Discord.
+
+**Subscribing is better than the alert rule would have been.** A rule is a thing to write, to
+keep correct, and to remember exists. `issue.created` fires on the first sighting of a failure
+and on nothing else, which is what #108 decided the channel was for — obtained by checking one
+box rather than by maintaining a condition. What comes with it is the rest of the resource:
+`resolved`, `assigned`, `archived` and `unresolved` arrive at the same endpoint, including the
+ones you cause yourself while triaging, and are dropped by the bridge rather than by Sentry.
 
 **A dedicated channel is the whole reason for the channel.** Email was reconsidered when the
 price of Discord stopped being zero, and declined again: a mailbox already carries noise, so a
@@ -79,7 +87,11 @@ exist is safe: the Worker answers 503 and says which one is missing.
 **A third deployment on every merge.** The release job now waits on all three, on the reasoning
 it already carried: a release naming a deployment that failed is worse than no release.
 
-**A revision is shortened the same way everywhere.** The Discord message prints seven characters
-of the commit, as the release tag, the update message and the app's own header do (ADR-0016), so
-what arrives in the channel can be read against what the app says about itself without
-translation.
+**A revision is shortened the same way everywhere, when there is one.** Where the message is
+built from an event it prints seven characters of the commit, as the release tag, the update
+message and the app's own header do (ADR-0016). An **issue carries neither a release nor an
+environment** — both belong to an occurrence rather than to the group of them — so on the path
+actually in use those fields are absent rather than guessed. The link is what leads to them, and
+a field that invented a value would be worse than one that is missing. Fetching them from
+Sentry's API was considered and dropped: it spends a network round trip inside the one second a
+webhook has to answer, to restate what the link already reaches.
