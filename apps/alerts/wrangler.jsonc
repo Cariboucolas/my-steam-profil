@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "steam-achievements-alerts",
+  "main": "src/worker.ts",
+  // Pinned the way apps/api pins it: raising it is a deliberate act.
+  "compatibility_date": "2026-09-22",
+  // The only place a failure of this Worker can be seen. Nothing alerts when
+  // the thing that alerts is down — a limit ADR-0018 states rather than hides.
+  "observability": { "enabled": true }
+}

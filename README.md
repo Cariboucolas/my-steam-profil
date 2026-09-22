@@ -13,6 +13,7 @@ Architecture hexagonale, monorepo pnpm. Voir `docs/superpowers/` (local) pour le
 | `packages/contracts` | Les DTO « fil » partagés entre le backend et l'app. |
 | `apps/api` | Proxy Steam (ADR-0001) : quatre endpoints, mappers et presenters. |
 | `apps/mobile` | L'app Expo : l'écran de saisie du profil, puis les écrans Library et Game. |
+| `apps/alerts` | Le pont qui porte une alerte Sentry jusqu'à Discord (ADR-0018). |
 | `tools/steam-spike` | Récupère les réponses brutes de Steam dans `fixtures/steam-raw/`. |
 
 ## En production
@@ -50,6 +51,13 @@ ligne dit `dev`, comme l'app (ADR-0016).
 Le site déployé ne contient **aucun** SteamID : le build de production force
 `EXPO_PUBLIC_STEAM_ID` à vide — explicitement, et non en comptant sur son absence — donc l'app
 demande quel profil afficher, ce qui la rend utilisable par n'importe qui.
+
+Les alertes Sentry arrivent dans un serveur Discord dédié, par `apps/alerts` — un troisième
+Worker, qui vérifie la signature de Sentry et traduit son JSON en message Discord. Il existe
+parce que l'intégration Discord native de Sentry demande un plan payant, là où une *custom
+internal integration* est gratuite mais parle une langue que Discord refuse. **Rien ne
+surveille ce Worker** : s'il cesse de transmettre, le silence ressemble à celui d'un système
+qui va bien. C'est la limite connue d'ADR-0018, écrite plutôt que dissimulée.
 
 Ce que les deux cibles publiées rapportent quand elles cassent va au projet Sentry
 `cdcraft/steam-achievements`, sous la révision qu'elles affichent déjà. Le DSN est une
