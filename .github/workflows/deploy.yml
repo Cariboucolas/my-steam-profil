@@ -199,11 +199,45 @@ jobs:
             --project-name=steam-achievements
             --branch=main
 
+  probe:
+    name: probe
+    # Both Workers are out by now. The site is static assets and changes nothing
+    # about what they answer, so it is not waited on.
+    needs: [api, alerts]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The same probe health.yml runs, in the mode that raises nothing and
+      # announces nothing: the workflow going red *is* the notification, and
+      # somebody merged a minute ago, so somebody is watching. The channel
+      # ADR-0018 bought is for what nobody is watching (ADR-0019).
+      #
+      # It retries for up to a minute, which is propagation rather than patience
+      # with a broken deploy.
+      - name: Check that what was just deployed answers
+        env:
+          API_URL: ${{ vars.API_URL }}
+          ALERTS_URL: ${{ vars.ALERTS_URL }}
+        run: pnpm --filter @steam/health-probe run probe deploy
+
   release:
     name: release
-    # All of them must have succeeded. A release that names a deployment which
-    # failed is worse than no release at all.
-    needs: [api, alerts, web]
+    # All of them must have succeeded, the probe included. A release that names
+    # a deployment which failed is worse than no release at all, and so is one
+    # naming an address that does not answer.
+    needs: [api, alerts, web, probe]
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
