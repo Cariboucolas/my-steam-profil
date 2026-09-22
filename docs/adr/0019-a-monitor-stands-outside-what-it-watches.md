@@ -125,10 +125,12 @@ is what `docs/adr/README.md` says the set is for.
 
 ## Consequences
 
-**One secret and one label, posted by hand.** `DISCORD_HEALTH_WEBHOOK_URL` is a secret and not
-a repository variable, on ADR-0018's reasoning: whoever holds a webhook URL can post into the
-channel. The `incident` label has to exist before the first outage, or the issue creation fails
-at the worst possible moment. Both are checked before the first HTTP request, and a missing one
+**One secret, one variable and one label, posted by hand.** `DISCORD_HEALTH_WEBHOOK_URL` is a
+secret and not a repository variable, on ADR-0018's reasoning: whoever holds a webhook URL can
+post into the channel. `ALERTS_URL` is a variable beside `API_URL`, because the bridge's address
+is public and deriving it from the API's by string surgery would break the first time either is
+renamed. The `incident` label has to exist before the first outage, or the issue creation fails
+at the worst possible moment. All three are checked before the first probe, and a missing one
 fails the job loudly with the command that fixes it — the shape `deploy.yml` already uses for
 `API_URL` and `SENTRY_DSN`. A scheduled workflow that fails notifies the repository owner, so
 a monitor mute for want of configuration does not stay mute.
