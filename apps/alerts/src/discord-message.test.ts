@@ -90,4 +90,69 @@ describe("describeAlert", () => {
     expect(embedOf(long)?.title).toHaveLength(256);
     expect(embedOf(long)?.title.endsWith("…")).toBe(true);
   });
+
+  it("refuses a comment, which shares an action name with a new issue", () => {
+    // `comment.created` and `issue.created` both say "created". Routing on the
+    // action alone would wake somebody for a comment.
+    expect(describeAlert({ action: "created", data: { comment: { comment: "hi" } } })).toBeUndefined();
+  });
+});
+
+/**
+ * The other shape, and the one actually in use: Sentry's own Discord
+ * integration needs a paid plan, so the free path is an issue webhook rather
+ * than an alert rule action (ADR-0018).
+ */
+describe("describeAlert, on a new issue", () => {
+  const issue = {
+    action: "created",
+    data: {
+      issue: {
+        title: "TypeError: x is not a function",
+        culprit: "openExternalUrl(app/src/components)",
+        level: "error",
+        shortId: "STEAM-ACHIEVEMENTS-3",
+        web_url: "https://cdcraft.sentry.io/issues/1234567890/",
+      },
+    },
+  };
+
+  it("leads with what broke, linked to the issue", () => {
+    expect(embedOf(issue)).toMatchObject({
+      title: "TypeError: x is not a function",
+      url: "https://cdcraft.sentry.io/issues/1234567890/",
+    });
+  });
+
+  it("names the issue by its short id, which is how a person refers to it", () => {
+    expect(embedOf(issue)?.fields).toContainEqual(
+      expect.objectContaining({ name: "Issue", value: "STEAM-ACHIEVEMENTS-3" }),
+    );
+  });
+
+  it("says nothing about the revision, because an issue does not carry one", () => {
+    // environment and release belong to an event. The link is what leads to
+    // them; inventing a value here would be worse than leaving the field out.
+    const names = embedOf(issue)?.fields.map((field) => field.name);
+
+    expect(names).not.toContain("Revision");
+    expect(names).not.toContain("Environment");
+  });
+
+  it("falls back to the permalink where web_url is absent", () => {
+    const older = {
+      action: "created",
+      data: { issue: { title: "Boom", permalink: "https://cdcraft.sentry.io/issues/9/" } },
+    };
+
+    expect(embedOf(older)?.url).toBe("https://cdcraft.sentry.io/issues/9/");
+  });
+
+  it("wakes nobody for an issue that merely changed state", () => {
+    // Subscribing to issues also subscribes to resolved, assigned, archived
+    // and unresolved — including the ones you cause yourself while triaging.
+    for (const action of ["resolved", "assigned", "archived", "unresolved"]) {
+      expect(describeAlert({ ...issue, action })).toBeUndefined();
+    }
+  });
 });

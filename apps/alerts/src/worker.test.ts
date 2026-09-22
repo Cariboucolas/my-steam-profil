@@ -76,6 +76,41 @@ describe("the alert bridge", () => {
     });
   });
 
+  it("posts a new issue, which is the shape the free plan actually sends", async () => {
+    // Sentry's Discord integration needs a paid plan, and so does the alert
+    // rule action. The webhook subscription is what is left (ADR-0018).
+    const post = discordAnswering(accepted);
+    const issue = {
+      action: "created",
+      data: {
+        issue: {
+          title: "TypeError: x is not a function",
+          shortId: "STEAM-ACHIEVEMENTS-3",
+          web_url: "https://cdcraft.sentry.io/issues/1234567890/",
+        },
+      },
+    };
+
+    const response = await createFetchHandler(post)(await signed(issue), env);
+
+    expect(response.status).toBe(204);
+    const [, init] = post.mock.calls[0] ?? [];
+    expect(JSON.parse(String(init?.body))).toMatchObject({
+      embeds: [{ title: "TypeError: x is not a function" }],
+    });
+  });
+
+  it("stays quiet when an issue merely changed state", async () => {
+    const post = discordAnswering(accepted);
+    const resolved = {
+      action: "resolved",
+      data: { issue: { title: "Old news", web_url: "https://cdcraft.sentry.io/issues/1/" } },
+    };
+
+    expect((await createFetchHandler(post)(await signed(resolved), env)).status).toBe(204);
+    expect(post).not.toHaveBeenCalled();
+  });
+
   it("refuses a request that is not signed by the integration", async () => {
     const post = discordAnswering(accepted);
     const forged = new Request("https://alerts.example.com/", {

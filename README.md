@@ -54,8 +54,10 @@ demande quel profil afficher, ce qui la rend utilisable par n'importe qui.
 
 Les alertes Sentry arrivent dans un serveur Discord dédié, par `apps/alerts` — un troisième
 Worker, qui vérifie la signature de Sentry et traduit son JSON en message Discord. Il existe
-parce que l'intégration Discord native de Sentry demande un plan payant, là où une *custom
-internal integration* est gratuite mais parle une langue que Discord refuse. **Rien ne
+parce que l'intégration Discord native de Sentry demande un plan payant — comme l'*alert rule
+action* qu'une intégration personnalisée exposerait sinon — là où l'abonnement au webhook
+`issue` est gratuit mais parle une langue que Discord refuse. Seule l'action `created` réveille :
+`resolved`, `assigned` et le reste arrivent au même endroit et sont écartés par le pont. **Rien ne
 surveille ce Worker** : s'il cesse de transmettre, le silence ressemble à celui d'un système
 qui va bien. C'est la limite connue d'ADR-0018, écrite plutôt que dissimulée.
 
