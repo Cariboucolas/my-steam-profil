@@ -6,11 +6,8 @@ import {
   deviceIsFineWithMotion,
   letTheDeviceAnswer,
 } from "../../accessibility/reduce-motion.test-support";
-import {
-  HOLD_MS,
-  MARK_STOP_COUNT,
-  REVEAL_MS,
-} from "../../splash/splash-timing";
+import { HOLD_MS, REVEAL_MS } from "../../splash/splash-timing";
+import { MARK_STOP_COUNT } from "../../theme/mark";
 import {
   MARK_STOP_TEST_ID,
   MARK_TIP_TEST_ID,
