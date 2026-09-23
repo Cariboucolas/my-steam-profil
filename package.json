@@ -8,6 +8,8 @@
     "typecheck": "pnpm -r run typecheck",
     "check:tests": "pnpm --filter @steam/repo-checks check",
     "build:web": "pnpm --filter @steam/mobile exec expo export --platform web --dump-sourcemap",
+    "icons:build": "pnpm --filter @steam/icon-build icons",
+    "icons:check": "pnpm --filter @steam/icon-build icons -- --check",
     "test:domain": "pnpm --filter @steam/domain test",
     "test:api": "pnpm --filter @steam/api test",
     "coverage:domain": "pnpm --filter @steam/domain coverage",
