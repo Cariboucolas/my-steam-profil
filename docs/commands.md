@@ -111,6 +111,17 @@ drifted from their sources without anyone knowing (#134).
 `tools/icon-build/src/recipes.ts` says what each image comes from, including the three that look
 as though they could come from `icon.svg` and cannot.
 
+`docs/images/` holds the two screenshots the README shows, each one already wrapped in a phone
+bezel — GitHub strips the CSS that would draw one, so the frame has to be inside the PNG.
+
+```sh
+cd docs/images && ./frame-phone.sh ~/Desktop/capture.png library.png
+```
+
+Run it only when a screenshot changes, over the **raw** capture. Nothing drifts if you never
+run it: the framed file is the only file, with no source beside it to fall out of step.
+[docs/images/README.md](./images/README.md) says why it was built that way.
+
 ### The ones whose output stays outside the repository
 
 ```sh
