@@ -111,8 +111,9 @@ drifted from their sources without anyone knowing (#134).
 `tools/icon-build/src/recipes.ts` says what each image comes from, including the three that look
 as though they could come from `icon.svg` and cannot.
 
-`docs/images/` holds the two screenshots the README shows, each one already wrapped in a phone
-bezel — GitHub strips the CSS that would draw one, so the frame has to be inside the PNG.
+`docs/images/` holds the two screenshots the README shows, each one already inside a phone —
+GitHub strips the CSS that would draw one, so the body has to be inside the PNG. The script also
+cuts the capture to a phone's 19.5:9, which is what keeps the two images the same height.
 
 ```sh
 cd docs/images && ./frame-phone.sh ~/Desktop/capture.png library.png
