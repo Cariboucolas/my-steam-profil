@@ -166,17 +166,9 @@ pnpm icons:build     # rewrite all seventeen
 pnpm icons:check     # say whether any has drifted from its artwork, without writing
 ```
 
-Run the first after touching any SVG, and commit what it writes. Nothing runs
-either of these for you — neither is part of `verify`, because gating CI on them
-would put a ~30 MB native dependency in every install for a check that matters
-a few times a year (#135).
-
-`pnpm icons:check` earns its keep beyond staleness: it also compares the
-artwork's palette against `apps/mobile/src/theme/mark.ts`, which is the same
-mark by a second route — the component the splash animates a stop at a time.
-A colour changed on one side alone passes every test in the repository and shows
-up only as a flicker when the native splash hands over. Worth running before a
-PR that touches either.
+Run the first after touching any SVG, and commit what it writes. **Nothing runs
+either of these for you**, deliberately — why, and when `icons:check` is worth
+the keystrokes, is in [commands.md](./commands.md#the-commands-nobody-runs-for-you).
 
 `tools/icon-build/src/recipes.ts` says what each image comes from, including the
 three that look as though they could come from `icon.svg` and cannot.
@@ -191,4 +183,5 @@ another that dates no session.
 pnpm --filter @steam/spike spike   # see tools/steam-spike/.env.example
 ```
 
-`fixtures/steam-raw/` is outside the repository: it holds personal profile data.
+`fixtures/steam-raw/` is outside the repository: it holds personal profile data. Nothing runs
+this one for you either — see [commands.md](./commands.md).
