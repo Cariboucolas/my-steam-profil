@@ -28,7 +28,15 @@
       "expo-router",
       "expo-image",
       "expo-font",
-      "expo-splash-screen",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 132,
+          "resizeMode": "contain",
+          "backgroundColor": "#0b0f14"
+        }
+      ],
       "expo-web-browser",
       [
         "@sentry/react-native/expo",
