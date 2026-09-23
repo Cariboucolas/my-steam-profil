@@ -1,19 +1,17 @@
 # App assets
 
-What Expo reads, and what each file is made from. Regenerating any of them is
-still a manual export — see issue #127.
+The SVGs here are the artwork. Every PNG beside them is built from one:
 
-| Expo reads | Made from | Notes |
-| --- | --- | --- |
-| `icon.png` | `icon-square.svg` | square and opaque: both OSes apply their own mask |
-| `android-icon-foreground.png` | `adaptive-foreground.svg` | keeps the `1.3` scale that fills the adaptive safe zone |
-| `android-icon-background.png` | `adaptive-background.svg` | flat `#0b0f14` |
-| `android-icon-monochrome.png` | `adaptive-foreground.svg` | a white silhouette, for Android's themed icons |
-| `favicon.png` | `icon.svg` | the rounded mark: a browser does not mask it |
-| `splash-icon.png` | `splash-mark.svg` | the native splash, at the 132 pt `app.json` places it |
+```sh
+pnpm icons:build     # rewrite them all
+pnpm icons:check     # say whether any has parted company with its artwork
+```
 
-`splash-mark.svg` is `icon.svg` without its rounded plate: the splash plugin
-paints `backgroundColor` behind the image, so the plate would be drawn twice.
+`tools/icon-build/src/recipes.ts` is the table of what comes from what, and why.
+Three of these look like they could come from `icon.svg` and cannot — the app
+icon needs no plate of its own, the splash needs none at all, and the adaptive
+foreground is drawn at a larger scale. Each of those has cost somebody an hour,
+and each is now a line in that file rather than a thing to remember.
 
 `png/` holds the sizes a store listing or a web page asks for by hand, which
 nothing in the app reads. It has its own [README](png/README.md).
@@ -26,5 +24,10 @@ are exported images, that is the component the splash animates a stop at a time.
 They differ in one figure. The SVGs draw the colour ramp in twenty-four steps;
 `MARK_STOPS` draws it in twelve, as the design's animated variant does. Rendered
 side by side at 132 pt — the size where the native splash hands over to the
-component — the two are indistinguishable, so the seam does not show. Anything
-that changes the ramp has to change both.
+component — the two are indistinguishable, so the seam does not show.
+
+Everything else about them has to match, and `pnpm icons:check` is what says so:
+it reads the ramp's two ends, the tip and the hub off the artwork and compares
+them with `mark.ts`. Nothing else in the repository would notice a colour
+changed on one side only — it passes every test and appears as a flicker at the
+handover.

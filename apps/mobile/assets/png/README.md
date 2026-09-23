@@ -6,8 +6,8 @@ Nothing in the app reads this directory. Expo reads the five PNGs one level up
 listing or a web page asks for by hand, kept so they do not have to be
 re-exported one at a time.
 
-All of them come from the SVGs one level up. Regenerating them is not yet a
-command — see issue #127.
+All of them come from the SVGs one level up, and `pnpm icons:build` rewrites
+them. `tools/icon-build/src/recipes.ts` says which source each one uses.
 
 | File | Source | What asks for it |
 | --- | --- | --- |
