@@ -70,6 +70,7 @@ phone, the four endpoints, what to do when the phone cannot reach Metro — is i
 
 | | |
 | --- | --- |
+| [docs/commands.md](docs/commands.md) | Every command you can run by hand, what each is for, and which ones nobody runs for you |
 | [docs/development.md](docs/development.md) | Run it locally: backend, app, a real phone over USB, the network troubleshooting |
 | [docs/deployment.md](docs/deployment.md) | Pages, Workers, EAS Update, the switches, where the API key lives |
 | [docs/testing.md](docs/testing.md) | The three commands CI runs and the `verify` gate |
