@@ -2,12 +2,11 @@ import { render } from "@testing-library/react-native";
 
 import {
   BrandMark,
-  MARK_STOPS,
   MARK_STOP_TEST_ID,
   MARK_TIP_TEST_ID,
   MARK_TRACK_TEST_ID,
 } from "./BrandMark";
-import { MARK_STOP_COUNT } from "../../splash/splash-timing";
+import { MARK_STOPS, MARK_STOP_COUNT } from "../../theme/mark";
 
 /**
  * The mark is hidden from the accessibility tree on purpose, and the library
@@ -17,14 +16,9 @@ import { MARK_STOP_COUNT } from "../../splash/splash-timing";
 const DRAWN = { includeHiddenElements: true } as const;
 
 describe("MARK_STOPS", () => {
-  /** The schedule counts them out one by one; the two must agree. */
-  it("has the stop the schedule expects", () => {
-    expect(MARK_STOPS).toHaveLength(MARK_STOP_COUNT);
-  });
-
   it("runs from the darkest amber to the lightest", () => {
-    expect(MARK_STOPS[0]?.colour).toBe("#c98634");
-    expect(MARK_STOPS[MARK_STOPS.length - 1]?.colour).toBe("#f6cf9b");
+    expect(MARK_STOPS[0]?.color).toBe("#c98634");
+    expect(MARK_STOPS[MARK_STOPS.length - 1]?.color).toBe("#f6cf9b");
   });
 
   /** Each stop sits one step further round than the one before it. */

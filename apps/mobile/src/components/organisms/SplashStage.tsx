@@ -3,13 +3,13 @@ import { Animated, Easing, StyleSheet, View } from "react-native";
 
 import { useReduceMotion } from "../../accessibility/use-reduce-motion";
 import {
-  MARK_STOP_COUNT,
   WORDMARK_DELAY_MS,
   WORDMARK_RISE_MS,
   holdFor,
   stopsShownAt,
   tipIsShownAt,
 } from "../../splash/splash-timing";
+import { MARK_STOP_COUNT } from "../../theme/mark";
 import { colors, fonts } from "../../theme/tokens";
 import { BrandMark } from "../atoms/BrandMark";
 
@@ -31,6 +31,12 @@ const RISE_DISTANCE = 8;
  * Half a stop's interval, so a stop is never drawn more than half a step late.
  * The schedule in `splash-timing` is the authority on when each part lands;
  * this only says how closely the stage follows it.
+ *
+ * A clock rather than an `Animated.Value`, unlike `TallyLoadBar` and `Skeleton`
+ * next door, because what moves here is not a style: the reveal adds SVG
+ * children one at a time, and no driver animates whether an element exists. The
+ * wordmark's rise *is* a style, and is animated the way the neighbours do it.
+ * Thirty renders of a fifteen-node tree, once per launch, is the price.
  */
 const TICK_MS = 30;
 
