@@ -12,7 +12,7 @@ const TOP_ROOM = 60;
 export default function SetupScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { state, remember } = useSteamId();
+  const { state, remember, forget } = useSteamId();
 
   const submit = async (raw: string) => {
     const accepted = await remember(raw);
@@ -24,6 +24,18 @@ export default function SetupScreen() {
     }
     return accepted;
   };
+
+  const forgetProfile = async () => {
+    await forget();
+    // The library underneath now redirects here, but only once it has focus:
+    // back to it, and its redirect replaces it with a single first-run form.
+    // Staying put instead would leave this screen over a library with nothing
+    // to show, for back to reveal.
+    router.dismissTo("/");
+  };
+
+  // The way back and the way out both need a profile to act on.
+  const known = state.status === "known";
 
   return (
     <ScrollView
@@ -41,7 +53,8 @@ export default function SetupScreen() {
         // it is on the stack and replaces this screen with it otherwise, so a
         // reload or a deep link straight to /setup — where router.back() would
         // be a silent no-op — still lands somewhere.
-        onCancel={state.status === "known" ? () => router.dismissTo("/") : undefined}
+        onCancel={known ? () => router.dismissTo("/") : undefined}
+        onForget={known ? () => void forgetProfile() : undefined}
       />
     </ScrollView>
   );

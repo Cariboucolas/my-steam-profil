@@ -5,17 +5,32 @@ import {
   screen,
   waitFor,
 } from "expo-router/testing-library";
-import { Text } from "react-native";
+import { Redirect, useRouter } from "expo-router";
+import { Pressable, Text } from "react-native";
 
 import { deviceAsksForLessMotion } from "../accessibility/reduce-motion.test-support";
 import type { SteamIdStorage } from "../settings/steam-id-storage";
-import { SteamIdProvider } from "../settings/steam-id-store";
+import { SteamIdProvider, useSteamId } from "../settings/steam-id-store";
 import SetupScreen from "../../app/setup";
 
 const STEAM_ID = "76561197979269357";
 const OTHER_STEAM_ID = "76561197960287930";
 
 const LibraryStub = () => <Text>library screen</Text>;
+
+/** The library's own way in and out of setup: its redirect, and its link. */
+const RedirectingLibraryStub = () => {
+  const router = useRouter();
+  const { state } = useSteamId();
+  if (state.status === "absent") {
+    return <Redirect href="/setup" />;
+  }
+  return (
+    <Pressable onPress={() => router.push("/setup")}>
+      <Text>Change profile</Text>
+    </Pressable>
+  );
+};
 
 /** Remembers what it was told, so a test can ask what the device now holds. */
 const recordingStorage = (stored: string | undefined) => {
@@ -34,18 +49,24 @@ const recordingStorage = (stored: string | undefined) => {
   return { storage, held: () => current };
 };
 
-const renderSetup = (stored: string | undefined) => {
+const renderSetup = (
+  stored: string | undefined,
+  { index = LibraryStub, initialUrl = "/setup" } = {},
+) => {
   const device = recordingStorage(stored);
   const router = renderRouter(
-    { index: LibraryStub, setup: SetupScreen },
+    { index, setup: SetupScreen },
     {
-      initialUrl: "/setup",
+      initialUrl,
       wrapper: ({ children }) => (
         <SteamIdProvider storage={device.storage}>{children}</SteamIdProvider>
       ),
     },
   );
-  return { ...router, held: device.held };
+  /** The screens on the app's stack, bottom first, under the router's own root. */
+  const stackedScreens = () =>
+    router.getRouterState()?.routes[0]?.state?.routes.map((route) => route.name);
+  return { ...router, held: device.held, stackedScreens };
 };
 
 describe("setup screen", () => {
@@ -103,6 +124,7 @@ describe("setup screen", () => {
 
       await screen.findByText("Which Steam profile?");
       expect(screen.queryByText("Cancel")).toBeNull();
+      expect(screen.queryByText("Forget this profile")).toBeNull();
     });
 
     it("offers one once a profile is already known", async () => {
@@ -118,6 +140,37 @@ describe("setup screen", () => {
 
       await waitFor(() => expect(screen.getByText("library screen")).toBeTruthy());
       expect(held()).toBe(STEAM_ID);
+    });
+  });
+
+  describe("forgetting", () => {
+    it("takes the profile off the device", async () => {
+      const { held } = renderSetup(STEAM_ID);
+
+      fireEvent.press(await screen.findByText("Forget this profile"));
+
+      await waitFor(() => expect(held()).toBeUndefined());
+    });
+
+    /**
+     * Setup is pushed on top of the library, and the library redirects to
+     * setup as soon as there is no profile. Forgetting must end on one setup
+     * screen, not on a second one stacked over the first, with a stale
+     * library between them for back to reveal.
+     */
+    it("leaves a single first-run form behind", async () => {
+      const { stackedScreens } = renderSetup(STEAM_ID, {
+        index: RedirectingLibraryStub,
+        initialUrl: "/",
+      });
+
+      fireEvent.press(await screen.findByText("Change profile"));
+      fireEvent.press(await screen.findByText("Forget this profile"));
+
+      await waitFor(() => expect(stackedScreens()).toEqual(["setup"]));
+      expect(screen.getByText("Which Steam profile?")).toBeTruthy();
+      expect(screen.queryByText("Cancel")).toBeNull();
+      expect(screen.queryByText("Forget this profile")).toBeNull();
     });
   });
 });
