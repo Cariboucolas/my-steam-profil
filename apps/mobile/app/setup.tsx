@@ -25,7 +25,7 @@ export default function SetupScreen() {
     return accepted;
   };
 
-  const forgetProfile = async () => {
+  const forgetSteamId = async () => {
     await forget();
     // The library underneath now redirects here, but only once it has focus:
     // back to it, and its redirect replaces it with a single first-run form.
@@ -54,7 +54,7 @@ export default function SetupScreen() {
         // reload or a deep link straight to /setup — where router.back() would
         // be a silent no-op — still lands somewhere.
         onCancel={known ? () => router.dismissTo("/") : undefined}
-        onForget={known ? () => void forgetProfile() : undefined}
+        onForget={known ? () => void forgetSteamId() : undefined}
       />
     </ScrollView>
   );

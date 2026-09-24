@@ -18,7 +18,10 @@ const OTHER_STEAM_ID = "76561197960287930";
 
 const LibraryStub = () => <Text>library screen</Text>;
 
-/** The library's own way in and out of setup: its redirect, and its link. */
+/**
+ * The library's own way in and out of setup: its redirect, and its link — an
+ * icon on the real screen, reached by the same accessibility label.
+ */
 const RedirectingLibraryStub = () => {
   const router = useRouter();
   const { state } = useSteamId();
@@ -26,8 +29,8 @@ const RedirectingLibraryStub = () => {
     return <Redirect href="/setup" />;
   }
   return (
-    <Pressable onPress={() => router.push("/setup")}>
-      <Text>Change profile</Text>
+    <Pressable accessibilityLabel="Change profile" onPress={() => router.push("/setup")}>
+      <Text>library screen</Text>
     </Pressable>
   );
 };
@@ -164,11 +167,11 @@ describe("setup screen", () => {
         initialUrl: "/",
       });
 
-      fireEvent.press(await screen.findByText("Change profile"));
+      fireEvent.press(await screen.findByLabelText("Change profile"));
       fireEvent.press(await screen.findByText("Forget this profile"));
 
       await waitFor(() => expect(stackedScreens()).toEqual(["setup"]));
-      expect(screen.getByText("Which Steam profile?")).toBeTruthy();
+      expect(screen.getByLabelText("SteamID64").props.value).toBe("");
       expect(screen.queryByText("Cancel")).toBeNull();
       expect(screen.queryByText("Forget this profile")).toBeNull();
     });

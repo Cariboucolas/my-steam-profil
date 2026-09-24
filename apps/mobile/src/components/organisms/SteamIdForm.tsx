@@ -13,7 +13,7 @@ type Props = {
   readonly onSubmit: (raw: string) => Promise<boolean>;
   /** Absent when there is no profile to go back to. */
   readonly onCancel?: (() => void) | undefined;
-  /** Absent when there is no profile to forget. */
+  /** Absent when there is no SteamID stored to forget. */
   readonly onForget?: (() => void) | undefined;
 };
 
