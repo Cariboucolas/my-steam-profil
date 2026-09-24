@@ -13,9 +13,11 @@ type Props = {
   readonly onSubmit: (raw: string) => Promise<boolean>;
   /** Absent when there is no profile to go back to. */
   readonly onCancel?: (() => void) | undefined;
+  /** Absent when there is no profile to forget. */
+  readonly onForget?: (() => void) | undefined;
 };
 
-export function SteamIdForm({ onSubmit, onCancel }: Props) {
+export function SteamIdForm({ onSubmit, onCancel, onForget }: Props) {
   const [raw, setRaw] = useState("");
   const [refused, setRefused] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -73,7 +75,13 @@ export function SteamIdForm({ onSubmit, onCancel }: Props) {
 
       {onCancel ? (
         <Pressable accessibilityRole="button" onPress={onCancel}>
-          <Text style={styles.cancel}>Cancel</Text>
+          <Text style={styles.secondary}>Cancel</Text>
+        </Pressable>
+      ) : null}
+
+      {onForget ? (
+        <Pressable accessibilityRole="button" onPress={onForget}>
+          <Text style={styles.secondary}>Forget this profile</Text>
         </Pressable>
       ) : null}
     </View>
@@ -127,7 +135,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.accent,
   },
-  cancel: {
+  secondary: {
     fontFamily: fonts.sans,
     fontSize: 14,
     color: colors.textDim,

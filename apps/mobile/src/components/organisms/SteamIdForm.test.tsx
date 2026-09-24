@@ -59,6 +59,23 @@ describe("SteamIdForm", () => {
     expect(onCancel).toHaveBeenCalled();
   });
 
+  it("offers nothing to forget when there is no profile", () => {
+    const onSubmit = jest.fn<Promise<boolean>, [string]>().mockResolvedValue(true);
+    render(<SteamIdForm onSubmit={onSubmit} onCancel={jest.fn()} />);
+
+    expect(screen.queryByText("Forget this profile")).toBeNull();
+  });
+
+  it("forgets the profile when asked to", () => {
+    const onSubmit = jest.fn<Promise<boolean>, [string]>().mockResolvedValue(true);
+    const onForget = jest.fn();
+    render(<SteamIdForm onSubmit={onSubmit} onForget={onForget} />);
+
+    fireEvent.press(screen.getByText("Forget this profile"));
+
+    expect(onForget).toHaveBeenCalled();
+  });
+
   it("stops waiting even when the submit handler rejects", async () => {
     // A rejected submit used to skip setBusy(false) and disable the button
     // for good, with no message.
