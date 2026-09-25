@@ -1,0 +1,59 @@
+name: EAS Build
+
+# An update is only served to a build whose runtime matches it, and the runtime
+# is the fingerprint of everything native. When a merge moves it, the installed
+# app stops receiving updates and nothing says so: a stranded build (#115).
+# This makes sure every fingerprint main publishes to has a build to install.
+#
+# Most merges touch JavaScript only: the fingerprint has a build already, and
+# the run ends in a minute having started nothing and posted nothing.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Never cancelled, unlike eas-update.yml. A job cancelled while it waits would
+# leave the build running at Expo with nobody to post its link. A second merge
+# with the same new fingerprint waits here, then finds the first one's build
+# and stops: two merges, one build.
+concurrency:
+  group: eas-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: android preview
+    # The same kill switch as the update workflow: one variable stops both.
+    if: vars.EAS_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    # Twenty minutes of build, behind a queue that on the free plan can take
+    # longer than the build itself.
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # The fingerprint hashes the autolinked native modules, so it can only be
+      # computed over installed dependencies.
+      - run: pnpm install --frozen-lockfile
+
+      - uses: expo/expo-github-action@v9
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      # The `preview` profile in eas.json carries its own env, the deployed API
+      # included, so nothing is passed to the build from here. The webhook is
+      # read only when a build finished: a merge that needed none does not go
+      # red for lack of it, and one that did fails here rather than stay quiet.
+      - name: Build the fingerprint if it has no build yet
+        env:
+          DISCORD_BUILDS_WEBHOOK_URL: ${{ secrets.DISCORD_BUILDS_WEBHOOK_URL }}
+        run: pnpm --filter @steam/native-build run ensure
