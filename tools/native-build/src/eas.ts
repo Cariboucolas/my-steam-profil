@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 
-import { buildsOf, type Build } from "./builds";
+import { buildsOf, isRecord, type Build } from "./builds";
 
 const PROFILE = "preview";
 const PLATFORM = "android";
@@ -10,7 +10,7 @@ const PLATFORM = "android";
  * straight to the job's log: that is where `eas build` narrates twenty minutes
  * of queue and build, and where `--json` puts everything that is not JSON.
  */
-const printed = (command: string, args: readonly string[], cwd: string): Promise<string> =>
+const stdoutOf = (command: string, args: readonly string[], cwd: string): Promise<string> =>
   new Promise((resolve, reject) => {
     const child = spawn(command, args, { cwd, stdio: ["ignore", "pipe", "inherit"] });
     const chunks: Buffer[] = [];
@@ -37,16 +37,13 @@ const json = (output: string, what: string): unknown => {
  * before this was written: at 4efb0a6 both say 71b5ede….
  */
 export const fingerprintIn = (mobile: string) => async (): Promise<string> => {
-  const output = await printed(
+  const output = await stdoutOf(
     "npx",
     ["expo-updates", "fingerprint:generate", "--platform", PLATFORM],
     mobile,
   );
   const fingerprint = json(output, "expo-updates fingerprint:generate");
-  const hash =
-    typeof fingerprint === "object" && fingerprint !== null && "hash" in fingerprint
-      ? fingerprint.hash
-      : undefined;
+  const hash = isRecord(fingerprint) ? fingerprint.hash : undefined;
   if (typeof hash !== "string" || hash === "") {
     throw new Error("expo-updates fingerprint:generate printed no hash.");
   }
@@ -58,7 +55,7 @@ export const buildsListedIn =
   async (runtime: string): Promise<readonly Build[]> =>
     buildsOf(
       json(
-        await printed(
+        await stdoutOf(
           "eas",
           [
             "build:list",
@@ -81,7 +78,7 @@ export const buildsListedIn =
 export const buildStartedIn = (mobile: string) => async (): Promise<readonly Build[]> =>
   buildsOf(
     json(
-      await printed(
+      await stdoutOf(
         "eas",
         [
           "build",

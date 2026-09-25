@@ -37,10 +37,15 @@ try {
       // Read only when there is something to post. A merge whose fingerprint is
       // already built needs no channel, and must not go red for lack of one;
       // a build that finished does, and fails here, loudly, rather than skip.
-      announce: (line) =>
-        announceTo(
+      //
+      // Logged first: once a build is finished the next run finds it and posts
+      // nothing, so a post that failed would otherwise lose the link for good.
+      announce: (line) => {
+        console.log(line);
+        return announceTo(
           required("DISCORD_BUILDS_WEBHOOK_URL", "Run: gh secret set DISCORD_BUILDS_WEBHOOK_URL"),
-        )(line),
+        )(line);
+      },
     },
     sha,
   );
