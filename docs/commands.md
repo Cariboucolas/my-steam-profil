@@ -13,7 +13,7 @@ ships the wrong artwork with every test green. The two are indistinguishable in 
 | `typecheck`, `check:tests`, `test`, `build:web` | CI, on every pull request and every push to `main` |
 | The watch modes and dev servers | You, while you work — nothing to remember |
 | `icons:build`, `icons:check`, `spike` | **Nobody.** [See below.](#the-commands-nobody-runs-for-you) |
-| `deploy`, the EAS update, and `eas build` when the fingerprint moved | The merge to `main` |
+| `deploy`, the EAS update, and `eas build` when the fingerprint moved | The merge to `main`, or a dispatch of `eas-build.yml` |
 
 ## What CI already runs for you
 
