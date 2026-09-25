@@ -97,7 +97,8 @@ for the current `main`.
 
 The link goes through the `DISCORD_BUILDS_WEBHOOK_URL` secret, a webhook of its own so that the
 health channel stays for incidents only. A merge that needs no build never reads it; one that
-finished a build and cannot post fails red.
+finished a build and cannot post fails red. The link is then in that run's log, and only there:
+the next run finds the finished build and posts nothing.
 
 The very first build is still made by hand, once: EAS only creates the Android signing
 credentials interactively, and the workflow runs non-interactively.
