@@ -35,7 +35,7 @@ export type Settled =
  */
 const COVERING: ReadonlySet<Status> = new Set(["NEW", "IN_QUEUE", "IN_PROGRESS", "FINISHED"]);
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
+export const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null;
 
 const text = (value: unknown): string | undefined =>
