@@ -74,19 +74,38 @@ touching the workflow — a switch, not a waiting room. The Expo project is
 `@cariboucolas/steam-achievements`; its `projectId` and `updates.url` are in `app.json`, and the
 robot token is in the `EXPO_TOKEN` secret.
 
-Then there is one human step, and only one. An EAS update does **not** load in Expo Go: it needs
-a build that embeds `expo-updates`. You make one once:
+An EAS update does **not** load in Expo Go: it needs a build that embeds `expo-updates`. The
+installed app then updates itself on the launch following a merge — Expo downloads the update in
+the background on the first launch and applies it on the next.
+
+### Stranded builds
+
+An update is only served to a build whose runtime matches it. `app.json` sets
+`runtimeVersion: { policy: "fingerprint" }`, so the runtime is a hash of everything native:
+autolinked modules, icons, the evaluated app config, `eas.json`. A **stranded build** is an
+installed build whose runtime is no longer the one `main` publishes updates to. It keeps working,
+it just never changes again, and nothing on the phone says so. The first one went unnoticed for
+days, and #113 was among the merges it never received.
+
+The `EAS Build` workflow is what prevents one. On every merge it computes the Android fingerprint
+of `main`, asks EAS whether a `preview` build already exists for it — queued, in progress or
+finished — and stops there if one does, which is most merges. When none does, it starts the
+build, waits for it, and posts the install link to the Discord builds channel. Install the APK
+from that link and the phone is back on the channel. The workflow is guarded by the same
+`EAS_ENABLED` switch, and a manual dispatch (`gh workflow run eas-build.yml`) does the same thing
+for the current `main`.
+
+The link goes through the `DISCORD_BUILDS_WEBHOOK_URL` secret, a webhook of its own so that the
+health channel stays for incidents only. A merge that needs no build never reads it; one that
+finished a build and cannot post fails red.
+
+The very first build is still made by hand, once: EAS only creates the Android signing
+credentials interactively, and the workflow runs non-interactively.
 
 ```sh
 cd apps/mobile
 eas build --profile preview --platform android   # ~15 to 20 min, at Expo
 ```
-
-The build ends with a link and a QR code: open it from the phone and install the APK. **That
-wait happens only once.** After that, the installed app updates itself on the launch following a
-merge — Expo downloads the update in the background on the first launch and applies it on the
-next. Rebuilding an APK is only necessary when a native dependency changes, that is, when
-`runtimeVersion` changes.
 
 iOS on a real device is out of scope: it requires the Apple Developer Program (99 $/year). The
 deployed site covers visual checking in the meantime.

@@ -29,8 +29,8 @@ pnpm build:web    # builds the web bundle, to prove that it builds
 Cheapest first, so a type error does not wait behind a test run.
 
 `pnpm test` is `pnpm -r test`, so it runs wherever a package defines one:
-`packages/domain`, `apps/api`, `apps/mobile`, `apps/alerts`, `tools/health-probe`
-and `tools/repo-checks`. `packages/contracts` and `tools/steam-spike` have no
+`packages/domain`, `apps/api`, `apps/mobile`, `apps/alerts`, `tools/health-probe`,
+`tools/native-build` and `tools/repo-checks`. `packages/contracts` and `tools/steam-spike` have no
 tests of their own and are covered by typecheck.
 
 No count is written down here on purpose. The one that used to be — "224 tests"

@@ -12,8 +12,8 @@ ships the wrong artwork with every test green. The two are indistinguishable in 
 | --- | --- |
 | `typecheck`, `check:tests`, `test`, `build:web` | CI, on every pull request and every push to `main` |
 | The watch modes and dev servers | You, while you work — nothing to remember |
-| `icons:build`, `icons:check`, `spike`, `eas build` | **Nobody.** [See below.](#the-commands-nobody-runs-for-you) |
-| `deploy`, and the EAS update | The merge to `main` |
+| `icons:build`, `icons:check`, `spike` | **Nobody.** [See below.](#the-commands-nobody-runs-for-you) |
+| `deploy`, the EAS update, and `eas build` when the fingerprint moved | The merge to `main` |
 
 ## What CI already runs for you
 
@@ -55,7 +55,8 @@ pnpm coverage:domain      # the domain's coverage report on its own
 `pnpm tdd` is `vitest --watch` on `packages/domain`, which has no I/O by design: the run is
 immediate, and that is what makes it the place to write a test first. Any package has the same
 watch mode under its own name — `pnpm --filter @steam/api test:watch`, and so on for
-`@steam/mobile`, `@steam/alerts`, `@steam/health-probe`, `@steam/repo-checks`.
+`@steam/mobile`, `@steam/alerts`, `@steam/health-probe`, `@steam/native-build`,
+`@steam/repo-checks`.
 
 ```sh
 pnpm dev:api                                # the backend, on :3000
@@ -134,16 +135,6 @@ holds personal profile data. That directory is where the real cases quoted in te
 come from — a profile whose hours Steam withholds, another that dates no session. Run it when
 you need a case the fixtures do not already have.
 
-```sh
-cd apps/mobile
-eas build --profile preview --platform android   # ~15 to 20 min, at Expo
-```
-
-The one human step in the whole deployment, and it happens once. An EAS update does not load in
-Expo Go: it needs a build that embeds `expo-updates`. After that install, the app updates itself
-on the launch following a merge, and a rebuild is only necessary when a native dependency
-changes. [deployment.md](./deployment.md) has the rest.
-
 ## Deploying and probing
 
 Every merge to `main` deploys the site, the API and the Android channel. The commands below
@@ -165,6 +156,17 @@ pnpm --filter @steam/alerts dev:worker
 
 `dev:worker` runs the real Workers runtime rather than `tsx`, which is what you want when the
 question is about the platform and not the code. The revision it reports says `dev`.
+
+```sh
+gh workflow run eas-build.yml   # what every merge does: build the fingerprint if it has no build
+```
+
+The `EAS Build` workflow runs `pnpm --filter @steam/native-build ensure`, which starts
+`eas build --profile preview --platform android` only when the Android fingerprint of `main` has
+no build yet, waits for it, and posts the install link to Discord. Dispatch the workflow rather
+than running that script yourself: locally it would start a real build under your own Expo login.
+The one `eas build` still typed by hand is the very first, which creates the signing credentials —
+[deployment.md](./deployment.md#stranded-builds) has the rest.
 
 ```sh
 pnpm --filter @steam/health-probe probe             # schedule mode, the default
