@@ -24,7 +24,9 @@ jobs:
   build:
     name: android preview
     # The same kill switch as the update workflow: one variable stops both.
-    if: vars.EAS_ENABLED == 'true'
+    # And main only: a dispatch from another branch would build a fingerprint
+    # nothing publishes updates to.
+    if: vars.EAS_ENABLED == 'true' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     # Twenty minutes of build, behind a queue that on the free plan can take
     # longer than the build itself.
