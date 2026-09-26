@@ -3,6 +3,16 @@
 const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 const path = require("node:path");
 
+// A bundle embedded by an EAS build states the commit it was built from
+// (ADR-0020). Nothing the runner sets reaches the builder, but the builder
+// knows the commit, and this runs before Metro forks the workers that inline
+// EXPO_PUBLIC_*. Here rather than in eas.json or an app config, which are part
+// of the fingerprint. It fills a gap and never overrides: an update, a web
+// export or a developer's .env still says what it says.
+if (!process.env.EXPO_PUBLIC_COMMIT_SHA && process.env.EAS_BUILD_GIT_COMMIT_HASH) {
+  process.env.EXPO_PUBLIC_COMMIT_SHA = process.env.EAS_BUILD_GIT_COMMIT_HASH;
+}
+
 const projectRoot = __dirname;
 const workspaceRoot = path.resolve(projectRoot, "../..");
 
