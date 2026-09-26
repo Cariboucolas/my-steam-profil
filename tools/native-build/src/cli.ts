@@ -28,23 +28,26 @@ const summarise = (line: string): void => {
 
 const sha = required("GITHUB_SHA", "It is set by Actions; this is not Actions.");
 
+// Read only once a build is needed. A merge whose fingerprint is already built
+// needs no channel and must not go red for lack of one; a build does, and is
+// refused before it starts rather than finished for nobody.
+const webhook = (): string =>
+  required("DISCORD_BUILDS_WEBHOOK_URL", "Run: gh secret set DISCORD_BUILDS_WEBHOOK_URL");
+
 try {
   const outcome = await ensureBuild(
     {
       fingerprint: fingerprintIn(MOBILE),
       listBuilds: buildsListedIn(MOBILE),
+      checkChannel: async () => {
+        webhook();
+      },
       startBuild: buildStartedIn(MOBILE),
-      // Read only when there is something to post. A merge whose fingerprint is
-      // already built needs no channel, and must not go red for lack of one;
-      // a build that finished does, and fails here, loudly, rather than skip.
-      //
       // Logged first: once a build is finished the next run finds it and posts
       // nothing, so a post that failed would otherwise lose the link for good.
       announce: (line) => {
         console.log(line);
-        return announceTo(
-          required("DISCORD_BUILDS_WEBHOOK_URL", "Run: gh secret set DISCORD_BUILDS_WEBHOOK_URL"),
-        )(line);
+        return announceTo(webhook())(line);
       },
     },
     sha,
