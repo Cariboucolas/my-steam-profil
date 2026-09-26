@@ -53,8 +53,9 @@ jobs:
 
       # The `preview` profile in eas.json carries its own env, the deployed API
       # included, so nothing is passed to the build from here. The webhook is
-      # read only when a build finished: a merge that needed none does not go
-      # red for lack of it, and one that did fails here rather than stay quiet.
+      # read only once a build is needed, and before it starts: a merge that
+      # needs none does not go red for lack of it, and a build nobody would be
+      # told about is refused rather than spent.
       - name: Build the fingerprint if it has no build yet
         env:
           DISCORD_BUILDS_WEBHOOK_URL: ${{ secrets.DISCORD_BUILDS_WEBHOOK_URL }}

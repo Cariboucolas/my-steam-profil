@@ -19,6 +19,7 @@ const portsWith = (existing: readonly Build[], built: readonly Build[] = [build(
   const ports = {
     fingerprint: vi.fn(async () => RUNTIME),
     listBuilds: vi.fn(async (_runtime: string) => existing),
+    checkChannel: vi.fn(async () => {}),
     startBuild: vi.fn(async () => built),
     announce: vi.fn(async (_line: string) => {}),
   } satisfies Ports;
@@ -40,6 +41,12 @@ describe("a merge whose fingerprint is already built", () => {
     expect(ports.announce).not.toHaveBeenCalled();
   });
 
+  it("does not ask for the channel, which a merge needing no build does not need", async () => {
+    const ports = portsWith([build("FINISHED")]);
+    await ensureBuild(ports, SHA);
+    expect(ports.checkChannel).not.toHaveBeenCalled();
+  });
+
   it("counts a build still in the queue, so two quick merges cost one build", async () => {
     const ports = portsWith([build("IN_QUEUE")]);
 
@@ -58,6 +65,23 @@ describe("a merge whose fingerprint has no build", () => {
     expect(ports.announce).toHaveBeenCalledWith(
       `📦 Android build for \`a1b2c3d\` is ready — the native fingerprint changed, so the installed app stops receiving updates until this one replaces it: ${APK}`,
     );
+  });
+
+  it("checks the channel before spending a build on it", async () => {
+    const ports = portsWith([]);
+    await ensureBuild(ports, SHA);
+    expect(ports.checkChannel.mock.invocationCallOrder[0]).toBeLessThan(
+      ports.startBuild.mock.invocationCallOrder[0]!,
+    );
+  });
+
+  it("starts no build when there is no channel to announce it to", async () => {
+    // One of the month's fifteen, spent on an APK nobody is told about.
+    const ports = portsWith([]);
+    ports.checkChannel.mockRejectedValueOnce(new Error("DISCORD_BUILDS_WEBHOOK_URL is not set."));
+
+    await expect(ensureBuild(ports, SHA)).rejects.toThrow("DISCORD_BUILDS_WEBHOOK_URL");
+    expect(ports.startBuild).not.toHaveBeenCalled();
   });
 
   it("fails, and posts nothing, when the build errors at Expo", async () => {
