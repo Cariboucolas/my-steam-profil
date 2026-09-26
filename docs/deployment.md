@@ -56,6 +56,21 @@ Emptying it is the switch, like `EAS_ENABLED`. What goes and what does not: ADR-
 `SENTRY_AUTH_TOKEN` secret only uploads source maps, without which a minified stack cannot be
 read.
 
+It lives in two places, one per kind of bundle. The GitHub secret serves the web deploy and the
+EAS update. The bundle embedded in an APK is built at Expo, whose Gradle build uploads its maps
+itself, and it reads the token from the `preview` EAS environment. The `preview` profile names
+that environment in `eas.json`, and without the token the build fails rather than ship an APK
+whose stacks nobody can read:
+
+```sh
+cd apps/mobile
+eas env:create --environment preview --name SENTRY_AUTH_TOKEN --visibility secret
+```
+
+That upload runs the `sentry-cli` binary from `apps/mobile/node_modules`, which pnpm only places
+there for a direct dependency. That is why `@sentry/cli` is one, pinned to the version
+`@sentry/react-native` resolves.
+
 Sentry alerts land in a dedicated Discord server through `apps/alerts` — a third Worker, which
 verifies Sentry's signature and translates its JSON into a Discord message. It exists because
 Sentry's native Discord integration requires a paid plan — as does the *alert rule action* a
