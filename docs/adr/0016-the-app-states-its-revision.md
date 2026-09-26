@@ -1,5 +1,9 @@
 # The app states its revision, it does not detect that it is behind
 
+> Amended by [ADR-0020](0020-a-build-declares-what-its-profile-promises.md): a native build now
+> exists, and its embedded bundle states its commit too. The claim to be live comes from the
+> `preview` profile rather than from a workflow, because the builder cannot know its branch.
+
 The running app names the commit it was built from. It never asks anyone what the current commit
 is, and never announces that a newer one exists. Recognising a stale tab is the reader's act,
 performed with information the app has put in front of them.
