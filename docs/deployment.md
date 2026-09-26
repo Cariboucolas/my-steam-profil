@@ -111,9 +111,15 @@ from that link and the phone is back on the channel. The workflow is guarded by 
 for the current `main`.
 
 The link goes through the `DISCORD_BUILDS_WEBHOOK_URL` secret, a webhook of its own so that the
-health channel stays for incidents only. A merge that needs no build never reads it; one that
-finished a build and cannot post fails red. The link is then in that run's log, and only there:
-the next run finds the finished build and posts nothing.
+health channel stays for incidents only. A merge that needs no build never reads it. One that
+needs a build checks it before starting, and fails red without building if it is missing. If the
+post itself is refused once the build is done, the link is in that run's log, and only there: the
+next run finds the finished build and posts nothing.
+
+Builds count against the Expo account's monthly quota: fifteen Android builds on the free plan,
+per [expo.dev/pricing](https://expo.dev/pricing) at the time of writing. A build is only spent
+when the fingerprint actually moves, which happened about five times in the project's first five
+weeks. Dispatch the workflow once the quota comes back if a month ran out.
 
 The very first build is still made by hand, once: EAS only creates the Android signing
 credentials interactively, and the workflow runs non-interactively.
