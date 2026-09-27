@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { storyGaps } from "./missing-stories";
+import { storyGaps, templatesWithoutPageStories } from "./missing-stories";
 
 describe("storyGaps", () => {
   it("keeps quiet when every component has its stories", () => {
@@ -40,5 +40,35 @@ describe("storyGaps", () => {
       "atoms/Chip.tsx",
       "atoms/Gone.tsx",
     ]);
+  });
+});
+
+/**
+ * A template's stories show its skeleton; only a page's show it filled with
+ * what the screen really loads. Each template is filled by the page of the
+ * same name, so that page has to have stories too (#75).
+ */
+describe("templatesWithoutPageStories", () => {
+  it("keeps quiet when every template's page has stories", () => {
+    const files = [
+      "templates/LibraryTemplate.tsx",
+      "templates/LibraryTemplate.stories.tsx",
+      "pages/LibraryPage.tsx",
+      "pages/LibraryPage.stories.tsx",
+    ];
+
+    expect(templatesWithoutPageStories(files)).toEqual([]);
+  });
+
+  it("names a template whose page has no stories", () => {
+    const files = ["templates/GameTemplate.tsx", "pages/GamePage.tsx"];
+
+    expect(templatesWithoutPageStories(files)).toEqual(["templates/GameTemplate.tsx"]);
+  });
+
+  it("reads a template's own stories as no substitute for its page's", () => {
+    const files = ["templates/SetupTemplate.tsx", "templates/SetupTemplate.stories.tsx"];
+
+    expect(templatesWithoutPageStories(files)).toEqual(["templates/SetupTemplate.tsx"]);
   });
 });

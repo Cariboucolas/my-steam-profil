@@ -32,3 +32,20 @@ export const storyGaps = (
     staleExceptions: exceptions.filter((one) => !withoutStories.includes(one)),
   };
 };
+
+const TEMPLATE = /^templates\/(\w+)Template\.tsx$/;
+
+/**
+ * Templates whose page has no stories. A template's own stories show its
+ * skeleton; only its page's show it filled with what the screen really loads,
+ * through its real loading path (#75, ADR-0022). The two share a name —
+ * `LibraryTemplate` is filled by `LibraryPage` — so the page owed is found by
+ * name rather than by reading what imports what.
+ */
+export const templatesWithoutPageStories = (files: readonly string[]): readonly string[] => {
+  const present = new Set(files);
+  return files.filter((one) => {
+    const screen = TEMPLATE.exec(one)?.[1];
+    return screen !== undefined && !present.has(`pages/${screen}Page.stories.tsx`);
+  });
+};
