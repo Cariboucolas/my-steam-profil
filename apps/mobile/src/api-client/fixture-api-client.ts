@@ -11,7 +11,7 @@ import type {
   UnlockDto,
 } from "@steam/contracts";
 
-import type { ApiClient, ProgressError } from "./api-client";
+import type { ApiClient, ApiError, ProgressError } from "./api-client";
 
 const MS_PER_SECOND = 1000;
 
@@ -120,5 +120,36 @@ const unlocksIn = (progress: GameProgressDto): readonly UnlockDto[] =>
      */
     getAchievementNames: (appId) =>
       Promise.resolve(ok<AchievementNamesDto>(namesIn(data.progress[appId]))),
+  };
+};
+
+/** A promise that never settles: the load a page is left waiting on. */
+const never = <T,>(): Promise<T> => new Promise<T>(() => undefined);
+
+/**
+ * A client whose every answer is still on its way, so a page shows its
+ * loading state for as long as anyone looks at it. Explicit rather than a
+ * delay: a story that resolves after a few seconds is a story nobody can
+ * point at mid-load (#75).
+ */
+export const createPendingApiClient = (): ApiClient => ({
+  getProfile: never,
+  getGames: never,
+  getGameProgress: never,
+  getGameTally: never,
+  getGameRarity: never,
+  getAchievementNames: never,
+});
+
+/** A client that answers everything with the one failure it was given. */
+export const createFailingApiClient = (error: ApiError): ApiClient => {
+  const failure = () => Promise.resolve(err(error));
+  return {
+    getProfile: failure,
+    getGames: failure,
+    getGameProgress: failure,
+    getGameTally: failure,
+    getGameRarity: failure,
+    getAchievementNames: failure,
   };
 };
