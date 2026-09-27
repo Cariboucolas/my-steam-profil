@@ -55,7 +55,11 @@ jobs:
       # `preview` profile in eas.json, the deployed API included, and from the
       # `preview` EAS environment, which holds EXPO_PUBLIC_LIVE: this workflow
       # is what that profile is meant to be built by, so the build it starts
-      # states its commit as live (ADR-0020). The commit itself is read on the
+      # states its commit as live (ADR-0020). That environment also holds
+      # EXPO_PUBLIC_SENTRY_DSN, the value of the SENTRY_DSN repository
+      # variable, so a fresh install reports before any update loads
+      # (ADR-0017); kept out of eas.json, where it would move the
+      # fingerprint. The commit itself is read on the
       # builder, by metro.config.js. The webhook is
       # read only once a build is needed, and before it starts: a merge that
       # needs none does not go red for lack of it, and a build nobody would be
