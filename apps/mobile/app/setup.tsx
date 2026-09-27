@@ -1,68 +1,19 @@
 import { useRouter } from "expo-router";
-import { ScrollView, StyleSheet } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useCallback } from "react";
 
-import { SteamIdForm } from "../src/components/organisms/SteamIdForm";
-import { useSteamId } from "../src/settings/steam-id-store";
-import { colors, spacing } from "../src/theme/tokens";
+import { SetupPage } from "../src/components/pages/SetupPage";
 
-/** Enough room above the form that it does not sit under the status bar. */
-const TOP_ROOM = 60;
-
-export default function SetupScreen() {
+/**
+ * The setup route: what depends on the router, and nothing else (ADR-0022).
+ */
+export default function SetupRoute() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
-  const { state, remember, forget } = useSteamId();
 
-  const submit = async (raw: string) => {
-    const accepted = await remember(raw);
-    // Pops back to the library rather than stacking another copy of it. When
-    // there is no library to pop back to — a first run, reached by the redirect
-    // — dismissTo falls back to replacing this screen with it.
-    if (accepted) {
-      router.dismissTo("/");
-    }
-    return accepted;
-  };
+  // Pops back to the library rather than stacking another copy of it. When
+  // there is no library to pop back to — a first run reached by the redirect,
+  // a reload, or a deep link straight to /setup, where router.back() would be
+  // a silent no-op — dismissTo replaces this screen with it instead.
+  const leave = useCallback(() => router.dismissTo("/"), [router]);
 
-  const forgetSteamId = async () => {
-    await forget();
-    // The library underneath now redirects here, but only once it has focus:
-    // back to it, and its redirect replaces it with a single first-run form.
-    // Staying put instead would leave this screen over a library with nothing
-    // to show, for back to reveal.
-    router.dismissTo("/");
-  };
-
-  // The way back and the way out both need a profile to act on.
-  const known = state.status === "known";
-
-  return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={{
-        paddingTop: insets.top + TOP_ROOM,
-        paddingBottom: insets.bottom + spacing.xxl,
-      }}
-      // Otherwise the first tap only dismisses the keyboard.
-      keyboardShouldPersistTaps="handled"
-    >
-      <SteamIdForm
-        onSubmit={submit}
-        // Nothing to cancel back to on a first run. dismissTo pops to "/" when
-        // it is on the stack and replaces this screen with it otherwise, so a
-        // reload or a deep link straight to /setup — where router.back() would
-        // be a silent no-op — still lands somewhere.
-        onCancel={known ? () => router.dismissTo("/") : undefined}
-        onForget={known ? () => void forgetSteamId() : undefined}
-      />
-    </ScrollView>
-  );
+  return <SetupPage onLeave={leave} />;
 }
-
-const styles = StyleSheet.create({
-  screen: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-});
