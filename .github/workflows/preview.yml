@@ -127,6 +127,16 @@ jobs:
         env:
           EXPO_PUBLIC_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
 
+      # A bare `require` left in the bundle builds green and draws nothing: the
+      # browser has no `require`, and every story fails before it renders.
+      - name: Refuse a gallery that would draw nothing
+        working-directory: apps/mobile
+        run: |
+          if grep -qE '(^|[^A-Za-z0-9_.$])require\(' storybook-static/assets/*.js; then
+            echo "::error::The gallery bundle still calls require(), which the browser does not have."
+            exit 1
+          fi
+
       # Pages refuses to deploy to a project that does not exist, and only asks
       # to create one when a person is at the keyboard.
       - name: Make sure the gallery's Pages project exists
