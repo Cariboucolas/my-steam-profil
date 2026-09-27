@@ -7,16 +7,5 @@
   "atoms/Skeleton.tsx",
   "atoms/StatBlock.tsx",
   "atoms/Tabs.tsx",
-  "atoms/TallyLoadBar.tsx",
-  "molecules/AchievementRow.tsx",
-  "molecules/GameListItem.tsx",
-  "molecules/RarestEmpty.tsx",
-  "molecules/RarestRow.tsx",
-  "molecules/SortChips.tsx",
-  "molecules/TimelineDayRow.tsx",
-  "molecules/UnlockCalendarHeader.tsx",
-  "molecules/UnlockHalfDots.tsx",
-  "molecules/UnlockMonthRow.tsx",
-  "molecules/UnlockToneLegend.tsx",
-  "molecules/WithheldFiguresNote.tsx"
+  "atoms/TallyLoadBar.tsx"
 ]
