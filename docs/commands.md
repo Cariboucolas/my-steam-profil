@@ -33,7 +33,9 @@ The order is deliberate — cheapest first, so a type error does not wait behind
 `pnpm check:stories` is `check:tests`'s mirror for the gallery (#75): every component under
 `atoms/`, `molecules/`, `organisms/` and `templates/` carries a `.stories.tsx` beside it, except
 those listed in `apps/mobile/.storybook/unstoried.json`. An entry that no longer forgives anything
-fails the check too, so the list can only shrink.
+fails the check too, so the list can only shrink. And every template is shown filled: the page of
+the same name — `LibraryTemplate`, `LibraryPage` — has stories under `pages/`, served through
+`ApiClientProvider` by the fixture client.
 
 `pnpm check:tests` is the least obvious of the others. `pnpm -r test` skips a package with no
 `test` script without saying so, which means a package created with tests but no script would
