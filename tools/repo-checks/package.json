@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "check": "tsx src/cli.ts",
+    "stories": "tsx src/stories-cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit"
