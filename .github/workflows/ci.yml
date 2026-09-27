@@ -45,6 +45,11 @@ jobs:
       - name: Check tests are collected
         run: pnpm check:tests
 
+      # A component added without stories leaves the gallery silently behind
+      # the library. Those not yet storied are listed, and the list only empties.
+      - name: Check components have stories
+        run: pnpm check:stories
+
       - name: Test
         run: pnpm test
 
