@@ -18,12 +18,5 @@
   "molecules/UnlockHalfDots.tsx",
   "molecules/UnlockMonthRow.tsx",
   "molecules/UnlockToneLegend.tsx",
-  "molecules/WithheldFiguresNote.tsx",
-  "organisms/CompletionSummary.tsx",
-  "organisms/ErrorState.tsx",
-  "organisms/GameHero.tsx",
-  "organisms/ProfileHeader.tsx",
-  "organisms/SplashStage.tsx",
-  "organisms/SteamIdForm.tsx",
-  "organisms/UnlockCalendarCard.tsx"
+  "molecules/WithheldFiguresNote.tsx"
 ]
