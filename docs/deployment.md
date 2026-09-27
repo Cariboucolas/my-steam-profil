@@ -67,6 +67,16 @@ cd apps/mobile
 eas env:create --environment preview --name SENTRY_AUTH_TOKEN --visibility secret
 ```
 
+The DSN makes the same trip: nothing the runner sets reaches Expo, so the `preview` EAS
+environment holds its own copy, `EXPO_PUBLIC_SENTRY_DSN`, with the value of the `SENTRY_DSN`
+variable. Without it an APK stays silent until the next update loads. It stays out of `eas.json`,
+where it would move the fingerprint. The switch is therefore in two places, and changing the DSN
+means changing both:
+
+```sh
+eas env:create --environment preview --name EXPO_PUBLIC_SENTRY_DSN --visibility plaintext
+```
+
 That upload runs the `sentry-cli` binary from `apps/mobile/node_modules`, which pnpm only places
 there for a direct dependency. That is why `@sentry/cli` is one, pinned to the version
 `@sentry/react-native` resolves.
