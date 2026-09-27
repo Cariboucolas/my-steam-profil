@@ -1,11 +1,1 @@
-[
-  "atoms/BrandMark.tsx",
-  "atoms/Chip.tsx",
-  "atoms/CompletionRing.tsx",
-  "atoms/GameCover.tsx",
-  "atoms/ProgressBar.tsx",
-  "atoms/Skeleton.tsx",
-  "atoms/StatBlock.tsx",
-  "atoms/Tabs.tsx",
-  "atoms/TallyLoadBar.tsx"
-]
+[]
