@@ -1,17 +1,8 @@
-import type { ProfileDto } from "@steam/contracts";
 import type { Meta, StoryObj } from "@storybook/react-native-web-vite";
 import { fn } from "storybook/test";
 
+import { FIXTURE_PROFILE as profile } from "../../fixtures/profile";
 import { ProfileHeader } from "./ProfileHeader";
-
-/** A made-up player, wearing the avatar Steam gives a profile that never chose one. */
-const profile: ProfileDto = {
-  steamId: "76561198000000000",
-  personaName: "Tarnished",
-  avatarUrl:
-    "https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg",
-  profileUrl: "https://steamcommunity.com/profiles/76561198000000000/",
-};
 
 const meta = {
   title: "Organisms/ProfileHeader",

@@ -24,7 +24,7 @@ const tally = (unlocked: number, total: number): GameTallyDto => ({
 const ELDEN_RING = 1245620;
 
 /** A library as it looks once every tally is in, played and counted. */
-const GAMES: readonly GameDto[] = [
+export const LIBRARY_GAMES: readonly GameDto[] = [
   game(ELDEN_RING, "Elden Ring", 212),
   game(1145360, "Hades", 96),
   game(413150, "Stardew Valley", 340),
@@ -49,17 +49,17 @@ const view = (
   frozenOrder: null,
 });
 
-export const countedLibrary: LibraryView = view(GAMES, TALLIES);
+export const countedLibrary: LibraryView = view(LIBRARY_GAMES, TALLIES);
 
 /** Two of the four tallies have landed; the other two are still on their way. */
-export const landingLibrary: LibraryView = view(GAMES, {
+export const landingLibrary: LibraryView = view(LIBRARY_GAMES, {
   1245620: tally(42, 42),
   1145360: tally(38, 49),
 });
 
 /** The same library on a profile whose hours Steam does not publish. */
 export const playtimeWithheldLibrary: LibraryView = view(
-  GAMES.map((one) => ({ ...one, playtimeMinutes: null })),
+  LIBRARY_GAMES.map((one) => ({ ...one, playtimeMinutes: null })),
   TALLIES,
 );
 
@@ -67,7 +67,7 @@ export const playtimeWithheldLibrary: LibraryView = view(
  * A collector's library, whose unlock count is too long to be written out in
  * full on a phone and has to be shortened (ADR-0011).
  */
-export const collectorLibrary: LibraryView = view(GAMES, {
+export const collectorLibrary: LibraryView = view(LIBRARY_GAMES, {
   1245620: tally(61_204, 70_000),
   1145360: tally(38_500, 49_000),
   413150: tally(31_000, 40_000),
@@ -117,7 +117,7 @@ export const unlockingLibrary = (today: Date, since: Date): LibraryView => {
 
   // Carried by one game: the calendar counts across the whole library, so
   // which game earned them changes nothing it draws.
-  return view(GAMES, {
+  return view(LIBRARY_GAMES, {
     ...TALLIES,
     [ELDEN_RING]: { ...tally(unlocks.length, unlocks.length), unlocks },
   });
