@@ -7,7 +7,7 @@ right and the story is an approximation.
 
 ## What it binds
 
-Nothing yet: this is decided in #75, ahead of the work. The decision binds:
+Decided in #75, and binding since the gallery's first story:
 
 - The Storybook framework, `@storybook/react-native-web-vite`, and every story written for it.
 - Every question of rendering — typography, measured widths, shadows, safe areas — which is
