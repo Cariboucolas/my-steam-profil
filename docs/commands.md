@@ -10,7 +10,7 @@ ships the wrong artwork with every test green. The two are indistinguishable in 
 
 | | Run by |
 | --- | --- |
-| `typecheck`, `check:tests`, `test`, `build:web` | CI, on every pull request and every push to `main` |
+| `typecheck`, `check:tests`, `check:stories`, `test`, `build:web` | CI, on every pull request and every push to `main` |
 | The watch modes and dev servers | You, while you work — nothing to remember |
 | `icons:build`, `icons:check`, `spike` | **Nobody.** [See below.](#the-commands-nobody-runs-for-you) |
 | `deploy`, the EAS update, and `eas build` when the fingerprint moved | The merge to `main`, or a dispatch of `eas-build.yml` |
@@ -20,16 +20,22 @@ ships the wrong artwork with every test green. The two are indistinguishable in 
 ```sh
 pnpm typecheck      # every package in the workspace
 pnpm check:tests    # refuses a package whose tests would never run
+pnpm check:stories  # refuses a component without stories, bar a list that only empties
 pnpm test           # every package that defines a test script
 pnpm build:web      # builds the web bundle, to prove that it builds
 ```
 
-These four are the `verify` job, in that order, and `verify` is required before merge. Running
+These five are the `verify` job, in that order, and `verify` is required before merge. Running
 them yourself before pushing saves the round trip; forgetting them costs only that.
 
 The order is deliberate — cheapest first, so a type error does not wait behind a test run.
 
-`pnpm check:tests` is the least obvious of the four. `pnpm -r test` skips a package with no
+`pnpm check:stories` is `check:tests`'s mirror for the gallery (#75): every component under
+`atoms/`, `molecules/`, `organisms/` and `templates/` carries a `.stories.tsx` beside it, except
+those listed in `apps/mobile/.storybook/unstoried.json`. An entry that no longer forgives anything
+fails the check too, so the list can only shrink.
+
+`pnpm check:tests` is the least obvious of the others. `pnpm -r test` skips a package with no
 `test` script without saying so, which means a package created with tests but no script would
 leave CI green having run none of them. This refuses that package instead. It also catches test
 files sitting where Expo Router would publish them as screens.
@@ -63,7 +69,11 @@ pnpm dev:api                                # the backend, on :3000
 pnpm --filter @steam/mobile start           # then `w` for the browser
 pnpm --filter @steam/mobile start --android # onto a plugged-in phone
 pnpm --filter @steam/mobile start --tunnel  # when the network refuses to cooperate
+pnpm --filter @steam/mobile storybook       # the component gallery, on :6006
 ```
+
+The gallery shows a component in a state; it never settles how something looks, which is the
+device's call (ADR-0021).
 
 The backend reads `apps/api/.env` and listens on every interface, so a phone on the same network
 can reach it. Getting a real phone to talk to Metro — `adb reverse`, the IPv6 case, when the

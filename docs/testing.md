@@ -16,17 +16,22 @@ Every other command this repository has, and which of them nobody runs for you, 
 
 ## What CI runs
 
-These four commands are exactly what CI executes — in this order — on every pull request and
+These five commands are exactly what CI executes — in this order — on every pull request and
 every push to `main`:
 
 ```sh
-pnpm typecheck    # every package in the workspace
-pnpm check:tests  # refuses a package whose tests would never run
-pnpm test         # every package that has tests, listed below
-pnpm build:web    # builds the web bundle, to prove that it builds
+pnpm typecheck      # every package in the workspace
+pnpm check:tests    # refuses a package whose tests would never run
+pnpm check:stories  # refuses a component without stories, bar a list that only empties
+pnpm test           # every package that has tests, listed below
+pnpm build:web      # builds the web bundle, to prove that it builds
 ```
 
 Cheapest first, so a type error does not wait behind a test run.
+
+Every Storybook story is rendered by `apps/mobile/src/components/stories.test.tsx`, which finds
+them on disk and renders each through `composeStories`. A story that no longer renders fails
+`pnpm test`; no browser is involved, and no pixel is compared (ADR-0021).
 
 `pnpm test` is `pnpm -r test`, so it runs wherever a package defines one:
 `packages/domain`, `apps/api`, `apps/mobile`, `apps/alerts`, `tools/health-probe`,
