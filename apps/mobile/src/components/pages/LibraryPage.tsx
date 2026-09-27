@@ -77,6 +77,12 @@ type Props = {
   /** Where a row leads. The route knows the address; the page only knows the game. */
   readonly onOpenGame: (appId: number) => void;
   readonly onChangeProfile: () => void;
+  /**
+   * The day the calendar is a statement about. Left out, the day the page
+   * opened on; a story names one, so the gallery does not repaint each morning
+   * and a day like 1 January stays reachable (#75).
+   */
+  readonly today?: Date;
 };
 
 /**
@@ -84,7 +90,7 @@ type Props = {
  * (ADR-0022). Knows nothing of the router — where a row or the profile control
  * leads is handed in — so it renders anywhere a client can be served.
  */
-export function LibraryPage({ onOpenGame, onChangeProfile }: Props) {
+export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: Props) {
   const apiClient = useApiClient();
   const [state, setState] = useState<State>({ status: "loading" });
   const [chosenSort, setChosenSort] = useState<LibrarySort>("completed");
@@ -96,7 +102,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile }: Props) {
   // Today, read once when the screen opens. The calendar is a statement about
   // today, so it takes one — and a fresh Date on every render would rebuild the
   // whole year on every render.
-  const [today] = useState(() => new Date());
+  const [today] = useState(() => givenToday ?? new Date());
 
   useEffect(() => {
     if (apiClient === undefined) {
