@@ -6,7 +6,11 @@ import type {
   ProfileDto,
 } from "@steam/contracts";
 
-import { createFixtureApiClient } from "./fixture-api-client";
+import {
+  createFailingApiClient,
+  createFixtureApiClient,
+  createPendingApiClient,
+} from "./fixture-api-client";
 
 const profile: ProfileDto = {
   steamId: "76561197979269357",
@@ -198,5 +202,44 @@ describe("createFixtureApiClient (achievements)", () => {
    */
   it("names nothing for a game it has no progress for", async () => {
     expect(await client.getAchievementNames(440)).toEqual({ ok: true, value: [] });
+  });
+});
+
+/**
+ * The two states a page story cannot reach with data alone: a load that is
+ * still on its way, and one that failed. Explicit variants rather than a
+ * delay, so a story shows the state for as long as anyone looks at it.
+ */
+describe("createPendingApiClient", () => {
+  it("never answers anything it is asked", async () => {
+    const client = createPendingApiClient();
+    const settled = jest.fn();
+
+    void client.getProfile().then(settled);
+    void client.getGames().then(settled);
+    void client.getGameProgress(1).then(settled);
+    void client.getGameTally(1).then(settled);
+    void client.getGameRarity(1).then(settled);
+    void client.getAchievementNames(1).then(settled);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(settled).not.toHaveBeenCalled();
+  });
+});
+
+describe("createFailingApiClient", () => {
+  it("answers everything with the failure it was given", async () => {
+    const client = createFailingApiClient("PRIVATE_PROFILE");
+
+    const answers = await Promise.all([
+      client.getProfile(),
+      client.getGames(),
+      client.getGameProgress(1),
+      client.getGameTally(1),
+      client.getGameRarity(1),
+      client.getAchievementNames(1),
+    ]);
+
+    expect(answers).toEqual(Array(6).fill({ ok: false, error: "PRIVATE_PROFILE" }));
   });
 });
