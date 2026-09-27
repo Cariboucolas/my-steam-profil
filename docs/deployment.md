@@ -9,7 +9,7 @@ What is published, where it goes, and the switches that stop it.
 | The site | https://steam-achievements-czo.pages.dev | Cloudflare Pages |
 | The API | https://steam-achievements-api.cdcraft.workers.dev | Cloudflare Workers |
 | The Android app | EAS `preview` channel | EAS Update, over the air |
-| The component gallery | the `steam-achievements-storybook` Pages project | Cloudflare Pages |
+| The component gallery | https://steam-achievements-storybook.pages.dev | Cloudflare Pages |
 
 Every merge to `main` deploys all four and publishes a
 [Release](https://github.com/Cariboucolas/my-steam-profil/releases) that repeats these
