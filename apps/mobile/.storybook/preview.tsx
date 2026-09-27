@@ -1,6 +1,7 @@
 import { useFonts } from "@expo-google-fonts/ibm-plex-sans";
 import type { Decorator, Preview } from "@storybook/react-native-web-vite";
 import { StyleSheet, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { APP_FONT_FACES } from "../src/theme/font-faces";
 import { colors, spacing } from "../src/theme/tokens";
@@ -28,8 +29,25 @@ const withAppFonts: Decorator = (Story) => {
   return <View style={styles.screen}>{loaded ? <Story /> : null}</View>;
 };
 
+/**
+ * The gallery draws no status bar and no home indicator, so there is nothing
+ * for a screen to hold itself clear of. Given up front rather than measured,
+ * so a story draws on its first render, in the browser and in Jest alike.
+ */
+const NO_INSETS = {
+  frame: { x: 0, y: 0, width: 0, height: 0 },
+  insets: { top: 0, left: 0, right: 0, bottom: 0 },
+};
+
+const withSafeArea: Decorator = (Story) => (
+  <SafeAreaProvider initialMetrics={NO_INSETS}>
+    <Story />
+  </SafeAreaProvider>
+);
+
 const preview: Preview = {
-  decorators: [withAppFonts],
+  // Last is outermost: the safe area wraps the fonts gate, which wraps the story.
+  decorators: [withAppFonts, withSafeArea],
   tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
