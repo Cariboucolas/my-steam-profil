@@ -9,8 +9,9 @@ What is published, where it goes, and the switches that stop it.
 | The site | https://steam-achievements-czo.pages.dev | Cloudflare Pages |
 | The API | https://steam-achievements-api.cdcraft.workers.dev | Cloudflare Workers |
 | The Android app | EAS `preview` channel | EAS Update, over the air |
+| The component gallery | the `steam-achievements-storybook` Pages project | Cloudflare Pages |
 
-Every merge to `main` deploys all three and publishes a
+Every merge to `main` deploys all four and publishes a
 [Release](https://github.com/Cariboucolas/my-steam-profil/releases) that repeats these
 addresses. To check a merge made it all the way through:
 
@@ -26,6 +27,14 @@ The Pages project is called `steam-achievements`, but its address is
 **subdomain** is unique worldwide, and the short one was taken. `--project-name` in
 `deploy.yml` follows the name, never the address — reading them as one and the same is an easy
 mistake, and it costs a deployment.
+
+The component gallery (#75) is a second project, `steam-achievements-storybook`, so the app's
+bundle never carries Storybook. `deploy.yml` builds it in a job of its own, `gallery`, that waits
+on nothing — it serves fixtures, never the API — and holds nothing back when it fails. Every pull
+request gets a gallery preview beside the app's, in the same comment. Both workflows create the
+project the first time they find it missing, because Pages only offers to create one when a person
+is at the keyboard. The gallery states its Revision in the manager's title, under the app's rule
+(ADR-0016).
 
 ## Where the Steam API key lives
 

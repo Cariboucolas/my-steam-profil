@@ -199,6 +199,60 @@ jobs:
             --project-name=steam-achievements
             --branch=main
 
+  gallery:
+    name: gallery
+    # The component gallery (#75). Its own job and its own Pages project, so
+    # the app's bundle never carries Storybook, and a gallery that fails to
+    # build holds nothing else back. It serves fixtures only, so it waits on no
+    # API.
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # States its Revision in the manager's title under the app's own rule
+      # (ADR-0016): this is main, so the commit alone.
+      - name: Build the gallery
+        run: pnpm --filter @steam/mobile build:storybook
+        env:
+          EXPO_PUBLIC_COMMIT_SHA: ${{ github.sha }}
+          EXPO_PUBLIC_LIVE: "true"
+
+      # Pages refuses to deploy to a project that does not exist, and only asks
+      # to create one when a person is at the keyboard. Created here, once, the
+      # first time a deploy finds it missing.
+      - name: Make sure the gallery's Pages project exists
+        working-directory: apps/mobile
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          pnpm exec wrangler pages project list | grep -qF steam-achievements-storybook ||
+            pnpm exec wrangler pages project create steam-achievements-storybook --production-branch=main
+
+      - name: Deploy the gallery to Pages
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/mobile
+          packageManager: pnpm
+          command: >-
+            pages deploy storybook-static
+            --project-name=steam-achievements-storybook
+            --branch=main
+
   probe:
     name: probe
     # Both Workers are out by now. The site is static assets and changes nothing
