@@ -1,14 +1,4 @@
-import {
-  useFonts,
-  IBMPlexSans_400Regular,
-  IBMPlexSans_500Medium,
-  IBMPlexSans_600SemiBold,
-} from "@expo-google-fonts/ibm-plex-sans";
-import {
-  IBMPlexMono_400Regular,
-  IBMPlexMono_500Medium,
-  IBMPlexMono_600SemiBold,
-} from "@expo-google-fonts/ibm-plex-mono";
+import { useFonts } from "@expo-google-fonts/ibm-plex-sans";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
@@ -23,6 +13,7 @@ import { SplashStage } from "../src/components/organisms/SplashStage";
 import { startReporting } from "../src/reporting/start";
 import { createSteamIdStorage } from "../src/settings/steam-id-storage";
 import { SteamIdProvider, useSteamId } from "../src/settings/steam-id-store";
+import { APP_FONT_FACES } from "../src/theme/font-faces";
 import { colors } from "../src/theme/tokens";
 
 /** The width the design was drawn at. */
@@ -83,14 +74,7 @@ function SplashGate({ children }: { readonly children: ReactNode }) {
 }
 
 export default function RootLayout() {
-  const [fontsLoaded] = useFonts({
-    IBMPlexSans_400Regular,
-    IBMPlexSans_500Medium,
-    IBMPlexSans_600SemiBold,
-    IBMPlexMono_400Regular,
-    IBMPlexMono_500Medium,
-    IBMPlexMono_600SemiBold,
-  });
+  const [fontsLoaded] = useFonts(APP_FONT_FACES);
 
   useEffect(() => {
     if (fontsLoaded) {
