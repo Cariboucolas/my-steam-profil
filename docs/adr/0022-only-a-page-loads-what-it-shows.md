@@ -7,7 +7,7 @@ never fetch. The route files under `app/` keep what depends on the router and re
 
 ## What it binds
 
-Nothing yet: this is decided in #75, ahead of the work. The decision binds:
+Decided in #75, and binding since the routes were split into pages and templates. It binds:
 
 - `src/components/templates/`: layout only, taking named `ReactNode` props rather than domain data.
 - `src/components/pages/`: the one level that calls `useApiClient`.
