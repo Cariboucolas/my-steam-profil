@@ -117,6 +117,41 @@ jobs:
             --project-name=steam-achievements
             --branch=${{ steps.branch.outputs.name }}
 
+      # The component gallery for the same commit (#75), in its own Pages
+      # project so the app's bundle never carries Storybook. In this job rather
+      # than one of its own, so its link lands in the one comment below instead
+      # of two jobs racing to edit it. A preview states `dev` and its commit,
+      # as the app's preview does (ADR-0016).
+      - name: Build the gallery
+        run: pnpm --filter @steam/mobile build:storybook
+        env:
+          EXPO_PUBLIC_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+
+      # Pages refuses to deploy to a project that does not exist, and only asks
+      # to create one when a person is at the keyboard.
+      - name: Make sure the gallery's Pages project exists
+        working-directory: apps/mobile
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          pnpm exec wrangler pages project list | grep -qF steam-achievements-storybook ||
+            pnpm exec wrangler pages project create steam-achievements-storybook --production-branch=main
+
+      - name: Deploy a preview of the gallery to Pages
+        id: gallery
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/mobile
+          packageManager: pnpm
+          command: >-
+            pages deploy storybook-static
+            --project-name=steam-achievements-storybook
+            --branch=${{ steps.branch.outputs.name }}
+
       # Read from the action rather than built from the branch name. Pages
       # slugifies a branch and truncates it, so a name like
       # `feat/library-offers-only-the-orders-steam-publishes` does not map to a
@@ -132,6 +167,8 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
           ALIAS: ${{ steps.preview.outputs.pages-deployment-alias-url }}
           COMMIT_URL: ${{ steps.preview.outputs.deployment-url }}
+          GALLERY_ALIAS: ${{ steps.gallery.outputs.pages-deployment-alias-url }}
+          GALLERY_COMMIT_URL: ${{ steps.gallery.outputs.deployment-url }}
           SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           set -euo pipefail
@@ -143,6 +180,10 @@ jobs:
             echo "::error::wrangler-action returned no deployment URL"
             exit 1
           }
+          test -n "${GALLERY_ALIAS:-}${GALLERY_COMMIT_URL:-}" || {
+            echo "::error::wrangler-action returned no deployment URL for the gallery"
+            exit 1
+          }
 
           BODY="$RUNNER_TEMP/preview.md"
           {
@@ -150,6 +191,7 @@ jobs:
             echo "|---|---|"
             echo "| Preview | ${ALIAS:-$COMMIT_URL} |"
             echo "| This commit | $COMMIT_URL |"
+            echo "| Gallery | ${GALLERY_ALIAS:-$GALLERY_COMMIT_URL} |"
             echo
             echo "Built against the production API. \`${SHA::7}\`."
           } > "$BODY"
