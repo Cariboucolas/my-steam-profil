@@ -1,13 +1,8 @@
 import type { Meta, StoryObj } from "@storybook/react-native-web-vite";
 
-import { unlockingLibrary } from "../../fixtures/library";
+import { calendarOn } from "../../fixtures/calendar";
 import { FIRST_OF_JANUARY, LAST_DAY_OF_THE_YEAR, STORY_TODAY } from "../../fixtures/today";
-import { buildUnlockCalendar } from "../../view-models/unlock-calendar";
 import { UnlockCalendarCard } from "./UnlockCalendarCard";
-
-/** A player unlocking since the start of last year, seen on `today`. */
-const calendarOn = (today: Date, since = new Date(2025, 0, 1, 12)) =>
-  buildUnlockCalendar(unlockingLibrary(today, since), today);
 
 const meta = {
   title: "Organisms/UnlockCalendarCard",
