@@ -37,7 +37,11 @@ if (staleExceptions.length > 0) {
 }
 
 if (unstoried.length === 0 && staleExceptions.length === 0) {
-  console.log(`No component lacks stories beyond the ${exceptions.length} excepted in ${exceptionsPath}.`);
+  console.log(
+    exceptions.length === 0
+      ? "Every component has its stories."
+      : `No component lacks stories beyond the ${exceptions.length} excepted in ${exceptionsPath}.`,
+  );
 }
 
 process.exit(unstoried.length > 0 || staleExceptions.length > 0 ? 1 : 0);
