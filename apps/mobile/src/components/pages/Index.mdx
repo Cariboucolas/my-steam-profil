@@ -1,0 +1,30 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Pages/Index" />
+
+# Pages
+
+The one level that loads what it shows. A page asks the `ApiClient` for its data, keeps the state
+of that load, builds what its view-models build, and hands the result to its template
+([ADR-0022](https://github.com/Cariboucolas/my-steam-profil/blob/main/docs/adr/0022-only-a-page-loads-what-it-shows.md)).
+
+## Beside the router, not inside it
+
+A page knows nothing of Expo Router. Where a row leads, the way back, the redirect when no profile
+is stored, reading `appId` from the address — those stay in the route files under `app/`, which
+hand the page callbacks. That is what lets a page render here at all.
+
+## Its stories
+
+Each is served through `ApiClientProvider` by the fixture client, so it shows the page's real
+loading path rather than a picture of one:
+
+- `servedBy(create, stored)` from `src/fixtures/served.tsx` — a device remembering a profile (or
+  `null` for none) and the factory every client comes from.
+- `libraryServedOn(today)` from `src/fixtures/api.ts` — the fixture player's whole library, dated
+  back from the story's day and never after it.
+- `createPendingApiClient()` for a load still on its way, `createFailingApiClient(error)` for one
+  that failed.
+
+`LibraryPage` is told which day it is through `today`; its stories pass `STORY_TODAY`, or another
+day where that is the state being shown.

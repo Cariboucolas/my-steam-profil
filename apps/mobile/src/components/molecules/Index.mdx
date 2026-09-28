@@ -1,0 +1,28 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Molecules/Index" />
+
+# Molecules
+
+A few atoms that mean something together: one row of the library, one month of the calendar, the
+chips that order a list, the note that says why an order is missing.
+
+## What a molecule may do
+
+- Take one thing a view-model built — a `GameRow`, an `UnlockMonth`, a `NamedUnlock` — and draw
+  it as it stands.
+- Hand what the reader does back up through a callback: a press, a choice.
+
+## What it may not do
+
+- Decide anything a view-model already decided. A rate is written as the view-model wrote it, and
+  a row waiting for its name is drawn waiting because the view-model says `pending`.
+- Fetch anything ([ADR-0022](https://github.com/Cariboucolas/my-steam-profil/blob/main/docs/adr/0022-only-a-page-loads-what-it-shows.md)).
+
+## Its stories
+
+Built through the same view-model the screen uses, from the sets in `src/fixtures/` — so a story
+cannot show a label the app would never write. Each state takes its
+[`CONTEXT.md`](https://github.com/Cariboucolas/my-steam-profil/blob/main/CONTEXT.md) name wherever it
+has one: `PlaytimeWithheld`, `NoRarityPublished`, `NoLastYearsTotal`. A zero and an absence are
+different states, and are named differently.

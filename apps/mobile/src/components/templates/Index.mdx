@@ -1,0 +1,20 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Templates/Index" />
+
+# Templates
+
+The layout of one screen, and nothing it shows: the scrolling column, the room left for the status
+bar and the home indicator, which lists mount every row and which mount only those on screen.
+
+## Slots, never data
+
+A template takes named `ReactNode` props — a `header`, its `rows`, what stands in for them when
+there are none — and never a domain object. The rows arrive already drawn, each keyed, so the
+template knows no game and the list still mounts only what is on screen.
+
+## Its stories
+
+Filled with `Skeleton`: the template is the screen's skeleton. Every template is also shown filled,
+by the page of the same name — `LibraryTemplate` by `LibraryPage` — and `pnpm check:stories`
+refuses a template whose page has no stories.

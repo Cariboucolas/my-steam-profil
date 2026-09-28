@@ -1,0 +1,29 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Atoms/Index" />
+
+# Atoms
+
+The smallest pieces the screens are built from: a chip, a ring, a bar, a skeleton. An atom knows
+nothing about Steam — it draws a number, a label or a shape it is handed, and nothing more.
+
+## What an atom may do
+
+- Take primitives through its props: a percentage, a label, a size.
+- Hold the local state of a control, and animate within what the reader's motion setting allows.
+
+## What it may not do
+
+- Take a domain object. A `GameDto` or a `LibrarySummary` belongs one level up.
+- Fetch anything. Only a page loads what it shows ([ADR-0022](https://github.com/Cariboucolas/my-steam-profil/blob/main/docs/adr/0022-only-a-page-loads-what-it-shows.md)).
+
+## Its stories
+
+Inline args, and the values the app itself passes where it passes a fixed one — the ring the
+library card draws is 72 across, so its story is too. A value the app never has is not a state
+worth showing.
+
+## What a story here is trusted for
+
+The state, never the pixels. The gallery runs on the web, and the device settles how anything
+looks ([ADR-0021](https://github.com/Cariboucolas/my-steam-profil/blob/main/docs/adr/0021-a-story-shows-a-state-the-device-settles-how-it-looks.md)).
