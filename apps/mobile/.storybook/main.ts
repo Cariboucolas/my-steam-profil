@@ -4,7 +4,11 @@ import { mergeConfig } from "vite";
 import { resolveRevision } from "../src/api-client/config";
 
 const config: StorybookConfig = {
-  stories: ["../src/components/**/*.stories.tsx"],
+  // Each level's Index first: it says what the level holds before its stories show it.
+  stories: ["../src/components/**/Index.mdx", "../src/components/**/*.stories.tsx"],
+  // Reads the Index pages, and draws a docs page for every component tagged
+  // `autodocs` in the preview.
+  addons: ["@storybook/addon-docs"],
   framework: {
     name: "@storybook/react-native-web-vite",
     options: {},
