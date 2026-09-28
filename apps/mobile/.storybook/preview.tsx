@@ -52,6 +52,19 @@ const preview: Preview = {
   parameters: {
     layout: "fullscreen",
     viewport: { options: PHONES },
+    // The five levels in the order they build on one another, each opening on
+    // the Index that says what it holds (ADR-0022).
+    options: {
+      storySort: {
+        order: [
+          "Atoms", ["Index", "*"],
+          "Molecules", ["Index", "*"],
+          "Organisms", ["Index", "*"],
+          "Templates", ["Index", "*"],
+          "Pages", ["Index", "*"],
+        ],
+      },
+    },
   },
   initialGlobals: {
     viewport: { value: DEFAULT_PHONE, isRotated: false },
