@@ -1,0 +1,25 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="Organisms/Index" />
+
+# Organisms
+
+A whole region of a screen: the library's stats card, the unlock calendar, a game's hero, the form
+that asks which profile to show.
+
+## Pure, and that is the rule
+
+An organism takes everything through its props and never fetches. That is where this app parts
+from organisms that load their own data: the library's tally is one download, cached per player
+(ADR-0005), and splitting who asks for it would split who reports it failing. Loading happens once,
+at the page ([ADR-0022](https://github.com/Cariboucolas/my-steam-profil/blob/main/docs/adr/0022-only-a-page-loads-what-it-shows.md)).
+
+## Its stories
+
+States that take setup to reach in the running app are one click here: a private profile, hours
+Steam withholds, a calendar on 1 January, a headline too long for the phone. Today is frozen at
+25 June 2026 (`STORY_TODAY` in `src/fixtures/today.ts`); a story about another day names it.
+
+A width-dependent state pins its phone. `HeadlineShortened` is drawn at 375, because the form of
+the headline belongs to the screen, not to the count
+([ADR-0011](https://github.com/Cariboucolas/my-steam-profil/blob/main/docs/adr/0011-a-figure-shortens-only-when-it-must.md)).
