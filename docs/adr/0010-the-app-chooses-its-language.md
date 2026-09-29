@@ -1,5 +1,9 @@
 # The app chooses its language, the device does not
 
+> Amended by [ADR-0023](0023-the-locale-is-a-setting-and-a-view-model-receives-its-translation-function.md):
+> the language is a persisted setting, and a view-model receives a translation function bound to it.
+> "Language" here is what the i18n literature calls the locale.
+
 Every string this app shows is written in the language the app has chosen. No wording, no date,
 no number separator is taken from the device's locale.
 
