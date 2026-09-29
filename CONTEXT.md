@@ -87,3 +87,23 @@ _Avoid_: LibraryTally (GameTally already names the per-game shape, and this wide
 **Revision**:
 What the running JavaScript declares about its own origin: the short commit it was built from, or the word `dev` where it did not come from a live deployment. Alone among the terms here it says nothing about progress — it describes the artefact rather than the player — and it earns its place for the same reason UnlockHeadline does: it is a promise the screen makes, and a promise has to be written down to be kept. A Revision is a **declaration by an artefact about itself**, never a fact about the world, which is precisely why it can be out of date without being wrong: a tab serving last week's bundle states last week's commit correctly. The app never asks anyone whether a newer one exists (ADR-0016). `dev` marks the not-live rather than the not-deployed, so a pull request's preview is a real deployment that says `dev` and names its commit beside it, where a developer's machine says `dev` and has none to name. **Live** is what `main` publishes to where its readers are — the site, an update on the channel, and the app installed from a build of it alike: the same commit is the same Revision however it reached the screen, embedded or downloaded. The claim is made by the publisher, never inferred by the artefact, which can know its commit but not its branch.
 _Avoid_: Version (the binary's release number, already spoken for), Build (the native artefact), Commit (a Revision may be `dev`, which no commit is), BuildId
+
+**Locale**:
+The language the app writes in, as a BCP 47 tag: `en` or `fr`. It is a setting the reader makes and the app persists, `en` until they choose, and it is the app's own, never read from the device (ADR-0010, ADR-0023). It decides the wording, the plural rules, the decimal mark, the grouping and the date format together, so no one of them is ever chosen apart from the rest. ADR-0010 says "language" for what is named Locale here.
+_Avoid_: Language (ambiguous with a game's own language, which Steam sends), Region, Culture, Device locale (the thing the app deliberately does not read)
+
+**Message key**:
+The stable identifier a string is looked up by, the same in every Locale (`unlock.remaining`). Code names a key and never writes the wording; the wording belongs to the Message catalog.
+_Avoid_: String id, Label, Token, Translation key (a key belongs to the message, and translating is done to its value)
+
+**Message catalog**:
+Every Message key of one Locale with its wording, including one form per plural category the Locale needs. Two catalogs are in step when they hold the same keys and the same plural categories for each, and a test fails when they are not. A catalog holds what the app writes; what Steam sends, a game's or an achievement's name, is in no catalog.
+_Avoid_: Dictionary, Strings file, Resource (i18next's word for it), Translation (that is one entry, not the set)
+
+**Translation function**:
+The `t` that turns a Message key and its values into text in one Locale, already bound to that Locale. A view-model receives it as an argument and reads no global, so a call is decided by its arguments alone (ADR-0023).
+_Avoid_: i18n instance (it holds every Locale, the function only one), Translator, Localizer
+
+**Plural category**:
+The form a Locale uses for a count, as CLDR names them: `zero`, `one`, `two`, `few`, `many`, `other`. English needs `one` and `other`; French needs `one`, `many` and `other`, which is why two catalogs cannot be compared by the keys of one.
+_Avoid_: Singular/plural (two forms is English's habit, not the rule), Plural form
