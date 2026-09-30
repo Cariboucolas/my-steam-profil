@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { openExternalUrl } from "./open-external-url";
@@ -33,11 +34,12 @@ type Props = {
  * profile happens to be theirs.
  */
 export function WithheldFiguresNote({ published }: Props) {
+  const { t } = useTranslation();
   const figure = published.playtime
     ? published.lastPlayed
       ? null
-      : "when this profile last played"
-    : "this profile's playtime";
+      : "lastPlayed"
+    : "playtime";
 
   if (figure === null) {
     return null;
@@ -45,7 +47,7 @@ export function WithheldFiguresNote({ published }: Props) {
 
   return (
     <View style={styles.note}>
-      <Text style={styles.title}>{`Steam does not publish ${figure}`}</Text>
+      <Text style={styles.title}>{t(`library.withheld.${figure}`)}</Text>
       <Pressable
         accessibilityRole="link"
         // The link is never withdrawn — not on a platform that opens it
@@ -56,7 +58,7 @@ export function WithheldFiguresNote({ published }: Props) {
         // here and the link stays pressable.
         onPress={() => void openExternalUrl(STEAM_PRIVACY_URL)}
       >
-        <Text style={styles.link}>if it is yours, open Steam's privacy settings</Text>
+        <Text style={styles.link}>{t("library.withheld.privacy")}</Text>
       </Pressable>
     </View>
   );

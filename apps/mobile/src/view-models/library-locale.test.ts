@@ -30,10 +30,6 @@ describe("a view-model given a translation function", () => {
     expect(formatHoursRounded(30, stub)).toBe("«library.minutes»");
     expect(calls).toEqual(["library.gamesCounted", "library.minutes"]);
   });
-
-  it("falls back to English only when it is given nothing", () => {
-    expect(gamesCounted(1)).toBe("1 game counted");
-  });
 });
 
 describe("French plurals", () => {

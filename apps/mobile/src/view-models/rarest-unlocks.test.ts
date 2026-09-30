@@ -1,3 +1,4 @@
+import { translatorFor } from "../i18n/i18n";
 import type {
   AchievementNamesDto,
   GameDto,
@@ -13,6 +14,8 @@ import {
   type RarityByAppId,
   type RarestUnlocks,
 } from "./rarest-unlocks";
+
+const english = translatorFor("en");
 
 const SOULSTONE = 2066020;
 const HALLS = 2218750;
@@ -106,7 +109,7 @@ const libraryHolding = (
 
 const rank = (held: Readonly<Record<number, Held>>): RarestUnlocks => {
   const { view, rarity } = libraryHolding(held);
-  return buildRarestUnlocks(view, rarity);
+  return buildRarestUnlocks(view, rarity, english);
 };
 
 /** The achievements a ranking named, rarest first. */
@@ -418,7 +421,7 @@ describe("buildRarestUnlocks", () => {
 
     const ranking = buildRarestUnlocks(
       { ...view, games: view.games.filter((one) => one.appId === SOULSTONE) },
-      rarity,
+      rarity, english,
     );
 
     expect(named(ranking)).toEqual(["RARE"]);

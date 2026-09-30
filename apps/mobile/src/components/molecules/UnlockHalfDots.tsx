@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, View } from "react-native";
 
 import { colors, radius, spacing } from "../../theme/tokens";
@@ -8,7 +9,7 @@ export const UNLOCK_HALF_DOT_TEST_ID = "unlock-half-dot";
 const HALVES: readonly YearHalf[] = [0, 1];
 
 /** What each dot answers to, so that it is a named control and not a mark. */
-const LABELS = ["First half of the year", "Second half of the year"] as const;
+const LABELS = ["calendar.halves.first", "calendar.halves.second"] as const;
 
 const DOT = 5;
 
@@ -48,6 +49,8 @@ type Props = {
  * not possible.
  */
 export function UnlockHalfDots({ inView, onSelect }: Props) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.dots}>
       {HALVES.map((half) => (
@@ -55,7 +58,7 @@ export function UnlockHalfDots({ inView, onSelect }: Props) {
           key={half}
           onPress={() => onSelect(half)}
           accessibilityRole="button"
-          accessibilityLabel={LABELS[half]}
+          accessibilityLabel={t(LABELS[half])}
           accessibilityState={{ selected: half === inView }}
           hitSlop={TARGET_SLACK}
           style={styles.target}

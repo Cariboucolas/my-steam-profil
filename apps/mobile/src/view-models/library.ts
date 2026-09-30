@@ -1,7 +1,7 @@
 import type { GameCompletionDto, GameDto, GameTallyDto } from "@steam/contracts";
 
 import { formatNumber } from "../i18n/format-number";
-import { ENGLISH, type Translate } from "../i18n/i18n";
+import type { Translate } from "../i18n/i18n";
 
 /** Tallies keyed by appId; absent means "not asked for yet", not "none". */
 export type TallyByAppId = Readonly<Record<number, GameTallyDto>>;
@@ -95,16 +95,6 @@ export type LibrarySummary = {
 const MINUTES_PER_HOUR = 60;
 const PERFECT = 100;
 /**
- * Shared rather than copied: the unlock calendar labels its rows from these
- * too, in capitals. Two lists of twelve months drift the day one of them is
- * corrected.
- */
-export const MONTHS = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-] as const;
-
-/**
  * Thousands separated by a space, as the mock writes them ("3 128"). The
  * locale is the one `t` is bound to, never the device's (ADR-0010, ADR-0023),
  * and the separator is a plain U+0020 rather than the thin space the design
@@ -114,9 +104,8 @@ export const MONTHS = [
  * screen group their thousands, and a separator that drifted between them
  * would read as three conventions.
  *
- * Every formatter below takes `t` last and defaults it to English, so a caller
- * that has no locale to give still gets the app's original wording. A caller
- * that has one always passes it: nothing here reads a global (ADR-0023).
+ * Every formatter below takes `t` last and requires it: nothing here reads a
+ * global, so a call is decided by its arguments alone (ADR-0023).
  */
 const group = (value: number, t: Translate): string => formatNumber(t, value);
 
@@ -132,7 +121,7 @@ const group = (value: number, t: Translate): string => formatNumber(t, value);
  * than by who reads it, because this one has two readers: a library row and
  * the stats card's total.
  */
-export const formatHoursRounded = (minutes: number, t: Translate = ENGLISH): string => {
+export const formatHoursRounded = (minutes: number, t: Translate): string => {
   if (minutes < MINUTES_PER_HOUR) {
     return t("library.minutes", { minutes });
   }
@@ -193,7 +182,7 @@ const underUnit = (value: number, decimals: number, t: Translate): string | null
 export const formatUnlockHeadline = (
   unlocked: number,
   maxChars: number,
-  t: Translate = ENGLISH,
+  t: Translate,
 ): string => {
   const full = group(unlocked, t);
   const forms = [full, underUnit(unlocked, ONE_DECIMAL, t), underUnit(unlocked, NO_DECIMAL, t)]
@@ -208,7 +197,7 @@ export const formatUnlockHeadline = (
  * from the device, so the wording is the app's (ADR-0010). Tests pin TZ=UTC so
  * they do not depend on where they run.
  */
-export const formatDay = (iso: string, t: Translate = ENGLISH): string => {
+export const formatDay = (iso: string, t: Translate): string => {
   const date = new Date(iso);
   return t("date.day", {
     day: date.getDate(),
@@ -223,7 +212,7 @@ export const formatDay = (iso: string, t: Translate = ENGLISH): string => {
  * same load, and a wording that drifted between them would read as two
  * different figures.
  */
-export const gamesCounted = (count: number, t: Translate = ENGLISH): string =>
+export const gamesCounted = (count: number, t: Translate): string =>
   t("library.gamesCounted", { count });
 
 /**
@@ -441,7 +430,7 @@ const orderedBy = (
 
 export const buildLibraryRows = (
   view: LibraryView,
-  t: Translate = ENGLISH,
+  t: Translate,
 ): readonly GameRow[] => {
   const { games, tallies, sort, pending, frozenOrder } = view;
 
@@ -472,7 +461,7 @@ export const buildLibraryRows = (
  */
 export const buildLibrarySummary = (
   view: LibraryView,
-  t: Translate = ENGLISH,
+  t: Translate,
 ): LibrarySummary => {
   const { games, tallies } = view;
 

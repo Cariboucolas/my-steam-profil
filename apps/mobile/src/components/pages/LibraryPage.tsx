@@ -10,7 +10,7 @@ import type { CountedLibrary } from "../../api-client/use-library-rarity";
 import { useLibraryTallies } from "../../api-client/use-library-tallies";
 import { useLocale } from "../../settings/locale-store";
 import { colors, fonts, spacing } from "../../theme/tokens";
-import { messageFor } from "../../view-models/api-errors";
+import { messageFor, type ScreenError } from "../../view-models/api-errors";
 import {
   availableSorts,
   buildLibraryRows,
@@ -44,7 +44,7 @@ type Loaded = {
 };
 type State =
   | { readonly status: "loading" }
-  | { readonly status: "error"; readonly message: string }
+  | { readonly status: "error"; readonly error: ScreenError }
   | { readonly status: "ready"; readonly data: Loaded };
 
 /**
@@ -69,7 +69,6 @@ const revision = resolveRevision(
  * the tab the screen opens on; Rarest ranks what the player has unlocked across
  * all of it, and costs a load nobody has asked for until they open it.
  */
-const TABS = ["Completion", "Rarest"] as const;
 const COMPLETION = 0;
 const RAREST = 1;
 
@@ -125,11 +124,11 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
       if (cancelled) return;
 
       if (!profile.ok) {
-        setState({ status: "error", message: messageFor(profile.error) });
+        setState({ status: "error", error: profile.error });
         return;
       }
       if (!games.ok) {
-        setState({ status: "error", message: messageFor(games.error) });
+        setState({ status: "error", error: games.error });
         return;
       }
 
@@ -195,6 +194,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
   );
   // The view-models write the sentences; the page only hands them the language (ADR-0023).
   const { t } = useTranslation();
+  const tabLabels = [t("library.tabs.completion"), t("library.tabs.rarest")];
   const { locale, choose } = useLocale();
   const rows = useMemo(() => buildLibraryRows(view, t), [view, t]);
   const summary = useMemo(() => buildLibrarySummary(view, t), [view, t]);
@@ -269,7 +269,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
     // the only recovery is killing the app.
     return (
       <ErrorState
-        message={state.message}
+        message={messageFor(state.error, t)}
         onRetry={() => setReloadNonce((previous) => previous + 1)}
         onChangeProfile={onChangeProfile}
       />
@@ -296,7 +296,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
         loaded={loaded ?? rarest.loaded}
       />
       <UnlockCalendarCard calendar={calendar} />
-      <Tabs labels={TABS} activeIndex={tab} onSelect={setTab} />
+      <Tabs labels={tabLabels} activeIndex={tab} onSelect={setTab} />
 
       {/* The chips order the library, which is Completion's list and no other.
           A control with one sensible option is not a control, so on Rarest they

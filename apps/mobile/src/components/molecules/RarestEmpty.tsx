@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
 
 import type { RarestTab } from "../../view-models/use-rarest-tab";
@@ -19,6 +20,8 @@ type Props = {
  * second they have unlocked nothing would be a plain untruth.
  */
 export function RarestEmpty({ status, anyUnlock }: Props) {
+  const { t } = useTranslation();
+
   if (status === "idle") {
     return null;
   }
@@ -26,23 +29,23 @@ export function RarestEmpty({ status, anyUnlock }: Props) {
   if (status === "counting") {
     return (
       <Block
-        title="Counting your library first"
-        hint="the rarest unlocks are ranked across every game you have played"
+        title={t("rarest.counting.title")}
+        hint={t("rarest.counting.hint")}
       />
     );
   }
 
   if (status === "loading") {
-    return <Block title="Ranking what you have unlocked" />;
+    return <Block title={t("rarest.loading")} />;
   }
 
   return anyUnlock ? (
     <Block
-      title="Nothing here Steam publishes a figure for"
-      hint="a rarity we do not hold is not a rarity of zero"
+      title={t("rarest.unpublished.title")}
+      hint={t("rarest.unpublished.hint")}
     />
   ) : (
-    <Block title="Nothing unlocked in any game yet" />
+    <Block title={t("rarest.none")} />
   );
 }
 

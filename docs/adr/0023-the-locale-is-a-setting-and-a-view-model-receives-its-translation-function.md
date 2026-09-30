@@ -20,7 +20,7 @@ the code that writes sentences. Issue #155 had to answer both before the first t
   hand it down. A view-model stays pure: same input, same translation function, same output.
 - **Numbers and dates.** They read the locale from the translation function they were given, so
   the decimal mark and the grouping follow the app and never the device (ADR-0010). Grouping keeps
-  its thin space through one `formatNumber` wrapper around the function. `K` and `M` are not
+  a plain U+0020 through one `formatNumber` wrapper around the function (ADR-0011). `K` and `M` are not
   translated, as ADR-0010 already says; only the decimal mark before them changes, `45.5K` in
   English and `45,5K` in French.
 - **Parity.** A test fails when a key or a plural category present in one catalog is missing from
@@ -64,5 +64,7 @@ The component gallery sets the locale for every story through a toolbar global, 
 with a decorator that gives the story an i18n instance for that locale and does not mount the
 SteamID store. The published gallery does not change on its own.
 
-Not decided here: any locale beyond English and French, right-to-left layout, and the wording of
-the French catalog, which is #157.
+The French catalog is #157's. A translation function has no default: leaving one out is a type
+error, and a test fails when a view-model imports the module that holds the instance.
+
+Not decided here: any locale beyond English and French, and right-to-left layout.

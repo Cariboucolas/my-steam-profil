@@ -1,6 +1,7 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, coverPlaceholder, fonts, spacing } from "../../theme/tokens";
@@ -26,6 +27,8 @@ type Props = {
 };
 
 export function GameHero({ appId, name, meta, topInset, onBack, languageSwitch }: Props) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.hero}>
       <Image
@@ -44,7 +47,7 @@ export function GameHero({ appId, name, meta, topInset, onBack, languageSwitch }
       <Pressable
         onPress={onBack}
         accessibilityRole="button"
-        accessibilityLabel="Back to library"
+        accessibilityLabel={t("game.back")}
         style={{ ...styles.back, top: topInset + spacing.sm }}
       >
         <Text style={styles.chevron}>‹</Text>

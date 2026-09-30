@@ -1,16 +1,18 @@
 import type { GameDto, GameProgressDto } from "@steam/contracts";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApiClient } from "../../api-client/use-api-client";
 import { colors, fonts, spacing } from "../../theme/tokens";
-import { messageFor } from "../../view-models/api-errors";
+import { messageFor, type ScreenError } from "../../view-models/api-errors";
 import {
   buildAchievementRows,
   buildFilterCounts,
   buildGameSummary,
   buildTimelineDays,
+  filterLabel,
   gameInLibrary,
   type AchievementFilter,
 } from "../../view-models/game-progress";
@@ -28,10 +30,8 @@ import { GameTemplate } from "../templates/GameTemplate";
 type Loaded = { readonly game: GameDto; readonly progress: GameProgressDto | null };
 type State =
   | { readonly status: "loading" }
-  | { readonly status: "error"; readonly message: string }
+  | { readonly status: "error"; readonly error: ScreenError }
   | { readonly status: "ready"; readonly data: Loaded };
-
-const TABS = ["Achievements", "Timeline"] as const;
 
 /** Soulstone Survivors alone defines 483 achievements. */
 const ACHIEVEMENTS_INITIAL_ROWS = 10;
@@ -49,6 +49,7 @@ type Props = {
  * another profile are handed in.
  */
 export function GamePage({ appId, onBack, onChangeProfile }: Props) {
+  const { t } = useTranslation();
   const { locale, choose } = useLocale();
   const insets = useSafeAreaInsets();
   const apiClient = useApiClient();
@@ -67,14 +68,14 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
 
     const load = async () => {
       if (!Number.isInteger(appId)) {
-        setState({ status: "error", message: "That is not a game id." });
+        setState({ status: "error", error: "INVALID_GAME_ID" });
         return;
       }
 
       const games = await apiClient.getGames();
       if (cancelled) return;
       if (!games.ok) {
-        setState({ status: "error", message: messageFor(games.error) });
+        setState({ status: "error", error: games.error });
         return;
       }
 
@@ -82,7 +83,7 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
       // library is refused here or nowhere.
       const game = gameInLibrary(games.value, appId);
       if (!game) {
-        setState({ status: "error", message: "This game is not in the library." });
+        setState({ status: "error", error: "NOT_IN_LIBRARY" });
         return;
       }
 
@@ -98,7 +99,7 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
         setState({ status: "ready", data: { game, progress: null } });
         return;
       }
-      setState({ status: "error", message: messageFor(progress.error) });
+      setState({ status: "error", error: progress.error });
     };
 
     void load();
@@ -112,24 +113,24 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
   const summary = useMemo(
     () =>
       state.status === "ready"
-        ? buildGameSummary(state.data.game, progress)
+        ? buildGameSummary(state.data.game, progress, t)
         : null,
-    [state, progress],
+    [state, progress, t],
   );
   const counts = useMemo(() => (progress ? buildFilterCounts(progress) : null), [progress]);
   const rows = useMemo(
     () =>
-      (progress ? buildAchievementRows(progress, filter) : []).map((row) => (
+      (progress ? buildAchievementRows(progress, filter, t) : []).map((row) => (
         <AchievementRow key={row.apiName} row={row} />
       )),
-    [progress, filter],
+    [progress, filter, t],
   );
   const days = useMemo(
     () =>
-      (progress ? buildTimelineDays(progress) : []).map((day) => (
+      (progress ? buildTimelineDays(progress, t) : []).map((day) => (
         <TimelineDayRow key={day.key} day={day} />
       )),
-    [progress],
+    [progress, t],
   );
 
   if (state.status === "loading") {
@@ -146,7 +147,7 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
     // profile have to be offered here, the same as the library screen.
     return (
       <ErrorState
-        message={state.message}
+        message={messageFor(state.error, t)}
         onRetry={() => setReloadNonce((previous) => previous + 1)}
         onChangeProfile={onChangeProfile}
       />
@@ -169,13 +170,13 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
         }
       />
       {summary && <CompletionSummary summary={summary} />}
-      <Tabs labels={TABS} activeIndex={tab} onSelect={setTab} />
+      <Tabs labels={[t("game.tabs.achievements"), t("game.tabs.timeline")]} activeIndex={tab} onSelect={setTab} />
 
       {hasAchievements && tab === 0 && counts && (
         <View style={styles.filters}>
-          <Chip label={`All ${counts.all}`} active={filter === "all"} onPress={() => setFilter("all")} />
-          <Chip label={`Unlocked ${counts.unlocked}`} active={filter === "unlocked"} onPress={() => setFilter("unlocked")} />
-          <Chip label={`Locked ${counts.locked}`} active={filter === "locked"} onPress={() => setFilter("locked")} />
+          <Chip label={filterLabel("all", counts, t)} active={filter === "all"} onPress={() => setFilter("all")} />
+          <Chip label={filterLabel("unlocked", counts, t)} active={filter === "unlocked"} onPress={() => setFilter("unlocked")} />
+          <Chip label={filterLabel("locked", counts, t)} active={filter === "locked"} onPress={() => setFilter("locked")} />
         </View>
       )}
 
@@ -183,12 +184,12 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>
             {progress === null
-              ? "Achievements not loaded for this game"
-              : "This game has no achievements"}
+              ? t("game.empty.notLoaded")
+              : t("game.empty.noAchievements")}
           </Text>
           {progress === null && (
             <Text style={styles.emptyHint}>
-              the schema and your unlocks load on first open
+              {t("game.empty.notLoadedHint")}
             </Text>
           )}
         </View>
@@ -205,7 +206,7 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
         empty={
           hasAchievements ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>Nothing unlocked yet</Text>
+              <Text style={styles.emptyTitle}>{t("game.empty.nothingUnlocked")}</Text>
             </View>
           ) : null
         }

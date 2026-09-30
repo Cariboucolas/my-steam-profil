@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet } from "react-native";
 
 import {
@@ -16,12 +17,6 @@ import { Chip } from "../atoms/Chip";
  * the chips and the screen's fallback cannot disagree about which orders exist.
  * This is the labels, and nothing else.
  */
-const LABELS: Readonly<Record<LibrarySort, string>> = {
-  completed: "Completed first",
-  recent: "Recently played",
-  playtime: "Most played",
-};
-
 const ORDER: readonly LibrarySort[] = ["completed", "recent", "playtime"];
 
 type Props = {
@@ -37,9 +32,10 @@ type Props = {
 };
 
 export function SortChips({ active, onSelect, published }: Props) {
+  const { t } = useTranslation();
   const available = availableSorts(published);
   const offered = ORDER.filter((sort) => available.includes(sort)).map(
-    (sort) => [sort, LABELS[sort]] as const,
+    (sort) => [sort, t(`library.sorts.${sort}`)] as const,
   );
 
   return (

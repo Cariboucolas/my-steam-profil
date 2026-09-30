@@ -48,10 +48,3 @@ export const i18nFor = (locale: Locale): i18n => {
 /** `t` fixed on `locale`: what a `use-*` hook hands down to a view-model. */
 export const translatorFor = (locale: Locale): Translate =>
   root.getFixedT(locale);
-
-/**
- * What a view-model falls back to when a caller does not say. It exists so a
- * suite written before the locale was a setting keeps asserting English; the
- * app itself always passes the function it got from the hook.
- */
-export const ENGLISH: Translate = translatorFor(DEFAULT_LOCALE);

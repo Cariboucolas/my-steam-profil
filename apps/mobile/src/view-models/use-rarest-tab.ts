@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   gamesHoldingAnUnlock,
@@ -68,11 +69,12 @@ export const useRarestTab = (
   view: LibraryView,
   active: boolean,
 ): RarestTab => {
+  const { t } = useTranslation();
   const { rarity, status, loaded } = useLibraryRarity(library, active);
 
   const ranking = useMemo(
-    () => buildRarestUnlocks(view, rarity),
-    [view, rarity],
+    () => buildRarestUnlocks(view, rarity, t),
+    [view, rarity, t],
   );
   const appIds = useMemo(() => gamesShownIn(ranking.rows), [ranking.rows]);
 

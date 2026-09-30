@@ -1,4 +1,5 @@
-import { MONTHS, type LibraryView } from "./library";
+import type { Translate } from "../i18n/i18n";
+import type { LibraryView } from "./library";
 
 /**
  * Every row spans this many columns, whatever its month holds. Deriving a
@@ -112,27 +113,6 @@ export type UnlockCalendar = {
 };
 
 /**
- * The months as they are said, rather than as a row writes them. `MAR` is
- * three capitals fitted to a 44-pixel column; it is not a word anyone is read.
- * Written out by hand rather than asked of Intl — the choice `formatDate`
- * already made — so that the wording does not follow the device's locale.
- */
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-] as const;
-
-/**
  * The row as it is read rather than looked at: its month, and what it held.
  *
  * The figure is spelled out even where the row draws an em dash. The dash is a
@@ -141,12 +121,11 @@ const MONTH_NAMES = [
  * missing rather than nothing.
  *
  * The month always lands inside the twelve, as it does for the row's own
- * abbreviation below; the fallback is what `noUncheckedIndexedAccess` asks for,
- * and it gives up the name rather than the count, which is the half a listener
- * could not work out from where they are.
+ * abbreviation below. The names are the catalog's, so the month is said in the
+ * language the reader chose.
  */
-const screenReaderLabelFor = (month: number, total: number): string =>
-  `${MONTH_NAMES[month] ?? ""}, ${total} ${total === 1 ? "unlock" : "unlocks"}`;
+const screenReaderLabelFor = (month: number, total: number, t: Translate): string =>
+  t("calendar.monthSpoken", { month: t(`calendar.monthNames.${month}`), count: total });
 
 /**
  * How many days a month really has. Day zero of the next month is the last day
@@ -337,6 +316,7 @@ const signedFigure = (difference: number): string =>
 export const buildUnlockCalendar = (
   view: LibraryView,
   now: Date,
+  t: Translate,
   held: UnlockToneScale | null = null,
 ): UnlockCalendar => {
   const year = now.getFullYear();
@@ -366,11 +346,11 @@ export const buildUnlockCalendar = (
     const total = days.reduce((sum, day) => sum + (day?.count ?? 0), 0);
 
     return {
-      label: (MONTHS[month] ?? "").toUpperCase(),
+      label: t(`calendar.months.${month}`).toUpperCase(),
       current,
       total,
       totalLabel: total === 0 ? EM_DASH : String(total),
-      screenReaderLabel: screenReaderLabelFor(month, total),
+      screenReaderLabel: screenReaderLabelFor(month, total, t),
       days,
     };
   });
@@ -393,8 +373,16 @@ export const buildUnlockCalendar = (
     deltaLabel:
       lastYearsTotal === null
         ? null
-        : `${signedFigure(total - lastYearsTotal)} vs all of ${lastYear} (${lastYearsTotal})`,
-    frameLabel: `YEAR ${year} · JAN → DEC`,
+        : t("calendar.delta", {
+            signed: signedFigure(total - lastYearsTotal),
+            year: lastYear,
+            total: lastYearsTotal,
+          }),
+    frameLabel: t("calendar.frame", {
+      year,
+      first: t("calendar.months.0").toUpperCase(),
+      last: t("calendar.months.11").toUpperCase(),
+    }),
     months,
     legend: legendFor(scale),
     counting,

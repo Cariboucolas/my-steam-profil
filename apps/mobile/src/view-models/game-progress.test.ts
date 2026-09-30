@@ -1,3 +1,4 @@
+import { translatorFor } from "../i18n/i18n";
 import type { AchievementDto, GameDto, GameProgressDto } from "@steam/contracts";
 
 import {
@@ -7,6 +8,8 @@ import {
   buildTimelineDays,
   gameInLibrary,
 } from "./game-progress";
+
+const english = translatorFor("en");
 
 const achievement = (
   apiName: string,
@@ -63,42 +66,42 @@ describe("buildFilterCounts", () => {
 
 describe("buildAchievementRows", () => {
   it("keeps every achievement under the all filter", () => {
-    expect(buildAchievementRows(PROGRESS, "all")).toHaveLength(4);
+    expect(buildAchievementRows(PROGRESS, "all", english)).toHaveLength(4);
   });
 
   it("keeps only unlocked ones under the unlocked filter", () => {
-    const rows = buildAchievementRows(PROGRESS, "unlocked");
+    const rows = buildAchievementRows(PROGRESS, "unlocked", english);
     expect(rows.map((r) => r.apiName)).toEqual(["BOSS_1", "BOSS_2", "BOSS_3"]);
   });
 
   it("keeps only locked ones under the locked filter", () => {
-    expect(buildAchievementRows(PROGRESS, "locked").map((r) => r.apiName)).toEqual([
+    expect(buildAchievementRows(PROGRESS, "locked", english).map((r) => r.apiName)).toEqual([
       "SECRET",
     ]);
   });
 
   it("shows the unlock date of an earned achievement", () => {
-    const row = buildAchievementRows(PROGRESS, "all")[0];
+    const row = buildAchievementRows(PROGRESS, "all", english)[0];
     expect(row?.dateLabel).toBe("24 Jun 2026");
   });
 
   it("says locked instead of a date when it was never earned", () => {
-    expect(buildAchievementRows(PROGRESS, "locked")[0]?.dateLabel).toBe("locked");
+    expect(buildAchievementRows(PROGRESS, "locked", english)[0]?.dateLabel).toBe("locked");
   });
 
   it("uses the colour icon once earned and the grey one before", () => {
-    expect(buildAchievementRows(PROGRESS, "unlocked")[0]?.iconUrl).toContain("icon/");
-    expect(buildAchievementRows(PROGRESS, "locked")[0]?.iconUrl).toContain("gray/");
+    expect(buildAchievementRows(PROGRESS, "unlocked", english)[0]?.iconUrl).toContain("icon/");
+    expect(buildAchievementRows(PROGRESS, "locked", english)[0]?.iconUrl).toContain("gray/");
   });
 
   it("stands in for a missing description", () => {
-    expect(buildAchievementRows(PROGRESS, "all")[2]?.description).toBe(
+    expect(buildAchievementRows(PROGRESS, "all", english)[2]?.description).toBe(
       "Hidden achievement — no description",
     );
   });
 
   it("shows the most recently earned first", () => {
-    expect(buildAchievementRows(PROGRESS, "all").map((r) => r.apiName)).toEqual([
+    expect(buildAchievementRows(PROGRESS, "all", english).map((r) => r.apiName)).toEqual([
       "BOSS_1",
       "BOSS_2",
       "BOSS_3",
@@ -108,7 +111,7 @@ describe("buildAchievementRows", () => {
 });
 
 describe("buildTimelineDays", () => {
-  const days = buildTimelineDays(PROGRESS);
+  const days = buildTimelineDays(PROGRESS, english);
 
   it("groups unlocks by the day they happened, newest first", () => {
     expect(days.map((d) => d.day)).toEqual(["24 Jun", "26 Nov"]);
@@ -126,12 +129,12 @@ describe("buildTimelineDays", () => {
   });
 
   it("has nothing to show for a game with no unlocks", () => {
-    expect(buildTimelineDays(EMPTY)).toEqual([]);
+    expect(buildTimelineDays(EMPTY, english)).toEqual([]);
   });
 });
 
 describe("buildGameSummary", () => {
-  const summary = buildGameSummary(GAME, PROGRESS);
+  const summary = buildGameSummary(GAME, PROGRESS, english);
 
   it("reads the fraction as the mock writes it", () => {
     expect(summary.fraction).toBe("3 / 4");
@@ -151,7 +154,7 @@ describe("buildGameSummary", () => {
   });
 
   it("has no rate and nothing remaining for a game with no achievements", () => {
-    const none = buildGameSummary(GAME, EMPTY);
+    const none = buildGameSummary(GAME, EMPTY, english);
     expect(none.percentage).toBeNull();
     expect(none.rateLabel).toBe("—");
     expect(none.fraction).toBe("no achievements");
@@ -159,7 +162,7 @@ describe("buildGameSummary", () => {
   });
 
   it("tells apart a game with nothing to earn from one never fetched", () => {
-    const unfetched = buildGameSummary(GAME, null);
+    const unfetched = buildGameSummary(GAME, null, english);
     expect(unfetched.percentage).toBeNull();
     expect(unfetched.fraction).toBe("not loaded");
   });
@@ -170,7 +173,7 @@ describe("buildGameSummary", () => {
    * what is known; only a game with no playtime either was really never opened.
    */
   it("says only what is known where Steam sent no date", () => {
-    const undated = buildGameSummary({ ...GAME, lastPlayedAt: null }, null);
+    const undated = buildGameSummary({ ...GAME, lastPlayedAt: null }, null, english);
 
     expect(undated.meta).toBe("82 h 57 played");
   });
@@ -178,7 +181,7 @@ describe("buildGameSummary", () => {
   it("still says never for a game with no playtime either", () => {
     const untouched = buildGameSummary(
       { ...GAME, lastPlayedAt: null, playtimeMinutes: 0,  },
-      null,
+      null, english,
     );
 
     expect(untouched.meta).toBe("0 min played · last played never");
@@ -197,7 +200,7 @@ describe("buildGameSummary", () => {
   it("says nothing about playtime where Steam withheld the hours", () => {
     const withheld = buildGameSummary(
       { ...GAME, lastPlayedAt: null, playtimeMinutes: null,  },
-      PROGRESS,
+      PROGRESS, english,
     );
 
     expect(withheld.meta).toBe("");
@@ -206,14 +209,14 @@ describe("buildGameSummary", () => {
   it("still says when it was last played where only the hours are withheld", () => {
     const withheld = buildGameSummary(
       { ...GAME, playtimeMinutes: null,  },
-      PROGRESS,
+      PROGRESS, english,
     );
 
     expect(withheld.meta).toBe("last played 25 Jun 2026");
   });
 
   it("still describes playtime for a game never fetched", () => {
-    expect(buildGameSummary(GAME, null).meta).toBe(
+    expect(buildGameSummary(GAME, null, english).meta).toBe(
       "82 h 57 played · last played 25 Jun 2026",
     );
   });
