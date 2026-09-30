@@ -1,4 +1,6 @@
+import { useLocale } from "../../settings/locale-store";
 import { useSteamId } from "../../settings/steam-id-store";
+import { LocaleChips } from "../molecules/LocaleChips";
 import { SteamIdForm } from "../organisms/SteamIdForm";
 import { SetupTemplate } from "../templates/SetupTemplate";
 
@@ -12,11 +14,13 @@ type Props = {
 };
 
 /**
- * Choosing which profile to show (ADR-0022). Loads nothing from the API; what
- * it reads and writes is the device's own record of the profile.
+ * Choosing which profile to show, and in which language (ADR-0022, ADR-0023).
+ * Loads nothing from the API; what it reads and writes is the device's own
+ * record of the profile and of the language.
  */
 export function SetupPage({ onLeave }: Props) {
   const { state, remember, forget } = useSteamId();
+  const { locale, choose } = useLocale();
 
   const submit = async (raw: string) => {
     const accepted = await remember(raw);
@@ -41,11 +45,16 @@ export function SetupPage({ onLeave }: Props) {
   return (
     <SetupTemplate
       form={
-        <SteamIdForm
-          onSubmit={submit}
-          onCancel={known ? onLeave : undefined}
-          onForget={known ? () => void forgetSteamId() : undefined}
-        />
+        <>
+          <SteamIdForm
+            onSubmit={submit}
+            onCancel={known ? onLeave : undefined}
+            onForget={known ? () => void forgetSteamId() : undefined}
+          />
+          {choose ? (
+            <LocaleChips active={locale} onSelect={(next) => void choose(next)} />
+          ) : null}
+        </>
       }
     />
   );

@@ -1,4 +1,5 @@
 import { LinearGradient } from "expo-linear-gradient";
+import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
 
 import { formatUnlockHeadline, type LibrarySummary } from "../../view-models/library";
@@ -200,6 +201,7 @@ type Props = {
 };
 
 export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
+  const { t } = useTranslation();
   const rate = summary.total === 0 ? null : Number.parseInt(summary.rateLabel, 10);
 
   /**
@@ -213,6 +215,7 @@ export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
   const headline = formatUnlockHeadline(
     summary.unlocked,
     headlineMaxChars(width, textScale),
+    t,
   );
 
   return (
@@ -239,7 +242,7 @@ export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
               style={styles.caption}
               maxFontSizeMultiplier={HEADLINE_MAX_FONT_SCALE}
             >
-              {"achievements\nunlocked"}
+              {t("library.statsCard.caption")}
             </Text>
           </View>
           <Text style={styles.fraction}>{summary.fraction}</Text>
@@ -247,14 +250,14 @@ export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
 
         <CompletionRing size={RING_SIZE} strokeWidth={RING_STROKE} percentage={rate}>
           <Text style={styles.ringRate}>{summary.rateLabel}</Text>
-          <Text style={styles.ringLabel}>LIBRARY</Text>
+          <Text style={styles.ringLabel}>{t("library.statsCard.ring")}</Text>
         </CompletionRing>
       </View>
 
       <View style={styles.stats}>
-        <StatBlock value={String(summary.perfectGames)} label="perfect games" />
-        <StatBlock value={summary.playtimeLabel} label="played" />
-        <StatBlock value={String(gameCount)} label="games owned" />
+        <StatBlock value={String(summary.perfectGames)} label={t("library.statsCard.perfectGames")} />
+        <StatBlock value={summary.playtimeLabel} label={t("library.statsCard.played")} />
+        <StatBlock value={String(gameCount)} label={t("library.statsCard.gamesOwned")} />
       </View>
     </LinearGradient>
   );
