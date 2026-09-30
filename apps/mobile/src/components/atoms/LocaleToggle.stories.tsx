@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react-native-web-vite";
 import { fn } from "storybook/test";
 
-import { LocaleChips } from "./LocaleChips";
+import { LocaleToggle } from "./LocaleToggle";
 
 const meta = {
-  title: "Molecules/LocaleChips",
-  component: LocaleChips,
+  title: "Atoms/LocaleToggle",
+  component: LocaleToggle,
   args: { onSelect: fn() },
-} satisfies Meta<typeof LocaleChips>;
+} satisfies Meta<typeof LocaleToggle>;
 
 export default meta;
 

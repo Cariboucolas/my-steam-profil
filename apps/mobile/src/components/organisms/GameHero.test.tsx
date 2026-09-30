@@ -1,6 +1,9 @@
 import { render, fireEvent } from "@testing-library/react-native";
 
+import { Text } from "react-native";
+
 import { spacing } from "../../theme/tokens";
+
 import { GameHero } from "./GameHero";
 
 const hero = (onBack = () => {}) => (
@@ -14,6 +17,21 @@ const hero = (onBack = () => {}) => (
 );
 
 describe("GameHero", () => {
+  it("draws the language switch it is given", () => {
+    const { getByText } = render(
+      <GameHero
+        appId={240}
+        name="Counter-Strike: Source"
+        meta=""
+        topInset={0}
+        onBack={() => {}}
+        languageSwitch={<Text>switch</Text>}
+      />,
+    );
+
+    expect(getByText("switch")).toBeTruthy();
+  });
+
   it("shows the game it heads", () => {
     const { getByText } = render(hero());
 

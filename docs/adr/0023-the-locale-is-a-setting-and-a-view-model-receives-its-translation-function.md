@@ -11,7 +11,7 @@ the code that writes sentences. Issue #155 had to answer both before the first t
 ## What it binds
 
 - **The setting.** `en` or `fr`, stored beside the SteamID with the same store and storage shape,
-  changed from the setup screen. With nothing stored the app is in English and the stored value is
+  changed on the fly from a switch in the header of every screen, so the whole app follows at once. With nothing stored the app is in English and the stored value is
   `en`. The device's locale is never read, not even to seed the default.
 - **The library.** `i18next` with `react-i18next` holds one message catalog per locale. Components
   reach it through the translation hook.

@@ -5,7 +5,7 @@ import type { ComponentType } from "react";
 import { letTheDeviceAnswer } from "../accessibility/reduce-motion.test-support";
 import preview from "../../.storybook/preview";
 import * as libraryStatsCard from "./organisms/LibraryStatsCard.stories";
-import * as localeChips from "./molecules/LocaleChips.stories";
+import * as localeToggle from "./atoms/LocaleToggle.stories";
 
 type StoryFile = Parameters<typeof composeStories>[0];
 
@@ -28,6 +28,7 @@ describe("the gallery's language switch", () => {
     await letTheDeviceAnswer();
 
     expect(getByText("perfect games")).toBeTruthy();
+    expect(getByText("COMPLETED")).toBeTruthy();
     expect(queryByText("jeux à 100 %")).toBeNull();
   });
 
@@ -42,10 +43,10 @@ describe("the gallery's language switch", () => {
   });
 
   it("changes the language of a story with no view-model in it", async () => {
-    const English = galleryIn(localeChips, "fr")["English"]!;
-    const { getByText } = render(<English />);
+    const English = galleryIn(localeToggle, "fr")["English"]!;
+    const { getByLabelText } = render(<English />);
     await letTheDeviceAnswer();
 
-    expect(getByText("Langue")).toBeTruthy();
+    expect(getByLabelText("Langue")).toBeTruthy();
   });
 });

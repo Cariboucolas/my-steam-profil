@@ -1,4 +1,5 @@
 import { Image } from "expo-image";
+import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { ProfileDto } from "@steam/contracts";
@@ -21,9 +22,17 @@ type Props = {
   readonly revision: string;
   /** Required: a screen with no way back to the setup form is a dead end. */
   readonly onChangeProfile: () => void;
+  /** The language switch, where the app can offer one (ADR-0023). */
+  readonly languageSwitch?: ReactNode;
 };
 
-export function ProfileHeader({ profile, gameCount, revision, onChangeProfile }: Props) {
+export function ProfileHeader({
+  profile,
+  gameCount,
+  revision,
+  onChangeProfile,
+  languageSwitch,
+}: Props) {
   return (
     <View style={styles.row}>
       <Image
@@ -54,6 +63,7 @@ export function ProfileHeader({ profile, gameCount, revision, onChangeProfile }:
           </Text>
         </View>
       </View>
+      {languageSwitch}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="Change profile"
