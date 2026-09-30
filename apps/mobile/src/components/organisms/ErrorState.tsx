@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, fonts, radius, spacing } from "../../theme/tokens";
@@ -17,27 +18,29 @@ type Props = {
  * renders no header, so without them there is no way out but killing the app.
  */
 export function ErrorState({ message, onRetry, onChangeProfile }: Props) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.centred}>
       <Text style={styles.message}>{message}</Text>
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Try again"
+        accessibilityLabel={t("errors.retry")}
         onPress={onRetry}
         style={styles.retry}
       >
-        <Text style={styles.retryLabel}>Try again</Text>
+        <Text style={styles.retryLabel}>{t("errors.retry")}</Text>
       </Pressable>
 
       {onChangeProfile ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Change profile"
+          accessibilityLabel={t("errors.changeProfile")}
           onPress={onChangeProfile}
           style={styles.secondary}
         >
-          <Text style={styles.secondaryLabel}>Change profile</Text>
+          <Text style={styles.secondaryLabel}>{t("errors.changeProfile")}</Text>
         </Pressable>
       ) : null}
     </View>

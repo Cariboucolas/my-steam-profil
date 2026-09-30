@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react-native-web-vite";
 
-import { translatorForGlobals } from "../../fixtures/story-locale";
+import { english, translatorForGlobals } from "../../fixtures/story-locale";
 
 import {
   collectorLibrary,
@@ -13,7 +13,7 @@ import { buildLibrarySummary, type LibraryView } from "../../view-models/library
 import { LibraryStatsCard } from "./LibraryStatsCard";
 
 /** The card as the library screen hands it a view: summary and count read from one library. */
-const argsFor = (view: LibraryView, loaded: number | null = null, t?: Translate) => ({
+const argsFor = (view: LibraryView, loaded: number | null = null, t: Translate = english) => ({
   summary: buildLibrarySummary(view, t),
   gameCount: view.games.length,
   loaded,

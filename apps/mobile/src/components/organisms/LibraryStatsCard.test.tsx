@@ -1,3 +1,4 @@
+import { translatorFor } from "../../i18n/i18n";
 import * as ReactNative from "react-native";
 import { render, waitFor } from "@testing-library/react-native";
 
@@ -24,6 +25,8 @@ import {
   LibraryStatsCard,
   LIBRARY_STATS_CARD_TEST_ID,
 } from "./LibraryStatsCard";
+
+const english = translatorFor("en");
 
 const summary = (over: Partial<LibrarySummary> = {}): LibrarySummary => ({
   unlocked: 1284,
@@ -159,7 +162,7 @@ describe("the headline always fits", () => {
     const budget = headlineMaxChars(width, scale);
 
     for (let unlocked = 0; unlocked <= 1_000_000; unlocked += 137) {
-      const written = formatUnlockHeadline(unlocked, budget);
+      const written = formatUnlockHeadline(unlocked, budget, english);
       const fits = headlineFits(written.length, width, scale);
       expect({ unlocked, written, fits }).toEqual({ unlocked, written, fits: true });
     }

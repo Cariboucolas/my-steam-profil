@@ -1,5 +1,6 @@
 import type { GameDto } from "@steam/contracts";
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import type { LibraryView } from "./library";
 import {
@@ -45,14 +46,15 @@ export const useUnlockCalendar = (
   view: LibraryView,
   now: Date,
 ): UnlockCalendar => {
+  const { t } = useTranslation();
   const [held, setHeld] = useState<HeldScale | null>(null);
 
   // Nothing is held for a library other than the one that read it.
   const heldScale =
     held !== null && held.games === view.games ? held.scale : null;
   const calendar = useMemo(
-    () => buildUnlockCalendar(view, now, heldScale),
-    [view, now, heldScale],
+    () => buildUnlockCalendar(view, now, t, heldScale),
+    [view, now, t, heldScale],
   );
 
   // Adjusted here rather than in an effect or a ref. A ref written mid-render

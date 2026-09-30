@@ -5,6 +5,8 @@ import type {
   UnlockDto,
 } from "@steam/contracts";
 
+import { formatNumber } from "../i18n/format-number";
+import type { Translate } from "../i18n/i18n";
 import { gamesCounted, type LibraryView } from "./library";
 
 /**
@@ -61,9 +63,9 @@ type Candidate = RarestUnlock & { readonly at: number | null };
  * written as under a tenth rather than as zero: the player is holding the
  * achievement, so "0%" of them would be a plain untruth.
  */
-const rarityLabelOf = (rarity: number): string => {
+const rarityLabelOf = (rarity: number, t: Translate): string => {
   const rounded = Math.round(rarity * 10) / 10;
-  return rounded === 0 ? "<0.1%" : `${rounded}%`;
+  return rounded === 0 ? `<${formatNumber(t, 0.1, 1)}%` : `${formatNumber(t, rounded, 1)}%`;
 };
 
 /**
@@ -107,6 +109,7 @@ const candidatesIn = (
   game: GameDto,
   unlocks: readonly UnlockDto[],
   published: GameRarityDto,
+  t: Translate,
 ): readonly Candidate[] => {
   const rarityOf = new Map(published.map((one) => [one.apiName, one.rarity]));
 
@@ -119,7 +122,7 @@ const candidatesIn = (
         gameName: game.name,
         apiName: unlock.apiName,
         rarity,
-        rarityLabel: rarityLabelOf(rarity),
+        rarityLabel: rarityLabelOf(rarity, t),
         at: unlock.at,
       },
     ];
@@ -145,10 +148,10 @@ const topWithItsTies = (ranked: readonly Candidate[]): readonly Candidate[] => {
   );
 };
 
-const labelFor = (rows: number, counted: number): string =>
+const labelFor = (rows: number, counted: number, t: Translate): string =>
   rows === 0
-    ? `nothing to rank across ${gamesCounted(counted)}`
-    : `rarest ${rows} across ${gamesCounted(counted)}`;
+    ? t("rarest.nothingToRank", { counted: gamesCounted(counted, t) })
+    : t("rarest.ranked", { count: rows, counted: gamesCounted(counted, t) });
 
 /**
  * The rarest achievements this player has actually unlocked, rarest first,
@@ -166,6 +169,7 @@ const labelFor = (rows: number, counted: number): string =>
 export const buildRarestUnlocks = (
   view: LibraryView,
   rarity: RarityByAppId,
+  t: Translate,
 ): RarestUnlocks => {
   const ranked: Candidate[] = [];
   let counted = 0;
@@ -178,14 +182,14 @@ export const buildRarestUnlocks = (
     if (!tally || !published || published.length === 0) continue;
 
     counted += 1;
-    ranked.push(...candidatesIn(game, tally.unlocks, published));
+    ranked.push(...candidatesIn(game, tally.unlocks, published, t));
   }
 
   const rows = topWithItsTies([...ranked].sort(byRarestThenNewest)).map(
     ({ at: _at, ...row }) => row,
   );
 
-  return { rows, countedLabel: labelFor(rows.length, counted) };
+  return { rows, countedLabel: labelFor(rows.length, counted, t) };
 };
 
 /**

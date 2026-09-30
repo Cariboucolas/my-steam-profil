@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { Animated, StyleSheet } from "react-native";
 
 import { useReduceMotion } from "../../accessibility/use-reduce-motion";
@@ -40,6 +41,7 @@ type Props = {
  */
 export function Skeleton({ width, height, radius }: Props) {
   const pulse = useRef(new Animated.Value(DIMMEST)).current;
+  const { t } = useTranslation();
   const reduceMotion = useReduceMotion();
 
   useEffect(() => {
@@ -71,7 +73,7 @@ export function Skeleton({ width, height, radius }: Props) {
   return (
     <Animated.View
       testID={SKELETON_TEST_ID}
-      accessibilityLabel="Loading"
+      accessibilityLabel={t("loading")}
       style={{
         ...styles.block,
         width,

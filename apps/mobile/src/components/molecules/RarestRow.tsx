@@ -1,4 +1,5 @@
 import { Image } from "expo-image";
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { NamedUnlock } from "../../view-models/rarest-unlocks";
@@ -14,8 +15,6 @@ export const RAREST_ICON_TEST_ID = "rarest-row-icon";
  * on a screen full of them, and Rarity runs backwards to every other percentage
  * in this app — 0.4 is a trophy almost nobody holds.
  */
-const OF_PLAYERS = "of players";
-
 /** Sized to the name it stands in for, so nothing shifts when it lands. */
 const NAME_SKELETON_WIDTH = 132;
 const NAME_SKELETON_HEIGHT = 11;
@@ -37,6 +36,8 @@ type Props = {
  * owns, sitting under rows that open, would not be understood as inert.
  */
 export function RarestRow({ row, onPress }: Props) {
+  const { t } = useTranslation();
+
   return (
     <Pressable
       onPress={() => onPress(row.appId)}
@@ -78,7 +79,7 @@ export function RarestRow({ row, onPress }: Props) {
 
       {/* The pair exactly as the stats card writes it. Ten of these down a
           page, so the figure is left plain: the ranking is the emphasis. */}
-      <StatBlock value={row.rarityLabel} label={OF_PLAYERS} />
+      <StatBlock value={row.rarityLabel} label={t("rarest.ofPlayers")} />
     </Pressable>
   );
 }

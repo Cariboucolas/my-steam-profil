@@ -1,3 +1,4 @@
+import { translatorFor } from "../i18n/i18n";
 import type { GameDto, GameTallyDto } from "@steam/contracts";
 
 import {
@@ -12,6 +13,8 @@ import {
   type LibrarySort,
   type TallyByAppId,
 } from "./library";
+
+const english = translatorFor("en");
 
 /** Null minutes is a playtime Steam withheld, not a game never launched. */
 const game = (
@@ -117,21 +120,21 @@ describe("what a library publishes about when it was played", () => {
 
 describe("formatHoursRounded", () => {
   it("groups thousands with a space, as the mock does", () => {
-    expect(formatHoursRounded(187_680)).toBe("3 128 h");
+    expect(formatHoursRounded(187_680, english)).toBe("3 128 h");
   });
 
   it("stays in minutes below an hour", () => {
-    expect(formatHoursRounded(45)).toBe("45 min");
+    expect(formatHoursRounded(45, english)).toBe("45 min");
   });
 
   it("reads zero as no playtime at all", () => {
-    expect(formatHoursRounded(0)).toBe("0 min");
+    expect(formatHoursRounded(0, english)).toBe("0 min");
   });
 });
 
 describe("formatDay", () => {
   it("writes a short English date", () => {
-    expect(formatDay("2026-06-25T12:16:14.000Z")).toBe("25 Jun 2026");
+    expect(formatDay("2026-06-25T12:16:14.000Z", english)).toBe("25 Jun 2026");
   });
 });
 
@@ -143,14 +146,14 @@ describe("formatDay", () => {
  */
 describe("formatUnlockHeadline", () => {
   it("writes the figure in full whenever it fits", () => {
-    expect(formatUnlockHeadline(45_500, 6)).toBe("45 500");
-    expect(formatUnlockHeadline(9_999, 5)).toBe("9 999");
-    expect(formatUnlockHeadline(0, 5)).toBe("0");
+    expect(formatUnlockHeadline(45_500, 6, english)).toBe("45 500");
+    expect(formatUnlockHeadline(9_999, 5, english)).toBe("9 999");
+    expect(formatUnlockHeadline(0, 5, english)).toBe("0");
   });
 
   it("keeps a decimal when the full figure does not fit", () => {
-    expect(formatUnlockHeadline(45_500, 5)).toBe("45.5K");
-    expect(formatUnlockHeadline(10_200, 5)).toBe("10.2K");
+    expect(formatUnlockHeadline(45_500, 5, english)).toBe("45.5K");
+    expect(formatUnlockHeadline(10_200, 5, english)).toBe("10.2K");
   });
 
   /**
@@ -158,8 +161,8 @@ describe("formatUnlockHeadline", () => {
    * precision the rounding did not have.
    */
   it("drops a decimal that is only a zero", () => {
-    expect(formatUnlockHeadline(10_000, 5)).toBe("10K");
-    expect(formatUnlockHeadline(1_000_000, 5)).toBe("1M");
+    expect(formatUnlockHeadline(10_000, 5, english)).toBe("10K");
+    expect(formatUnlockHeadline(1_000_000, 5, english)).toBe("1M");
   });
 
   /**
@@ -167,13 +170,13 @@ describe("formatUnlockHeadline", () => {
    * the case a single "shorten past 9 999" rule would have missed.
    */
   it("gives up the decimal too rather than overflow", () => {
-    expect(formatUnlockHeadline(123_400, 6)).toBe("123.4K");
-    expect(formatUnlockHeadline(123_400, 5)).toBe("123K");
+    expect(formatUnlockHeadline(123_400, 6, english)).toBe("123.4K");
+    expect(formatUnlockHeadline(123_400, 5, english)).toBe("123K");
   });
 
   it("rounds to the nearest, as the other figures on this screen do", () => {
-    expect(formatUnlockHeadline(45_550, 5)).toBe("45.6K");
-    expect(formatUnlockHeadline(45_540, 5)).toBe("45.5K");
+    expect(formatUnlockHeadline(45_550, 5, english)).toBe("45.6K");
+    expect(formatUnlockHeadline(45_540, 5, english)).toBe("45.5K");
   });
 
   /**
@@ -182,7 +185,7 @@ describe("formatUnlockHeadline", () => {
    * wrong unit.
    */
   it("promotes the unit when rounding overflows it", () => {
-    expect(formatUnlockHeadline(999_950, 5)).toBe("1M");
+    expect(formatUnlockHeadline(999_950, 5, english)).toBe("1M");
   });
 
   /**
@@ -191,13 +194,13 @@ describe("formatUnlockHeadline", () => {
    * formatter's job is to return the truth rather than a fiction that fits.
    */
   it("writes the figure in full when nothing shorter exists", () => {
-    expect(formatUnlockHeadline(127, 2)).toBe("127");
+    expect(formatUnlockHeadline(127, 2, english)).toBe("127");
   });
 });
 
 describe("buildLibraryRows", () => {
   it("shows completion for a game whose tally arrived", () => {
-    const row = buildLibraryRows(settled("completed")).find((r) => r.appId === 2066020);
+    const row = buildLibraryRows(settled("completed"), english).find((r) => r.appId === 2066020);
 
     expect(row?.rateLabel).toBe("73%");
     expect(row?.percentage).toBe(73);
@@ -205,20 +208,20 @@ describe("buildLibraryRows", () => {
   });
 
   it("shows a dash for a game whose tally was never asked for", () => {
-    const row = buildLibraryRows(settled("completed")).find((r) => r.appId === 8930);
+    const row = buildLibraryRows(settled("completed"), english).find((r) => r.appId === 8930);
 
     expect(row?.rateLabel).toBe("—");
     expect(row?.percentage).toBeNull();
   });
 
   it("says so when a game defines no achievements", () => {
-    const rows = buildLibraryRows(settled("completed", { 8930: tally(0, 0) }));
+    const rows = buildLibraryRows(settled("completed", { 8930: tally(0, 0) }), english);
     expect(rows.find((r) => r.appId === 8930)?.meta).toContain("no achievements");
   });
 
   it("shows a dash, not 0 %, for a game that defines no achievements", () => {
     const row = buildLibraryRows(
-      settled("completed", { 8930: tally(0, 0) }),
+      settled("completed", { 8930: tally(0, 0) }), english,
     ).find((r) => r.appId === 8930);
 
     expect(row?.rateLabel).toBe("—");
@@ -226,7 +229,7 @@ describe("buildLibraryRows", () => {
   });
 
   it("says so when a game was never launched", () => {
-    const rows = buildLibraryRows(settled("completed"));
+    const rows = buildLibraryRows(settled("completed"), english);
     expect(rows.find((r) => r.appId === 978520)?.meta).toContain("never played");
   });
 
@@ -238,7 +241,7 @@ describe("buildLibraryRows", () => {
    */
   it("says nothing about when, rather than never, where Steam sent no date", () => {
     const played = game(1, "Counter-Strike: Source", 8975, null);
-    const rows = buildLibraryRows(settled("playtime", {}, [played]));
+    const rows = buildLibraryRows(settled("playtime", {}, [played]), english);
 
     expect(rows[0]?.meta).not.toContain("never");
     expect(rows[0]?.meta).toContain("150 h");
@@ -253,7 +256,7 @@ describe("buildLibraryRows", () => {
    */
   it("says nothing about when, rather than never, where a whole library is silent", () => {
     const rows = buildLibraryRows(
-      settled("completed", { 240: tally(57, 147) }, WITHHELD_LIBRARY),
+      settled("completed", { 240: tally(57, 147) }, WITHHELD_LIBRARY), english,
     );
 
     expect(rows.every((row) => !row.meta.includes("never"))).toBe(true);
@@ -266,7 +269,7 @@ describe("buildLibraryRows", () => {
    */
   it("writes no hours at all where Steam withheld them", () => {
     const rows = buildLibraryRows(
-      settled("completed", { 240: tally(57, 147) }, WITHHELD_LIBRARY),
+      settled("completed", { 240: tally(57, 147) }, WITHHELD_LIBRARY), english,
     );
 
     expect(rows[0]?.meta).toBe("57/147");
@@ -274,14 +277,14 @@ describe("buildLibraryRows", () => {
   });
 
   it("still writes the hours of a game measured at zero minutes", () => {
-    const rows = buildLibraryRows(settled("completed", {}, [KEEPERS]));
+    const rows = buildLibraryRows(settled("completed", {}, [KEEPERS]), english);
 
     expect(rows[0]?.meta).toBe("0 min · never played");
   });
 
   it("leaves the games it was given untouched", () => {
     const order = GAMES.map((g) => g.appId);
-    buildLibraryRows(settled("playtime"));
+    buildLibraryRows(settled("playtime"), english);
     expect(GAMES.map((g) => g.appId)).toEqual(order);
   });
 });
@@ -309,7 +312,7 @@ describe("buildLibraryRows, ordered by what the player has finished", () => {
   };
 
   const ordered = () =>
-    buildLibraryRows(settled("completed", tallies, games)).map((r) => r.appId);
+    buildLibraryRows(settled("completed", tallies, games), english).map((r) => r.appId);
 
   it("puts a finished game ahead of an unfinished one, however close", () => {
     expect(ordered().indexOf(1)).toBeLessThan(ordered().indexOf(3));
@@ -330,12 +333,12 @@ describe("buildLibraryRows, ordered by what the player has finished", () => {
 
 describe("buildLibraryRows, other orders", () => {
   it("sorts the most recently played first, never played last", () => {
-    const rows = buildLibraryRows(settled("recent"));
+    const rows = buildLibraryRows(settled("recent"), english);
     expect(rows.map((r) => r.appId)).toEqual([2066020, 2218750, 8930, 978520]);
   });
 
   it("sorts the most played first", () => {
-    const rows = buildLibraryRows(settled("playtime"));
+    const rows = buildLibraryRows(settled("playtime"), english);
     expect(rows.map((r) => r.appId)).toEqual([8930, 2218750, 2066020, 978520]);
   });
 });
@@ -355,7 +358,7 @@ describe("buildLibraryRows, while tallies are still arriving", () => {
   });
 
   it("keeps the order it was pinned to, whatever the tallies say", () => {
-    const rows = buildLibraryRows(loading(TALLIES, []));
+    const rows = buildLibraryRows(loading(TALLIES, []), english);
     expect(rows.map((r) => r.appId)).toEqual([8930, 978520, 2066020, 2218750]);
   });
 
@@ -363,18 +366,18 @@ describe("buildLibraryRows, while tallies are still arriving", () => {
     const rows = buildLibraryRows({
       ...loading(TALLIES, []),
       frozenOrder: [2066020],
-    });
+    }, english);
     expect(rows).toHaveLength(GAMES.length);
     expect(rows[0]?.appId).toBe(2066020);
   });
 
   it("marks a game still waiting for its tally as pending", () => {
-    const rows = buildLibraryRows(loading({}, [2066020]));
+    const rows = buildLibraryRows(loading({}, [2066020]), english);
     expect(rows.find((r) => r.appId === 2066020)?.pending).toBe(true);
   });
 
   it("does not mark a game whose tally has landed", () => {
-    const rows = buildLibraryRows(loading(TALLIES, [8930]));
+    const rows = buildLibraryRows(loading(TALLIES, [8930]), english);
     expect(rows.find((r) => r.appId === 2066020)?.pending).toBe(false);
   });
 
@@ -383,14 +386,14 @@ describe("buildLibraryRows, while tallies are still arriving", () => {
    * draws a skeleton. Telling them apart is the whole point of the flag.
    */
   it("does not mark a game nothing is being asked about", () => {
-    const rows = buildLibraryRows(loading({}, [2066020]));
+    const rows = buildLibraryRows(loading({}, [2066020]), english);
     expect(rows.find((r) => r.appId === 8930)?.pending).toBe(false);
   });
 });
 
 describe("buildLibrarySummary", () => {
   // The chosen order has no bearing on a summary; any settled view will do.
-  const summary = buildLibrarySummary(settled("completed"));
+  const summary = buildLibrarySummary(settled("completed"), english);
 
   it("counts unlocked achievements across the games it has data for", () => {
     expect(summary.unlocked).toBe(853);
@@ -417,7 +420,7 @@ describe("buildLibrarySummary", () => {
       sort: "completed",
       pending: new Set<number>(),
       frozenOrder: null,
-    });
+    }, english);
 
     expect(summary.fraction).toBe("45 500 / 120 000 across 1 game counted");
   });
@@ -433,7 +436,7 @@ describe("buildLibrarySummary", () => {
       sort: "completed",
       pending: new Set<number>(),
       frozenOrder: null,
-    });
+    }, english);
 
     expect(summary.fraction).toBe("353 / 483 across 1 game counted");
   });
@@ -453,7 +456,7 @@ describe("buildLibrarySummary", () => {
   });
 
   it("totals playtime over the whole library, not just loaded games", () => {
-    expect(summary.playtimeLabel).toBe(formatHoursRounded(4977 + 14286 + 38496 + 0));
+    expect(summary.playtimeLabel).toBe(formatHoursRounded(4977 + 14286 + 38496 + 0, english));
   });
 
   /**
@@ -461,7 +464,7 @@ describe("buildLibrarySummary", () => {
    * one level up: the card would otherwise headline a figure Steam never gave.
    */
   it("has no total at all where Steam withheld the hours", () => {
-    const withheld = buildLibrarySummary(settled("completed", {}, WITHHELD_LIBRARY));
+    const withheld = buildLibrarySummary(settled("completed", {}, WITHHELD_LIBRARY), english);
 
     expect(withheld.playtimeLabel).toBe("—");
   });

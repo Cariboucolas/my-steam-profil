@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, fonts, spacing } from "../../theme/tokens";
@@ -10,8 +11,6 @@ export const UNLOCK_HEADER_TEST_ID = "unlock-calendar-header";
  * code says so throughout; this one word is the only place the two diverge,
  * and CONTEXT.md records it.
  */
-const TITLE = "Activity";
-
 type Props = {
   readonly total: number;
   readonly frameLabel: string;
@@ -34,10 +33,12 @@ type Props = {
  * it, and two left edges in one card would read as two cards.
  */
 export function UnlockCalendarHeader({ total, frameLabel, deltaLabel }: Props) {
+  const { t } = useTranslation();
+
   return (
     <View testID={UNLOCK_HEADER_TEST_ID} style={styles.header}>
       <View style={styles.line}>
-        <Text style={styles.title}>{TITLE}</Text>
+        <Text style={styles.title}>{t("calendar.title")}</Text>
         <Text style={styles.total}>{total}</Text>
       </View>
 

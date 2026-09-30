@@ -1,6 +1,7 @@
 import type { AchievementDto, GameDto, GameProgressDto } from "@steam/contracts";
 import { formatPlaytimeExact } from "@steam/domain";
 
+import type { Translate } from "../i18n/i18n";
 import { formatDay, joined, neverLaunched } from "./library";
 
 export type AchievementFilter = "all" | "unlocked" | "locked";
@@ -44,9 +45,6 @@ export type FilterCounts = {
   readonly locked: number;
 };
 
-/** Steam leaves the description empty on achievements hidden until earned. */
-const NO_DESCRIPTION = "Hidden achievement — no description";
-
 const pad = (value: number): string => String(value).padStart(2, "0");
 
 /** "22:09", in the device's own time zone. */
@@ -64,9 +62,18 @@ export const buildFilterCounts = (progress: GameProgressDto): FilterCounts => {
   return { all, unlocked, locked: all - unlocked };
 };
 
+/** The chip for one filter: what it shows, and how many that is. */
+export const filterLabel = (
+  filter: AchievementFilter,
+  counts: FilterCounts,
+  t: Translate,
+): string => t(`game.filters.${filter}`, { count: counts[filter] });
+
+/** Steam leaves the description empty on achievements hidden until earned. */
 export const buildAchievementRows = (
   progress: GameProgressDto,
   filter: AchievementFilter,
+  t: Translate,
 ): readonly AchievementRow[] =>
   progress.achievements
     .filter((a) =>
@@ -78,15 +85,16 @@ export const buildAchievementRows = (
     .map((a) => ({
       apiName: a.apiName,
       name: a.displayName,
-      description: a.description === "" ? NO_DESCRIPTION : a.description,
+      description: a.description === "" ? t("game.hiddenDescription") : a.description,
       // The grey icon is what Steam ships for an achievement not yet earned.
       iconUrl: a.unlocked ? a.icon : a.iconGray,
       unlocked: a.unlocked,
-      dateLabel: a.unlockedAt ? formatDay(a.unlockedAt) : "locked",
+      dateLabel: a.unlockedAt ? formatDay(a.unlockedAt, t) : t("game.locked"),
     }));
 
 export const buildTimelineDays = (
   progress: GameProgressDto,
+  t: Translate,
 ): readonly TimelineDay[] => {
   const byName = new Map(progress.achievements.map((a) => [a.apiName, a]));
   const days = new Map<string, TimelineItem[]>();
@@ -103,7 +111,7 @@ export const buildTimelineDays = (
       // mapper already drops those, so this is belt and braces.
       continue;
     }
-    const key = formatDay(entry.unlockedAt);
+    const key = formatDay(entry.unlockedAt, t);
     const items = days.get(key) ?? [];
     items.push({
       apiName: entry.apiName,
@@ -115,14 +123,14 @@ export const buildTimelineDays = (
   }
 
   return [...days.entries()].map(([key, items]) => {
-    // "24 Jun 2026" splits into the day line and the year beneath it.
+    // "24 Jun 2026" and "24 juin 2026" split into the day line and the year beneath it.
     const parts = key.split(" ");
     const year = parts.pop() ?? "";
     return {
       key,
       day: parts.join(" "),
       year,
-      countLabel: `${items.length} unlocked`,
+      countLabel: t("game.unlockedOnDay", { count: items.length }),
       items,
     };
   });
@@ -136,6 +144,7 @@ export const buildTimelineDays = (
 export const buildGameSummary = (
   game: GameDto,
   progress: GameProgressDto | null,
+  t: Translate,
 ): GameSummary => {
   // Steam does not always send a last-played time, and "last played never"
   // beside 82 hours is untrue. Where it withholds the date the line says only
@@ -152,22 +161,19 @@ export const buildGameSummary = (
   const played =
     game.playtimeMinutes === null
       ? null
-      : `${formatPlaytimeExact(game.playtimeMinutes)} played`;
+      : t("game.played", { time: formatPlaytimeExact(game.playtimeMinutes) });
   const lastPlayed = game.lastPlayedAt
-    ? formatDay(game.lastPlayedAt)
+    ? t("game.lastPlayed", { day: formatDay(game.lastPlayedAt, t) })
     : neverLaunched(game)
-      ? "never"
+      ? t("game.lastPlayedNever")
       : null;
-  const meta = joined([
-    played,
-    lastPlayed === null ? null : `last played ${lastPlayed}`,
-  ]);
+  const meta = joined([played, lastPlayed]);
 
   if (progress === null) {
     return {
       percentage: null,
       rateLabel: "—",
-      fraction: "not loaded",
+      fraction: t("game.notLoaded"),
       remaining: "",
       lastUnlock: "",
       meta,
@@ -188,11 +194,11 @@ export const buildGameSummary = (
   return {
     percentage: known ? Math.round(percentage) : null,
     rateLabel: known ? `${Math.round(percentage)}%` : "—",
-    fraction: known ? `${unlocked} / ${total}` : "no achievements",
-    remaining: known
-      ? `${left} ${left === 1 ? "achievement" : "achievements"} remaining`
+    fraction: known ? `${unlocked} / ${total}` : t("library.noAchievements"),
+    remaining: known ? t("game.remaining", { count: left }) : "",
+    lastUnlock: lastUnlockAt
+      ? t("game.lastUnlock", { day: formatDay(lastUnlockAt, t) })
       : "",
-    lastUnlock: lastUnlockAt ? `last unlock ${formatDay(lastUnlockAt)}` : "",
     meta,
   };
 };

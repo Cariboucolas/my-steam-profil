@@ -1,5 +1,6 @@
 import { Image } from "expo-image";
 import type { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import type { ProfileDto } from "@steam/contracts";
@@ -33,6 +34,8 @@ export function ProfileHeader({
   onChangeProfile,
   languageSwitch,
 }: Props) {
+  const { t } = useTranslation();
+
   return (
     <View style={styles.row}>
       <Image
@@ -46,7 +49,7 @@ export function ProfileHeader({
           {profile.personaName}
         </Text>
         <View style={styles.metaRow}>
-          <Text style={styles.meta}>{`${gameCount} games`}</Text>
+          <Text style={styles.meta}>{t("profile.gameCount", { count: gameCount })}</Text>
           {/* Its own element rather than more of the line above, because what
               is written and what is read part company here: the revision is
               provenance for whoever is looking, and three more words between
@@ -59,19 +62,19 @@ export function ProfileHeader({
             selectable={false}
             {...NOT_READ}
           >
-            {`· revision ${revision}`}
+            {t("profile.revision", { revision })}
           </Text>
         </View>
       </View>
       {languageSwitch}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Change profile"
+        accessibilityLabel={t("errors.changeProfile")}
         onPress={onChangeProfile}
         // The one accent of the design is spent on completion, not on this.
         style={styles.change}
       >
-        <Text style={styles.changeLabel}>Change</Text>
+        <Text style={styles.changeLabel}>{t("profile.change")}</Text>
       </Pressable>
     </View>
   );

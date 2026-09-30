@@ -1,3 +1,4 @@
+import { translatorFor } from "../i18n/i18n";
 import {
   buildUnlockCalendar,
   type UnlockCalendar,
@@ -17,6 +18,8 @@ import {
   stillCounting,
   withUndatedUnlocks,
 } from "./unlock-calendar.test-support";
+
+const english = translatorFor("en");
 
 const rowFor = (calendar: UnlockCalendar, label: string): UnlockMonth => {
   const month = calendar.months.find((one) => one.label === label);
@@ -59,7 +62,7 @@ describe("buildUnlockCalendar", () => {
   it("draws a row for every month up to the one today falls in", () => {
     const calendar = buildUnlockCalendar(
       libraryWhereUnlocksHappened(),
-      new Date("2026-04-17T10:00:00Z"),
+      new Date("2026-04-17T10:00:00Z"), english,
     );
 
     expect(calendar.months.map((month) => month.label)).toEqual([
@@ -73,7 +76,7 @@ describe("buildUnlockCalendar", () => {
   it("draws no day the player has not lived through yet", () => {
     const calendar = buildUnlockCalendar(
       libraryWhereUnlocksHappened(),
-      new Date("2026-04-17T10:00:00Z"),
+      new Date("2026-04-17T10:00:00Z"), english,
     );
     const april = rowFor(calendar, "APR");
 
@@ -88,7 +91,7 @@ describe("buildUnlockCalendar", () => {
   it("never draws a day that did not exist", () => {
     const calendar = buildUnlockCalendar(
       libraryWhereUnlocksHappened(),
-      new Date("2026-12-31T10:00:00Z"),
+      new Date("2026-12-31T10:00:00Z"), english,
     );
 
     expect(drawn(rowFor(calendar, "FEB"))).toHaveLength(28);
@@ -101,7 +104,7 @@ describe("buildUnlockCalendar", () => {
   it("draws the 29th of February in a leap year", () => {
     const calendar = buildUnlockCalendar(
       libraryWhereUnlocksHappened(),
-      new Date("2028-03-10T10:00:00Z"),
+      new Date("2028-03-10T10:00:00Z"), english,
     );
 
     expect(drawn(rowFor(calendar, "FEB"))).toHaveLength(29);
@@ -113,7 +116,7 @@ describe("buildUnlockCalendar", () => {
         [SOULSTONE]: ["2026-04-05T09:00:00Z", "2026-04-05T22:10:00Z"],
         [HALLS]: ["2026-04-05T11:00:00Z", "2026-04-06T11:00:00Z"],
       }),
-      new Date("2026-04-17T10:00:00Z"),
+      new Date("2026-04-17T10:00:00Z"), english,
     );
     const april = rowFor(calendar, "APR");
 
@@ -125,7 +128,7 @@ describe("buildUnlockCalendar", () => {
   it("counts what has arrived and waits for the rest", () => {
     const calendar = buildUnlockCalendar(
       libraryWhereUnlocksHappened({ [SOULSTONE]: ["2026-04-05T09:00:00Z"] }),
-      new Date("2026-04-17T10:00:00Z"),
+      new Date("2026-04-17T10:00:00Z"), english,
     );
 
     expect(rowFor(calendar, "APR").days[4]?.count).toBe(1);
@@ -137,7 +140,7 @@ describe("buildUnlockCalendar", () => {
     // the player's own day, so this one is the 14th and not the 15th.
     const calendar = buildUnlockCalendar(
       libraryWhereUnlocksHappened({ [SOULSTONE]: ["2026-03-14T23:30:00Z"] }),
-      new Date("2026-04-17T10:00:00Z"),
+      new Date("2026-04-17T10:00:00Z"), english,
     );
     const march = rowFor(calendar, "MAR");
 
@@ -150,7 +153,7 @@ describe("buildUnlockCalendar", () => {
       libraryWhereUnlocksHappened({
         [SOULSTONE]: ["1970-01-01T00:00:00Z", "2025-12-31T20:00:00Z"],
       }),
-      new Date("2026-04-17T10:00:00Z"),
+      new Date("2026-04-17T10:00:00Z"), english,
     );
 
     expect(totalOf(calendar)).toBe(0);
@@ -168,7 +171,7 @@ describe("buildUnlockCalendar", () => {
 
     const calendar = buildUnlockCalendar(
       withUndatedUnlocks(dated, SOULSTONE, 3),
-      new Date("2026-04-17T10:00:00Z"),
+      new Date("2026-04-17T10:00:00Z"), english,
     );
 
     expect(totalOf(calendar)).toBe(1);
@@ -185,7 +188,7 @@ describe("buildUnlockCalendar", () => {
         [SOULSTONE]: ["2026-03-14T09:00:00Z", "2026-03-14T10:00:00Z"],
         [HALLS]: ["2026-03-30T11:00:00Z", "2026-04-02T11:00:00Z"],
       }),
-      new Date("2026-04-17T10:00:00Z"),
+      new Date("2026-04-17T10:00:00Z"), english,
     );
 
     expect(rowFor(calendar, "MAR").total).toBe(3);
@@ -198,7 +201,7 @@ describe("buildUnlockCalendar", () => {
     // nothing to compare, which is what an empty month means.
     const calendar = buildUnlockCalendar(
       libraryWhereUnlocksHappened({ [SOULSTONE]: ["2026-03-14T09:00:00Z"] }),
-      new Date("2026-04-17T10:00:00Z"),
+      new Date("2026-04-17T10:00:00Z"), english,
     );
 
     expect(rowFor(calendar, "JAN").total).toBe(0);
@@ -209,7 +212,7 @@ describe("buildUnlockCalendar", () => {
   it("names the month today falls in", () => {
     const calendar = buildUnlockCalendar(
       libraryWhereUnlocksHappened(),
-      new Date("2026-04-17T10:00:00Z"),
+      new Date("2026-04-17T10:00:00Z"), english,
     );
 
     expect(calendar.months.map((month) => month.current)).toEqual([
@@ -228,7 +231,7 @@ describe("buildUnlockCalendar", () => {
     it("draws the year out empty and still sets it against the one before", () => {
       const calendar = buildUnlockCalendar(
         libraryWhereUnlocksHappened({ [SOULSTONE]: heldBy("2025-06-21", 306) }),
-        NOW,
+        NOW, english,
       );
 
       // Every month the year has reached, drawn to today and holding nothing.
@@ -247,7 +250,7 @@ describe("buildUnlockCalendar", () => {
     });
 
     it("says nothing at all about a year the player was not there for", () => {
-      const calendar = buildUnlockCalendar(libraryWhereUnlocksHappened(), NOW);
+      const calendar = buildUnlockCalendar(libraryWhereUnlocksHappened(), NOW, english);
 
       expect(calendar.months).toHaveLength(4);
       expect(calendar.total).toBe(0);
@@ -268,7 +271,7 @@ describe("buildUnlockCalendar", () => {
           [SOULSTONE]: ["2026-01-08T09:00:00Z", "2026-03-14T09:00:00Z"],
           [HALLS]: ["2026-04-02T11:00:00Z", "2025-06-21T11:00:00Z"],
         }),
-        NOW,
+        NOW, english,
       );
 
       expect(calendar.year).toBe(2026);
@@ -278,7 +281,7 @@ describe("buildUnlockCalendar", () => {
     });
 
     it("names the year and the extent it covers", () => {
-      const calendar = buildUnlockCalendar(libraryWhereUnlocksHappened(), NOW);
+      const calendar = buildUnlockCalendar(libraryWhereUnlocksHappened(), NOW, english);
 
       expect(calendar.frameLabel).toBe("YEAR 2026 · JAN → DEC");
     });
@@ -294,7 +297,7 @@ describe("buildUnlockCalendar", () => {
           [SOULSTONE]: [...heldBy("2026-02-11", 82)],
           [HALLS]: [...heldBy("2025-06-21", 306)],
         }),
-        NOW,
+        NOW, english,
       );
 
       expect(calendar.total).toBe(82);
@@ -310,7 +313,7 @@ describe("buildUnlockCalendar", () => {
     it("says whose whole year it is comparing against", () => {
       const calendar = buildUnlockCalendar(
         libraryWhereUnlocksHappened({ [HALLS]: heldBy("2025-06-21", 4) }),
-        NOW,
+        NOW, english,
       );
 
       expect(calendar.deltaLabel).toContain("all of 2025");
@@ -325,7 +328,7 @@ describe("buildUnlockCalendar", () => {
           [SOULSTONE]: heldBy("2026-02-11", 12),
           [HALLS]: heldBy("2025-06-21", 4),
         }),
-        NOW,
+        NOW, english,
       );
 
       expect(calendar.deltaLabel).toBe("+8 vs all of 2025 (4)");
@@ -338,7 +341,7 @@ describe("buildUnlockCalendar", () => {
           [SOULSTONE]: heldBy("2026-02-11", 4),
           [HALLS]: heldBy("2025-06-21", 4),
         }),
-        NOW,
+        NOW, english,
       );
 
       expect(calendar.deltaLabel).toBe("0 vs all of 2025 (4)");
@@ -349,7 +352,7 @@ describe("buildUnlockCalendar", () => {
       // against a year they were not there for.
       const calendar = buildUnlockCalendar(
         libraryWhereUnlocksHappened({ [SOULSTONE]: heldBy("2026-02-11", 12) }),
-        NOW,
+        NOW, english,
       );
 
       expect(calendar.total).toBe(12);
@@ -372,7 +375,7 @@ describe("buildUnlockCalendar", () => {
             "2026-01-01T00:30:00Z",
           ],
         }),
-        NOW,
+        NOW, english,
       );
 
       expect(calendar.total).toBe(1);
@@ -385,7 +388,7 @@ describe("buildUnlockCalendar", () => {
     it("names each month in full, and what it held", () => {
       const calendar = buildUnlockCalendar(
         libraryWhereUnlocksHappened({ [SOULSTONE]: heldBy("2026-03-14", 12) }),
-        NOW,
+        NOW, english,
       );
 
       // The row's own abbreviation is written for the eye; a screen reader is
@@ -396,7 +399,7 @@ describe("buildUnlockCalendar", () => {
     it("reads a month holding one unlock in the singular", () => {
       const calendar = buildUnlockCalendar(
         libraryWhereUnlocksHappened({ [SOULSTONE]: ["2026-02-09T09:00:00Z"] }),
-        NOW,
+        NOW, english,
       );
 
       expect(rowFor(calendar, "FEB").screenReaderLabel).toBe("February, 1 unlock");
@@ -407,7 +410,7 @@ describe("buildUnlockCalendar", () => {
       // The em dash is written for the eye, where a zero would read as a
       // figure worth comparing. Aloud it is a silence or a punctuation mark,
       // so the label states the number the row is standing on.
-      const calendar = buildUnlockCalendar(libraryWhereUnlocksHappened(), NOW);
+      const calendar = buildUnlockCalendar(libraryWhereUnlocksHappened(), NOW, english);
       const january = rowFor(calendar, "JAN");
 
       expect(january.totalLabel).toBe("—");
@@ -417,7 +420,7 @@ describe("buildUnlockCalendar", () => {
     it("names every month of a full year the way it is said", () => {
       const calendar = buildUnlockCalendar(
         libraryWhereUnlocksHappened(),
-        new Date("2026-12-31T10:00:00Z"),
+        new Date("2026-12-31T10:00:00Z"), english,
       );
 
       expect(
@@ -445,7 +448,7 @@ describe("buildUnlockCalendar", () => {
       // it out of the bands entirely.
       const calendar = buildUnlockCalendar(
         libraryWhereUnlocksHappened({ [SOULSTONE]: ["2026-04-05T09:00:00Z"] }),
-        new Date("2026-04-17T10:00:00Z"),
+        new Date("2026-04-17T10:00:00Z"), english,
       );
       const april = rowFor(calendar, "APR");
 
@@ -468,7 +471,7 @@ describe("buildUnlockCalendar", () => {
             ...heldBy("2026-04-05", 5),
           ],
         }),
-        new Date("2026-04-17T10:00:00Z"),
+        new Date("2026-04-17T10:00:00Z"), english,
       );
       const april = rowFor(calendar, "APR");
 
@@ -489,7 +492,7 @@ describe("buildUnlockCalendar", () => {
             heldBy(`2026-03-${String(index + 1).padStart(2, "0")}`, index + 1),
           ).flat(),
         }),
-        new Date("2026-04-17T10:00:00Z"),
+        new Date("2026-04-17T10:00:00Z"), english,
       );
 
       expect(activeTones(rowFor(calendar, "MAR"))).toEqual({
@@ -514,7 +517,7 @@ describe("buildUnlockCalendar", () => {
         rowFor(
           buildUnlockCalendar(
             libraryWhereUnlocksHappened({ [SOULSTONE]: [...april, ...older] }),
-            new Date("2026-04-17T10:00:00Z"),
+            new Date("2026-04-17T10:00:00Z"), english,
           ),
           "APR",
         )
@@ -547,7 +550,7 @@ describe("buildUnlockCalendar", () => {
             ...heldBy("2026-04-04", 20),
           ],
         }),
-        new Date("2026-04-17T10:00:00Z"),
+        new Date("2026-04-17T10:00:00Z"), english,
       );
 
       expect(calendar.legend.map((band) => band.tone)).toEqual([0, 1, 2, 3, 4]);
@@ -571,7 +574,7 @@ describe("buildUnlockCalendar", () => {
             ...heldBy("2026-04-03", 1),
           ],
         }),
-        new Date("2026-04-17T10:00:00Z"),
+        new Date("2026-04-17T10:00:00Z"), english,
       );
 
       expect(calendar.legend.map((band) => band.label)).toEqual([
@@ -588,7 +591,7 @@ describe("buildUnlockCalendar", () => {
       // nothing: a tone an unlock, until the player earns one.
       const calendar = buildUnlockCalendar(
         libraryWhereUnlocksHappened(),
-        new Date("2026-04-17T10:00:00Z"),
+        new Date("2026-04-17T10:00:00Z"), english,
       );
 
       expect(calendar.legend.map((band) => band.label)).toEqual([
@@ -612,9 +615,9 @@ describe("buildUnlockCalendar", () => {
         [SOULSTONE]: ["2026-04-05T09:00:00Z"],
       });
 
-      expect(buildUnlockCalendar(counted, NOW).counting).toBe(false);
+      expect(buildUnlockCalendar(counted, NOW, english).counting).toBe(false);
       expect(
-        buildUnlockCalendar(stillCounting(counted, [HALLS]), NOW).counting,
+        buildUnlockCalendar(stillCounting(counted, [HALLS]), NOW, english).counting,
       ).toBe(true);
     });
 
@@ -625,7 +628,7 @@ describe("buildUnlockCalendar", () => {
           HALLS,
           EXILE,
         ]),
-        NOW,
+        NOW, english,
       ).scale;
 
     /**
@@ -638,7 +641,7 @@ describe("buildUnlockCalendar", () => {
     it("holds no scale until a day of the player's own has landed", () => {
       const nothingYet = buildUnlockCalendar(
         stillCounting(libraryWhereUnlocksHappened(), [SOULSTONE, HALLS, EXILE]),
-        NOW,
+        NOW, english,
       );
 
       expect(nothingYet.scale).toBeNull();
@@ -667,7 +670,7 @@ describe("buildUnlockCalendar", () => {
           }),
           [EXILE],
         ),
-        NOW,
+        NOW, english,
         scaleReadMidLoad(),
       );
 
@@ -695,7 +698,7 @@ describe("buildUnlockCalendar", () => {
           [SOULSTONE]: APRIL_PEAKS,
           [HALLS]: MARCH_STEADY,
         }),
-        NOW,
+        NOW, english,
         scaleReadMidLoad(),
       );
 

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-native-web-vite";
 import { fn } from "storybook/test";
 
-import { translatorForGlobals } from "../../fixtures/story-locale";
+import { english, translatorForGlobals } from "../../fixtures/story-locale";
 import { countedLibrary, landingLibrary, playtimeWithheldLibrary } from "../../fixtures/library";
 import type { Translate } from "../../i18n/i18n";
 import { buildLibraryRows, type LibraryView } from "../../view-models/library";
@@ -11,7 +11,7 @@ const HADES = 1145360;
 const ELDEN_RING = 1245620;
 const STARDEW_VALLEY = 413150;
 
-const rowIn = (view: LibraryView, appId: number, t?: Translate) => {
+const rowIn = (view: LibraryView, appId: number, t: Translate) => {
   const row = buildLibraryRows(view, t).find((one) => one.appId === appId);
   if (!row) throw new Error(`No game ${appId} in the library fixture.`);
   return row;
@@ -39,7 +39,7 @@ const inTheToolbarsLanguage =
   );
 
 const storyOf = (view: LibraryView, appId: number): Story => ({
-  args: { row: rowIn(view, appId) },
+  args: { row: rowIn(view, appId, english) },
   render: inTheToolbarsLanguage(view, appId),
 });
 

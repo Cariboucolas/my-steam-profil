@@ -1,12 +1,11 @@
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { colors, fonts, radius, spacing } from "../../theme/tokens";
 
 /** A SteamID64 is exactly this long, which is the fact that fixes a typo. */
 const STEAM_ID_LENGTH = 17;
-
-const REFUSED = "That is not a SteamID64. It is seventeen digits — find yours at steamid.io.";
 
 type Props = {
   /** Answers false when the value is not a SteamID64. */
@@ -18,6 +17,7 @@ type Props = {
 };
 
 export function SteamIdForm({ onSubmit, onCancel, onForget }: Props) {
+  const { t } = useTranslation();
   const [raw, setRaw] = useState("");
   const [refused, setRefused] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -46,11 +46,11 @@ export function SteamIdForm({ onSubmit, onCancel, onForget }: Props) {
 
   return (
     <View style={styles.form}>
-      <Text style={styles.title}>Which Steam profile?</Text>
-      <Text style={styles.hint}>A SteamID64 — seventeen digits.</Text>
+      <Text style={styles.title}>{t("form.title")}</Text>
+      <Text style={styles.hint}>{t("form.hint")}</Text>
 
       <TextInput
-        accessibilityLabel="SteamID64"
+        accessibilityLabel={t("form.input")}
         value={raw}
         onChangeText={edit}
         onSubmitEditing={() => void submit()}
@@ -62,7 +62,7 @@ export function SteamIdForm({ onSubmit, onCancel, onForget }: Props) {
         style={styles.input}
       />
 
-      {refused ? <Text style={styles.error}>{REFUSED}</Text> : null}
+      {refused ? <Text style={styles.error}>{t("form.refused")}</Text> : null}
 
       <Pressable
         accessibilityRole="button"
@@ -70,18 +70,18 @@ export function SteamIdForm({ onSubmit, onCancel, onForget }: Props) {
         onPress={() => void submit()}
         style={styles.button}
       >
-        <Text style={styles.buttonLabel}>Show this profile</Text>
+        <Text style={styles.buttonLabel}>{t("form.submit")}</Text>
       </Pressable>
 
       {onCancel ? (
         <Pressable accessibilityRole="button" onPress={onCancel}>
-          <Text style={styles.secondary}>Cancel</Text>
+          <Text style={styles.secondary}>{t("form.cancel")}</Text>
         </Pressable>
       ) : null}
 
       {onForget ? (
         <Pressable accessibilityRole="button" onPress={onForget}>
-          <Text style={styles.secondary}>Forget this profile</Text>
+          <Text style={styles.secondary}>{t("form.forget")}</Text>
         </Pressable>
       ) : null}
     </View>

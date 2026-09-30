@@ -2,6 +2,8 @@ import type { GameProgressDto } from "@steam/contracts";
 import type { Meta, StoryObj } from "@storybook/react-native-web-vite";
 
 import { PLAYED_GAME } from "../../fixtures/library";
+import { english, inTheToolbarsLanguage } from "../../fixtures/story-locale";
+import type { Translate } from "../../i18n/i18n";
 import { buildGameSummary } from "../../view-models/game-progress";
 import { CompletionSummary } from "./CompletionSummary";
 
@@ -24,20 +26,20 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const InProgress: Story = {
-  args: { summary: buildGameSummary(PLAYED_GAME, progress(38, 49)) },
+const storyOf = (loaded: GameProgressDto | null): Story => {
+  const summaryIn = (t: Translate) => ({ summary: buildGameSummary(PLAYED_GAME, loaded, t) });
+  return {
+    args: summaryIn(english),
+    render: inTheToolbarsLanguage(CompletionSummary, summaryIn),
+  };
 };
 
-export const EveryAchievementUnlocked: Story = {
-  args: { summary: buildGameSummary(PLAYED_GAME, progress(49, 49)) },
-};
+export const InProgress: Story = storyOf(progress(38, 49));
+
+export const EveryAchievementUnlocked: Story = storyOf(progress(49, 49));
 
 /** A game that defines nothing to earn, which is not a game at zero. */
-export const NoAchievements: Story = {
-  args: { summary: buildGameSummary(PLAYED_GAME, progress(0, 0)) },
-};
+export const NoAchievements: Story = storyOf(progress(0, 0));
 
 /** The achievements were never fetched, which is not the same as a game defining none. */
-export const NotLoaded: Story = {
-  args: { summary: buildGameSummary(PLAYED_GAME, null) },
-};
+export const NotLoaded: Story = storyOf(null);

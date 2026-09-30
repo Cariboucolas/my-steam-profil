@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-native-web-vite";
 
 import { calendarOn, calendarWithNoUnlockDay } from "../../fixtures/calendar";
+import { english } from "../../fixtures/story-locale";
 import { STORY_TODAY } from "../../fixtures/today";
 import { UnlockToneLegend } from "./UnlockToneLegend";
 
@@ -15,10 +16,10 @@ type Story = StoryObj<typeof meta>;
 
 /** The bands read off this player's own active days (ADR-0007). */
 export const ReadFromThePlayer: Story = {
-  args: { legend: calendarOn(STORY_TODAY).legend },
+  args: { legend: calendarOn(STORY_TODAY, english).legend },
 };
 
 /** No active day to read a scale from: the bands a player is drawn against until one exists. */
 export const Unscaled: Story = {
-  args: { legend: calendarWithNoUnlockDay(STORY_TODAY).legend },
+  args: { legend: calendarWithNoUnlockDay(STORY_TODAY, english).legend },
 };
