@@ -11,6 +11,8 @@ import { NOT_READ } from "../src/accessibility/not-read";
 import { resolveInitialSteamId } from "../src/api-client/config";
 import { SplashStage } from "../src/components/organisms/SplashStage";
 import { startReporting } from "../src/reporting/start";
+import { createLocaleStorage } from "../src/settings/locale-storage";
+import { LocaleProvider } from "../src/settings/locale-store";
 import { createSteamIdStorage } from "../src/settings/steam-id-storage";
 import { SteamIdProvider, useSteamId } from "../src/settings/steam-id-store";
 import { APP_FONT_FACES } from "../src/theme/font-faces";
@@ -22,6 +24,7 @@ const PHONE_WIDTH = 402;
 // Built once, outside the component: a fresh storage object on every render
 // would restart the read inside SteamIdProvider's effect, forever.
 const storage = createSteamIdStorage(AsyncStorage);
+const localeStorage = createLocaleStorage(AsyncStorage);
 
 // The build may offer a profile; the device overrides it. Keeps `pnpm start`
 // on this machine as immediate as it was before the setup screen existed.
@@ -91,23 +94,25 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
-      <SteamIdProvider storage={storage} fallback={initialSteamId}>
-        <SplashGate>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: {
-                backgroundColor: colors.bg,
-                // A phone-width column, centred. No effect on a phone, where
-                // the screen is narrower; it keeps the web preview honest.
-                width: "100%",
-                maxWidth: PHONE_WIDTH,
-                alignSelf: "center",
-              },
-            }}
-          />
-        </SplashGate>
-      </SteamIdProvider>
+      <LocaleProvider storage={localeStorage}>
+        <SteamIdProvider storage={storage} fallback={initialSteamId}>
+          <SplashGate>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: {
+                  backgroundColor: colors.bg,
+                  // A phone-width column, centred. No effect on a phone, where
+                  // the screen is narrower; it keeps the web preview honest.
+                  width: "100%",
+                  maxWidth: PHONE_WIDTH,
+                  alignSelf: "center",
+                },
+              }}
+            />
+          </SplashGate>
+        </SteamIdProvider>
+      </LocaleProvider>
     </SafeAreaProvider>
   );
 }
