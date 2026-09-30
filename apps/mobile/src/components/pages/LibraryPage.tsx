@@ -1,5 +1,6 @@
 import type { GameDto, ProfileDto } from "@steam/contracts";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 import type { ApiClient } from "../../api-client/api-client";
@@ -190,8 +191,10 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
     () => ({ games, tallies, sort, pending, frozenOrder }),
     [games, tallies, sort, pending, frozenOrder],
   );
-  const rows = useMemo(() => buildLibraryRows(view), [view]);
-  const summary = useMemo(() => buildLibrarySummary(view), [view]);
+  // The view-models write the sentences; the page only hands them the language (ADR-0023).
+  const { t } = useTranslation();
+  const rows = useMemo(() => buildLibraryRows(view, t), [view, t]);
+  const summary = useMemo(() => buildLibrarySummary(view, t), [view, t]);
   // The tones hold still while the waves land, which is the hook's own doing
   // and not this screen's: it is the calendar's half of what `frozenOrder` is
   // to the list below.
@@ -223,12 +226,12 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
     (next: LibrarySort) => {
       setChosenSort(next);
       repin(
-        buildLibraryRows({ ...view, sort: next, frozenOrder: null }).map(
+        buildLibraryRows({ ...view, sort: next, frozenOrder: null }, t).map(
           (row) => row.appId,
         ),
       );
     },
-    [view, repin],
+    [view, repin, t],
   );
 
   const gameRows = useMemo(

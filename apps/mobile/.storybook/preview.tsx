@@ -1,8 +1,11 @@
 import { useFonts } from "@expo-google-fonts/ibm-plex-sans";
 import type { Decorator, Preview } from "@storybook/react-native-web-vite";
+import { I18nextProvider } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { i18nFor } from "../src/i18n/i18n";
+import { DEFAULT_LOCALE, isLocale, LOCALES } from "../src/i18n/locale";
 import { APP_FONT_FACES } from "../src/theme/font-faces";
 import { colors, spacing } from "../src/theme/tokens";
 
@@ -45,9 +48,36 @@ const withSafeArea: Decorator = (Story) => (
   </SafeAreaProvider>
 );
 
+/**
+ * Gives every story an i18n instance for the toolbar's language (ADR-0023).
+ * It mounts no locale store and no SteamID store: the gallery's language is a
+ * toolbar choice, not a setting, and nothing here is persisted.
+ */
+const withLocale: Decorator = (Story, context) => {
+  const chosen = context.globals["locale"];
+  const locale = isLocale(chosen) ? chosen : DEFAULT_LOCALE;
+
+  return (
+    <I18nextProvider i18n={i18nFor(locale)}>
+      <Story />
+    </I18nextProvider>
+  );
+};
+
 const preview: Preview = {
-  // Last is outermost: the safe area wraps the fonts gate, which wraps the story.
-  decorators: [withAppFonts, withSafeArea],
+  // Last is outermost: the safe area wraps the fonts gate, which wraps the locale, which wraps the story.
+  decorators: [withLocale, withAppFonts, withSafeArea],
+  globalTypes: {
+    locale: {
+      description: "Language the stories are written in",
+      toolbar: {
+        title: "Language",
+        icon: "globe",
+        items: LOCALES.map((value) => ({ value, title: value })),
+        dynamicTitle: true,
+      },
+    },
+  },
   tags: ["autodocs"],
   parameters: {
     layout: "fullscreen",
@@ -67,6 +97,7 @@ const preview: Preview = {
     },
   },
   initialGlobals: {
+    locale: DEFAULT_LOCALE,
     viewport: { value: DEFAULT_PHONE, isRotated: false },
   },
 };
