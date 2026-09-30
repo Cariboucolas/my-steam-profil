@@ -50,6 +50,7 @@ type Props = {
  */
 export function GamePage({ appId, onBack, onChangeProfile }: Props) {
   const { t } = useTranslation();
+  const tabLabels = [t("game.tabs.achievements"), t("game.tabs.timeline")];
   const { locale, choose } = useLocale();
   const insets = useSafeAreaInsets();
   const apiClient = useApiClient();
@@ -170,7 +171,7 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
         }
       />
       {summary && <CompletionSummary summary={summary} />}
-      <Tabs labels={[t("game.tabs.achievements"), t("game.tabs.timeline")]} activeIndex={tab} onSelect={setTab} />
+      <Tabs labels={tabLabels} activeIndex={tab} onSelect={setTab} />
 
       {hasAchievements && tab === 0 && counts && (
         <View style={styles.filters}>
