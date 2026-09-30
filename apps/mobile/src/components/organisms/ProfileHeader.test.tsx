@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
+import { Text } from "react-native";
 
 import { PROFILE_REVISION_TEST_ID, ProfileHeader } from "./ProfileHeader";
 
@@ -14,6 +15,24 @@ const PROFILE = {
 } as const;
 
 describe("ProfileHeader", () => {
+  it("draws the language switch it is given, and none otherwise", () => {
+    const { queryByText, rerender } = render(
+      <ProfileHeader profile={PROFILE} gameCount={1} revision="dev" onChangeProfile={jest.fn()} />,
+    );
+    expect(queryByText("switch")).toBeNull();
+
+    rerender(
+      <ProfileHeader
+        profile={PROFILE}
+        gameCount={1}
+        revision="dev"
+        onChangeProfile={jest.fn()}
+        languageSwitch={<Text>switch</Text>}
+      />,
+    );
+    expect(queryByText("switch")).toBeTruthy();
+  });
+
   it("shows who is being looked at and how much they own", () => {
     render(
       <ProfileHeader

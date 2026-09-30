@@ -21,6 +21,8 @@ import { TimelineDayRow } from "../molecules/TimelineDayRow";
 import { CompletionSummary } from "../organisms/CompletionSummary";
 import { ErrorState } from "../organisms/ErrorState";
 import { GameHero } from "../organisms/GameHero";
+import { useLocale } from "../../settings/locale-store";
+import { LocaleToggle } from "../atoms/LocaleToggle";
 import { GameTemplate } from "../templates/GameTemplate";
 
 type Loaded = { readonly game: GameDto; readonly progress: GameProgressDto | null };
@@ -47,6 +49,7 @@ type Props = {
  * another profile are handed in.
  */
 export function GamePage({ appId, onBack, onChangeProfile }: Props) {
+  const { locale, choose } = useLocale();
   const insets = useSafeAreaInsets();
   const apiClient = useApiClient();
   const [state, setState] = useState<State>({ status: "loading" });
@@ -161,6 +164,9 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
         meta={summary?.meta ?? ""}
         topInset={insets.top}
         onBack={onBack}
+        languageSwitch={
+          choose ? <LocaleToggle active={locale} onSelect={(next) => void choose(next)} /> : undefined
+        }
       />
       {summary && <CompletionSummary summary={summary} />}
       <Tabs labels={TABS} activeIndex={tab} onSelect={setTab} />

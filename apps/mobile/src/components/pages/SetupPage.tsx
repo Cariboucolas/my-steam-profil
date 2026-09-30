@@ -1,6 +1,6 @@
 import { useLocale } from "../../settings/locale-store";
 import { useSteamId } from "../../settings/steam-id-store";
-import { LocaleChips } from "../molecules/LocaleChips";
+import { LocaleToggle } from "../atoms/LocaleToggle";
 import { SteamIdForm } from "../organisms/SteamIdForm";
 import { SetupTemplate } from "../templates/SetupTemplate";
 
@@ -44,17 +44,15 @@ export function SetupPage({ onLeave }: Props) {
 
   return (
     <SetupTemplate
+      languageSwitch={
+        choose ? <LocaleToggle active={locale} onSelect={(next) => void choose(next)} /> : undefined
+      }
       form={
-        <>
-          <SteamIdForm
-            onSubmit={submit}
-            onCancel={known ? onLeave : undefined}
-            onForget={known ? () => void forgetSteamId() : undefined}
-          />
-          {choose ? (
-            <LocaleChips active={locale} onSelect={(next) => void choose(next)} />
-          ) : null}
-        </>
+        <SteamIdForm
+          onSubmit={submit}
+          onCancel={known ? onLeave : undefined}
+          onForget={known ? () => void forgetSteamId() : undefined}
+        />
       }
     />
   );

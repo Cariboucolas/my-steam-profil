@@ -8,6 +8,7 @@ import { resolveRevision } from "../../api-client/config";
 import { useApiClient } from "../../api-client/use-api-client";
 import type { CountedLibrary } from "../../api-client/use-library-rarity";
 import { useLibraryTallies } from "../../api-client/use-library-tallies";
+import { useLocale } from "../../settings/locale-store";
 import { colors, fonts, spacing } from "../../theme/tokens";
 import { messageFor } from "../../view-models/api-errors";
 import {
@@ -22,6 +23,7 @@ import {
 } from "../../view-models/library";
 import { useRarestTab } from "../../view-models/use-rarest-tab";
 import { useUnlockCalendar } from "../../view-models/use-unlock-calendar";
+import { LocaleToggle } from "../atoms/LocaleToggle";
 import { Tabs } from "../atoms/Tabs";
 import { GameListItem } from "../molecules/GameListItem";
 import { RarestEmpty } from "../molecules/RarestEmpty";
@@ -193,6 +195,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
   );
   // The view-models write the sentences; the page only hands them the language (ADR-0023).
   const { t } = useTranslation();
+  const { locale, choose } = useLocale();
   const rows = useMemo(() => buildLibraryRows(view, t), [view, t]);
   const summary = useMemo(() => buildLibrarySummary(view, t), [view, t]);
   // The tones hold still while the waves land, which is the hook's own doing
@@ -280,6 +283,9 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
         gameCount={games.length}
         revision={revision}
         onChangeProfile={onChangeProfile}
+        languageSwitch={
+          choose ? <LocaleToggle active={locale} onSelect={(next) => void choose(next)} /> : undefined
+        }
       />
       <LibraryStatsCard
         summary={summary}

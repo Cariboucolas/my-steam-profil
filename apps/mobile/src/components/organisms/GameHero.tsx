@@ -1,5 +1,6 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
+import type { ReactNode } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { colors, coverPlaceholder, fonts, spacing } from "../../theme/tokens";
@@ -20,9 +21,11 @@ type Props = {
   readonly meta: string;
   readonly topInset: number;
   readonly onBack: () => void;
+  /** The language switch, where the app can offer one (ADR-0023). */
+  readonly languageSwitch?: ReactNode;
 };
 
-export function GameHero({ appId, name, meta, topInset, onBack }: Props) {
+export function GameHero({ appId, name, meta, topInset, onBack, languageSwitch }: Props) {
   return (
     <View style={styles.hero}>
       <Image
@@ -46,6 +49,10 @@ export function GameHero({ appId, name, meta, topInset, onBack }: Props) {
       >
         <Text style={styles.chevron}>‹</Text>
       </Pressable>
+
+      {languageSwitch === undefined ? null : (
+        <View style={{ ...styles.switch, top: topInset + spacing.sm }}>{languageSwitch}</View>
+      )}
 
       <View style={styles.caption}>
         <Text numberOfLines={2} style={styles.name}>
@@ -77,6 +84,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(11,15,20,0.55)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.12)",
+  },
+  switch: {
+    position: "absolute",
+    right: 14,
   },
   chevron: {
     fontSize: 20,

@@ -45,24 +45,24 @@ const renderSetup = (device: LocaleStorage) =>
 describe("SetupPage language", () => {
   it("offers English first, stored as English when nothing was chosen", async () => {
     const device = heldLocale();
-    const { getByText } = renderSetup(device.storage);
+    const { getByLabelText } = renderSetup(device.storage);
 
-    expect(getByText("Language")).toBeTruthy();
+    expect(getByLabelText("Language")).toBeTruthy();
     await waitFor(() => expect(device.held()).toBe("en"));
   });
 
   it("switches to French and keeps the choice on the device", async () => {
     const device = heldLocale();
-    const { getByText } = renderSetup(device.storage);
+    const { getByText, getByLabelText } = renderSetup(device.storage);
 
-    fireEvent.press(getByText("Français"));
+    fireEvent.press(getByText("FR"));
 
-    await waitFor(() => expect(getByText("Langue")).toBeTruthy());
+    await waitFor(() => expect(getByLabelText("Langue")).toBeTruthy());
     expect(device.held()).toBe("fr");
   });
 
   it("offers no choice it could not keep when no locale store is mounted", () => {
-    const { queryByText } = render(
+    const { queryByLabelText } = render(
       <SafeAreaProvider
         initialMetrics={{
           frame: { x: 0, y: 0, width: 390, height: 844 },
@@ -75,6 +75,6 @@ describe("SetupPage language", () => {
       </SafeAreaProvider>,
     );
 
-    expect(queryByText("Language")).toBeNull();
+    expect(queryByLabelText("Language")).toBeNull();
   });
 });

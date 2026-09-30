@@ -28,7 +28,7 @@ export const en: Catalog = {
     fraction: "{{unlocked}} / {{total}} across {{counted}}",
     statsCard: {
       caption: "achievements\nunlocked",
-      ring: "LIBRARY",
+      ring: "COMPLETED",
       perfectGames: "perfect games",
       played: "played",
       gamesOwned: "games owned",
