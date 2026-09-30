@@ -1,5 +1,8 @@
 import type { GameCompletionDto, GameDto, GameTallyDto } from "@steam/contracts";
 
+import { formatNumber } from "../i18n/format-number";
+import { ENGLISH, type Translate } from "../i18n/i18n";
+
 /** Tallies keyed by appId; absent means "not asked for yet", not "none". */
 export type TallyByAppId = Readonly<Record<number, GameTallyDto>>;
 
@@ -103,16 +106,19 @@ export const MONTHS = [
 
 /**
  * Thousands separated by a space, as the mock writes them ("3 128"). The
- * locale is written into the call rather than read from the device (ADR-0010),
+ * locale is the one `t` is bound to, never the device's (ADR-0010, ADR-0023),
  * and the separator is a plain U+0020 rather than the thin space the design
  * would suggest: the library card measures its headline assuming IBM Plex Mono
  * advances every glyph equally, which holds for U+0020 and need not hold for
  * U+2009 (ADR-0011). Shared rather than copied — three figures on the library
  * screen group their thousands, and a separator that drifted between them
  * would read as three conventions.
+ *
+ * Every formatter below takes `t` last and defaults it to English, so a caller
+ * that has no locale to give still gets the app's original wording. A caller
+ * that has one always passes it: nothing here reads a global (ADR-0023).
  */
-const group = (value: number): string =>
-  value.toLocaleString("en-US").replace(/,/g, " ");
+const group = (value: number, t: Translate): string => formatNumber(t, value);
 
 /**
  * Hours with their thousands grouped, as the mock writes them ("3 128 h").
@@ -126,11 +132,11 @@ const group = (value: number): string =>
  * than by who reads it, because this one has two readers: a library row and
  * the stats card's total.
  */
-export const formatHoursRounded = (minutes: number): string => {
+export const formatHoursRounded = (minutes: number, t: Translate = ENGLISH): string => {
   if (minutes < MINUTES_PER_HOUR) {
-    return `${minutes} min`;
+    return t("library.minutes", { minutes });
   }
-  return `${group(Math.round(minutes / MINUTES_PER_HOUR))} h`;
+  return t("library.hours", { hours: group(Math.round(minutes / MINUTES_PER_HOUR), t) });
 };
 
 /**
@@ -156,15 +162,14 @@ const roundTo = (value: number, decimals: number): number => {
  * `0.1K` is not a shorter way of writing 127, it is a worse one.
  *
  * A trailing zero is dropped by writing the number rather than the digits:
- * 10.0 comes back as `10`. The locale is written into the call (ADR-0010), so
- * the decimal mark is the app's and never the device's; translating the app
- * changes this argument, and nothing else here.
+ * 10.0 comes back as `10`. The decimal mark is the locale `t` is bound to
+ * (ADR-0010, ADR-0023), so `45.5K` and `45,5K`; the unit is not translated.
  */
-const underUnit = (value: number, decimals: number): string | null => {
+const underUnit = (value: number, decimals: number, t: Translate): string | null => {
   for (const { suffix, divisor } of HEADLINE_UNITS) {
     const scaled = roundTo(value / divisor, decimals);
     if (scaled >= 1) {
-      return `${scaled.toLocaleString("en-US")}${suffix}`;
+      return `${formatNumber(t, scaled, decimals)}${suffix}`;
     }
   }
   return null;
@@ -185,23 +190,31 @@ const underUnit = (value: number, decimals: number): string | null => {
  * truncation: the layout guarantees five characters at the narrowest width it
  * serves, which is what keeps this unreachable.
  */
-export const formatUnlockHeadline = (unlocked: number, maxChars: number): string => {
-  const full = group(unlocked);
-  const forms = [full, underUnit(unlocked, ONE_DECIMAL), underUnit(unlocked, NO_DECIMAL)]
+export const formatUnlockHeadline = (
+  unlocked: number,
+  maxChars: number,
+  t: Translate = ENGLISH,
+): string => {
+  const full = group(unlocked, t);
+  const forms = [full, underUnit(unlocked, ONE_DECIMAL, t), underUnit(unlocked, NO_DECIMAL, t)]
     .filter((form): form is string => form !== null);
 
   return forms.find((form) => form.length <= maxChars) ?? forms[forms.length - 1] ?? full;
 };
 
 /**
- * "25 Jun 2026", in the device's own time zone. Built by hand rather than with
- * Intl so the wording stays the same whatever locale the device is set to.
- * Tests pin TZ=UTC so they do not depend on where they run.
+ * "25 Jun 2026", in the device's own time zone. The month and the order come
+ * from the catalog of the locale `t` is bound to, never from `Intl` and never
+ * from the device, so the wording is the app's (ADR-0010). Tests pin TZ=UTC so
+ * they do not depend on where they run.
  */
-export const formatDay = (iso: string): string => {
+export const formatDay = (iso: string, t: Translate = ENGLISH): string => {
   const date = new Date(iso);
-  const month = MONTHS[date.getMonth()] ?? "";
-  return `${date.getDate()} ${month} ${date.getFullYear()}`;
+  return t("date.day", {
+    day: date.getDate(),
+    month: t(`date.months.${date.getMonth()}`),
+    year: date.getFullYear(),
+  });
 };
 
 /**
@@ -210,8 +223,8 @@ export const formatDay = (iso: string): string => {
  * same load, and a wording that drifted between them would read as two
  * different figures.
  */
-export const gamesCounted = (count: number): string =>
-  `${count} game${count === 1 ? "" : "s"} counted`;
+export const gamesCounted = (count: number, t: Translate = ENGLISH): string =>
+  t("library.gamesCounted", { count });
 
 /**
  * Null covers two cases the list draws the same way: no tally was fetched, and
@@ -298,9 +311,9 @@ const totalMinutes = (games: readonly GameDto[]): number | null => {
  * playtime and no date says nothing about when rather than something false.
  *
  */
-const whenFor = (game: GameDto): string | null => {
-  if (game.lastPlayedAt) return formatDay(game.lastPlayedAt);
-  return neverLaunched(game) ? "never played" : null;
+const whenFor = (game: GameDto, t: Translate): string | null => {
+  if (game.lastPlayedAt) return formatDay(game.lastPlayedAt, t);
+  return neverLaunched(game) ? t("library.neverPlayed") : null;
 };
 
 /**
@@ -313,18 +326,22 @@ export const joined = (parts: readonly (string | null)[]): string =>
   parts.filter((part): part is string => part !== null).join(" · ");
 
 /** The hours as a row writes them, or nothing at all where Steam withheld them. */
-const playedFor = (game: GameDto): string | null =>
-  game.playtimeMinutes === null ? null : formatHoursRounded(game.playtimeMinutes);
+const playedFor = (game: GameDto, t: Translate): string | null =>
+  game.playtimeMinutes === null ? null : formatHoursRounded(game.playtimeMinutes, t);
 
-const metaFor = (game: GameDto, tally: GameCompletionDto | undefined): string => {
-  const played = playedFor(game);
-  const when = whenFor(game);
+const metaFor = (
+  game: GameDto,
+  tally: GameCompletionDto | undefined,
+  t: Translate,
+): string => {
+  const played = playedFor(game, t);
+  const when = whenFor(game, t);
 
   if (!tally) {
     return joined([played, when]);
   }
   if (tally.total === 0) {
-    return joined(["no achievements", played]);
+    return joined([t("library.noAchievements"), played]);
   }
   return joined([`${tally.unlocked}/${tally.total}`, played, when]);
 };
@@ -422,7 +439,10 @@ const orderedBy = (
   return [...games].sort((a, b) => place(a) - place(b));
 };
 
-export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
+export const buildLibraryRows = (
+  view: LibraryView,
+  t: Translate = ENGLISH,
+): readonly GameRow[] => {
   const { games, tallies, sort, pending, frozenOrder } = view;
 
   // Copied before sorting: the caller's list is not ours to reorder.
@@ -438,7 +458,7 @@ export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
       name: game.name,
       percentage,
       rateLabel: percentage === null ? "—" : `${percentage}%`,
-      meta: metaFor(game, tally),
+      meta: metaFor(game, tally, t),
       pending: pending.has(game.appId) && tally === undefined,
     };
   });
@@ -450,7 +470,10 @@ export const buildLibraryRows = (view: LibraryView): readonly GameRow[] => {
  * though the summary has no use for the chosen order or for what is still
  * outstanding.
  */
-export const buildLibrarySummary = (view: LibraryView): LibrarySummary => {
+export const buildLibrarySummary = (
+  view: LibraryView,
+  t: Translate = ENGLISH,
+): LibrarySummary => {
   const { games, tallies } = view;
 
   const loaded = games
@@ -464,13 +487,20 @@ export const buildLibrarySummary = (view: LibraryView): LibrarySummary => {
 
   return {
     unlocked,
-    unlockedScreenReaderLabel: `${group(unlocked)} achievements unlocked`,
+    unlockedScreenReaderLabel: t("library.unlockedSpoken", {
+      count: unlocked,
+      formatted: group(unlocked, t),
+    }),
     total,
     rateLabel: `${rate}%`,
     // Names what was measured and claims nothing about the rest: the games
     // left out were never launched, so they are excluded rather than missing.
-    fraction: `${group(unlocked)} / ${group(total)} across ${gamesCounted(loaded.length)}`,
+    fraction: t("library.fraction", {
+      unlocked: group(unlocked, t),
+      total: group(total, t),
+      counted: gamesCounted(loaded.length, t),
+    }),
     perfectGames: loaded.filter((e) => e.total > 0 && e.unlocked === e.total).length,
-    playtimeLabel: minutes === null ? "—" : formatHoursRounded(minutes),
+    playtimeLabel: minutes === null ? "—" : formatHoursRounded(minutes, t),
   };
 };
