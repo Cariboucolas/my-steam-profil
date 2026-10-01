@@ -195,7 +195,7 @@ describe("the unlock calendar", () => {
     const calendar = calendarIn(fr);
 
     expect(calendar.frameLabel).toBe(`ANNÉE ${STORY_TODAY.getFullYear()} · JAN → DÉC`);
-    expect(calendar.deltaLabel).toMatch(/^[+-]?\d+ contre l'ensemble de \d{4} \(\d+\)$/);
+    expect(calendar.deltaLabel).toMatch(/^[+-]?\d+ vs l'ensemble de \d{4} \(\d+\)$/);
     expect(calendarIn(en).frameLabel).toBe(`YEAR ${STORY_TODAY.getFullYear()} · JAN → DEC`);
   });
 });

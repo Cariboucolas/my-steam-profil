@@ -26,12 +26,12 @@ export const fr: Catalog = {
     fraction: "{{unlocked}} / {{total}} sur {{counted}}",
     tabs: {
       completion: "Complétion",
-      rarest: "Plus rares",
+      rarest: "Rareté",
     },
     sorts: {
-      completed: "Terminés d'abord",
+      completed: "Par complétion",
       recent: "Joués récemment",
-      playtime: "Plus joués",
+      playtime: "Les plus joués",
     },
     withheld: {
       playtime: "Steam ne publie pas le temps de jeu de ce profil",
@@ -109,7 +109,7 @@ export const fr: Catalog = {
     monthSpoken_many: "{{month}}, {{count}} de succès débloqués",
     monthSpoken_other: "{{month}}, {{count}} succès débloqués",
     frame: "ANNÉE {{year}} · {{first}} → {{last}}",
-    delta: "{{signed}} contre l'ensemble de {{year}} ({{total}})",
+    delta: "{{signed}} vs l'ensemble de {{year}} ({{total}})",
     halves: {
       first: "Première moitié de l'année",
       second: "Seconde moitié de l'année",
