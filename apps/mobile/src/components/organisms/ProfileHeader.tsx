@@ -66,16 +66,20 @@ export function ProfileHeader({
           </Text>
         </View>
       </View>
-      {languageSwitch}
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={t("errors.changeProfile")}
-        onPress={onChangeProfile}
-        // The one accent of the design is spent on completion, not on this.
-        style={styles.change}
-      >
-        <Text style={styles.changeLabel}>{t("profile.change")}</Text>
-      </Pressable>
+      {/* The switch above the way out, in one column: side by side they crowd
+          the name on the narrowest phone. */}
+      <View style={styles.actions}>
+        {languageSwitch}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={t("errors.changeProfile")}
+          onPress={onChangeProfile}
+          // The one accent of the design is spent on completion, not on this.
+          style={styles.change}
+        >
+          <Text style={styles.changeLabel}>{t("profile.change")}</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -129,6 +133,10 @@ const styles = StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: 10,
     color: colors.textFaint,
+  },
+  actions: {
+    alignItems: "flex-end",
+    gap: spacing.xs,
   },
   change: {
     paddingHorizontal: spacing.md,

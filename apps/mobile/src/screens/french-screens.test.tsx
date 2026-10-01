@@ -119,8 +119,8 @@ describe("the app in French", () => {
 
     await screen.findByText("1 jeu");
     expect(screen.getByText("Complétion")).toBeTruthy();
-    expect(screen.getByText("Plus rares")).toBeTruthy();
-    expect(screen.getByText("Terminés d'abord")).toBeTruthy();
+    expect(screen.getByText("Rareté")).toBeTruthy();
+    expect(screen.getByText("Par complétion")).toBeTruthy();
     expect(screen.getByText("Activité")).toBeTruthy();
     expect(screen.getByText(/^ANNÉE \d{4} · JAN → DÉC$/)).toBeTruthy();
     expect(screen.getByLabelText("Changer de profil")).toBeTruthy();
