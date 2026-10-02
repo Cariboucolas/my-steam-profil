@@ -29,18 +29,22 @@ export type ProgressError = ApiError | "NOT_LOADED";
 /**
  * The one seam between the screens and their data. Today a fixture reader,
  * tomorrow an HTTP client against apps/api — the screens never know which.
+ *
+ * Every question takes the signal of whoever asks it. Once it aborts, nobody
+ * reads the answer: a request not yet sent never is, and the call still
+ * answers a `Result` rather than rejecting (ADR-0002).
  */
 export interface ApiClient {
-  getProfile(): Promise<Result<ProfileDto, ApiError>>;
-  getGames(): Promise<Result<readonly GameDto[], ApiError>>;
-  getGameProgress(appId: number): Promise<Result<GameProgressDto, ProgressError>>;
+  getProfile(signal?: AbortSignal): Promise<Result<ProfileDto, ApiError>>;
+  getGames(signal?: AbortSignal): Promise<Result<readonly GameDto[], ApiError>>;
+  getGameProgress(appId: number, signal?: AbortSignal): Promise<Result<GameProgressDto, ProgressError>>;
   /**
    * How far the player has got in one game, and when they got there. The
    * library asks this once per game it owns, so it is deliberately the cheapest
    * question the app can ask — the backend answers it with a single Steam call
    * (ADR-0005), and the unlock dates ride along on it (ADR-0006).
    */
-  getGameTally(appId: number): Promise<Result<GameTallyDto, ProgressError>>;
+  getGameTally(appId: number, signal?: AbortSignal): Promise<Result<GameTallyDto, ProgressError>>;
   /**
    * What share of a game's owners holds each of its achievements, as Steam
    * publishes it. The only question here that is not about the configured
@@ -50,7 +54,7 @@ export interface ApiClient {
    * A game Steam publishes nothing about answers with an empty list, which is a
    * real answer and not a failure.
    */
-  getGameRarity(appId: number): Promise<Result<GameRarityDto, ApiError>>;
+  getGameRarity(appId: number, signal?: AbortSignal): Promise<Result<GameRarityDto, ApiError>>;
   /**
    * What a game calls each of its achievements, and the icon it draws them
    * with. The other question that is not about the configured player: a name is
@@ -64,5 +68,5 @@ export interface ApiClient {
    * A game that defines no achievements answers with an empty list, which is a
    * real answer and not a failure.
    */
-  getAchievementNames(appId: number): Promise<Result<AchievementNamesDto, ApiError>>;
+  getAchievementNames(appId: number, signal?: AbortSignal): Promise<Result<AchievementNamesDto, ApiError>>;
 }
