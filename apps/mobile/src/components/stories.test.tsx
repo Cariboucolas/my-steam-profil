@@ -2,7 +2,7 @@ import { readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 
 import { composeStories, setProjectAnnotations } from "@storybook/react";
-import { render } from "@testing-library/react-native";
+import { act, render } from "@testing-library/react-native";
 import type { ComponentType } from "react";
 import preview from "../../.storybook/preview";
 import { letTheDeviceAnswer } from "../accessibility/reduce-motion.test-support";
@@ -32,6 +32,16 @@ const stories = storyFilesUnder(__dirname).flatMap((file) => {
   );
 });
 
+/**
+ * A story whose backend is unavailable asks once more (#162), one timer tick
+ * after the first refusal. Left alone, that second answer reaches the page
+ * after the test has stopped looking, or after it has been torn down.
+ */
+const letARetryLand = (): Promise<void> =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+
 it("finds the stories it is meant to render", () => {
   expect(stories.length).toBeGreaterThan(0);
 });
@@ -40,6 +50,7 @@ describe.each(stories)("%s", (_, Story) => {
   it("renders", async () => {
     const { toJSON } = render(<Story />);
     await letTheDeviceAnswer();
+    await letARetryLand();
 
     expect(toJSON()).not.toBeNull();
   });
