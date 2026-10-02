@@ -1,16 +1,17 @@
 const FIVE_MINUTES_MS = 5 * 60 * 1000;
 
 /**
- * As long as the backend holds its own answer (ADR-0005). Nothing is said of
- * how long an entry nobody watches stays in memory: the library's default.
+ * For as long as the backend holds a tally (ADR-0005), which is the answer the
+ * library asks for most. Nothing is said of how long an entry nobody watches
+ * stays in memory: the library's default.
  */
-const AS_THE_BACKEND = { staleTime: FIVE_MINUTES_MS } as const;
+const FOR_FIVE_MINUTES = { staleTime: FIVE_MINUTES_MS } as const;
 
 /**
  * Asked every time and kept for nobody: the game view is not cached
  * (ADR-0005).
  */
-const NEVER = { staleTime: 0, gcTime: 0 } as const;
+const NEVER_CACHED = { staleTime: 0, gcTime: 0 } as const;
 
 /**
  * The same for every player and slow to change (ADR-0008): fresh for as long
@@ -29,16 +30,16 @@ const FOR_THE_SESSION = { staleTime: Infinity, gcTime: Infinity } as const;
  */
 export const queries = {
   profile: (steamId: string) =>
-    ({ queryKey: ["profile", steamId], ...AS_THE_BACKEND }) as const,
+    ({ queryKey: ["profile", steamId], ...FOR_FIVE_MINUTES }) as const,
 
   games: (steamId: string) =>
-    ({ queryKey: ["games", steamId], ...AS_THE_BACKEND }) as const,
+    ({ queryKey: ["games", steamId], ...FOR_FIVE_MINUTES }) as const,
 
   tally: (steamId: string, appId: number) =>
-    ({ queryKey: ["tally", steamId, appId], ...AS_THE_BACKEND }) as const,
+    ({ queryKey: ["tally", steamId, appId], ...FOR_FIVE_MINUTES }) as const,
 
   progress: (steamId: string, appId: number) =>
-    ({ queryKey: ["progress", steamId, appId], ...NEVER }) as const,
+    ({ queryKey: ["progress", steamId, appId], ...NEVER_CACHED }) as const,
 
   rarity: (appId: number) =>
     ({ queryKey: ["rarity", appId], ...FOR_THE_SESSION }) as const,

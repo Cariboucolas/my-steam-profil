@@ -89,6 +89,12 @@ describe("root layout", () => {
    * the two share a background, so the seam between them is invisible rather
    * than merely quick.
    */
+  it("carries the mark on from where the native splash left it", async () => {
+    renderApp(true);
+
+    await waitFor(() => expect(screen.getByText(SPLASH_WORDMARK)).toBeTruthy());
+  });
+
   /**
    * What a screen loads is kept above the routes, so the next screen finds it
    * (#162). A screen under the layout must reach that cache without mounting
@@ -111,12 +117,6 @@ describe("root layout", () => {
 
     expect(first).toBeDefined();
     expect(new Set(caches).size).toBe(1);
-  });
-
-  it("carries the mark on from where the native splash left it", async () => {
-    renderApp(true);
-
-    await waitFor(() => expect(screen.getByText(SPLASH_WORDMARK)).toBeTruthy());
   });
 
   describe("while the branded stage is still running", () => {

@@ -10,8 +10,9 @@ import type { Result } from "@steam/domain";
  * (ADR-0005).
  *
  * Six matches what a client will open to one host anyway, so a larger number
- * would only queue somewhere less visible. Stated once because it is one
- * budget: two loads each helping themselves to six would halve both.
+ * would only queue somewhere less visible. This is the size of a wave; the
+ * budget itself is held by the queue behind the HTTP client, which every wave
+ * of every load passes through (#162).
  */
 const CONCURRENT_REQUESTS = 6;
 
