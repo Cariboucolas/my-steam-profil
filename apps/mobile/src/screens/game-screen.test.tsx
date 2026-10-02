@@ -7,6 +7,7 @@ import GameScreen from "../../app/game/[appId]";
 import { deviceAsksForLessMotion } from "../accessibility/reduce-motion.test-support";
 import type { ApiClient, ApiError } from "../api-client/api-client";
 import { createFixtureApiClient } from "../api-client/fixture-api-client";
+import { FreshQueries } from "../query/FreshQueries";
 import type { SteamIdStorage } from "../settings/steam-id-storage";
 import { SteamIdProvider } from "../settings/steam-id-store";
 
@@ -128,6 +129,9 @@ const silent = (): ApiClient => {
   return { ...withProgress({}), getGames: never };
 };
 
+/** The screen asks an unavailable backend once, and once more before it gives up (#162). */
+const ASKS_BEFORE_GIVING_UP = 2;
+
 const storage = (stored: string | undefined): SteamIdStorage => ({
   read: () => Promise.resolve(stored),
   write: () => Promise.resolve(),
@@ -164,7 +168,9 @@ const renderAt = (
     {
       initialUrl,
       wrapper: ({ children }) => (
-        <SteamIdProvider storage={storage(stored)}>{children}</SteamIdProvider>
+        <FreshQueries>
+          <SteamIdProvider storage={storage(stored)}>{children}</SteamIdProvider>
+        </FreshQueries>
       ),
     },
   );
@@ -353,6 +359,10 @@ describe("game screen", () => {
       await waitFor(() => expect(screen.getByText("setup screen")).toBeTruthy());
     });
 
+    /**
+     * Down for as long as the screen asks by itself, which is twice: an
+     * unavailable backend is asked once more before the screen gives up (#162).
+     */
     it("loads the game when the reader tries again", async () => {
       const up = withProgress({ [SOULSTONE]: played });
       let asked = 0;
@@ -360,7 +370,9 @@ describe("game screen", () => {
         ...up,
         getGames: () => {
           asked += 1;
-          return asked === 1 ? Promise.resolve(err("UNAVAILABLE")) : up.getGames();
+          return asked <= ASKS_BEFORE_GIVING_UP
+            ? Promise.resolve(err("UNAVAILABLE"))
+            : up.getGames();
         },
       });
 

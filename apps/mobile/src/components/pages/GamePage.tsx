@@ -1,13 +1,14 @@
-import type { GameDto, GameProgressDto } from "@steam/contracts";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApiClient } from "../../api-client/use-api-client";
+import { useGameLoad } from "../../api-client/use-game-load";
 import { useLocale } from "../../settings/locale-store";
+import { useChosenSteamId } from "../../settings/steam-id-store";
 import { colors, fonts, spacing } from "../../theme/tokens";
-import { messageFor, type ScreenError } from "../../view-models/api-errors";
+import { messageFor } from "../../view-models/api-errors";
 import {
   type AchievementFilter,
   buildAchievementRows,
@@ -15,7 +16,6 @@ import {
   buildGameSummary,
   buildTimelineDays,
   filterLabel,
-  gameInLibrary,
 } from "../../view-models/game-progress";
 import { Chip } from "../atoms/Chip";
 import { LocaleToggle } from "../atoms/LocaleToggle";
@@ -26,12 +26,6 @@ import { CompletionSummary } from "../organisms/CompletionSummary";
 import { ErrorState } from "../organisms/ErrorState";
 import { GameHero } from "../organisms/GameHero";
 import { GameTemplate } from "../templates/GameTemplate";
-
-type Loaded = { readonly game: GameDto; readonly progress: GameProgressDto | null };
-type State =
-  | { readonly status: "loading" }
-  | { readonly status: "error"; readonly error: ScreenError }
-  | { readonly status: "ready"; readonly data: Loaded };
 
 /** Soulstone Survivors alone defines 483 achievements. */
 const ACHIEVEMENTS_INITIAL_ROWS = 10;
@@ -54,67 +48,16 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
   const { locale, choose } = useLocale();
   const insets = useSafeAreaInsets();
   const apiClient = useApiClient();
-  const [state, setState] = useState<State>({ status: "loading" });
+  const load = useGameLoad(useChosenSteamId(), apiClient, appId);
   const [tab, setTab] = useState(0);
   const [filter, setFilter] = useState<AchievementFilter>("all");
-  // Bumped to re-run the load when nothing else about the request changed —
-  // a backend that was down and may now be up.
-  const [reloadNonce, setReloadNonce] = useState(0);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `reloadNonce` re-runs the load and is read nowhere in it. Goes with it in #167.
-  useEffect(() => {
-    if (apiClient === undefined) {
-      return;
-    }
-    let cancelled = false;
-
-    const load = async () => {
-      if (!Number.isInteger(appId)) {
-        setState({ status: "error", error: "INVALID_GAME_ID" });
-        return;
-      }
-
-      const games = await apiClient.getGames();
-      if (cancelled) return;
-      if (!games.ok) {
-        setState({ status: "error", error: games.error });
-        return;
-      }
-
-      // ADR-0004: the backend answers for any appId, so a game outside the
-      // library is refused here or nowhere.
-      const game = gameInLibrary(games.value, appId);
-      if (!game) {
-        setState({ status: "error", error: "NOT_IN_LIBRARY" });
-        return;
-      }
-
-      const progress = await apiClient.getGameProgress(appId);
-      if (cancelled) return;
-
-      if (progress.ok) {
-        setState({ status: "ready", data: { game, progress: progress.value } });
-        return;
-      }
-      if (progress.error === "NOT_LOADED") {
-        // Not a failure: the achievements were simply never fetched for it.
-        setState({ status: "ready", data: { game, progress: null } });
-        return;
-      }
-      setState({ status: "error", error: progress.error });
-    };
-
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, [appId, apiClient, reloadNonce]);
-
-  const progress = state.status === "ready" ? state.data.progress : null;
+  const game = load.status === "ready" ? load.game : null;
+  const progress = load.status === "ready" ? load.progress : null;
 
   const summary = useMemo(
-    () => (state.status === "ready" ? buildGameSummary(state.data.game, progress, t) : null),
-    [state, progress, t],
+    () => (game ? buildGameSummary(game, progress, t) : null),
+    [game, progress, t],
   );
   const counts = useMemo(() => (progress ? buildFilterCounts(progress) : null), [progress]);
   const rows = useMemo(
@@ -132,7 +75,7 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
     [progress, t],
   );
 
-  if (state.status === "loading") {
+  if (load.status === "loading") {
     return (
       <View style={styles.centred}>
         <ActivityIndicator color={colors.accent} />
@@ -140,27 +83,26 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
     );
   }
 
-  if (state.status === "error") {
+  if (load.status === "error") {
     // A deep link straight to this screen can be the only history entry, so
     // there is no back path at all: both a retry and a way to another
     // profile have to be offered here, the same as the library screen.
     return (
       <ErrorState
-        message={messageFor(state.error, t)}
-        onRetry={() => setReloadNonce((previous) => previous + 1)}
+        message={messageFor(load.error, t)}
+        onRetry={load.retry}
         onChangeProfile={onChangeProfile}
       />
     );
   }
 
-  const { game } = state.data;
   const hasAchievements = progress !== null && progress.completion.total > 0;
 
   const header = (
     <>
       <GameHero
-        appId={game.appId}
-        name={game.name}
+        appId={load.game.appId}
+        name={load.game.name}
         meta={summary?.meta ?? ""}
         topInset={insets.top}
         onBack={onBack}
