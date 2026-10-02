@@ -1,0 +1,73 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.5.15/schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    // The icons are drawn by a tool and read by a build, never by a person.
+    "includes": ["**", "!**/*.svg"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    // What the code was already written to: at 80, five times as many lines move.
+    "lineWidth": 100
+  },
+  "linter": {
+    "enabled": true,
+    "domains": {
+      // Rules of hooks and exhaustive dependencies: what the compiler cannot see.
+      "react": "recommended"
+    },
+    "rules": {
+      "preset": "recommended",
+      "complexity": {
+        // `payload["action"]` is how this code marks a key read off data from
+        // outside, as opposed to a field of a type it declared.
+        "useLiteralKeys": "off"
+      },
+      "nursery": {
+        // Type-aware and still in the nursery: kept because a promise nobody
+        // awaits is silent, and dropped without regret if it turns noisy.
+        "noFloatingPromises": "error",
+        "noMisusedPromises": "error"
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["**/*.test.ts", "**/*.test.tsx", "**/*.test-support.ts", "**/*.test-support.tsx"],
+      "linter": {
+        // Only here: outside a test, a function named `fit` is not a focused test.
+        "domains": { "test": "recommended" },
+        "rules": {
+          "style": {
+            // A test states what it expects to be there; a missing value fails it.
+            "noNonNullAssertion": "off"
+          },
+          "performance": {
+            // A helper folding a dozen fixtures: immutable beats fast.
+            "noAccumulatingSpread": "off"
+          }
+        }
+      }
+    }
+  ],
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "double"
+    }
+  },
+  "assist": {
+    "enabled": true,
+    "actions": {
+      "source": {
+        "organizeImports": "on"
+      }
+    }
+  }
+}
