@@ -10,6 +10,8 @@
     "check:stories": "pnpm --filter @steam/repo-checks stories",
     "build:web": "pnpm --filter @steam/mobile exec expo export --platform web --dump-sourcemap",
     "icons:build": "pnpm --filter @steam/icon-build icons",
+    "lint": "biome check --error-on-warnings .",
+    "lint:fix": "biome check --write .",
     "icons:check": "pnpm --filter @steam/icon-build icons -- --check",
     "test:domain": "pnpm --filter @steam/domain test",
     "test:api": "pnpm --filter @steam/api test",
