@@ -30,6 +30,7 @@ const header = (
 
 /** Stands in for the achievements, an icon and a name each. */
 const rows = Array.from({ length: 8 }, (_, index) => (
+  // biome-ignore lint/suspicious/noArrayIndexKey: a fixed list of placeholders, never reordered.
   <View key={`row-${index}`} style={styles.row}>
     <Skeleton width={40} height={40} />
     <Skeleton width={200} height={11} />

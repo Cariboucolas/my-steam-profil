@@ -44,6 +44,7 @@ export function LibraryTemplate({ header, rows, empty, initialRows }: Props) {
         paddingTop: insets.top + spacing.lg,
         paddingBottom: insets.bottom + BOTTOM_ROOM,
       }}
+      // biome-ignore lint/complexity/noUselessFragments: the list takes an element, and `header` is any node.
       ListHeaderComponent={<>{header}</>}
       {...(empty === undefined ? {} : { ListEmptyComponent: <>{empty}</> })}
       {...(initialRows === undefined

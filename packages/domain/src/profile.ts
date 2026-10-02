@@ -1,4 +1,4 @@
-import { type SteamId } from "./steam-id";
+import type { SteamId } from "./steam-id";
 
 export interface Profile {
   readonly steamId: SteamId;

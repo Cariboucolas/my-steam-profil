@@ -7,14 +7,14 @@ import {
   mapGameTally,
   mapProfile,
 } from "./steam-mapper";
-import {
-  type SteamGlobalAchievementPercentage,
-  type SteamGlobalAchievementPercentagesResponse,
-  type SteamOwnedGamesResponse,
-  type SteamPlayerAchievementsResponse,
-  type SteamPlayerSummariesResponse,
-  type SteamSchemaAchievement,
-  type SteamSchemaResponse,
+import type {
+  SteamGlobalAchievementPercentage,
+  SteamGlobalAchievementPercentagesResponse,
+  SteamOwnedGamesResponse,
+  SteamPlayerAchievementsResponse,
+  SteamPlayerSummariesResponse,
+  SteamSchemaAchievement,
+  SteamSchemaResponse,
 } from "./steam-types";
 
 const summaries = (

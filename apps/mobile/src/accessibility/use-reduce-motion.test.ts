@@ -1,11 +1,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { AccessibilityInfo, type EmitterSubscription } from "react-native";
 
-import {
-  deviceAsksForLessMotion,
-  deviceIsFineWithMotion,
-  letTheDeviceAnswer,
-} from "./reduce-motion.test-support";
+import { deviceAsksForLessMotion, deviceIsFineWithMotion } from "./reduce-motion.test-support";
 import { useReduceMotion } from "./use-reduce-motion";
 
 type ReduceMotionListener = (enabled: boolean) => void;

@@ -61,6 +61,7 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
   // a backend that was down and may now be up.
   const [reloadNonce, setReloadNonce] = useState(0);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `reloadNonce` re-runs the load and is read nowhere in it. Goes with it in #167.
   useEffect(() => {
     if (apiClient === undefined) {
       return;
