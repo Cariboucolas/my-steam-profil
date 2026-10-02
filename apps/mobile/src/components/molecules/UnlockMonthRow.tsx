@@ -156,6 +156,7 @@ export function UnlockMonthRow({ month }: Props) {
       <View {...NOT_READ} testID={UNLOCK_DAYS_TEST_ID} style={styles.days}>
         {month.days.map((day, index) => (
           <View
+            // biome-ignore lint/suspicious/noArrayIndexKey: a month's days never reorder: the index is the day.
             key={index}
             testID={day === null ? undefined : UNLOCK_DAY_TEST_ID}
             style={{

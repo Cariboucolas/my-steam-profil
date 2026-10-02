@@ -91,6 +91,7 @@ export const useShownAchievementNames = (shown: ShownGames | null): ShownAchieve
    */
   const live = useRef({ cancelled: false });
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new `client` is a new player, which is what clears. Goes with the hook in #169.
   useEffect(() => {
     // A new player is a new library: nothing learned about one names the other.
     const forThisPlayer = { cancelled: false };
@@ -104,6 +105,7 @@ export const useShownAchievementNames = (shown: ShownGames | null): ShownAchieve
     };
   }, [client]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `wanted` stands in for `appIds`, whose identity changes on every render.
   useEffect(() => {
     const missing = client === null ? [] : appIds.filter((appId) => !asked.current.has(appId));
 

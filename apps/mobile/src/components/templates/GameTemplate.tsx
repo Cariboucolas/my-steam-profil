@@ -49,6 +49,7 @@ export function GameTemplate({
       keyExtractor={(row) => String(row.key)}
       renderItem={({ item }) => item}
       contentContainerStyle={{ paddingBottom: insets.bottom + BOTTOM_ROOM }}
+      // biome-ignore lint/complexity/noUselessFragments: the list takes an element, and `header` is any node.
       ListHeaderComponent={<>{header}</>}
       {...(spaceAfterHeader ? { ListHeaderComponentStyle: styles.spacedHeader } : {})}
       {...(empty === undefined ? {} : { ListEmptyComponent: <>{empty}</> })}

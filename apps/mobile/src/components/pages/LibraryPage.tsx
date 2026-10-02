@@ -103,6 +103,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
   // whole year on every render.
   const [today] = useState(() => givenToday ?? new Date());
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `reloadNonce` re-runs the load and is read nowhere in it. Goes with it in #166.
   useEffect(() => {
     if (apiClient === undefined) {
       return;

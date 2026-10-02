@@ -15,14 +15,14 @@ import {
   type TimelineEntry,
   unlockStateFromSteam,
 } from "@steam/domain";
-import {
-  type SteamGlobalAchievementPercentage,
-  type SteamGlobalAchievementPercentagesResponse,
-  type SteamOwnedGamesResponse,
-  type SteamPlayerAchievement,
-  type SteamPlayerAchievementsResponse,
-  type SteamPlayerSummariesResponse,
-  type SteamSchemaResponse,
+import type {
+  SteamGlobalAchievementPercentage,
+  SteamGlobalAchievementPercentagesResponse,
+  SteamOwnedGamesResponse,
+  SteamPlayerAchievement,
+  SteamPlayerAchievementsResponse,
+  SteamPlayerSummariesResponse,
+  SteamSchemaResponse,
 } from "./steam-types";
 
 export type MapProfileError = "NOT_FOUND" | "INVALID_STEAM_ID";

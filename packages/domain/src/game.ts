@@ -1,4 +1,4 @@
-import { type Playtime } from "./playtime";
+import type { Playtime } from "./playtime";
 
 export interface Game {
   readonly appId: number;

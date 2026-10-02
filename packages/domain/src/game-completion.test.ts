@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Achievement } from "./achievement";
+import type { Achievement } from "./achievement";
 import { computeGameCompletion } from "./game-completion";
 
 const make = (apiName: string, unlocked: boolean): Achievement => ({

@@ -135,6 +135,7 @@ export const useLibraryRarity = (
 
   // Declared before the arming below, so that on the commit where a library is
   // replaced under a reader who is watching, this clears and that re-arms.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new `library` is what clears, and nothing of it is read. Goes with the hook in #169.
   useEffect(() => {
     // Another profile's rarity must never be crossed with this one's unlocks:
     // two libraries share appIds, so stale figures would not even look wrong.

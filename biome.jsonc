@@ -30,6 +30,11 @@
         // outside, as opposed to a field of a type it declared.
         "useLiteralKeys": "off"
       },
+      "suspicious": {
+        // Switched back on for the tests below: anywhere else, a function named
+        // `fit` is not a focused test, and the rule says it is.
+        "noFocusedTests": "off"
+      },
       "nursery": {
         // Type-aware and still in the nursery: kept because a promise nobody
         // awaits is silent, and dropped without regret if it turns noisy.
@@ -47,9 +52,9 @@
         "**/*.test-support.tsx"
       ],
       "linter": {
-        // Only here: outside a test, a function named `fit` is not a focused test.
         "domains": { "test": "recommended" },
         "rules": {
+          "suspicious": { "noFocusedTests": "error" },
           "style": {
             // A test states what it expects to be there; a missing value fails it.
             "noNonNullAssertion": "off"

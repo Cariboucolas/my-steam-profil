@@ -1,4 +1,4 @@
-import { type Achievement } from "./achievement";
+import type { Achievement } from "./achievement";
 import { CompletionRate } from "./completion-rate";
 
 export interface GameCompletion {

@@ -29,6 +29,7 @@ const header = (
 
 /** Stands in for the rows of the library, a cover and a line each. */
 const rows = Array.from({ length: 8 }, (_, index) => (
+  // biome-ignore lint/suspicious/noArrayIndexKey: a fixed list of placeholders, never reordered.
   <View key={`row-${index}`} style={styles.row}>
     <Skeleton width={76} height={36} />
     <Skeleton width={200} height={11} />

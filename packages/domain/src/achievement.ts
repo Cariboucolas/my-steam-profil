@@ -1,4 +1,4 @@
-import { type UnlockState } from "./unlock-state";
+import type { UnlockState } from "./unlock-state";
 
 export interface Achievement {
   readonly apiName: string; // Steam key (schema.name === player.apiname)

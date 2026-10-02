@@ -8,7 +8,7 @@ const LABELS = ["Achievements", "Timeline"] as const;
 describe("Tabs", () => {
   it("renders every label", () => {
     const { getByText } = render(<Tabs labels={LABELS} activeIndex={0} onSelect={() => {}} />);
-    LABELS.forEach((label) => expect(getByText(label)).toBeTruthy());
+    for (const label of LABELS) expect(getByText(label)).toBeTruthy();
   });
 
   it("highlights only the active tab", () => {
