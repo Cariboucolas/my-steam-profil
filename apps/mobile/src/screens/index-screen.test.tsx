@@ -8,6 +8,7 @@ import { deviceAsksForLessMotion } from "../accessibility/reduce-motion.test-sup
 import type { ApiClient, ApiError } from "../api-client/api-client";
 import { createFixtureApiClient } from "../api-client/fixture-api-client";
 import { UNLOCK_CALENDAR_CARD_TEST_ID } from "../components/organisms/UnlockCalendarCard";
+import { FreshQueries } from "../query/FreshQueries";
 import type { SteamIdStorage } from "../settings/steam-id-storage";
 import { SteamIdProvider, useSteamId } from "../settings/steam-id-store";
 import { colors } from "../theme/tokens";
@@ -109,7 +110,13 @@ const refusing = (error: ApiError): ApiClient => {
   };
 };
 
-/** Down when first asked, up when asked again — what a retry is for. */
+/** The screen asks an unavailable backend once, and once more before it gives up (#162). */
+const ASKS_BEFORE_GIVING_UP = 2;
+
+/**
+ * Down for as long as the screen asks by itself, up once the reader asks —
+ * what a retry is for.
+ */
 const downThenUp = (): ApiClient => {
   const up = library();
   let asked = 0;
@@ -117,7 +124,7 @@ const downThenUp = (): ApiClient => {
     ...up,
     getProfile: () => {
       asked += 1;
-      return asked === 1 ? Promise.resolve(err("UNAVAILABLE")) : up.getProfile();
+      return asked <= ASKS_BEFORE_GIVING_UP ? Promise.resolve(err("UNAVAILABLE")) : up.getProfile();
     },
   };
 };
@@ -204,10 +211,12 @@ const renderAt = (clients: Readonly<Record<string, ApiClient>>, stored: string |
     {
       initialUrl: "/",
       wrapper: ({ children }) => (
-        <SteamIdProvider storage={storage(stored)}>
-          {children}
-          <ProfileSwitch />
-        </SteamIdProvider>
+        <FreshQueries>
+          <SteamIdProvider storage={storage(stored)}>
+            {children}
+            <ProfileSwitch />
+          </SteamIdProvider>
+        </FreshQueries>
       ),
     },
   );
@@ -311,9 +320,9 @@ describe("library screen", () => {
     });
 
     /**
-     * The api client is memoised on the steam id, so asking the same profile
-     * again is a no-op unless something else about the request changed. This
-     * is what says the retry is a real one.
+     * A failure is kept for as long as an answer would be, so nothing asks the
+     * same profile again unless the reader does. This is what says the retry
+     * is a real one.
      */
     it("loads the library when the reader tries again", async () => {
       renderLibrary(downThenUp());

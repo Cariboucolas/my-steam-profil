@@ -1,16 +1,17 @@
-import type { GameDto, ProfileDto } from "@steam/contracts";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import type { GameDto } from "@steam/contracts";
+import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
-import type { ApiClient } from "../../api-client/api-client";
 import { resolveRevision } from "../../api-client/config";
 import { useApiClient } from "../../api-client/use-api-client";
+import { useLibraryLoad } from "../../api-client/use-library-load";
 import type { CountedLibrary } from "../../api-client/use-library-rarity";
 import { useLibraryTallies } from "../../api-client/use-library-tallies";
 import { useLocale } from "../../settings/locale-store";
+import { useSteamId } from "../../settings/steam-id-store";
 import { colors, fonts, spacing } from "../../theme/tokens";
-import { messageFor, type ScreenError } from "../../view-models/api-errors";
+import { messageFor } from "../../view-models/api-errors";
 import {
   availableSorts,
   buildLibraryRows,
@@ -35,17 +36,6 @@ import { LibraryStatsCard } from "../organisms/LibraryStatsCard";
 import { ProfileHeader } from "../organisms/ProfileHeader";
 import { UnlockCalendarCard } from "../organisms/UnlockCalendarCard";
 import { LibraryTemplate } from "../templates/LibraryTemplate";
-
-type Loaded = {
-  /** Which client answered, so a profile switch invalidates these at once. */
-  readonly client: ApiClient;
-  readonly profile: ProfileDto;
-  readonly games: readonly GameDto[];
-};
-type State =
-  | { readonly status: "loading" }
-  | { readonly status: "error"; readonly error: ScreenError }
-  | { readonly status: "ready"; readonly data: Loaded };
 
 /**
  * One array for every render that has no library yet. A literal here would be
@@ -91,73 +81,25 @@ type Props = {
  */
 export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: Props) {
   const apiClient = useApiClient();
-  const [state, setState] = useState<State>({ status: "loading" });
+  const { state: chosen } = useSteamId();
+  const library = useLibraryLoad(chosen.status === "known" ? chosen.steamId : undefined, apiClient);
   const [chosenSort, setChosenSort] = useState<LibrarySort>("completed");
   const [tab, setTab] = useState(COMPLETION);
-  // Bumped to re-run the load when nothing else about the request changed —
-  // a backend that was down and may now be up. The api client is memoised on
-  // the steam id, so without this a retry with the same profile is a no-op.
-  const [reloadNonce, setReloadNonce] = useState(0);
   // Today, read once when the screen opens. The calendar is a statement about
   // today, so it takes one — and a fresh Date on every render would rebuild the
   // whole year on every render.
   const [today] = useState(() => givenToday ?? new Date());
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: `reloadNonce` re-runs the load and is read nowhere in it. Goes with it in #166.
-  useEffect(() => {
-    if (apiClient === undefined) {
-      return;
-    }
-    let cancelled = false;
-
-    // A different profile must not show the previous one's library while it
-    // loads. Without this, switching profiles flashes the old data.
-    setState({ status: "loading" });
-
-    const load = async () => {
-      const [profile, games] = await Promise.all([apiClient.getProfile(), apiClient.getGames()]);
-      if (cancelled) return;
-
-      if (!profile.ok) {
-        setState({ status: "error", error: profile.error });
-        return;
-      }
-      if (!games.ok) {
-        setState({ status: "error", error: games.error });
-        return;
-      }
-
-      // The library shows as soon as it arrives; tallies fill in after, rather
-      // than holding the whole screen back for several hundred of them.
-      setState({
-        status: "ready",
-        data: { client: apiClient, profile: profile.value, games: games.value },
-      });
-    };
-
-    void load();
-    // Guards against a state update once the screen has gone away.
-    return () => {
-      cancelled = true;
-    };
-  }, [apiClient, reloadNonce]);
-
-  // What the screen draws: the library in hand, until the next one arrives.
-  const games = state.status === "ready" ? state.data.games : NO_GAMES;
-
-  // What gets counted: only the games this very client answered for. On the
-  // render where the profile has just changed, the previous library is still in
-  // state and every effect runs before that render's reset does, so counting
-  // what is drawn would spend a wave of requests on the wrong profile's games.
-  const gamesToCount =
-    state.status === "ready" && state.data.client === apiClient ? games : NO_GAMES;
+  // What the screen draws and what gets counted: the library of the Profile
+  // chosen, and nothing on the render where another one has just been chosen.
+  const games = library.status === "ready" ? library.games : NO_GAMES;
 
   // Where the tallies have got to. Fetching them, bounding them, abandoning
   // them on a profile switch and holding the list still while they land are
   // all its concern, and none of them are state this screen keeps.
   const { tallies, pending, counted, loaded, frozenOrder, repin } = useLibraryTallies(
     apiClient,
-    gamesToCount,
+    games,
   );
 
   // What Steam publishes about this library, which decides which orders exist
@@ -241,7 +183,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
     [rarest.rows, onOpenGame],
   );
 
-  if (state.status === "loading") {
+  if (library.status === "loading") {
     return (
       <View style={styles.centred}>
         <ActivityIndicator color={colors.accent} />
@@ -249,7 +191,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
     );
   }
 
-  if (state.status === "error") {
+  if (library.status === "error") {
     // Two ways out, because the message covers two kinds of failure and this
     // screen renders no header. A backend that was down may now be up, so
     // retrying the same profile has to be possible; a profile that does not
@@ -257,8 +199,8 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
     // the only recovery is killing the app.
     return (
       <ErrorState
-        message={messageFor(state.error, t)}
-        onRetry={() => setReloadNonce((previous) => previous + 1)}
+        message={messageFor(library.error, t)}
+        onRetry={library.retry}
         onChangeProfile={onChangeProfile}
       />
     );
@@ -267,7 +209,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
   const header = (
     <>
       <ProfileHeader
-        profile={state.data.profile}
+        profile={library.profile}
         gameCount={games.length}
         revision={revision}
         onChangeProfile={onChangeProfile}
