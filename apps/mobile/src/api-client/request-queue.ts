@@ -47,9 +47,12 @@ export const createRequestQueue = (places: number): RequestQueue => {
 
       let stage: "waiting" | "sent" | "over" = "waiting";
 
-      /** Ends the call once, whichever of the answer and the abort comes first. */
+      /**
+       * Ends the call on whichever of the answer and the abort comes first.
+       * The one that comes second finds no place left to give up, and a
+       * promise already settled.
+       */
       const end = (settle: () => void) => {
-        if (stage === "over") return;
         const heldAPlace = stage === "sent";
         stage = "over";
         signal?.removeEventListener("abort", drop);
