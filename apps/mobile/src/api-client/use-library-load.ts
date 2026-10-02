@@ -2,8 +2,9 @@ import type { GameDto, ProfileDto } from "@steam/contracts";
 import { skipToken, useQuery } from "@tanstack/react-query";
 
 import { queries } from "../query/queries";
-import { ApiFailure, valueOrThrow } from "../query/value-or-throw";
+import { codeOf, valueOrThrow } from "../query/value-or-throw";
 import type { ApiClient, ApiError } from "./api-client";
+import { gamesQuery, NO_PROFILE } from "./games-query";
 
 /** Where the library's first load has got to, as the screen experiences it. */
 export type LibraryLoad =
@@ -25,18 +26,6 @@ export type LibraryLoad =
     };
 
 const LOADING: LibraryLoad = { status: "loading" };
-
-/** Names nobody: the key of a query that is not run while no Profile is chosen. */
-const NO_PROFILE = "";
-
-/**
- * The failure a screen can put in words. The port answers a `Result` and never
- * rejects (ADR-0002), so a query fails with an `ApiFailure`; were anything else
- * thrown, the screen says the library could not be reached and offers to ask
- * again, rather than wait on an answer that will not come.
- */
-const codeOf = (failure: Error): ApiError =>
-  failure instanceof ApiFailure && failure.code !== "NOT_LOADED" ? failure.code : "UNAVAILABLE";
 
 /**
  * A query that had an answer and failed when asked again keeps both, and stays
@@ -64,13 +53,7 @@ export const useLibraryLoad = (
         ? skipToken
         : ({ signal }) => apiClient.getProfile(signal).then(valueOrThrow),
   });
-  const games = useQuery({
-    ...queries.games(steamId ?? NO_PROFILE),
-    queryFn:
-      apiClient === undefined
-        ? skipToken
-        : ({ signal }) => apiClient.getGames(signal).then(valueOrThrow),
-  });
+  const games = useQuery(gamesQuery(steamId, apiClient));
 
   // Both have to settle before either is reported, so a Profile that failed
   // fast does not flash its failure ahead of a library still on its way.

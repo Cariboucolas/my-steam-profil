@@ -1,6 +1,6 @@
 import type { Result } from "@steam/domain";
 
-import type { ProgressError } from "../api-client";
+import type { ApiError, ProgressError } from "../api-client";
 
 /**
  * An expected failure, thrown. A query knows a failure only as something its
@@ -32,3 +32,16 @@ export const valueOrThrow = <Value, Code extends ProgressError>(
   }
   throw new ApiFailure(answer.error);
 };
+
+/**
+ * The failure a screen can put in words, read back from what a query failed
+ * with. The port answers a `Result` and never rejects (ADR-0002), so a query
+ * fails with an `ApiFailure`; were anything else thrown, the screen says the
+ * backend could not be reached and offers to ask again, rather than wait on an
+ * answer that will not come.
+ *
+ * `NOT_LOADED` is read the same way: it is an answer about one game and no
+ * failure, and a query function that lets it through as one has a bug.
+ */
+export const codeOf = (failure: Error): ApiError =>
+  failure instanceof ApiFailure && failure.code !== "NOT_LOADED" ? failure.code : "UNAVAILABLE";
