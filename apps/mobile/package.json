@@ -63,7 +63,8 @@
   "jest": {
     "preset": "jest-expo",
     "setupFiles": [
-      "./src/i18n/i18n.ts"
+      "./src/i18n/i18n.ts",
+      "./src/query/answers-in-the-same-turn.test-support.ts"
     ],
     "testMatch": [
       "**/src/**/*.test.ts",
