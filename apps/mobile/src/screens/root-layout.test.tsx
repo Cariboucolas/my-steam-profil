@@ -4,6 +4,7 @@ import {
   screen,
   waitFor,
 } from "expo-router/testing-library";
+import { useQueryClient } from "@tanstack/react-query";
 import { Text } from "react-native";
 import * as SplashScreen from "expo-splash-screen";
 
@@ -88,6 +89,30 @@ describe("root layout", () => {
    * the two share a background, so the seam between them is invisible rather
    * than merely quick.
    */
+  /**
+   * What a screen loads is kept above the routes, so the next screen finds it
+   * (#162). A screen under the layout must reach that cache without mounting
+   * anything of its own.
+   */
+  it("serves every screen the one cache it keeps above the routes", async () => {
+    const caches: unknown[] = [];
+    const Asking = () => {
+      caches.push(useQueryClient());
+      return <Text>asking screen</Text>;
+    };
+
+    const routes = { _layout: RootLayout, index: Asking, other: Asking };
+    renderRouter(routes, { initialUrl: "/" });
+    await waitFor(() => expect(screen.getByText("asking screen")).toBeTruthy());
+    const [first] = caches;
+
+    renderRouter(routes, { initialUrl: "/other" });
+    await waitFor(() => expect(screen.getAllByText("asking screen")).toBeTruthy());
+
+    expect(first).toBeDefined();
+    expect(new Set(caches).size).toBe(1);
+  });
+
   it("carries the mark on from where the native splash left it", async () => {
     renderApp(true);
 

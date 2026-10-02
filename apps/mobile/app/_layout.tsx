@@ -1,5 +1,6 @@
 import { useFonts } from "@expo-google-fonts/ibm-plex-sans";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
@@ -10,6 +11,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { NOT_READ } from "../src/accessibility/not-read";
 import { resolveInitialSteamId } from "../src/api-client/config";
 import { SplashStage } from "../src/components/organisms/SplashStage";
+import { createAppQueryClient } from "../src/query/query-client";
 import { startReporting } from "../src/reporting/start";
 import { createLocaleStorage } from "../src/settings/locale-storage";
 import { LocaleProvider } from "../src/settings/locale-store";
@@ -25,6 +27,10 @@ const PHONE_WIDTH = 402;
 // would restart the read inside SteamIdProvider's effect, forever.
 const storage = createSteamIdStorage(AsyncStorage);
 const localeStorage = createLocaleStorage(AsyncStorage);
+
+// Built once for the same reason, and above the routes: what one screen loaded
+// is there for the next, which a cache owned by a screen could never be (#162).
+const queryClient = createAppQueryClient();
 
 // The build may offer a profile; the device overrides it. Keeps `pnpm start`
 // on this machine as immediate as it was before the setup screen existed.
@@ -92,28 +98,30 @@ export default function RootLayout() {
   }
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
-      <LocaleProvider storage={localeStorage}>
-        <SteamIdProvider storage={storage} fallback={initialSteamId}>
-          <SplashGate>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                contentStyle: {
-                  backgroundColor: colors.bg,
-                  // A phone-width column, centred. No effect on a phone, where
-                  // the screen is narrower; it keeps the web preview honest.
-                  width: "100%",
-                  maxWidth: PHONE_WIDTH,
-                  alignSelf: "center",
-                },
-              }}
-            />
-          </SplashGate>
-        </SteamIdProvider>
-      </LocaleProvider>
-    </SafeAreaProvider>
+    <QueryClientProvider client={queryClient}>
+      <SafeAreaProvider>
+        <StatusBar style="light" />
+        <LocaleProvider storage={localeStorage}>
+          <SteamIdProvider storage={storage} fallback={initialSteamId}>
+            <SplashGate>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: {
+                    backgroundColor: colors.bg,
+                    // A phone-width column, centred. No effect on a phone, where
+                    // the screen is narrower; it keeps the web preview honest.
+                    width: "100%",
+                    maxWidth: PHONE_WIDTH,
+                    alignSelf: "center",
+                  },
+                }}
+              />
+            </SplashGate>
+          </SteamIdProvider>
+        </LocaleProvider>
+      </SafeAreaProvider>
+    </QueryClientProvider>
   );
 }
 
