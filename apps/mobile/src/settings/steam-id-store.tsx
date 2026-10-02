@@ -120,3 +120,13 @@ export const useSteamId = (): SteamIdContextValue => {
   }
   return value;
 };
+
+/**
+ * The SteamId of the Profile being shown, or nothing while the device has not
+ * answered or nobody has chosen one: what a client is made for and what a
+ * query is kept under.
+ */
+export const useChosenSteamId = (): string | undefined => {
+  const { state } = useSteamId();
+  return state.status === "known" ? state.steamId : undefined;
+};

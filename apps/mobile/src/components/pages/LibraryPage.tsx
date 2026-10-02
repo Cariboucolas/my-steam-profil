@@ -9,7 +9,7 @@ import { useLibraryLoad } from "../../api-client/use-library-load";
 import type { CountedLibrary } from "../../api-client/use-library-rarity";
 import { useLibraryTallies } from "../../api-client/use-library-tallies";
 import { useLocale } from "../../settings/locale-store";
-import { useSteamId } from "../../settings/steam-id-store";
+import { useChosenSteamId } from "../../settings/steam-id-store";
 import { colors, fonts, spacing } from "../../theme/tokens";
 import { messageFor } from "../../view-models/api-errors";
 import {
@@ -81,8 +81,7 @@ type Props = {
  */
 export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: Props) {
   const apiClient = useApiClient();
-  const { state: chosen } = useSteamId();
-  const library = useLibraryLoad(chosen.status === "known" ? chosen.steamId : undefined, apiClient);
+  const library = useLibraryLoad(useChosenSteamId(), apiClient);
   const [chosenSort, setChosenSort] = useState<LibrarySort>("completed");
   const [tab, setTab] = useState(COMPLETION);
   // Today, read once when the screen opens. The calendar is a statement about

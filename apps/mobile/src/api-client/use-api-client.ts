@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-import { useSteamId } from "../settings/steam-id-store";
+import { useChosenSteamId } from "../settings/steam-id-store";
 import type { ApiClient } from "./api-client";
 import { useCreateApiClient } from "./api-client-provider";
 
@@ -12,9 +12,8 @@ import { useCreateApiClient } from "./api-client-provider";
  * loading.
  */
 export const useApiClient = (): ApiClient | undefined => {
-  const { state } = useSteamId();
+  const steamId = useChosenSteamId();
   const create = useCreateApiClient();
-  const steamId = state.status === "known" ? state.steamId : undefined;
 
   return useMemo(() => (steamId === undefined ? undefined : create(steamId)), [steamId, create]);
 };
