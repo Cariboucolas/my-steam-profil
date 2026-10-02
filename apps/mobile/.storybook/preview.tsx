@@ -6,6 +6,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { i18nFor } from "../src/i18n/i18n";
 import { DEFAULT_LOCALE, isLocale, LOCALES } from "../src/i18n/locale";
+import { FreshQueries } from "../src/query/FreshQueries";
 import { APP_FONT_FACES } from "../src/theme/font-faces";
 import { colors, spacing } from "../src/theme/tokens";
 
@@ -64,9 +65,21 @@ const withLocale: Decorator = (Story, context) => {
   );
 };
 
+/**
+ * Gives every story a cache of its own, where the app keeps one above its
+ * routes (#162): a page story loads what it shows each time it is opened, and
+ * never draws what the story before it loaded.
+ */
+const withFreshQueries: Decorator = (Story) => (
+  <FreshQueries>
+    <Story />
+  </FreshQueries>
+);
+
 const preview: Preview = {
-  // Last is outermost: the safe area wraps the fonts gate, which wraps the locale, which wraps the story.
-  decorators: [withLocale, withAppFonts, withSafeArea],
+  // Last is outermost: the safe area wraps the fonts gate, which wraps the locale, which wraps
+  // the cache, which wraps the story.
+  decorators: [withFreshQueries, withLocale, withAppFonts, withSafeArea],
   globalTypes: {
     locale: {
       description: "Language the stories are written in",
