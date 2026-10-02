@@ -10,7 +10,7 @@ ships the wrong artwork with every test green. The two are indistinguishable in 
 
 | | Run by |
 | --- | --- |
-| `typecheck`, `check:tests`, `check:stories`, `test`, `build:web` | CI, on every pull request and every push to `main` |
+| `lint`, `typecheck`, `check:tests`, `check:stories`, `test`, `build:web` | CI, on every pull request and every push to `main` |
 | The watch modes and dev servers | You, while you work — nothing to remember |
 | `icons:build`, `icons:check`, `spike` | **Nobody.** [See below.](#the-commands-nobody-runs-for-you) |
 | `deploy`, the EAS update, and `eas build` when the fingerprint moved | The merge to `main`, or a dispatch of `eas-build.yml` |
@@ -18,6 +18,7 @@ ships the wrong artwork with every test green. The two are indistinguishable in 
 ## What CI already runs for you
 
 ```sh
+pnpm lint           # Biome: the lint rules and the formatting, read-only
 pnpm typecheck      # every package in the workspace
 pnpm check:tests    # refuses a package whose tests would never run
 pnpm check:stories  # refuses a component without stories, bar a list that only empties
@@ -25,10 +26,14 @@ pnpm test           # every package that defines a test script
 pnpm build:web      # builds the web bundle, to prove that it builds
 ```
 
-These five are the `verify` job, in that order, and `verify` is required before merge. Running
+These six are the `verify` job, in that order, and `verify` is required before merge. Running
 them yourself before pushing saves the round trip; forgetting them costs only that.
 
 The order is deliberate — cheapest first, so a type error does not wait behind a test run.
+
+`pnpm lint` changes nothing; `pnpm lint:fix` writes what Biome can fix on its own, the formatting
+and the import order first among it. What it enforces and why is ADR-0024, and each rule switched
+off carries its reason in `biome.jsonc`.
 
 `pnpm check:stories` is `check:tests`'s mirror for the gallery (#75): every component under
 `atoms/`, `molecules/`, `organisms/` and `templates/` carries a `.stories.tsx` beside it, except
