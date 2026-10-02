@@ -1,3 +1,5 @@
+import { onlineManager } from "@tanstack/react-query";
+
 import { createAppQueryClient, retriesOnceWhenUnavailable } from "./query-client";
 import { ApiFailure } from "./value-or-throw";
 
@@ -30,6 +32,7 @@ describe("createAppQueryClient", () => {
 
   afterEach(() => {
     jest.useRealTimers();
+    onlineManager.setOnline(true);
   });
 
   /** How many times a query asked before it gave up on a backend answering `code`. */
@@ -51,6 +54,33 @@ describe("createAppQueryClient", () => {
 
   it("asks once about a profile that is private", async () => {
     expect(await timesAsked("PRIVATE_PROFILE")).toBe(1);
+  });
+
+  /**
+   * A browser that reports being offline would otherwise hold the question
+   * back, and the screen would wait where it used to say what went wrong.
+   */
+  it("asks even when the browser says it is offline", async () => {
+    onlineManager.setOnline(false);
+    const client = createAppQueryClient();
+    const ask = jest.fn(() => Promise.resolve("answered"));
+
+    await client.fetchQuery({ queryKey: ["probe"], queryFn: ask });
+    client.clear();
+
+    expect(ask).toHaveBeenCalledTimes(1);
+  });
+
+  it("waits between two asks only as long as it is told to", async () => {
+    const client = createAppQueryClient({ retryDelay: 0 });
+    const ask = jest.fn(() => Promise.reject(new ApiFailure("UNAVAILABLE")));
+
+    const settled = client.fetchQuery({ queryKey: ["probe"], queryFn: ask }).catch(() => undefined);
+    await jest.advanceTimersByTimeAsync(0);
+    await settled;
+    client.clear();
+
+    expect(ask).toHaveBeenCalledTimes(2);
   });
 
   /** A recount comes from the player or not at all (#162). */
