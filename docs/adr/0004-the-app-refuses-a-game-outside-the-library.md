@@ -31,7 +31,7 @@ claiming the pair is real. A caller that has not checked ownership can be handed
 GameProgress for an appId the player has never owned, and cannot tell that from a game that
 defines no achievements. Any second client would have to make the same check the app makes.
 
-That check therefore has to stay honest. `apps/mobile/app/game/[appId].tsx` refuses an appId
+That check therefore has to stay honest. `apps/mobile/src/api-client/use-game-load.ts` refuses an appId
 absent from the library, and `fixture-api-client.ts` distinguishes `NOT_LOADED` from `NOT_FOUND`
 on the same rule. Both are covered by tests, because this ADR is what makes them load-bearing
 rather than defensive.
