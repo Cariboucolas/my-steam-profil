@@ -27,7 +27,7 @@ const REQUESTS_IN_FLIGHT = 6;
  * per SteamId, and a queue per client would be as many budgets as there are
  * clients (#162).
  */
-const backend = createRequestQueue(REQUESTS_IN_FLIGHT);
+const backendQueue = createRequestQueue(REQUESTS_IN_FLIGHT);
 
 export type HttpApiClientConfig = {
   /** Where apps/api is listening. */
@@ -90,7 +90,7 @@ export const createHttpApiClient = (config: HttpApiClientConfig): ApiClient => {
    * port keeps answering `Result`, and whoever aborted is not reading it.
    */
   const getAt = async <T>(url: string, signal: AbortSignal | undefined) => {
-    const answer = await backend(() => send<T>(url, signal), signal);
+    const answer = await backendQueue(() => send<T>(url, signal), signal);
     return answer === DROPPED ? err<ApiError>("UNAVAILABLE") : answer;
   };
 

@@ -1,15 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react-native";
-import { Text } from "react-native";
 
 import { FreshQueries } from "./FreshQueries";
-
-/** Shows an answer kept for the session: a cache that held it would never ask again. */
-function Probe({ ask }: { readonly ask: () => Promise<string> }) {
-  const { data } = useQuery({ queryKey: ["probe"], queryFn: ask, staleTime: Infinity });
-
-  return <Text>{data ?? "asking"}</Text>;
-}
+import { Probe } from "./probe.test-support";
 
 describe("FreshQueries", () => {
   it("serves a query to what it wraps", async () => {

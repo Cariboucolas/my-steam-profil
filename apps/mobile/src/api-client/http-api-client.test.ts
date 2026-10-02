@@ -227,14 +227,14 @@ describe("createHttpApiClient (completion)", () => {
  */
 describe("createHttpApiClient (the six-request budget)", () => {
   /** Every call a test made, dropped when it ends so the next finds six places. */
-  let test: AbortController;
+  let untilTheTestEnds: AbortController;
 
   beforeEach(() => {
-    test = new AbortController();
+    untilTheTestEnds = new AbortController();
   });
 
   afterEach(() => {
-    test.abort();
+    untilTheTestEnds.abort();
   });
 
   /** A backend that answers a request only when the test says so. */
@@ -263,8 +263,8 @@ describe("createHttpApiClient (the six-request budget)", () => {
     const other = clientFor(OTHER_STEAM_ID);
 
     for (let appId = 1; appId <= 10; appId += 1) {
-      void one.getGameTally(appId, test.signal);
-      void other.getGameTally(appId, test.signal);
+      void one.getGameTally(appId, untilTheTestEnds.signal);
+      void other.getGameTally(appId, untilTheTestEnds.signal);
     }
 
     expect(sent).toHaveLength(6);
@@ -277,7 +277,7 @@ describe("createHttpApiClient (the six-request budget)", () => {
 
     void client.getGameTally(1, left.signal);
     for (let appId = 2; appId <= 7; appId += 1) {
-      void client.getGameTally(appId, test.signal);
+      void client.getGameTally(appId, untilTheTestEnds.signal);
     }
     expect(appIdsSent()).toEqual([1, 2, 3, 4, 5, 6]);
 
@@ -294,7 +294,7 @@ describe("createHttpApiClient (the six-request budget)", () => {
 
     const aborted = client.getGameTally(1, left.signal);
     for (let appId = 2; appId <= 9; appId += 1) {
-      void client.getGameTally(appId, test.signal);
+      void client.getGameTally(appId, untilTheTestEnds.signal);
     }
 
     left.abort();
@@ -310,10 +310,10 @@ describe("createHttpApiClient (the six-request budget)", () => {
     const one = clientFor(STEAM_ID);
     const other = clientFor(OTHER_STEAM_ID);
 
-    const first = [1, 2, 3, 4, 5, 6].map((appId) => one.getGameTally(appId, test.signal));
-    void other.getGameTally(30, test.signal);
-    void one.getGameTally(10, test.signal);
-    void other.getGameTally(20, test.signal);
+    const first = [1, 2, 3, 4, 5, 6].map((appId) => one.getGameTally(appId, untilTheTestEnds.signal));
+    void other.getGameTally(30, untilTheTestEnds.signal);
+    void one.getGameTally(10, untilTheTestEnds.signal);
+    void other.getGameTally(20, untilTheTestEnds.signal);
 
     sent[3]?.answer({});
     await first[3];
@@ -330,9 +330,9 @@ describe("createHttpApiClient (the six-request budget)", () => {
     const client = clientFor(STEAM_ID);
     const left = new AbortController();
 
-    const first = [1, 2, 3, 4, 5, 6].map((appId) => client.getGameTally(appId, test.signal));
+    const first = [1, 2, 3, 4, 5, 6].map((appId) => client.getGameTally(appId, untilTheTestEnds.signal));
     void client.getGameTally(7, left.signal);
-    void client.getGameTally(8, test.signal);
+    void client.getGameTally(8, untilTheTestEnds.signal);
 
     left.abort();
     sent[0]?.answer({});
@@ -355,9 +355,9 @@ describe("createHttpApiClient (the six-request budget)", () => {
   it("hands the signal to the request, so one in flight is aborted with it", () => {
     const { sent, clientFor } = heldBackend();
 
-    void clientFor(STEAM_ID).getGames(test.signal);
+    void clientFor(STEAM_ID).getGames(untilTheTestEnds.signal);
 
-    expect(sent[0]?.signal).toBe(test.signal);
+    expect(sent[0]?.signal).toBe(untilTheTestEnds.signal);
   });
 
   /** The port never rejects for an expected failure, an abort included (ADR-0002). */
@@ -370,7 +370,7 @@ describe("createHttpApiClient (the six-request budget)", () => {
     const left = new AbortController();
 
     const calls = [1, 2, 3, 4, 5, 6, 7].map((appId) =>
-      client.getGameTally(appId, appId === aborted ? left.signal : test.signal),
+      client.getGameTally(appId, appId === aborted ? left.signal : untilTheTestEnds.signal),
     );
     left.abort();
 

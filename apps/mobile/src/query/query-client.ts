@@ -18,6 +18,20 @@ export const retriesOnceWhenUnavailable = (
   failure instanceof ApiFailure &&
   failure.code === "UNAVAILABLE";
 
+/** What #162 decided for every query, and nothing a caller may relax. */
+const DECIDED = {
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
+  retryOnMount: false,
+  retry: retriesOnceWhenUnavailable,
+} as const;
+
+/** What a cache may be told on top of what was decided. */
+export type QueryClientOptions = {
+  /** How long an entry nobody watches is kept. The library's default if absent. */
+  readonly gcTime?: number;
+};
+
 /**
  * A cache for what the app loaded, with what #162 decided for every query: no
  * refetch the player did not ask for, a failure that holds until it goes
@@ -25,14 +39,5 @@ export const retriesOnceWhenUnavailable = (
  *
  * The app builds one, above the routes; a test or a story builds its own.
  */
-export const createAppQueryClient = (): QueryClient =>
-  new QueryClient({
-    defaultOptions: {
-      queries: {
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: false,
-        retryOnMount: false,
-        retry: retriesOnceWhenUnavailable,
-      },
-    },
-  });
+export const createAppQueryClient = (options: QueryClientOptions = {}): QueryClient =>
+  new QueryClient({ defaultOptions: { queries: { ...DECIDED, ...options } } });
