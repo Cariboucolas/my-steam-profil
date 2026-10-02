@@ -1,13 +1,11 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import sharp from "sharp";
-
+import { MARK_STOPS, MARK_TIP } from "../../../apps/mobile/src/theme/mark";
+import { colors } from "../../../apps/mobile/src/theme/tokens";
 import { disagreements, type Palette } from "./agreement";
 import { ASSETS, RECIPES, type Recipe } from "./recipes";
 import { asMonochrome, stripProvenance, withoutPlate } from "./svg";
-
-import { MARK_STOPS, MARK_TIP } from "../../../apps/mobile/src/theme/mark";
-import { colors } from "../../../apps/mobile/src/theme/tokens";
 
 /**
  * Rebuilds every PNG the app and the stores read, from the SVGs beside them.
@@ -44,9 +42,7 @@ const render = async (recipe: Recipe): Promise<Buffer> => {
 
   // Flattened onto the app's own ground rather than onto white, and stripped of
   // an alpha channel the App Store refuses on an icon.
-  const ground = recipe.opaque
-    ? image.flatten({ background: colors.bg }).removeAlpha()
-    : image;
+  const ground = recipe.opaque ? image.flatten({ background: colors.bg }).removeAlpha() : image;
 
   return ground.png({ compressionLevel: 9 }).toBuffer();
 };

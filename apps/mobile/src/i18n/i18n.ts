@@ -46,5 +46,4 @@ export const i18nFor = (locale: Locale): i18n => {
 };
 
 /** `t` fixed on `locale`: what a `use-*` hook hands down to a view-model. */
-export const translatorFor = (locale: Locale): Translate =>
-  root.getFixedT(locale);
+export const translatorFor = (locale: Locale): Translate => root.getFixedT(locale);

@@ -49,5 +49,12 @@ export const WithRows: Story = { args: { rows } };
 
 /** No rows: whatever the page puts in their place stands where they would be. */
 export const WithNoRows: Story = {
-  args: { rows: [], empty: <View style={styles.empty}><Skeleton width={180} height={13} /></View> },
+  args: {
+    rows: [],
+    empty: (
+      <View style={styles.empty}>
+        <Skeleton width={180} height={13} />
+      </View>
+    ),
+  },
 };

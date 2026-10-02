@@ -1,10 +1,10 @@
-import { SteamGatewayError, type SteamGateway } from "./steam-gateway";
+import { type SteamGateway, SteamGatewayError } from "./steam-gateway";
 import type {
-  SteamPlayerSummariesResponse,
-  SteamOwnedGamesResponse,
-  SteamSchemaResponse,
-  SteamPlayerAchievementsResponse,
   SteamGlobalAchievementPercentagesResponse,
+  SteamOwnedGamesResponse,
+  SteamPlayerAchievementsResponse,
+  SteamPlayerSummariesResponse,
+  SteamSchemaResponse,
 } from "./steam-types";
 
 const STEAM_BASE_URL = "https://api.steampowered.com";
@@ -38,10 +38,7 @@ const CARRIES_AN_ANSWER = [BAD_REQUEST, FORBIDDEN] as const;
  * Steam answers with its own envelope and fails with an HTML page, and a page
  * is not JSON, so it raises below rather than reaching the mapper.
  */
-const CARRIES_A_PLAYER_ANSWER = [
-  ...CARRIES_AN_ANSWER,
-  INTERNAL_SERVER_ERROR,
-] as const;
+const CARRIES_A_PLAYER_ANSWER = [...CARRIES_AN_ANSWER, INTERNAL_SERVER_ERROR] as const;
 
 /** Steam localises achievement names; the domain speaks English. */
 const LANGUAGE = "english";
@@ -55,10 +52,7 @@ const LANGUAGE = "english";
  * all of them. Every parameter is safe to print: the key is set on the URL
  * below and never travels in `params`.
  */
-const asking = (
-  path: string,
-  params: Readonly<Record<string, string>>,
-): string => {
+const asking = (path: string, params: Readonly<Record<string, string>>): string => {
   const named = Object.entries(params)
     .map(([name, value]) => `${name}=${value}`)
     .join(", ");

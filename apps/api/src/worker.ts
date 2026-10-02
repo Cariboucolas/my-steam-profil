@@ -1,10 +1,10 @@
 import type { Hono } from "hono";
 
 import { createApp } from "./http/app";
+import { noCache, type ResponseCache } from "./http/cache";
 import { loadConfig } from "./http/config";
 import { createSteamClient } from "./steam/steam-client";
 import type { SteamGateway } from "./steam/steam-gateway";
-import { noCache, type ResponseCache } from "./http/cache";
 
 /**
  * What Cloudflare hands the Worker in place of process.env.
@@ -70,8 +70,7 @@ const SERVICE_UNAVAILABLE = 503;
  * and says why in the log, which is where Cloudflare's tail will find it.
  */
 export const createFetchHandler = (
-  createGateway: (apiKey: string) => SteamGateway = (apiKey) =>
-    createSteamClient({ apiKey }),
+  createGateway: (apiKey: string) => SteamGateway = (apiKey) => createSteamClient({ apiKey }),
 ) => {
   // One app per isolate. The environment cannot change under a running Worker,
   // so there is nothing to invalidate — and building a Hono app per request

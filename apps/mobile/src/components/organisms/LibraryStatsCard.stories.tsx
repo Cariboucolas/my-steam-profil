@@ -1,13 +1,11 @@
 import type { Meta, StoryObj } from "@storybook/react-native-web-vite";
-
-import { english, translatorForGlobals } from "../../fixtures/story-locale";
-
 import {
   collectorLibrary,
   countedLibrary,
   landingLibrary,
   playtimeWithheldLibrary,
 } from "../../fixtures/library";
+import { english, translatorForGlobals } from "../../fixtures/story-locale";
 import type { Translate } from "../../i18n/i18n";
 import { buildLibrarySummary, type LibraryView } from "../../view-models/library";
 import { LibraryStatsCard } from "./LibraryStatsCard";

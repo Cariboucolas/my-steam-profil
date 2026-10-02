@@ -1,14 +1,9 @@
 import type { AchievementDto, GameDto, GameProgressDto, ProfileDto } from "@steam/contracts";
 import { err } from "@steam/domain";
-import {
-  act,
-  fireEvent,
-  renderRouter,
-  screen,
-  waitFor,
-} from "expo-router/testing-library";
+import { act, fireEvent, renderRouter, screen, waitFor } from "expo-router/testing-library";
 import { Text } from "react-native";
-
+import GameScreen from "../../app/game/[appId]";
+import LibraryScreen from "../../app/index";
 import { deviceAsksForLessMotion } from "../accessibility/reduce-motion.test-support";
 import type { ApiClient } from "../api-client/api-client";
 import { createFixtureApiClient } from "../api-client/fixture-api-client";
@@ -17,8 +12,6 @@ import type { LocaleStorage } from "../settings/locale-storage";
 import { LocaleProvider } from "../settings/locale-store";
 import type { SteamIdStorage } from "../settings/steam-id-storage";
 import { SteamIdProvider } from "../settings/steam-id-store";
-import GameScreen from "../../app/game/[appId]";
-import LibraryScreen from "../../app/index";
 
 const STEAM_ID = "76561197979269357";
 const SOULSTONE = 2066020;
@@ -143,9 +136,11 @@ describe("the app in French", () => {
     expect(screen.getByText("Succès caché — aucune description")).toBeTruthy();
     expect(screen.getByText("1 succès restant")).toBeTruthy();
     expect(screen.getByLabelText("Retour à la bibliothèque")).toBeTruthy();
-    expect(screen.getByText(/^82 h 57 de jeu · dernière partie le 25 juin 2026$/, {
-      includeHiddenElements: true,
-    })).toBeTruthy();
+    expect(
+      screen.getByText(/^82 h 57 de jeu · dernière partie le 25 juin 2026$/, {
+        includeHiddenElements: true,
+      }),
+    ).toBeTruthy();
   });
 
   it("writes an error in French, and offers its way out in French", async () => {

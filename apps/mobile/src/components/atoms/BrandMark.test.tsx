@@ -1,12 +1,6 @@
 import { render } from "@testing-library/react-native";
-
-import {
-  BrandMark,
-  MARK_STOP_TEST_ID,
-  MARK_TIP_TEST_ID,
-  MARK_TRACK_TEST_ID,
-} from "./BrandMark";
-import { MARK_STOPS, MARK_STOP_COUNT } from "../../theme/mark";
+import { MARK_STOP_COUNT, MARK_STOPS } from "../../theme/mark";
+import { BrandMark, MARK_STOP_TEST_ID, MARK_TIP_TEST_ID, MARK_TRACK_TEST_ID } from "./BrandMark";
 
 /**
  * The mark is hidden from the accessibility tree on purpose, and the library
@@ -40,23 +34,17 @@ describe("BrandMark", () => {
   });
 
   it("draws nothing of the arc before any stop has landed", () => {
-    const { queryAllByTestId } = render(
-      <BrandMark size={112} stops={0} tip={false} />,
-    );
+    const { queryAllByTestId } = render(<BrandMark size={112} stops={0} tip={false} />);
     expect(queryAllByTestId(MARK_STOP_TEST_ID, DRAWN)).toHaveLength(0);
   });
 
   it("draws exactly as many stops as it is given", () => {
-    const { queryAllByTestId } = render(
-      <BrandMark size={112} stops={5} tip={false} />,
-    );
+    const { queryAllByTestId } = render(<BrandMark size={112} stops={5} tip={false} />);
     expect(queryAllByTestId(MARK_STOP_TEST_ID, DRAWN)).toHaveLength(5);
   });
 
   it("draws the whole arc when every stop has landed", () => {
-    const { queryAllByTestId } = render(
-      <BrandMark size={112} stops={MARK_STOP_COUNT} tip />,
-    );
+    const { queryAllByTestId } = render(<BrandMark size={112} stops={MARK_STOP_COUNT} tip />);
     expect(queryAllByTestId(MARK_STOP_TEST_ID, DRAWN)).toHaveLength(MARK_STOP_COUNT);
   });
 
@@ -65,30 +53,22 @@ describe("BrandMark", () => {
    * does not have, nor for a negative one.
    */
   it("draws no more stops than it has, however many it is asked for", () => {
-    const { queryAllByTestId } = render(
-      <BrandMark size={112} stops={99} tip={false} />,
-    );
+    const { queryAllByTestId } = render(<BrandMark size={112} stops={99} tip={false} />);
     expect(queryAllByTestId(MARK_STOP_TEST_ID, DRAWN)).toHaveLength(MARK_STOP_COUNT);
   });
 
   it("draws no stops at all when asked for fewer than none", () => {
-    const { queryAllByTestId } = render(
-      <BrandMark size={112} stops={-4} tip={false} />,
-    );
+    const { queryAllByTestId } = render(<BrandMark size={112} stops={-4} tip={false} />);
     expect(queryAllByTestId(MARK_STOP_TEST_ID, DRAWN)).toHaveLength(0);
   });
 
   it("holds the tip back until it is told to draw it", () => {
-    const { queryByTestId } = render(
-      <BrandMark size={112} stops={MARK_STOP_COUNT} tip={false} />,
-    );
+    const { queryByTestId } = render(<BrandMark size={112} stops={MARK_STOP_COUNT} tip={false} />);
     expect(queryByTestId(MARK_TIP_TEST_ID, DRAWN)).toBeNull();
   });
 
   it("draws the tip when it is told to", () => {
-    const { getByTestId } = render(
-      <BrandMark size={112} stops={MARK_STOP_COUNT} tip />,
-    );
+    const { getByTestId } = render(<BrandMark size={112} stops={MARK_STOP_COUNT} tip />);
     expect(getByTestId(MARK_TIP_TEST_ID, DRAWN)).toBeTruthy();
   });
 
@@ -97,9 +77,7 @@ describe("BrandMark", () => {
    * reader listening to the app gets the wordmark beside it instead.
    */
   it("says nothing to a reader who is listening", () => {
-    const { queryByTestId } = render(
-      <BrandMark size={112} stops={MARK_STOP_COUNT} tip />,
-    );
+    const { queryByTestId } = render(<BrandMark size={112} stops={MARK_STOP_COUNT} tip />);
 
     // Drawn, and out of the traversal: the same node answers both ways round.
     expect(queryByTestId(MARK_TRACK_TEST_ID, DRAWN)).toBeTruthy();

@@ -21,16 +21,13 @@ export const useReduceMotion = (): boolean | undefined => {
     /** Set once the first answer stops being worth acting on. */
     let superseded = false;
 
-    const subscription = AccessibilityInfo.addEventListener(
-      "reduceMotionChanged",
-      (enabled) => {
-        // An announcement is newer than a read still in flight, so it wins:
-        // nothing orders the two, and a stale read must not undo a change the
-        // player has just made.
-        superseded = true;
-        setReduceMotion(enabled);
-      },
-    );
+    const subscription = AccessibilityInfo.addEventListener("reduceMotionChanged", (enabled) => {
+      // An announcement is newer than a read still in flight, so it wins:
+      // nothing orders the two, and a stale read must not undo a change the
+      // player has just made.
+      superseded = true;
+      setReduceMotion(enabled);
+    });
 
     void AccessibilityInfo.isReduceMotionEnabled().then((enabled) => {
       if (!superseded) {

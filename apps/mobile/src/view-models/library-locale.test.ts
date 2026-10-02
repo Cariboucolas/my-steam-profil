@@ -1,4 +1,4 @@
-import { translatorFor, type Translate } from "../i18n/i18n";
+import { type Translate, translatorFor } from "../i18n/i18n";
 import {
   buildLibrarySummary,
   formatDay,

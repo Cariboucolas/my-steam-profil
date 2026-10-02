@@ -18,7 +18,11 @@ export function LocaleToggle({ active, onSelect }: Props) {
   const { t } = useTranslation();
 
   return (
-    <View accessibilityRole="radiogroup" accessibilityLabel={t("setup.language")} style={styles.group}>
+    <View
+      accessibilityRole="radiogroup"
+      accessibilityLabel={t("setup.language")}
+      style={styles.group}
+    >
       {LOCALES.map((locale) => {
         const selected = locale === active;
         return (
@@ -27,7 +31,10 @@ export function LocaleToggle({ active, onSelect }: Props) {
             accessibilityRole="radio"
             accessibilityState={{ selected }}
             onPress={() => onSelect(locale)}
-            style={{ ...styles.segment, backgroundColor: selected ? colors.accentSoft : "transparent" }}
+            style={{
+              ...styles.segment,
+              backgroundColor: selected ? colors.accentSoft : "transparent",
+            }}
           >
             <Text style={{ ...styles.label, color: selected ? colors.accent : colors.textMuted }}>
               {locale.toUpperCase()}

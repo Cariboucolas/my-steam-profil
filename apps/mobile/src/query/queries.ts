@@ -29,11 +29,9 @@ const FOR_THE_SESSION = { staleTime: Infinity, gcTime: Infinity } as const;
  * none: every player reads the same answer, and a new Profile keeps it.
  */
 export const queries = {
-  profile: (steamId: string) =>
-    ({ queryKey: ["profile", steamId], ...FOR_FIVE_MINUTES }) as const,
+  profile: (steamId: string) => ({ queryKey: ["profile", steamId], ...FOR_FIVE_MINUTES }) as const,
 
-  games: (steamId: string) =>
-    ({ queryKey: ["games", steamId], ...FOR_FIVE_MINUTES }) as const,
+  games: (steamId: string) => ({ queryKey: ["games", steamId], ...FOR_FIVE_MINUTES }) as const,
 
   tally: (steamId: string, appId: number) =>
     ({ queryKey: ["tally", steamId, appId], ...FOR_FIVE_MINUTES }) as const,
@@ -41,8 +39,7 @@ export const queries = {
   progress: (steamId: string, appId: number) =>
     ({ queryKey: ["progress", steamId, appId], ...NEVER_CACHED }) as const,
 
-  rarity: (appId: number) =>
-    ({ queryKey: ["rarity", appId], ...FOR_THE_SESSION }) as const,
+  rarity: (appId: number) => ({ queryKey: ["rarity", appId], ...FOR_THE_SESSION }) as const,
 
   achievementNames: (appId: number) =>
     ({ queryKey: ["achievementNames", appId], ...FOR_THE_SESSION }) as const,

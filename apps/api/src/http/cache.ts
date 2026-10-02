@@ -24,8 +24,7 @@ export const noCache: ResponseCache = {
 };
 
 /** A cached answer is served with mutable headers, so CORS can still be applied. */
-const reusable = (response: Response): Response =>
-  new Response(response.body, response);
+const reusable = (response: Response): Response => new Response(response.body, response);
 
 const OK = 200;
 
@@ -43,11 +42,7 @@ type RouteHandler = (context: Context) => Promise<Response>;
  * property of what that answer says, and this helper never sees it.
  */
 export const cached =
-  (
-    cache: ResponseCache,
-    seconds: number,
-    handle: RouteHandler,
-  ): RouteHandler =>
+  (cache: ResponseCache, seconds: number, handle: RouteHandler): RouteHandler =>
   async (context) => {
     // The Hono context carries the original Request, which is the cache key:
     // it is the full URL, so it already separates players and games.

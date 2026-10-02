@@ -8,25 +8,19 @@ describe("RarestEmpty", () => {
    * on it — and a wait nobody explained looks exactly like an answer.
    */
   it("says the library is being counted first", () => {
-    const { getByText } = render(
-      <RarestEmpty status="counting" anyUnlock={false} />,
-    );
+    const { getByText } = render(<RarestEmpty status="counting" anyUnlock={false} />);
 
     expect(getByText("Counting your library first")).toBeTruthy();
   });
 
   it("says the figures are still landing", () => {
-    const { getByText } = render(
-      <RarestEmpty status="loading" anyUnlock={true} />,
-    );
+    const { getByText } = render(<RarestEmpty status="loading" anyUnlock={true} />);
 
     expect(getByText("Ranking what you have unlocked")).toBeTruthy();
   });
 
   it("tells a player who has unlocked nothing anywhere that they have", () => {
-    const { getByText } = render(
-      <RarestEmpty status="ready" anyUnlock={false} />,
-    );
+    const { getByText } = render(<RarestEmpty status="ready" anyUnlock={false} />);
 
     expect(getByText("Nothing unlocked in any game yet")).toBeTruthy();
   });
@@ -36,9 +30,7 @@ describe("RarestEmpty", () => {
    * plenty. Handing them the other sentence would be a plain untruth.
    */
   it("does not tell a player with unlocks that they have none", () => {
-    const { getByText, queryByText } = render(
-      <RarestEmpty status="ready" anyUnlock={true} />,
-    );
+    const { getByText, queryByText } = render(<RarestEmpty status="ready" anyUnlock={true} />);
 
     expect(getByText("Nothing here Steam publishes a figure for")).toBeTruthy();
     expect(queryByText("Nothing unlocked in any game yet")).toBeNull();

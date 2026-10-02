@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { outageLine, recoveryLine, howLong } from "./message";
+import { howLong, outageLine, recoveryLine } from "./message";
 
 describe("the line that wakes somebody", () => {
   it("names the target, the reason and where the incident is", () => {

@@ -7,7 +7,7 @@ import {
   letTheDeviceAnswer,
 } from "../../accessibility/reduce-motion.test-support";
 import { colors } from "../../theme/tokens";
-import { Skeleton, SKELETON_TEST_ID } from "./Skeleton";
+import { SKELETON_TEST_ID, Skeleton } from "./Skeleton";
 
 /**
  * The swing is handed to the native driver, so its opacity never moves on the
@@ -17,21 +17,20 @@ import { Skeleton, SKELETON_TEST_ID } from "./Skeleton";
  */
 const watchSwings = () => {
   const swing = { start: jest.fn(), stop: jest.fn(), reset: jest.fn() };
-  jest
-    .spyOn(Animated, "loop")
-    .mockReturnValue(swing as unknown as Animated.CompositeAnimation);
+  jest.spyOn(Animated, "loop").mockReturnValue(swing as unknown as Animated.CompositeAnimation);
   return swing;
 };
 
 /** Hands back the device's own announcement of a change to the setting. */
 const watchAnnouncements = () => {
   let announce: ((enabled: boolean) => void) | undefined;
-  jest
-    .spyOn(AccessibilityInfo, "addEventListener")
-    .mockImplementation(((_event: string, handler: (enabled: boolean) => void) => {
-      announce = handler;
-      return { remove: () => {} } as EmitterSubscription;
-    }) as unknown as typeof AccessibilityInfo.addEventListener);
+  jest.spyOn(AccessibilityInfo, "addEventListener").mockImplementation(((
+    _event: string,
+    handler: (enabled: boolean) => void,
+  ) => {
+    announce = handler;
+    return { remove: () => {} } as EmitterSubscription;
+  }) as unknown as typeof AccessibilityInfo.addEventListener);
   return (enabled: boolean) => act(() => announce?.(enabled));
 };
 

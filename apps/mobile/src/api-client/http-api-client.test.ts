@@ -25,20 +25,19 @@ const json = (body: unknown, status = 200): Response =>
     headers: { "content-type": "application/json" },
   });
 
-const clientAnswering = (
-  answer: (url: string) => Response | Promise<Response>,
-) =>
+const clientAnswering = (answer: (url: string) => Response | Promise<Response>) =>
   createHttpApiClient({
     baseUrl: BASE_URL,
     steamId: STEAM_ID,
     fetch: ((input) => Promise.resolve(answer(String(input)))) as typeof fetch,
   });
 
-const clientReturning = (body: unknown, status = 200) =>
-  clientAnswering(() => json(body, status));
+const clientReturning = (body: unknown, status = 200) => clientAnswering(() => json(body, status));
 
 describe("createHttpApiClient (addresses)", () => {
-  const urlsAsked = async (call: (client: ReturnType<typeof clientAnswering>) => Promise<unknown>) => {
+  const urlsAsked = async (
+    call: (client: ReturnType<typeof clientAnswering>) => Promise<unknown>,
+  ) => {
     const seen: string[] = [];
     const client = clientAnswering((url) => {
       seen.push(url);
@@ -60,9 +59,7 @@ describe("createHttpApiClient (addresses)", () => {
 
   it("asks the backend for progress in one game", async () => {
     const [url] = await urlsAsked((client) => client.getGameProgress(APP_ID));
-    expect(url).toBe(
-      `${BASE_URL}/api/profile/${STEAM_ID}/games/${APP_ID}/progress`,
-    );
+    expect(url).toBe(`${BASE_URL}/api/profile/${STEAM_ID}/games/${APP_ID}/progress`);
   });
 
   /**
@@ -134,29 +131,31 @@ describe("createHttpApiClient (failures)", () => {
   });
 
   it("reads a 400 as a steam id the backend refuses", async () => {
-    expect(
-      await clientReturning({ error: "INVALID_STEAM_ID" }, 400).getProfile(),
-    ).toEqual({ ok: false, error: "INVALID_STEAM_ID" });
+    expect(await clientReturning({ error: "INVALID_STEAM_ID" }, 400).getProfile()).toEqual({
+      ok: false,
+      error: "INVALID_STEAM_ID",
+    });
   });
 
   it("reads a 502 as the service being unavailable", async () => {
-    expect(
-      await clientReturning({ error: "STEAM_UNAVAILABLE" }, 502).getGames(),
-    ).toEqual({ ok: false, error: "UNAVAILABLE" });
+    expect(await clientReturning({ error: "STEAM_UNAVAILABLE" }, 502).getGames()).toEqual({
+      ok: false,
+      error: "UNAVAILABLE",
+    });
   });
 
   it("reads a 500 as the service being unavailable", async () => {
-    expect(
-      await clientReturning({ error: "INTERNAL_ERROR" }, 500).getGames(),
-    ).toEqual({ ok: false, error: "UNAVAILABLE" });
+    expect(await clientReturning({ error: "INTERNAL_ERROR" }, 500).getGames()).toEqual({
+      ok: false,
+      error: "UNAVAILABLE",
+    });
   });
 
   it("reads an unreachable backend as unavailable rather than crashing", async () => {
     const client = createHttpApiClient({
       baseUrl: BASE_URL,
       steamId: STEAM_ID,
-      fetch: (() =>
-        Promise.reject(new TypeError("Network request failed"))) as typeof fetch,
+      fetch: (() => Promise.reject(new TypeError("Network request failed"))) as typeof fetch,
     });
     expect(await client.getProfile()).toEqual({ ok: false, error: "UNAVAILABLE" });
   });
@@ -185,9 +184,7 @@ describe("createHttpApiClient (completion)", () => {
 
     await client.getGameTally(APP_ID);
 
-    expect(seen).toEqual([
-      `${BASE_URL}/api/profile/${STEAM_ID}/games/${APP_ID}/completion`,
-    ]);
+    expect(seen).toEqual([`${BASE_URL}/api/profile/${STEAM_ID}/games/${APP_ID}/completion`]);
   });
 
   it("serves the tally the backend answered with", async () => {
@@ -239,7 +236,11 @@ describe("createHttpApiClient (the six-request budget)", () => {
 
   /** A backend that answers a request only when the test says so. */
   const heldBackend = () => {
-    const sent: { url: string; signal: AbortSignal | undefined; answer: (body: unknown) => void }[] = [];
+    const sent: {
+      url: string;
+      signal: AbortSignal | undefined;
+      answer: (body: unknown) => void;
+    }[] = [];
     const fetchHeld = ((input: string | URL | Request, init?: RequestInit) =>
       new Promise<Response>((resolve) => {
         sent.push({
@@ -252,7 +253,11 @@ describe("createHttpApiClient (the six-request budget)", () => {
     const clientFor = (steamId: string) =>
       createHttpApiClient({ baseUrl: BASE_URL, steamId, fetch: fetchHeld });
 
-    return { sent, clientFor, appIdsSent: () => sent.map(({ url }) => Number(/games\/(\d+)/.exec(url)?.[1])) };
+    return {
+      sent,
+      clientFor,
+      appIdsSent: () => sent.map(({ url }) => Number(/games\/(\d+)/.exec(url)?.[1])),
+    };
   };
 
   const OTHER_STEAM_ID = "76561198000000000";
@@ -310,7 +315,9 @@ describe("createHttpApiClient (the six-request budget)", () => {
     const one = clientFor(STEAM_ID);
     const other = clientFor(OTHER_STEAM_ID);
 
-    const first = [1, 2, 3, 4, 5, 6].map((appId) => one.getGameTally(appId, untilTheTestEnds.signal));
+    const first = [1, 2, 3, 4, 5, 6].map((appId) =>
+      one.getGameTally(appId, untilTheTestEnds.signal),
+    );
     void other.getGameTally(30, untilTheTestEnds.signal);
     void one.getGameTally(10, untilTheTestEnds.signal);
     void other.getGameTally(20, untilTheTestEnds.signal);
@@ -330,7 +337,9 @@ describe("createHttpApiClient (the six-request budget)", () => {
     const client = clientFor(STEAM_ID);
     const left = new AbortController();
 
-    const first = [1, 2, 3, 4, 5, 6].map((appId) => client.getGameTally(appId, untilTheTestEnds.signal));
+    const first = [1, 2, 3, 4, 5, 6].map((appId) =>
+      client.getGameTally(appId, untilTheTestEnds.signal),
+    );
     void client.getGameTally(7, left.signal);
     void client.getGameTally(8, untilTheTestEnds.signal);
 

@@ -1,10 +1,9 @@
 import type { GameRarityDto, GameTallyDto } from "@steam/contracts";
 import { err, ok, type Result } from "@steam/domain";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
-
-import type { ApiClient, ApiError } from "./api-client";
-import { useLibraryRarity, type CountedLibrary } from "./use-library-rarity";
 import type { TallyByAppId } from "../view-models/library";
+import type { ApiClient, ApiError } from "./api-client";
+import { type CountedLibrary, useLibraryRarity } from "./use-library-rarity";
 
 type Rarity = Result<GameRarityDto, ApiError>;
 
@@ -31,9 +30,7 @@ const HOLDS_UNLOCKS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
 const HOLDS_NOTHING = 99;
 
 const TALLIES: TallyByAppId = {
-  ...Object.fromEntries(
-    HOLDS_UNLOCKS.map((appId) => [appId, tally([`ACH_${appId}`])]),
-  ),
+  ...Object.fromEntries(HOLDS_UNLOCKS.map((appId) => [appId, tally([`ACH_${appId}`])])),
   [HOLDS_NOTHING]: tally([]),
 };
 
@@ -88,10 +85,10 @@ const heldClient = (
   return { client, asked, release };
 };
 
-const counted = (
-  client: ApiClient,
-  tallies: TallyByAppId = TALLIES,
-): CountedLibrary => ({ client, tallies });
+const counted = (client: ApiClient, tallies: TallyByAppId = TALLIES): CountedLibrary => ({
+  client,
+  tallies,
+});
 
 type Props = {
   readonly library: CountedLibrary | null;
@@ -194,9 +191,7 @@ describe("useLibraryRarity", () => {
    * says "not asked". The ranking excludes both, and only one of them is news.
    */
   it("keeps a game Steam publishes nothing about as an empty answer", async () => {
-    const { client } = heldClient([], (appId) =>
-      appId === 2 ? ok([]) : ok(published(appId)),
-    );
+    const { client } = heldClient([], (appId) => (appId === 2 ? ok([]) : ok(published(appId))));
     const { result } = renderRarity(counted(client));
 
     await waitFor(() => expect(result.current.status).toBe("ready"));

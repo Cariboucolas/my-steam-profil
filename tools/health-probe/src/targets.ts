@@ -1,4 +1,4 @@
-import { saysItIsHealthy, refusesTheMethod, type Check } from "./checks";
+import { type Check, refusesTheMethod, saysItIsHealthy } from "./checks";
 import type { NonEmpty } from "./decision";
 
 /**

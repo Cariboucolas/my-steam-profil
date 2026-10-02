@@ -26,8 +26,7 @@ const tally = (unlocked: number): GameTallyDto => ({
 });
 
 /** Dated so that recency order is simply the appIds in ascending order. */
-const playedOn = (appId: number) =>
-  `2026-06-${String(20 - appId).padStart(2, "0")}T00:00:00.000Z`;
+const playedOn = (appId: number) => `2026-06-${String(20 - appId).padStart(2, "0")}T00:00:00.000Z`;
 
 const libraryOf = (appIds: readonly number[]): readonly GameDto[] =>
   appIds.map((appId) => game(appId, playedOn(appId)));
@@ -108,10 +107,7 @@ type Props = {
   readonly games: readonly GameDto[];
 };
 
-const renderTallies = (
-  client: ApiClient | undefined,
-  games: readonly GameDto[] = GAMES,
-) =>
+const renderTallies = (client: ApiClient | undefined, games: readonly GameDto[] = GAMES) =>
   renderHook(({ client: c, games: g }: Props) => useLibraryTallies(c, g), {
     initialProps: { client, games },
   });
@@ -460,4 +456,3 @@ describe("useLibraryTallies", () => {
     expect(result.current.loaded).toBeNull();
   });
 });
-

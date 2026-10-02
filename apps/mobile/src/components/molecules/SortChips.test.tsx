@@ -1,4 +1,4 @@
-import { render, fireEvent } from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 
 import { colors } from "../../theme/tokens";
 import { SortChips } from "./SortChips";

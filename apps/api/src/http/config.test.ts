@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { loadConfig, DEFAULT_PORT } from "./config";
+import { describe, expect, it } from "vitest";
+import { DEFAULT_PORT, loadConfig } from "./config";
 
 const API_KEY = "SECRET";
 

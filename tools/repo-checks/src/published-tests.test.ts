@@ -15,9 +15,9 @@ describe("testFilesTheRouterWouldPublish", () => {
    * all — so nothing runs the test and nothing reports the bundle it grew.
    */
   it("names a test file left in the router root", () => {
-    expect(
-      testFilesTheRouterWouldPublish(["index.tsx", "index.test.tsx", "setup.tsx"]),
-    ).toEqual(["index.test.tsx"]);
+    expect(testFilesTheRouterWouldPublish(["index.tsx", "index.test.tsx", "setup.tsx"])).toEqual([
+      "index.test.tsx",
+    ]);
   });
 
   it("names one nested under a route segment", () => {

@@ -29,8 +29,7 @@ const STROKE = /stroke="(#[0-9a-f]{6})"/gi;
 const FILLED_PATH = /<path\b[^>]*\bfill="(#[0-9a-f]{6})"/i;
 const FILLED_CIRCLE = /<circle\b(?![^>]*fill="none")[^>]*\bfill="(#[0-9a-f]{6})"/i;
 
-const first = (match: RegExpMatchArray | null): string =>
-  (match?.[1] ?? "").toLowerCase();
+const first = (match: RegExpMatchArray | null): string => (match?.[1] ?? "").toLowerCase();
 
 /**
  * Reads the mark's palette off its artwork.

@@ -1,24 +1,23 @@
 import { fireEvent, render, within } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
-
-import { UNLOCK_DAY_TEST_ID } from "../molecules/UnlockMonthRow";
+import { colors } from "../../theme/tokens";
 import type { UnlockCalendar } from "../../view-models/unlock-calendar";
 import {
   DECEMBER_HEIGHT,
   SCROLLED_PAST,
-  scrolledTo,
   SIX_ROWS,
+  scrolledTo,
 } from "../../view-models/unlock-calendar-scroll.test-support";
 import { UNLOCK_HEADER_TEST_ID } from "../molecules/UnlockCalendarHeader";
 import { UNLOCK_HALF_DOT_TEST_ID } from "../molecules/UnlockHalfDots";
+import { UNLOCK_DAY_TEST_ID } from "../molecules/UnlockMonthRow";
 import { UNLOCK_LEGEND_TEST_ID } from "../molecules/UnlockToneLegend";
-import { colors } from "../../theme/tokens";
 import {
-  UnlockCalendarCard,
   UNLOCK_CALENDAR_CARD_TEST_ID,
   UNLOCK_CALENDAR_GRID_TEST_ID,
   UNLOCK_FADE_BOTTOM_TEST_ID,
   UNLOCK_FADE_TOP_TEST_ID,
+  UnlockCalendarCard,
 } from "./UnlockCalendarCard";
 
 /**
@@ -28,20 +27,7 @@ import {
  */
 const PAINTED = { includeHiddenElements: true } as const;
 
-const MONTHS = [
-  "JAN",
-  "FEB",
-  "MAR",
-  "APR",
-  "MAY",
-  "JUN",
-  "JUL",
-  "AUG",
-  "SEP",
-  "OCT",
-  "NOV",
-  "DEC",
-];
+const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const DAYS_IN = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 /**
@@ -91,9 +77,7 @@ const calendar = yearTo(3);
 
 describe("UnlockCalendarCard", () => {
   it("draws a row for every month the year has reached", () => {
-    const { getByText, queryByText } = render(
-      <UnlockCalendarCard calendar={calendar} />,
-    );
+    const { getByText, queryByText } = render(<UnlockCalendarCard calendar={calendar} />);
 
     // Which rows exist, asked of the one thing a row always writes. What the
     // label puts beside the month is `UnlockMonthRow`'s own business, and its
@@ -105,9 +89,7 @@ describe("UnlockCalendarCard", () => {
   });
 
   it("draws every day those months hold", () => {
-    const { getAllByTestId } = render(
-      <UnlockCalendarCard calendar={calendar} />,
-    );
+    const { getAllByTestId } = render(<UnlockCalendarCard calendar={calendar} />);
 
     expect(getAllByTestId(UNLOCK_DAY_TEST_ID, PAINTED)).toHaveLength(31 + 28 + 5);
   });
@@ -224,9 +206,7 @@ describe("a year taller than the card", () => {
   it("says which half of the year is in view", () => {
     const { getAllByTestId, grid } = december();
     const painted = () =>
-      getAllByTestId(UNLOCK_HALF_DOT_TEST_ID).map(
-        (dot) => dot.props.style.backgroundColor,
-      );
+      getAllByTestId(UNLOCK_HALF_DOT_TEST_ID).map((dot) => dot.props.style.backgroundColor);
 
     expect(painted()).toEqual([colors.accent, colors.textFaint]);
 

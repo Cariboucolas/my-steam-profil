@@ -31,9 +31,7 @@ export function SetupTemplate({ form, languageSwitch }: Props) {
       // Otherwise the first tap only dismisses the keyboard.
       keyboardShouldPersistTaps="handled"
     >
-      {languageSwitch === undefined ? null : (
-        <View style={styles.switch}>{languageSwitch}</View>
-      )}
+      {languageSwitch === undefined ? null : <View style={styles.switch}>{languageSwitch}</View>}
       {form}
     </ScrollView>
   );

@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 
-import { translatorFor, type Translate } from "../i18n/i18n";
+import { type Translate, translatorFor } from "../i18n/i18n";
 import { DEFAULT_LOCALE, isLocale } from "../i18n/locale";
 
 /** What a story's own args are written in: the controls panel stays English. */

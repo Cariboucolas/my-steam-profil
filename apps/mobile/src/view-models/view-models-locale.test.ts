@@ -1,6 +1,6 @@
-import type { AchievementDto, GameDto, GameProgressDto, GameRarityDto } from "@steam/contracts";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
+import type { AchievementDto, GameDto, GameProgressDto, GameRarityDto } from "@steam/contracts";
 
 import { unlockingLibrary } from "../fixtures/library";
 import { STORY_TODAY } from "../fixtures/today";
@@ -102,8 +102,16 @@ describe("the game screen's sentences", () => {
   });
 
   it("says what is missing rather than a figure, in French", () => {
-    const unloaded = buildGameSummary({ ...GAME, lastPlayedAt: null, playtimeMinutes: 0 }, null, fr);
-    const none = buildGameSummary(GAME, { ...PROGRESS, completion: { unlocked: 0, total: 0, percentage: 0 } }, fr);
+    const unloaded = buildGameSummary(
+      { ...GAME, lastPlayedAt: null, playtimeMinutes: 0 },
+      null,
+      fr,
+    );
+    const none = buildGameSummary(
+      GAME,
+      { ...PROGRESS, completion: { unlocked: 0, total: 0, percentage: 0 } },
+      fr,
+    );
 
     expect(unloaded.fraction).toBe("non chargé");
     expect(unloaded.meta).toBe("0 min de jeu · jamais lancé");
@@ -175,12 +183,22 @@ describe("the unlock calendar", () => {
     buildUnlockCalendar(unlockingLibrary(STORY_TODAY, new Date(2025, 0, 1, 12)), STORY_TODAY, t);
 
   it("takes its month labels from the catalog", () => {
-    expect(calendarIn(en).months.map((month) => month.label).slice(0, 3)).toEqual(["JAN", "FEB", "MAR"]);
-    expect(calendarIn(fr).months.map((month) => month.label).slice(0, 3)).toEqual(["JAN", "FÉV", "MAR"]);
+    expect(
+      calendarIn(en)
+        .months.map((month) => month.label)
+        .slice(0, 3),
+    ).toEqual(["JAN", "FEB", "MAR"]);
+    expect(
+      calendarIn(fr)
+        .months.map((month) => month.label)
+        .slice(0, 3),
+    ).toEqual(["JAN", "FÉV", "MAR"]);
   });
 
   it("keeps every French label inside the three characters the column is sized for", () => {
-    const labels = Array.from({ length: 12 }, (_, month) => fr(`calendar.months.${month}`).toUpperCase());
+    const labels = Array.from({ length: 12 }, (_, month) =>
+      fr(`calendar.months.${month}`).toUpperCase(),
+    );
 
     expect(labels.filter((label) => label.length > 3)).toEqual([]);
     expect(labels[7]).toBe("AOÛ");

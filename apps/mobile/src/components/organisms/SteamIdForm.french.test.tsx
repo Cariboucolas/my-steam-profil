@@ -10,7 +10,11 @@ const inFrench = (form: React.ReactElement) =>
 describe("SteamIdForm in French", () => {
   it("asks, refuses and offers its ways out in French", async () => {
     inFrench(
-      <SteamIdForm onSubmit={() => Promise.resolve(false)} onCancel={() => {}} onForget={() => {}} />,
+      <SteamIdForm
+        onSubmit={() => Promise.resolve(false)}
+        onCancel={() => {}}
+        onForget={() => {}}
+      />,
     );
 
     expect(screen.getByText("Quel profil Steam ?")).toBeTruthy();

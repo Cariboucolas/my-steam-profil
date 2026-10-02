@@ -15,11 +15,11 @@ import {
   availableSorts,
   buildLibraryRows,
   buildLibrarySummary,
-  publishesLastPlayed,
-  publishesPlaytime,
   type LibrarySort,
   type LibraryView,
   type PublishedFigures,
+  publishesLastPlayed,
+  publishesPlaytime,
 } from "../../view-models/library";
 import { useRarestTab } from "../../view-models/use-rarest-tab";
 import { useUnlockCalendar } from "../../view-models/use-unlock-calendar";
@@ -59,10 +59,7 @@ const NO_GAMES: readonly GameDto[] = [];
  * and read once at module scope: Metro substitutes EXPO_PUBLIC_ variables at
  * build time, and only where they appear literally.
  */
-const revision = resolveRevision(
-  process.env.EXPO_PUBLIC_COMMIT_SHA,
-  process.env.EXPO_PUBLIC_LIVE,
-);
+const revision = resolveRevision(process.env.EXPO_PUBLIC_COMMIT_SHA, process.env.EXPO_PUBLIC_LIVE);
 
 /**
  * The two things this screen can be a list of. Completion is the library and
@@ -117,10 +114,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
     setState({ status: "loading" });
 
     const load = async () => {
-      const [profile, games] = await Promise.all([
-        apiClient.getProfile(),
-        apiClient.getGames(),
-      ]);
+      const [profile, games] = await Promise.all([apiClient.getProfile(), apiClient.getGames()]);
       if (cancelled) return;
 
       if (!profile.ok) {
@@ -155,15 +149,15 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
   // state and every effect runs before that render's reset does, so counting
   // what is drawn would spend a wave of requests on the wrong profile's games.
   const gamesToCount =
-    state.status === "ready" && state.data.client === apiClient
-      ? games
-      : NO_GAMES;
+    state.status === "ready" && state.data.client === apiClient ? games : NO_GAMES;
 
   // Where the tallies have got to. Fetching them, bounding them, abandoning
   // them on a profile switch and holding the list still while they land are
   // all its concern, and none of them are state this screen keeps.
-  const { tallies, pending, counted, loaded, frozenOrder, repin } =
-    useLibraryTallies(apiClient, gamesToCount);
+  const { tallies, pending, counted, loaded, frozenOrder, repin } = useLibraryTallies(
+    apiClient,
+    gamesToCount,
+  );
 
   // What Steam publishes about this library, which decides which orders exist
   // at all. Its own memo rather than part of `view`: it is read by the chips
@@ -182,9 +176,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
   // nothing on screen saying which order it is in. Derived rather than
   // corrected in state: a reader who moves back to a profile that publishes
   // the figure gets the order they chose, still chosen.
-  const sort = availableSorts(published).includes(chosenSort)
-    ? chosenSort
-    : "completed";
+  const sort = availableSorts(published).includes(chosenSort) ? chosenSort : "completed";
 
   // Named, now that both builders read it: a missing field fails to compile
   // rather than quietly satisfying one caller and not the other.
@@ -213,8 +205,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
    * still afterwards, which is what the loads behind it are started off.
    */
   const countedLibrary = useMemo<CountedLibrary | null>(
-    () =>
-      counted && apiClient !== undefined ? { client: apiClient, tallies } : null,
+    () => (counted && apiClient !== undefined ? { client: apiClient, tallies } : null),
     [counted, apiClient, tallies],
   );
   const rarest = useRarestTab(countedLibrary, view, tab === RAREST);
@@ -229,9 +220,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
     (next: LibrarySort) => {
       setChosenSort(next);
       repin(
-        buildLibraryRows({ ...view, sort: next, frozenOrder: null }, t).map(
-          (row) => row.appId,
-        ),
+        buildLibraryRows({ ...view, sort: next, frozenOrder: null }, t).map((row) => row.appId),
       );
     },
     [view, repin, t],
@@ -239,9 +228,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
 
   const gameRows = useMemo(
     () =>
-      rows.map((row) => (
-        <GameListItem key={String(row.appId)} row={row} onPress={onOpenGame} />
-      )),
+      rows.map((row) => <GameListItem key={String(row.appId)} row={row} onPress={onOpenGame} />),
     [rows, onOpenGame],
   );
   const rarestRows = useMemo(
@@ -284,7 +271,9 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
         revision={revision}
         onChangeProfile={onChangeProfile}
         languageSwitch={
-          choose ? <LocaleToggle active={locale} onSelect={(next) => void choose(next)} /> : undefined
+          choose ? (
+            <LocaleToggle active={locale} onSelect={(next) => void choose(next)} />
+          ) : undefined
         }
       />
       <LibraryStatsCard
@@ -308,9 +297,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
           <WithheldFiguresNote published={published} />
         </>
       ) : (
-        rarest.status === "ready" && (
-          <Text style={styles.counted}>{rarest.countedLabel}</Text>
-        )
+        rarest.status === "ready" && <Text style={styles.counted}>{rarest.countedLabel}</Text>
       )}
     </>
   );
@@ -325,9 +312,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
     );
   }
 
-  return (
-    <LibraryTemplate header={header} rows={gameRows} initialRows={LIBRARY_INITIAL_ROWS} />
-  );
+  return <LibraryTemplate header={header} rows={gameRows} initialRows={LIBRARY_INITIAL_ROWS} />;
 }
 
 const styles = StyleSheet.create({

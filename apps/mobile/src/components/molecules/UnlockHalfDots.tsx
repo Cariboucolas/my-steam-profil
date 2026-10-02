@@ -67,8 +67,7 @@ export function UnlockHalfDots({ inView, onSelect }: Props) {
             testID={UNLOCK_HALF_DOT_TEST_ID}
             style={{
               ...styles.dot,
-              backgroundColor:
-                half === inView ? colors.accent : colors.textFaint,
+              backgroundColor: half === inView ? colors.accent : colors.textFaint,
             }}
           />
         </Pressable>

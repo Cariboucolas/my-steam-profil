@@ -13,5 +13,4 @@ export type ScreenError = ProgressError | "INVALID_GAME_ID" | "NOT_IN_LIBRARY";
  * distinctions matter: "Steam has never heard of this player" and "this profile
  * is private" would otherwise look like the same dead end.
  */
-export const messageFor = (error: ScreenError, t: Translate): string =>
-  t(`errors.${error}`);
+export const messageFor = (error: ScreenError, t: Translate): string => t(`errors.${error}`);

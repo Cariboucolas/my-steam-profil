@@ -1,9 +1,8 @@
 import type { GameDto } from "@steam/contracts";
 import { useCallback, useEffect, useState } from "react";
-
+import { longestFirst, type TallyByAppId } from "../view-models/library";
 import type { ApiClient } from "./api-client";
 import { askInWaves } from "./request-waves";
-import { longestFirst, type TallyByAppId } from "../view-models/library";
 
 /** Shared, so resetting a library that is already empty re-renders nothing. */
 const NO_TALLIES: TallyByAppId = {};
@@ -20,8 +19,7 @@ const NOTHING_OUTSTANDING: ReadonlySet<number> = new Set();
  * and left every row of that library blank.
  */
 const everOpened = (game: GameDto): boolean =>
-  (game.playtimeMinutes !== null && game.playtimeMinutes > 0) ||
-  game.lastPlayedAt !== null;
+  (game.playtimeMinutes !== null && game.playtimeMinutes > 0) || game.lastPlayedAt !== null;
 
 /**
  * Most recently played first, because that is the order a player recognises, so

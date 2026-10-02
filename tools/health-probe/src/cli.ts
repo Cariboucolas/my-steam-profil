@@ -1,7 +1,7 @@
 import { announceTo } from "./discord";
-import { incidentsOn, INCIDENT_LABEL } from "./github";
+import { INCIDENT_LABEL, incidentsOn } from "./github";
 import { attemptWith } from "./http";
-import { waitUntilHealthy, watch, type Ports } from "./run";
+import { type Ports, waitUntilHealthy, watch } from "./run";
 import { targetsOf } from "./targets";
 
 /** How long a freshly deployed Worker is given to start answering. */

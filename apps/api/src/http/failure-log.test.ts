@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { SteamGatewayError } from "../steam/steam-gateway";
 import { describeFailure } from "./failure-log";

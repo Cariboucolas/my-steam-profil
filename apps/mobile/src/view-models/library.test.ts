@@ -1,5 +1,5 @@
-import { translatorFor } from "../i18n/i18n";
 import type { GameDto, GameTallyDto } from "@steam/contracts";
+import { translatorFor } from "../i18n/i18n";
 
 import {
   buildLibraryRows,
@@ -7,10 +7,10 @@ import {
   formatDay,
   formatHoursRounded,
   formatUnlockHeadline,
+  type LibrarySort,
   longestFirst,
   publishesLastPlayed,
   publishesPlaytime,
-  type LibrarySort,
   type TallyByAppId,
 } from "./library";
 
@@ -89,9 +89,7 @@ describe("what a library publishes about when it was played", () => {
   });
 
   it("publishes no playtime when no game carries a figure at all", () => {
-    expect(publishesPlaytime([WITHHELD, game(4, "Day of Defeat", null, null)])).toBe(
-      false,
-    );
+    expect(publishesPlaytime([WITHHELD, game(4, "Day of Defeat", null, null)])).toBe(false);
   });
 
   /**
@@ -220,9 +218,9 @@ describe("buildLibraryRows", () => {
   });
 
   it("shows a dash, not 0 %, for a game that defines no achievements", () => {
-    const row = buildLibraryRows(
-      settled("completed", { 8930: tally(0, 0) }), english,
-    ).find((r) => r.appId === 8930);
+    const row = buildLibraryRows(settled("completed", { 8930: tally(0, 0) }), english).find(
+      (r) => r.appId === 8930,
+    );
 
     expect(row?.rateLabel).toBe("—");
     expect(row?.percentage).toBeNull();
@@ -256,7 +254,8 @@ describe("buildLibraryRows", () => {
    */
   it("says nothing about when, rather than never, where a whole library is silent", () => {
     const rows = buildLibraryRows(
-      settled("completed", { 240: tally(57, 147) }, WITHHELD_LIBRARY), english,
+      settled("completed", { 240: tally(57, 147) }, WITHHELD_LIBRARY),
+      english,
     );
 
     expect(rows.every((row) => !row.meta.includes("never"))).toBe(true);
@@ -269,7 +268,8 @@ describe("buildLibraryRows", () => {
    */
   it("writes no hours at all where Steam withheld them", () => {
     const rows = buildLibraryRows(
-      settled("completed", { 240: tally(57, 147) }, WITHHELD_LIBRARY), english,
+      settled("completed", { 240: tally(57, 147) }, WITHHELD_LIBRARY),
+      english,
     );
 
     expect(rows[0]?.meta).toBe("57/147");
@@ -363,10 +363,13 @@ describe("buildLibraryRows, while tallies are still arriving", () => {
   });
 
   it("still shows every game, including one the pinned order does not name", () => {
-    const rows = buildLibraryRows({
-      ...loading(TALLIES, []),
-      frozenOrder: [2066020],
-    }, english);
+    const rows = buildLibraryRows(
+      {
+        ...loading(TALLIES, []),
+        frozenOrder: [2066020],
+      },
+      english,
+    );
     expect(rows).toHaveLength(GAMES.length);
     expect(rows[0]?.appId).toBe(2066020);
   });
@@ -414,13 +417,16 @@ describe("buildLibrarySummary", () => {
    * together would be a poor place for it to survive.
    */
   it("groups the thousands on both halves", () => {
-    const summary = buildLibrarySummary({
-      games: [SOULSTONE],
-      tallies: { [SOULSTONE.appId]: tally(45500, 120000) },
-      sort: "completed",
-      pending: new Set<number>(),
-      frozenOrder: null,
-    }, english);
+    const summary = buildLibrarySummary(
+      {
+        games: [SOULSTONE],
+        tallies: { [SOULSTONE.appId]: tally(45500, 120000) },
+        sort: "completed",
+        pending: new Set<number>(),
+        frozenOrder: null,
+      },
+      english,
+    );
 
     expect(summary.fraction).toBe("45 500 / 120 000 across 1 game counted");
   });
@@ -430,13 +436,16 @@ describe("buildLibrarySummary", () => {
    * in the same words, so the wording is shared rather than written twice.
    */
   it("counts a single game in the singular", () => {
-    const summary = buildLibrarySummary({
-      games: [SOULSTONE],
-      tallies: { [SOULSTONE.appId]: tally(353, 483) },
-      sort: "completed",
-      pending: new Set<number>(),
-      frozenOrder: null,
-    }, english);
+    const summary = buildLibrarySummary(
+      {
+        games: [SOULSTONE],
+        tallies: { [SOULSTONE.appId]: tally(353, 483) },
+        sort: "completed",
+        pending: new Set<number>(),
+        frozenOrder: null,
+      },
+      english,
+    );
 
     expect(summary.fraction).toBe("353 / 483 across 1 game counted");
   });
@@ -478,8 +487,7 @@ describe("buildLibrarySummary", () => {
  * figure would make the comparison intransitive.
  */
 describe("longestFirst", () => {
-  const withHours = (minutes: number | null): GameDto =>
-    game(1, "Half-Life 2", minutes, null);
+  const withHours = (minutes: number | null): GameDto => game(1, "Half-Life 2", minutes, null);
 
   it("puts the longer of two measured playtimes first", () => {
     expect(longestFirst(withHours(60), withHours(8975))).toBeGreaterThan(0);

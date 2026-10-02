@@ -1,4 +1,4 @@
-import { writeFile, mkdir } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import "dotenv/config";
 
@@ -14,14 +14,10 @@ if (!KEY || !STEAM_ID || !APPID) {
 const OUT_DIR = resolve(process.cwd(), "../../fixtures/steam-raw");
 
 const endpoints: Record<string, string> = {
-  "player-summaries":
-    `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${KEY}&steamids=${STEAM_ID}`,
-  "owned-games":
-    `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${KEY}&steamid=${STEAM_ID}&include_appinfo=true&include_played_free_games=true&format=json`,
-  [`schema-for-game-${APPID}`]:
-    `https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key=${KEY}&appid=${APPID}&l=french`,
-  [`player-achievements-${APPID}`]:
-    `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=${APPID}&key=${KEY}&steamid=${STEAM_ID}&l=french`,
+  "player-summaries": `https://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${KEY}&steamids=${STEAM_ID}`,
+  "owned-games": `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${KEY}&steamid=${STEAM_ID}&include_appinfo=true&include_played_free_games=true&format=json`,
+  [`schema-for-game-${APPID}`]: `https://api.steampowered.com/ISteamUserStats/GetSchemaForGame/v2/?key=${KEY}&appid=${APPID}&l=french`,
+  [`player-achievements-${APPID}`]: `https://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=${APPID}&key=${KEY}&steamid=${STEAM_ID}&l=french`,
 };
 
 async function run(): Promise<void> {

@@ -1,8 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, View } from "react-native";
-
-import type { RarestTab } from "../../view-models/use-rarest-tab";
 import { colors, fonts, spacing } from "../../theme/tokens";
+import type { RarestTab } from "../../view-models/use-rarest-tab";
 
 type Props = {
   readonly status: RarestTab["status"];
@@ -27,12 +26,7 @@ export function RarestEmpty({ status, anyUnlock }: Props) {
   }
 
   if (status === "counting") {
-    return (
-      <Block
-        title={t("rarest.counting.title")}
-        hint={t("rarest.counting.hint")}
-      />
-    );
+    return <Block title={t("rarest.counting.title")} hint={t("rarest.counting.hint")} />;
   }
 
   if (status === "loading") {
@@ -40,10 +34,7 @@ export function RarestEmpty({ status, anyUnlock }: Props) {
   }
 
   return anyUnlock ? (
-    <Block
-      title={t("rarest.unpublished.title")}
-      hint={t("rarest.unpublished.hint")}
-    />
+    <Block title={t("rarest.unpublished.title")} hint={t("rarest.unpublished.hint")} />
   ) : (
     <Block title={t("rarest.none")} />
   );

@@ -1,9 +1,8 @@
 import { Image } from "expo-image";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-
-import type { NamedUnlock } from "../../view-models/rarest-unlocks";
 import { colors } from "../../theme/tokens";
+import type { NamedUnlock } from "../../view-models/rarest-unlocks";
 import { Skeleton } from "../atoms/Skeleton";
 import { StatBlock } from "../atoms/StatBlock";
 import { achievementRowGeometry } from "./achievement-row-geometry";

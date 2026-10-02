@@ -28,9 +28,7 @@ describe("ErrorState", () => {
 
   it("offers a way to change profile when given one", () => {
     const onChangeProfile = jest.fn();
-    render(
-      <ErrorState message={MESSAGE} onRetry={jest.fn()} onChangeProfile={onChangeProfile} />,
-    );
+    render(<ErrorState message={MESSAGE} onRetry={jest.fn()} onChangeProfile={onChangeProfile} />);
 
     fireEvent.press(screen.getByLabelText("Change profile"));
 

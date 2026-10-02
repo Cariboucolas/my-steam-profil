@@ -1,7 +1,7 @@
-import { render, fireEvent } from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 
 import { openExternalUrl } from "./open-external-url";
-import { WithheldFiguresNote, STEAM_PRIVACY_URL } from "./WithheldFiguresNote";
+import { STEAM_PRIVACY_URL, WithheldFiguresNote } from "./WithheldFiguresNote";
 
 jest.mock("./open-external-url", () => ({
   openExternalUrl: jest.fn(() => Promise.resolve()),

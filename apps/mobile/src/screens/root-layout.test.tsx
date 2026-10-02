@@ -1,20 +1,14 @@
-import {
-  act,
-  renderRouter,
-  screen,
-  waitFor,
-} from "expo-router/testing-library";
 import { useQueryClient } from "@tanstack/react-query";
-import { Text } from "react-native";
+import { act, renderRouter, screen, waitFor } from "expo-router/testing-library";
 import * as SplashScreen from "expo-splash-screen";
-
+import { Text } from "react-native";
+import RootLayout from "../../app/_layout";
 import {
   deviceAsksForLessMotion,
   deviceIsFineWithMotion,
 } from "../accessibility/reduce-motion.test-support";
 import { SPLASH_WORDMARK } from "../components/organisms/SplashStage";
 import { HOLD_MS } from "../splash/splash-timing";
-import RootLayout from "../../app/_layout";
 
 /**
  * Whether the fonts have arrived. The real hook answers asynchronously from a
@@ -140,9 +134,7 @@ describe("root layout", () => {
 
       expect(screen.getByText(SPLASH_WORDMARK)).toBeTruthy();
       expect(screen.queryByText("library screen")).toBeNull();
-      expect(
-        screen.queryByText("library screen", { includeHiddenElements: true }),
-      ).toBeTruthy();
+      expect(screen.queryByText("library screen", { includeHiddenElements: true })).toBeTruthy();
     });
 
     it("hands the app over once it has run its course", async () => {

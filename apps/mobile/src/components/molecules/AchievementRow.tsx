@@ -1,8 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
-
-import type { AchievementRow as Row } from "../../view-models/game-progress";
 import { colors, fonts } from "../../theme/tokens";
+import type { AchievementRow as Row } from "../../view-models/game-progress";
 import { achievementRowGeometry } from "./achievement-row-geometry";
 
 export const ACHIEVEMENT_TILE_TEST_ID = "achievement-tile";

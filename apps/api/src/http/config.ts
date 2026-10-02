@@ -1,4 +1,4 @@
-import { ok, err, type Result } from "@steam/domain";
+import { err, ok, type Result } from "@steam/domain";
 
 /** Where the service listens when the environment says nothing. */
 export const DEFAULT_PORT = 3000;

@@ -3,11 +3,7 @@ import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import type { LibraryView } from "./library";
-import {
-  buildUnlockCalendar,
-  type UnlockCalendar,
-  type UnlockToneScale,
-} from "./unlock-calendar";
+import { buildUnlockCalendar, type UnlockCalendar, type UnlockToneScale } from "./unlock-calendar";
 
 /**
  * The player's year, rebuilt as the tallies land, with its tone scale held
@@ -42,16 +38,12 @@ type HeldScale = {
   readonly scale: UnlockToneScale;
 };
 
-export const useUnlockCalendar = (
-  view: LibraryView,
-  now: Date,
-): UnlockCalendar => {
+export const useUnlockCalendar = (view: LibraryView, now: Date): UnlockCalendar => {
   const { t } = useTranslation();
   const [held, setHeld] = useState<HeldScale | null>(null);
 
   // Nothing is held for a library other than the one that read it.
-  const heldScale =
-    held !== null && held.games === view.games ? held.scale : null;
+  const heldScale = held !== null && held.games === view.games ? held.scale : null;
   const calendar = useMemo(
     () => buildUnlockCalendar(view, now, t, heldScale),
     [view, now, t, heldScale],
@@ -66,9 +58,7 @@ export const useUnlockCalendar = (
   // settles in one further pass and never loops.
   const worthHolding = calendar.counting ? calendar.scale : null;
   if (worthHolding !== heldScale) {
-    setHeld(
-      worthHolding === null ? null : { games: view.games, scale: worthHolding },
-    );
+    setHeld(worthHolding === null ? null : { games: view.games, scale: worthHolding });
   }
 
   return calendar;

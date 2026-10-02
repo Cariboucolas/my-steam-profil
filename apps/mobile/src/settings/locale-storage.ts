@@ -23,4 +23,3 @@ export const createLocaleStorage = (store: KeyValueStore): LocaleStorage => ({
 
   write: (locale) => store.setItem(LOCALE_KEY, locale),
 });
-

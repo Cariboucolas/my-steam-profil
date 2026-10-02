@@ -1,11 +1,10 @@
 import { composeStories, setProjectAnnotations } from "@storybook/react";
 import { render } from "@testing-library/react-native";
 import type { ComponentType } from "react";
-
-import { letTheDeviceAnswer } from "../accessibility/reduce-motion.test-support";
 import preview from "../../.storybook/preview";
-import * as libraryStatsCard from "./organisms/LibraryStatsCard.stories";
+import { letTheDeviceAnswer } from "../accessibility/reduce-motion.test-support";
 import * as localeToggle from "./atoms/LocaleToggle.stories";
+import * as libraryStatsCard from "./organisms/LibraryStatsCard.stories";
 
 type StoryFile = Parameters<typeof composeStories>[0];
 

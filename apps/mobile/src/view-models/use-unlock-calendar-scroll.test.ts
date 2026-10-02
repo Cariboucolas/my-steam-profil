@@ -5,8 +5,8 @@ import {
   DECEMBER_HEIGHT,
   ROW_GAP,
   SCROLLED_PAST,
-  scrolledTo,
   SIX_ROWS,
+  scrolledTo,
 } from "./unlock-calendar-scroll.test-support";
 import { useUnlockCalendarScroll } from "./use-unlock-calendar-scroll";
 

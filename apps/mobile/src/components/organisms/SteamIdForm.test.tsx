@@ -79,7 +79,8 @@ describe("SteamIdForm", () => {
   it("stops waiting even when the submit handler rejects", async () => {
     // A rejected submit used to skip setBusy(false) and disable the button
     // for good, with no message.
-    const onSubmit = jest.fn<Promise<boolean>, [string]>()
+    const onSubmit = jest
+      .fn<Promise<boolean>, [string]>()
       .mockRejectedValue(new Error("storage unavailable"));
     render(<SteamIdForm onSubmit={onSubmit} />);
 

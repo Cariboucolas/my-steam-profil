@@ -1,12 +1,12 @@
 import { SteamId } from "@steam/domain";
 import {
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
 } from "react";
 
 import type { SteamIdStorage } from "./steam-id-storage";
@@ -61,11 +61,7 @@ export function SteamIdProvider({ storage, fallback, children }: Props) {
         if (cancelled) return;
         // The device wins over the build: someone who typed an id meant it.
         const steamId = stored ?? fallback;
-        setState(
-          steamId === undefined
-            ? { status: "absent" }
-            : { status: "known", steamId },
-        );
+        setState(steamId === undefined ? { status: "absent" } : { status: "known", steamId });
       },
       () => {
         // A device whose store cannot be read — blocked site data on the web —
@@ -111,10 +107,7 @@ export function SteamIdProvider({ storage, fallback, children }: Props) {
     setState({ status: "absent" });
   }, [storage]);
 
-  const value = useMemo(
-    () => ({ state, remember, forget }),
-    [state, remember, forget],
-  );
+  const value = useMemo(() => ({ state, remember, forget }), [state, remember, forget]);
 
   return <SteamIdContext.Provider value={value}>{children}</SteamIdContext.Provider>;
 }

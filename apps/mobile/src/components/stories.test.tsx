@@ -4,9 +4,8 @@ import { join, relative } from "node:path";
 import { composeStories, setProjectAnnotations } from "@storybook/react";
 import { render } from "@testing-library/react-native";
 import type { ComponentType } from "react";
-
-import { letTheDeviceAnswer } from "../accessibility/reduce-motion.test-support";
 import preview from "../../.storybook/preview";
+import { letTheDeviceAnswer } from "../accessibility/reduce-motion.test-support";
 
 setProjectAnnotations(preview);
 

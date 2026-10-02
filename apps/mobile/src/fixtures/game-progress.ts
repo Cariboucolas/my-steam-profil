@@ -19,9 +19,24 @@ const achievement = (
 });
 
 const ACHIEVEMENTS: readonly AchievementDto[] = [
-  achievement("ESCAPE", "Is There Anybody Out There?", "Escape the Underworld for the first time.", "2026-06-24T21:12:00Z"),
-  achievement("KEEPSAKE", "Sentimental", "Give a Keepsake to someone who asked for it.", "2026-06-24T20:48:00Z"),
-  achievement("ROOM_CLEAR", "Chthonic Colleagues", "Clear a chamber without taking damage.", "2026-06-02T19:05:00Z"),
+  achievement(
+    "ESCAPE",
+    "Is There Anybody Out There?",
+    "Escape the Underworld for the first time.",
+    "2026-06-24T21:12:00Z",
+  ),
+  achievement(
+    "KEEPSAKE",
+    "Sentimental",
+    "Give a Keepsake to someone who asked for it.",
+    "2026-06-24T20:48:00Z",
+  ),
+  achievement(
+    "ROOM_CLEAR",
+    "Chthonic Colleagues",
+    "Clear a chamber without taking damage.",
+    "2026-06-02T19:05:00Z",
+  ),
   // Steam leaves the description empty on an achievement hidden until earned.
   achievement("SECRET", "Night and Darkness", "", null),
   achievement("HEAT_32", "Hell Mode Master", "Clear an escape attempt at 32 Heat.", null),

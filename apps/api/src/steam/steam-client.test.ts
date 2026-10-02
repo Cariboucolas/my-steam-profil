@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createSteamClient } from "./steam-client";
 import { SteamGatewayError } from "./steam-gateway";
 
@@ -67,9 +67,7 @@ describe("createSteamClient (URLs)", () => {
     await clientWith(fetchImpl).getGlobalAchievementPercentages(APP_ID);
 
     const url = urlOf(fetchImpl);
-    expect(url).toContain(
-      "/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/",
-    );
+    expect(url).toContain("/ISteamUserStats/GetGlobalAchievementPercentagesForApp/v2/");
     expect(url).toContain(`gameid=${APP_ID}`);
     expect(url).not.toContain(STEAM_ID);
   });
@@ -128,16 +126,12 @@ describe("createSteamClient (answers)", () => {
 describe("createSteamClient (failures)", () => {
   it("raises when Steam rate-limits us", async () => {
     const client = clientWith(stubFetch(() => jsonResponse({}, TOO_MANY_REQUESTS)));
-    await expect(client.getPlayerSummaries(STEAM_ID)).rejects.toBeInstanceOf(
-      SteamGatewayError,
-    );
+    await expect(client.getPlayerSummaries(STEAM_ID)).rejects.toBeInstanceOf(SteamGatewayError);
   });
 
   it("raises when Steam fails on its side", async () => {
     const client = clientWith(stubFetch(() => jsonResponse({}, SERVER_ERROR)));
-    await expect(client.getOwnedGames(STEAM_ID)).rejects.toBeInstanceOf(
-      SteamGatewayError,
-    );
+    await expect(client.getOwnedGames(STEAM_ID)).rejects.toBeInstanceOf(SteamGatewayError);
   });
 
   it("carries the status it failed on, so the cause can be logged", async () => {
@@ -153,18 +147,14 @@ describe("createSteamClient (failures)", () => {
         throw new TypeError("network down");
       }),
     );
-    await expect(client.getPlayerSummaries(STEAM_ID)).rejects.toBeInstanceOf(
-      SteamGatewayError,
-    );
+    await expect(client.getPlayerSummaries(STEAM_ID)).rejects.toBeInstanceOf(SteamGatewayError);
   });
 
   it("raises when Steam answers something that is not JSON", async () => {
     const client = clientWith(
       stubFetch(() => new Response("<html>maintenance</html>", { status: 200 })),
     );
-    await expect(client.getPlayerSummaries(STEAM_ID)).rejects.toBeInstanceOf(
-      SteamGatewayError,
-    );
+    await expect(client.getPlayerSummaries(STEAM_ID)).rejects.toBeInstanceOf(SteamGatewayError);
   });
 
   it("never leaks the api key in the error it raises", async () => {
@@ -223,28 +213,19 @@ describe("createSteamClient (Steam's meaningful 4xx)", () => {
  */
 describe("createSteamClient (4xx everywhere else)", () => {
   it("raises when the library call is refused", async () => {
-    const client = clientWith(
-      stubFetch(() => jsonResponse({ response: {} }, FORBIDDEN)),
-    );
-    await expect(client.getOwnedGames(STEAM_ID)).rejects.toBeInstanceOf(
-      SteamGatewayError,
-    );
+    const client = clientWith(stubFetch(() => jsonResponse({ response: {} }, FORBIDDEN)));
+    await expect(client.getOwnedGames(STEAM_ID)).rejects.toBeInstanceOf(SteamGatewayError);
   });
 
   it("raises when the profile call is refused", async () => {
     const client = clientWith(stubFetch(() => jsonResponse({}, FORBIDDEN)));
-    await expect(client.getPlayerSummaries(STEAM_ID)).rejects.toBeInstanceOf(
-      SteamGatewayError,
-    );
+    await expect(client.getPlayerSummaries(STEAM_ID)).rejects.toBeInstanceOf(SteamGatewayError);
   });
 
   it("raises when the profile call is rejected as a bad request", async () => {
     const client = clientWith(stubFetch(() => jsonResponse({}, BAD_REQUEST)));
-    await expect(client.getPlayerSummaries(STEAM_ID)).rejects.toBeInstanceOf(
-      SteamGatewayError,
-    );
+    await expect(client.getPlayerSummaries(STEAM_ID)).rejects.toBeInstanceOf(SteamGatewayError);
   });
-
 });
 
 /**
@@ -262,9 +243,7 @@ describe("createSteamClient (Steam's meaningful 500)", () => {
     const body = {
       playerstats: { error: "Internal server error", success: false },
     };
-    const client = clientWith(
-      stubFetch(() => jsonResponse(body, INTERNAL_SERVER_ERROR)),
-    );
+    const client = clientWith(stubFetch(() => jsonResponse(body, INTERNAL_SERVER_ERROR)));
     expect(await client.getPlayerAchievements(STEAM_ID, APP_ID)).toEqual(body);
   });
 
@@ -277,9 +256,9 @@ describe("createSteamClient (Steam's meaningful 500)", () => {
           }),
       ),
     );
-    await expect(
-      client.getPlayerAchievements(STEAM_ID, APP_ID),
-    ).rejects.toBeInstanceOf(SteamGatewayError);
+    await expect(client.getPlayerAchievements(STEAM_ID, APP_ID)).rejects.toBeInstanceOf(
+      SteamGatewayError,
+    );
   });
 
   /**
@@ -288,12 +267,8 @@ describe("createSteamClient (Steam's meaningful 500)", () => {
    * outage into a library of games that appear to have nothing to earn.
    */
   it("still raises when the schema call answers 500", async () => {
-    const client = clientWith(
-      stubFetch(() => jsonResponse({ game: {} }, INTERNAL_SERVER_ERROR)),
-    );
-    await expect(client.getSchemaForGame(APP_ID)).rejects.toBeInstanceOf(
-      SteamGatewayError,
-    );
+    const client = clientWith(stubFetch(() => jsonResponse({ game: {} }, INTERNAL_SERVER_ERROR)));
+    await expect(client.getSchemaForGame(APP_ID)).rejects.toBeInstanceOf(SteamGatewayError);
   });
 });
 
@@ -313,9 +288,9 @@ describe("createSteamClient (what a failure says)", () => {
   it("names what it was asking about when Steam refuses", async () => {
     const client = clientWith(stubFetch(() => jsonResponse({}, SERVER_ERROR)));
 
-    await expect(
-      client.getPlayerAchievements(STEAM_ID, APP_ID),
-    ).rejects.toSatisfy(namesTheQuestion);
+    await expect(client.getPlayerAchievements(STEAM_ID, APP_ID)).rejects.toSatisfy(
+      namesTheQuestion,
+    );
   });
 
   it("names what it was asking about when Steam cannot be reached", async () => {
@@ -325,9 +300,9 @@ describe("createSteamClient (what a failure says)", () => {
       }),
     );
 
-    await expect(
-      client.getPlayerAchievements(STEAM_ID, APP_ID),
-    ).rejects.toSatisfy(namesTheQuestion);
+    await expect(client.getPlayerAchievements(STEAM_ID, APP_ID)).rejects.toSatisfy(
+      namesTheQuestion,
+    );
   });
 
   it("names what it was asking about when the answer is not JSON", async () => {
@@ -335,17 +310,16 @@ describe("createSteamClient (what a failure says)", () => {
       stubFetch(() => new Response("<html>maintenance</html>", { status: 200 })),
     );
 
-    await expect(
-      client.getPlayerAchievements(STEAM_ID, APP_ID),
-    ).rejects.toSatisfy(namesTheQuestion);
+    await expect(client.getPlayerAchievements(STEAM_ID, APP_ID)).rejects.toSatisfy(
+      namesTheQuestion,
+    );
   });
 
   it("still keeps the api key out of the richer message", async () => {
     const client = clientWith(stubFetch(() => jsonResponse({}, SERVER_ERROR)));
 
-    await expect(
-      client.getPlayerAchievements(STEAM_ID, APP_ID),
-    ).rejects.toSatisfy((error: unknown) => !String(error).includes(API_KEY));
+    await expect(client.getPlayerAchievements(STEAM_ID, APP_ID)).rejects.toSatisfy(
+      (error: unknown) => !String(error).includes(API_KEY),
+    );
   });
 });
-

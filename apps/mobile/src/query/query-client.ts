@@ -10,10 +10,7 @@ const RETRIES_WHEN_UNAVAILABLE = 1;
  * answer differently a second time: a profile that is private, missing or
  * refused stays so, and asking again would only delay saying it (#162).
  */
-export const retriesOnceWhenUnavailable = (
-  failureCount: number,
-  failure: unknown,
-): boolean =>
+export const retriesOnceWhenUnavailable = (failureCount: number, failure: unknown): boolean =>
   failureCount < RETRIES_WHEN_UNAVAILABLE &&
   failure instanceof ApiFailure &&
   failure.code === "UNAVAILABLE";

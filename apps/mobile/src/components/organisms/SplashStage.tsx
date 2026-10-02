@@ -3,11 +3,11 @@ import { Animated, Easing, StyleSheet, View } from "react-native";
 
 import { useReduceMotion } from "../../accessibility/use-reduce-motion";
 import {
-  WORDMARK_DELAY_MS,
-  WORDMARK_RISE_MS,
   holdFor,
   stopsShownAt,
   tipIsShownAt,
+  WORDMARK_DELAY_MS,
+  WORDMARK_RISE_MS,
 } from "../../splash/splash-timing";
 import { MARK_STOP_COUNT } from "../../theme/mark";
 import { colors, fonts } from "../../theme/tokens";

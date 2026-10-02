@@ -3,10 +3,7 @@ import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join, relative } from "node:path";
 
 import { testFilesTheRouterWouldPublish } from "./published-tests";
-import {
-  packagesWhoseTestsNeverRun,
-  type SurveyedPackage,
-} from "./uncollected-tests";
+import { packagesWhoseTestsNeverRun, type SurveyedPackage } from "./uncollected-tests";
 
 const TEST_FILE = /\.test\.[cm]?[jt]sx?$/;
 
@@ -23,7 +20,9 @@ const listedPackages = (): readonly ListedPackage[] =>
     }),
   ) as readonly ListedPackage[];
 
-const manifestOf = (directory: string): { readonly main?: string; readonly scripts?: Record<string, string> } =>
+const manifestOf = (
+  directory: string,
+): { readonly main?: string; readonly scripts?: Record<string, string> } =>
   JSON.parse(readFileSync(join(directory, "package.json"), "utf8"));
 
 /**

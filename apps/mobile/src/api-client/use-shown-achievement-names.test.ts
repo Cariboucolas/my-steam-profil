@@ -3,7 +3,7 @@ import { err, ok, type Result } from "@steam/domain";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 
 import type { ApiClient, ApiError } from "./api-client";
-import { useShownAchievementNames, type ShownGames } from "./use-shown-achievement-names";
+import { type ShownGames, useShownAchievementNames } from "./use-shown-achievement-names";
 
 type Named = Result<AchievementNamesDto, ApiError>;
 
@@ -175,9 +175,7 @@ describe("useShownAchievementNames", () => {
     );
     const { result } = renderNames(shown(client, [SOULSTONE, HALLS]));
 
-    await waitFor(() =>
-      expect(result.current.names).toEqual({ [SOULSTONE]: naming(SOULSTONE) }),
-    );
+    await waitFor(() => expect(result.current.names).toEqual({ [SOULSTONE]: naming(SOULSTONE) }));
 
     expect([...result.current.pending]).toEqual([]);
   });
@@ -196,9 +194,7 @@ describe("useShownAchievementNames", () => {
     const other = eagerClient();
     rerender({ games: shown(other.client, [EXILE]) });
 
-    await waitFor(() =>
-      expect(result.current.names).toEqual({ [EXILE]: naming(EXILE) }),
-    );
+    await waitFor(() => expect(result.current.names).toEqual({ [EXILE]: naming(EXILE) }));
   });
 
   /**
@@ -210,9 +206,7 @@ describe("useShownAchievementNames", () => {
     const { client, release } = heldClient([HALLS]);
     const { result } = renderNames(shown(client, [SOULSTONE, HALLS]));
 
-    await waitFor(() =>
-      expect([...result.current.pending]).toEqual([SOULSTONE, HALLS]),
-    );
+    await waitFor(() => expect([...result.current.pending]).toEqual([SOULSTONE, HALLS]));
     expect(result.current.names).toEqual({});
 
     await release();
@@ -269,9 +263,7 @@ describe("useShownAchievementNames", () => {
    * row keeps the apiName it was ranked under, and must stop pulsing to say so.
    */
   it("stops waiting on a game that could not be named", async () => {
-    const { client, release } = heldClient([SOULSTONE], () =>
-      err<ApiError>("UNAVAILABLE"),
-    );
+    const { client, release } = heldClient([SOULSTONE], () => err<ApiError>("UNAVAILABLE"));
     const { result } = renderNames(shown(client, [SOULSTONE]));
 
     await waitFor(() => expect([...result.current.pending]).toEqual([SOULSTONE]));

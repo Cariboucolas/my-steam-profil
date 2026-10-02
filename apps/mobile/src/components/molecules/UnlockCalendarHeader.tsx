@@ -44,9 +44,7 @@ export function UnlockCalendarHeader({ total, frameLabel, deltaLabel }: Props) {
 
       <View style={styles.line}>
         <Text style={styles.frame}>{frameLabel}</Text>
-        {deltaLabel === null ? null : (
-          <Text style={styles.delta}>{deltaLabel}</Text>
-        )}
+        {deltaLabel === null ? null : <Text style={styles.delta}>{deltaLabel}</Text>}
       </View>
     </View>
   );

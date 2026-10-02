@@ -1,29 +1,25 @@
-import { translatorFor } from "../../i18n/i18n";
-import * as ReactNative from "react-native";
 import { render, waitFor } from "@testing-library/react-native";
-
+import * as ReactNative from "react-native";
 import {
   deviceAsksForLessMotion,
   deviceIsFineWithMotion,
   letTheDeviceAnswer,
 } from "../../accessibility/reduce-motion.test-support";
+import { translatorFor } from "../../i18n/i18n";
 
 import { NARROWEST_SCREEN } from "../../theme/tokens";
 import type { LibrarySummary } from "../../view-models/library";
-import {
-  TALLY_LOAD_BAR_FILL_TEST_ID,
-  TALLY_LOAD_BAR_TEST_ID,
-} from "../atoms/TallyLoadBar";
 import { formatUnlockHeadline } from "../../view-models/library";
+import { TALLY_LOAD_BAR_FILL_TEST_ID, TALLY_LOAD_BAR_TEST_ID } from "../atoms/TallyLoadBar";
 import {
   effectiveTextScale,
+  HEADLINE_MAX_FONT_SCALE,
+  HEADLINE_REQUIRED_WIDTH,
   headlineFits,
   headlineMaxChars,
   headlineRoom,
-  HEADLINE_MAX_FONT_SCALE,
-  HEADLINE_REQUIRED_WIDTH,
-  LibraryStatsCard,
   LIBRARY_STATS_CARD_TEST_ID,
+  LibraryStatsCard,
 } from "./LibraryStatsCard";
 
 const english = translatorFor("en");

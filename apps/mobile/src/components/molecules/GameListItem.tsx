@@ -1,10 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
-
-import type { GameRow } from "../../view-models/library";
 import { colors, fonts, spacing } from "../../theme/tokens";
+import type { GameRow } from "../../view-models/library";
 import { GameCover } from "../atoms/GameCover";
-import { Skeleton } from "../atoms/Skeleton";
 import { ProgressBar } from "../atoms/ProgressBar";
+import { Skeleton } from "../atoms/Skeleton";
 
 const COVER_WIDTH = 76;
 const COVER_HEIGHT = 36;
@@ -22,16 +21,8 @@ export function GameListItem({ row, onPress }: Props) {
   const known = row.percentage !== null;
 
   return (
-    <Pressable
-      onPress={() => onPress(row.appId)}
-      accessibilityRole="button"
-      style={styles.row}
-    >
-      <GameCover
-        appId={row.appId}
-        width={COVER_WIDTH}
-        height={COVER_HEIGHT}
-      />
+    <Pressable onPress={() => onPress(row.appId)} accessibilityRole="button" style={styles.row}>
+      <GameCover appId={row.appId} width={COVER_WIDTH} height={COVER_HEIGHT} />
       <View style={styles.middle}>
         <Text numberOfLines={1} style={styles.name}>
           {row.name}

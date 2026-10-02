@@ -1,21 +1,21 @@
-import type { Profile, Game, Achievement, GameCompletion } from "@steam/domain";
 import type {
-  ProfileDto,
-  GameDto,
   AchievementDto,
-  GameCompletionDto,
-  GameProgressDto,
-  GameTallyDto,
-  AchievementRarityDto,
-  GameRarityDto,
   AchievementNameDto,
   AchievementNamesDto,
+  AchievementRarityDto,
+  GameCompletionDto,
+  GameDto,
+  GameProgressDto,
+  GameRarityDto,
+  GameTallyDto,
+  ProfileDto,
 } from "@steam/contracts";
+import type { Achievement, Game, GameCompletion, Profile } from "@steam/domain";
 import type {
+  AchievementName,
+  AchievementRarity,
   GameProgress,
   GameTally,
-  AchievementRarity,
-  AchievementName,
 } from "../steam/steam-mapper";
 
 export const toProfileDto = (profile: Profile): ProfileDto => ({
@@ -41,14 +41,10 @@ export const toAchievementDto = (achievement: Achievement): AchievementDto => ({
   icon: achievement.icon,
   iconGray: achievement.iconGray,
   unlocked: achievement.unlockState.unlocked,
-  unlockedAt: achievement.unlockState.unlocked
-    ? achievement.unlockState.at.toISOString()
-    : null,
+  unlockedAt: achievement.unlockState.unlocked ? achievement.unlockState.at.toISOString() : null,
 });
 
-export const toGameCompletionDto = (
-  completion: GameCompletion,
-): GameCompletionDto => ({
+export const toGameCompletionDto = (completion: GameCompletion): GameCompletionDto => ({
   unlocked: completion.unlocked,
   total: completion.total,
   // Unrounded on purpose: a client can round, it cannot recover precision.
@@ -61,31 +57,25 @@ export const toGameTallyDto = (tally: GameTally): GameTallyDto => ({
   unlocks: tally.unlocks,
 });
 
-export const toAchievementRarityDto = (
-  rarity: AchievementRarity,
-): AchievementRarityDto => ({
+export const toAchievementRarityDto = (rarity: AchievementRarity): AchievementRarityDto => ({
   apiName: rarity.apiName,
   // Unrounded: Steam has already rounded, and rounding twice invents ties.
   rarity: rarity.rarity,
 });
 
 /** What Steam publishes about a Game, in the order Steam published it. */
-export const toGameRarityDto = (
-  rarities: readonly AchievementRarity[],
-): GameRarityDto => rarities.map(toAchievementRarityDto);
+export const toGameRarityDto = (rarities: readonly AchievementRarity[]): GameRarityDto =>
+  rarities.map(toAchievementRarityDto);
 
-export const toAchievementNameDto = (
-  named: AchievementName,
-): AchievementNameDto => ({
+export const toAchievementNameDto = (named: AchievementName): AchievementNameDto => ({
   apiName: named.apiName,
   displayName: named.displayName,
   icon: named.icon,
 });
 
 /** How a Game names its Achievements, in the order the Game defines them. */
-export const toAchievementNamesDto = (
-  named: readonly AchievementName[],
-): AchievementNamesDto => named.map(toAchievementNameDto);
+export const toAchievementNamesDto = (named: readonly AchievementName[]): AchievementNamesDto =>
+  named.map(toAchievementNameDto);
 
 export const toGameProgressDto = (data: GameProgress): GameProgressDto => ({
   completion: toGameCompletionDto(data.completion),

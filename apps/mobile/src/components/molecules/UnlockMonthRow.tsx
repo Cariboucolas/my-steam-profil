@@ -1,18 +1,8 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { NOT_READ } from "../../accessibility/not-read";
-import {
-  colors,
-  fonts,
-  MONO_ADVANCE,
-  spacing,
-  unlockToneFills,
-} from "../../theme/tokens";
-import {
-  COLUMNS,
-  type UnlockDay,
-  type UnlockMonth,
-} from "../../view-models/unlock-calendar";
+import { colors, fonts, MONO_ADVANCE, spacing, unlockToneFills } from "../../theme/tokens";
+import { COLUMNS, type UnlockDay, type UnlockMonth } from "../../view-models/unlock-calendar";
 
 export const UNLOCK_DAY_TEST_ID = "unlock-day";
 export const UNLOCK_DAYS_TEST_ID = "unlock-days";
@@ -52,8 +42,7 @@ const TOTAL_GUARANTEED_CHARS = 4;
  * it is what a fourth digit was spent on, and adding any back is a widening
  * this column has to ask the grid to pay for.
  */
-const labelTextWidth = (chars: number): number =>
-  chars * LABEL_FONT_SIZE * MONO_ADVANCE;
+const labelTextWidth = (chars: number): number => chars * LABEL_FONT_SIZE * MONO_ADVANCE;
 
 /**
  * What the column keeps over what the model predicts. Half a glyph, because
@@ -117,8 +106,7 @@ export const GRID_INSET = spacing.sm;
  * tests that pin the legible minimum.
  */
 export const dayCellWidth = (screenWidth: number): number =>
-  (screenWidth - 2 * GRID_INSET - LABEL_WIDTH - (COLUMNS - 1) * CELL_GAP) /
-  COLUMNS;
+  (screenWidth - 2 * GRID_INSET - LABEL_WIDTH - (COLUMNS - 1) * CELL_GAP) / COLUMNS;
 
 /**
  * What a column is painted: nothing where no day sits behind it, and otherwise
@@ -148,16 +136,8 @@ type Props = { readonly month: UnlockMonth };
  */
 export function UnlockMonthRow({ month }: Props) {
   return (
-    <View
-      accessible
-      accessibilityLabel={month.screenReaderLabel}
-      style={styles.row}
-    >
-      <View
-        {...NOT_READ}
-        testID={UNLOCK_MONTH_LABEL_TEST_ID}
-        style={styles.label}
-      >
+    <View accessible accessibilityLabel={month.screenReaderLabel} style={styles.row}>
+      <View {...NOT_READ} testID={UNLOCK_MONTH_LABEL_TEST_ID} style={styles.label}>
         <Text
           allowFontScaling={false}
           testID={UNLOCK_MONTH_NAME_TEST_ID}
@@ -168,20 +148,12 @@ export function UnlockMonthRow({ month }: Props) {
         >
           {month.label}
         </Text>
-        <Text
-          allowFontScaling={false}
-          testID={UNLOCK_MONTH_TOTAL_TEST_ID}
-          style={styles.total}
-        >
+        <Text allowFontScaling={false} testID={UNLOCK_MONTH_TOTAL_TEST_ID} style={styles.total}>
           {month.totalLabel}
         </Text>
       </View>
 
-      <View
-        {...NOT_READ}
-        testID={UNLOCK_DAYS_TEST_ID}
-        style={styles.days}
-      >
+      <View {...NOT_READ} testID={UNLOCK_DAYS_TEST_ID} style={styles.days}>
         {month.days.map((day, index) => (
           <View
             key={index}

@@ -16,8 +16,5 @@ export const useApiClient = (): ApiClient | undefined => {
   const create = useCreateApiClient();
   const steamId = state.status === "known" ? state.steamId : undefined;
 
-  return useMemo(
-    () => (steamId === undefined ? undefined : create(steamId)),
-    [steamId, create],
-  );
+  return useMemo(() => (steamId === undefined ? undefined : create(steamId)), [steamId, create]);
 };

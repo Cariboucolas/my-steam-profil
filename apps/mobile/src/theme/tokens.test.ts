@@ -60,14 +60,11 @@ const linear = (channel: number): number => {
  * alone will not do — it is linear in light, and the eye is not.
  */
 const lightness = (rgb: Rgb): number => {
-  const y =
-    0.2126 * linear(rgb[0]) + 0.7152 * linear(rgb[1]) + 0.0722 * linear(rgb[2]);
+  const y = 0.2126 * linear(rgb[0]) + 0.7152 * linear(rgb[1]) + 0.0722 * linear(rgb[2]);
   return y > 216 / 24389 ? 116 * y ** (1 / 3) - 16 : (24389 / 27) * y;
 };
 
-const painted = unlockToneFills.map((fill) =>
-  lightness(over(fill, over(colors.bg, [0, 0, 0]))),
-);
+const painted = unlockToneFills.map((fill) => lightness(over(fill, over(colors.bg, [0, 0, 0]))));
 
 const neighbours = painted.flatMap((step, i) => {
   const paler = painted[i - 1];

@@ -56,10 +56,7 @@ const field = (name: string, value: string | undefined): MessageField[] =>
  * them. Nothing is invented to fill the gap: the link leads to where Sentry
  * shows it, and a field that guessed would be worse than one that is absent.
  */
-const fieldsOf = (
-  source: Record<string, unknown>,
-  rule: string | undefined,
-): MessageField[] => [
+const fieldsOf = (source: Record<string, unknown>, rule: string | undefined): MessageField[] => [
   ...field("Environment", text(source["environment"])),
   ...field("Revision", text(source["release"])?.slice(0, SHORT_SHA_LENGTH)),
   ...field("Issue", text(source["shortId"])),

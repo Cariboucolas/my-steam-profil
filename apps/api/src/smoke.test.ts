@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
 import { SteamId } from "@steam/domain";
+import { describe, expect, it } from "vitest";
 
 describe("api toolchain", () => {
   it("can import from @steam/domain", () => {

@@ -1,18 +1,13 @@
+import type { AchievementNamesDto, GameDto, GameRarityDto, UnlockDto } from "@steam/contracts";
 import { translatorFor } from "../i18n/i18n";
-import type {
-  AchievementNamesDto,
-  GameDto,
-  GameRarityDto,
-  UnlockDto,
-} from "@steam/contracts";
 
 import type { LibraryView } from "./library";
 import {
   buildRarestUnlocks,
   gamesShownIn,
   nameUnlocks,
-  type RarityByAppId,
   type RarestUnlocks,
+  type RarityByAppId,
 } from "./rarest-unlocks";
 
 const english = translatorFor("en");
@@ -100,9 +95,7 @@ const libraryHolding = (
     rarity: Object.fromEntries(
       appIds
         .map((appId) => [appId, publishedOf(held[appId] ?? {})] as const)
-        .filter((entry): entry is readonly [number, GameRarityDto] =>
-          entry[1] !== undefined,
-        ),
+        .filter((entry): entry is readonly [number, GameRarityDto] => entry[1] !== undefined),
     ),
   };
 };
@@ -113,8 +106,7 @@ const rank = (held: Readonly<Record<number, Held>>): RarestUnlocks => {
 };
 
 /** The achievements a ranking named, rarest first. */
-const named = (ranking: RarestUnlocks): readonly string[] =>
-  ranking.rows.map((row) => row.apiName);
+const named = (ranking: RarestUnlocks): readonly string[] => ranking.rows.map((row) => row.apiName);
 
 /** `count` achievements of one game, all published at the same figure. */
 const tiedAt = (
@@ -190,10 +182,7 @@ describe("buildRarestUnlocks", () => {
     const ranking = rank({
       [SOULSTONE]: {
         unlocked: Object.fromEntries(
-          Array.from({ length: 30 }, (_, index) => [
-            `ACH_${index}`,
-            "2026-01-01T00:00:00Z",
-          ]),
+          Array.from({ length: 30 }, (_, index) => [`ACH_${index}`, "2026-01-01T00:00:00Z"]),
         ),
         published: Object.fromEntries(
           Array.from({ length: 30 }, (_, index) => [`ACH_${index}`, index + 1]),
@@ -216,19 +205,13 @@ describe("buildRarestUnlocks", () => {
       [SOULSTONE]: {
         unlocked: {
           ...Object.fromEntries(
-            Array.from({ length: 8 }, (_, index) => [
-              `RARER_${index}`,
-              "2026-01-01T00:00:00Z",
-            ]),
+            Array.from({ length: 8 }, (_, index) => [`RARER_${index}`, "2026-01-01T00:00:00Z"]),
           ),
           ...tie.unlocked,
         },
         published: {
           ...Object.fromEntries(
-            Array.from({ length: 8 }, (_, index) => [
-              `RARER_${index}`,
-              (index + 1) / 10,
-            ]),
+            Array.from({ length: 8 }, (_, index) => [`RARER_${index}`, (index + 1) / 10]),
           ),
           ...tie.published,
         },
@@ -255,10 +238,7 @@ describe("buildRarestUnlocks", () => {
       [SOULSTONE]: {
         unlocked: {
           ...Object.fromEntries(
-            Array.from({ length: 9 }, (_, index) => [
-              `RARER_${index}`,
-              "2026-01-01T00:00:00Z",
-            ]),
+            Array.from({ length: 9 }, (_, index) => [`RARER_${index}`, "2026-01-01T00:00:00Z"]),
           ),
           TENTH: "2026-01-01T00:00:00Z",
           ELEVENTH: "2026-01-01T00:00:00Z",
@@ -266,10 +246,7 @@ describe("buildRarestUnlocks", () => {
         published: {
           // Nine rarer, each shown as its own figure: 0.5%, 1%, 1.5% …
           ...Object.fromEntries(
-            Array.from({ length: 9 }, (_, index) => [
-              `RARER_${index}`,
-              (index + 1) / 2,
-            ]),
+            Array.from({ length: 9 }, (_, index) => [`RARER_${index}`, (index + 1) / 2]),
           ),
           // Both shown as 5%, and apart only where nobody can see.
           TENTH: 5,
@@ -421,7 +398,8 @@ describe("buildRarestUnlocks", () => {
 
     const ranking = buildRarestUnlocks(
       { ...view, games: view.games.filter((one) => one.appId === SOULSTONE) },
-      rarity, english,
+      rarity,
+      english,
     );
 
     expect(named(ranking)).toEqual(["RARE"]);
@@ -542,10 +520,14 @@ describe("nameUnlocks", () => {
     }));
 
   it("gives each row the name and icon its game gives it", () => {
-    const rows = nameUnlocks(RANKING.rows, {
-      [SOULSTONE]: namesFor({ BOSS_1: ["Soulstone Slayer", "https://icon/boss1.jpg"] }),
-      [HALLS]: namesFor({ HALL_1: ["Torment Endured", "https://icon/hall1.jpg"] }),
-    }, ANSWERED);
+    const rows = nameUnlocks(
+      RANKING.rows,
+      {
+        [SOULSTONE]: namesFor({ BOSS_1: ["Soulstone Slayer", "https://icon/boss1.jpg"] }),
+        [HALLS]: namesFor({ HALL_1: ["Torment Endured", "https://icon/hall1.jpg"] }),
+      },
+      ANSWERED,
+    );
 
     expect(rows).toEqual([
       expect.objectContaining({
@@ -570,9 +552,13 @@ describe("nameUnlocks", () => {
    * key it was ranked under is a poor name and a true one.
    */
   it("keeps the apiName where the game names nothing for it", () => {
-    const rows = nameUnlocks(RANKING.rows, {
-      [SOULSTONE]: namesFor({ SOMETHING_ELSE: ["Another award", "https://icon/x.jpg"] }),
-    }, ANSWERED);
+    const rows = nameUnlocks(
+      RANKING.rows,
+      {
+        [SOULSTONE]: namesFor({ SOMETHING_ELSE: ["Another award", "https://icon/x.jpg"] }),
+      },
+      ANSWERED,
+    );
 
     expect(rows[0]).toMatchObject({
       apiName: "BOSS_1",
@@ -591,9 +577,13 @@ describe("nameUnlocks", () => {
 
   /** A name Steam sends empty would draw an empty row, which is worse than a key. */
   it("keeps the apiName where the game names it with nothing", () => {
-    const rows = nameUnlocks(RANKING.rows, {
-      [SOULSTONE]: namesFor({ BOSS_1: ["", "https://icon/boss1.jpg"] }),
-    }, ANSWERED);
+    const rows = nameUnlocks(
+      RANKING.rows,
+      {
+        [SOULSTONE]: namesFor({ BOSS_1: ["", "https://icon/boss1.jpg"] }),
+      },
+      ANSWERED,
+    );
 
     expect(rows[0]).toMatchObject({
       displayName: "BOSS_1",
@@ -602,13 +592,15 @@ describe("nameUnlocks", () => {
   });
 
   it("leaves the ranking in the order it was decided", () => {
-    const rows = nameUnlocks(RANKING.rows, {
-      [HALLS]: namesFor({ HALL_1: ["Torment Endured", "https://icon/hall1.jpg"] }),
-    }, ANSWERED);
-
-    expect(rows.map((row) => row.apiName)).toEqual(
-      RANKING.rows.map((row) => row.apiName),
+    const rows = nameUnlocks(
+      RANKING.rows,
+      {
+        [HALLS]: namesFor({ HALL_1: ["Torment Endured", "https://icon/hall1.jpg"] }),
+      },
+      ANSWERED,
     );
+
+    expect(rows.map((row) => row.apiName)).toEqual(RANKING.rows.map((row) => row.apiName));
   });
 });
 

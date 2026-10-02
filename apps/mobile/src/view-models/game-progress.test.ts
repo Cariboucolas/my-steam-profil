@@ -1,5 +1,5 @@
-import { translatorFor } from "../i18n/i18n";
 import type { AchievementDto, GameDto, GameProgressDto } from "@steam/contracts";
+import { translatorFor } from "../i18n/i18n";
 
 import {
   buildAchievementRows,
@@ -180,8 +180,9 @@ describe("buildGameSummary", () => {
 
   it("still says never for a game with no playtime either", () => {
     const untouched = buildGameSummary(
-      { ...GAME, lastPlayedAt: null, playtimeMinutes: 0,  },
-      null, english,
+      { ...GAME, lastPlayedAt: null, playtimeMinutes: 0 },
+      null,
+      english,
     );
 
     expect(untouched.meta).toBe("0 min played · last played never");
@@ -199,18 +200,16 @@ describe("buildGameSummary", () => {
    */
   it("says nothing about playtime where Steam withheld the hours", () => {
     const withheld = buildGameSummary(
-      { ...GAME, lastPlayedAt: null, playtimeMinutes: null,  },
-      PROGRESS, english,
+      { ...GAME, lastPlayedAt: null, playtimeMinutes: null },
+      PROGRESS,
+      english,
     );
 
     expect(withheld.meta).toBe("");
   });
 
   it("still says when it was last played where only the hours are withheld", () => {
-    const withheld = buildGameSummary(
-      { ...GAME, playtimeMinutes: null,  },
-      PROGRESS, english,
-    );
+    const withheld = buildGameSummary({ ...GAME, playtimeMinutes: null }, PROGRESS, english);
 
     expect(withheld.meta).toBe("last played 25 Jun 2026");
   });

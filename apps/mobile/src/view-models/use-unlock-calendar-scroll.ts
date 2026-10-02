@@ -1,13 +1,13 @@
-import { useRef, useState, type RefObject } from "react";
+import { type RefObject, useRef, useState } from "react";
 import type { ScrollView } from "react-native";
 
 import {
+  type FadedEdges,
   fadedEdges,
   halfInView,
   heightOfMonthsInView,
   offsetOfHalf,
   scrollsThroughTheYear,
-  type FadedEdges,
   type YearHalf,
 } from "./unlock-calendar-scroll";
 
@@ -58,10 +58,7 @@ export const useUnlockCalendarScroll = (
   const [content, setContent] = useState(0);
   const [offset, setOffset] = useState(0);
 
-  const height =
-    content > 0
-      ? heightOfMonthsInView(content, monthsDrawn, rowGap)
-      : undefined;
+  const height = content > 0 ? heightOfMonthsInView(content, monthsDrawn, rowGap) : undefined;
 
   // What the reader can see is what the card holds itself to; before it has
   // been measured they can see nothing of it, and nothing is claimed.
@@ -78,7 +75,6 @@ export const useUnlockCalendarScroll = (
     // Through the very scroll a finger moves, rather than a state of its own:
     // one place holds where the reader is, and the dot is a second way of
     // asking for the same movement.
-    goToHalf: (half) =>
-      ref.current?.scrollTo({ y: offsetOfHalf(half, scrolled), animated: true }),
+    goToHalf: (half) => ref.current?.scrollTo({ y: offsetOfHalf(half, scrolled), animated: true }),
   };
 };

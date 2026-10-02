@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { buildTimeline } from "./timeline";
+import { describe, expect, it } from "vitest";
 import { type Achievement } from "./achievement";
+import { buildTimeline } from "./timeline";
 
 const unlockedAchievement = (apiName: string, atSeconds: number): Achievement => ({
   apiName,

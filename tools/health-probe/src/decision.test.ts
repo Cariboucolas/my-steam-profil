@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { verdictOf, decide, type Incident } from "./decision";
+import { decide, type Incident, verdictOf } from "./decision";
 
 const failed = (reason: string) => ({ ok: false, reason }) as const;
 const passed = { ok: true } as const;

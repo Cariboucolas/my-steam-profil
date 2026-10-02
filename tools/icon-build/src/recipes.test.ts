@@ -3,8 +3,7 @@ import { describe, expect, it } from "vitest";
 
 import { ASSETS, RECIPES, type Recipe } from "./recipes";
 
-const recipeFor = (out: string): Recipe | undefined =>
-  RECIPES.find((r) => r.out === out);
+const recipeFor = (out: string): Recipe | undefined => RECIPES.find((r) => r.out === out);
 
 /** Every image path `app.json` hands to Expo, wherever it names one. */
 const imagesExpoReads = (): string[] => {
@@ -59,9 +58,7 @@ describe("the traps the recipes encode", () => {
 
   /** The adaptive foreground is drawn larger on purpose, to fill the safe zone. */
   it("takes the adaptive foreground from the artwork scaled for it", () => {
-    expect(recipeFor("android-icon-foreground.png")?.from).toBe(
-      "adaptive-foreground.svg",
-    );
+    expect(recipeFor("android-icon-foreground.png")?.from).toBe("adaptive-foreground.svg");
   });
 
   /** Android tints the themed icon, so it wants a silhouette, not a picture. */

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createFetchHandler } from "./worker";
 
@@ -33,9 +33,7 @@ const signed = async (payload: unknown) => {
     ["sign"],
   );
   const bytes = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(body));
-  const signature = [...new Uint8Array(bytes)]
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  const signature = [...new Uint8Array(bytes)].map((b) => b.toString(16).padStart(2, "0")).join("");
 
   return new Request("https://alerts.example.com/", {
     method: "POST",

@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
-import { computeGameCompletion } from "./game-completion";
+import { describe, expect, it } from "vitest";
 import { type Achievement } from "./achievement";
+import { computeGameCompletion } from "./game-completion";
 
 const make = (apiName: string, unlocked: boolean): Achievement => ({
   apiName,
@@ -9,9 +9,7 @@ const make = (apiName: string, unlocked: boolean): Achievement => ({
   hidden: false,
   icon: "",
   iconGray: "",
-  unlockState: unlocked
-    ? { unlocked: true, at: new Date(0) }
-    : { unlocked: false },
+  unlockState: unlocked ? { unlocked: true, at: new Date(0) } : { unlocked: false },
 });
 
 describe("computeGameCompletion", () => {

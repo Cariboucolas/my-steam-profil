@@ -1,17 +1,15 @@
 import { render, within } from "@testing-library/react-native";
-
-import { colors, unlockToneFills } from "../../theme/tokens";
+import { colors, NARROWEST_SCREEN, unlockToneFills } from "../../theme/tokens";
 import type { UnlockDay, UnlockMonth } from "../../view-models/unlock-calendar";
-import { NARROWEST_SCREEN } from "../../theme/tokens";
 import {
   CELL_GAP,
   dayCellWidth,
-  UnlockMonthRow,
   UNLOCK_DAY_TEST_ID,
   UNLOCK_DAYS_TEST_ID,
   UNLOCK_MONTH_LABEL_TEST_ID,
   UNLOCK_MONTH_NAME_TEST_ID,
   UNLOCK_MONTH_TOTAL_TEST_ID,
+  UnlockMonthRow,
 } from "./UnlockMonthRow";
 
 /**
@@ -59,14 +57,11 @@ describe("UnlockMonthRow", () => {
   });
 
   it("leaves a day that held nothing on the empty tile", () => {
-    const { getAllByTestId } = render(
-      <UnlockMonthRow month={month(17, { 5: held(3, 2) })} />,
-    );
+    const { getAllByTestId } = render(<UnlockMonthRow month={month(17, { 5: held(3, 2) })} />);
 
-    expect(
-      getAllByTestId(UNLOCK_DAY_TEST_ID, PAINTED)[3]?.props.style
-        .backgroundColor,
-    ).toBe(colors.tileEmpty);
+    expect(getAllByTestId(UNLOCK_DAY_TEST_ID, PAINTED)[3]?.props.style.backgroundColor).toBe(
+      colors.tileEmpty,
+    );
   });
 
   it("draws each tone in its own strength of the accent", () => {
@@ -91,21 +86,15 @@ describe("UnlockMonthRow", () => {
   });
 
   it("picks out the label of the month today falls in", () => {
-    const { getByTestId } = render(
-      <UnlockMonthRow month={month(17, {}, true)} />,
-    );
+    const { getByTestId } = render(<UnlockMonthRow month={month(17, {}, true)} />);
 
-    expect(
-      getByTestId(UNLOCK_MONTH_NAME_TEST_ID, PAINTED).props.style.color,
-    ).toBe(colors.accent);
+    expect(getByTestId(UNLOCK_MONTH_NAME_TEST_ID, PAINTED).props.style.color).toBe(colors.accent);
   });
 
   it("leaves any other month's label quiet", () => {
     const { getByTestId } = render(<UnlockMonthRow month={month(30)} />);
 
-    expect(
-      getByTestId(UNLOCK_MONTH_NAME_TEST_ID, PAINTED).props.style.color,
-    ).toBe(colors.textDim);
+    expect(getByTestId(UNLOCK_MONTH_NAME_TEST_ID, PAINTED).props.style.color).toBe(colors.textDim);
   });
 
   /**
@@ -119,10 +108,7 @@ describe("UnlockMonthRow", () => {
   it("keeps both halves of the label out of the system text size", () => {
     const { getByTestId } = render(<UnlockMonthRow month={month(30)} />);
 
-    for (const half of [
-      UNLOCK_MONTH_NAME_TEST_ID,
-      UNLOCK_MONTH_TOTAL_TEST_ID,
-    ]) {
+    for (const half of [UNLOCK_MONTH_NAME_TEST_ID, UNLOCK_MONTH_TOTAL_TEST_ID]) {
       expect(getByTestId(half, PAINTED).props.allowFontScaling).toBe(false);
     }
   });
@@ -143,13 +129,9 @@ describe("UnlockMonthRow", () => {
   });
 
   it("writes the month's total in the accent", () => {
-    const { getByTestId } = render(
-      <UnlockMonthRow month={month(30, { 5: held(3, 1) })} />,
-    );
+    const { getByTestId } = render(<UnlockMonthRow month={month(30, { 5: held(3, 1) })} />);
 
-    expect(
-      getByTestId(UNLOCK_MONTH_TOTAL_TEST_ID, PAINTED).props.style.color,
-    ).toBe(colors.accent);
+    expect(getByTestId(UNLOCK_MONTH_TOTAL_TEST_ID, PAINTED).props.style.color).toBe(colors.accent);
   });
 
   /**

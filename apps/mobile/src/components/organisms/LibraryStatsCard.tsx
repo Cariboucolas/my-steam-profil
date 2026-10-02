@@ -1,19 +1,11 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
 import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
-
+import { colors, fonts, MONO_ADVANCE, NARROWEST_SCREEN, radius, spacing } from "../../theme/tokens";
 import { formatUnlockHeadline, type LibrarySummary } from "../../view-models/library";
-import {
-  colors,
-  fonts,
-  MONO_ADVANCE,
-  NARROWEST_SCREEN,
-  radius,
-  spacing,
-} from "../../theme/tokens";
 import { CompletionRing } from "../atoms/CompletionRing";
-import { TallyLoadBar } from "../atoms/TallyLoadBar";
 import { StatBlock } from "../atoms/StatBlock";
+import { TallyLoadBar } from "../atoms/TallyLoadBar";
 
 export const LIBRARY_STATS_CARD_TEST_ID = "library-stats-card";
 
@@ -66,10 +58,7 @@ const HEADLINE_GUARANTEED_CHARS = 5;
  */
 const HEADLINE_SEARCH_LIMIT = 9;
 
-const CANDIDATE_LENGTHS = Array.from(
-  { length: HEADLINE_SEARCH_LIMIT },
-  (_, index) => index + 1,
-);
+const CANDIDATE_LENGTHS = Array.from({ length: HEADLINE_SEARCH_LIMIT }, (_, index) => index + 1);
 
 /**
  * The width the layout is asked to keep over what the headline is measured to
@@ -88,8 +77,7 @@ const HEADLINE_SLACK = 8;
  * reading, which never under-counts the width.
  */
 const headlineTextWidth = (chars: number, textScale: number): number =>
-  chars * HEADLINE_FONT_SIZE * MONO_ADVANCE * textScale +
-  (chars - 1) * HEADLINE_LETTER_SPACING;
+  chars * HEADLINE_FONT_SIZE * MONO_ADVANCE * textScale + (chars - 1) * HEADLINE_LETTER_SPACING;
 
 /**
  * The room the headline has to fit into, model and margin together: what
@@ -126,13 +114,8 @@ export const headlineRoom = (screenWidth: number, textScale: number): number =>
  * leaves at this text scale. The one place every half of the model meets, so a
  * test can ask the question the card promises an answer to.
  */
-export const headlineFits = (
-  chars: number,
-  screenWidth: number,
-  textScale: number,
-): boolean =>
-  headlineTextWidth(chars, textScale) + HEADLINE_SLACK <=
-  headlineRoom(screenWidth, textScale);
+export const headlineFits = (chars: number, screenWidth: number, textScale: number): boolean =>
+  headlineTextWidth(chars, textScale) + HEADLINE_SLACK <= headlineRoom(screenWidth, textScale);
 
 /**
  * The shortest form the cascade can offer for the band that gives it least to
@@ -147,10 +130,7 @@ const HEADLINE_TIGHTEST_CHARS = 4;
  * hundredth apart. Built by division rather than by accumulating a step, so
  * each one is the same double a literal of the same digits would give.
  */
-const SCALE_CANDIDATES = Array.from(
-  { length: 101 },
-  (_, index) => (100 + index) / 100,
-);
+const SCALE_CANDIDATES = Array.from({ length: 101 }, (_, index) => (100 + index) / 100);
 
 /**
  * How far the reader's text size may grow the headline and its caption
@@ -186,8 +166,7 @@ export const effectiveTextScale = (fontScale: number): number =>
  * formula to drift from the first when a gap or a font size moves.
  */
 export const headlineMaxChars = (screenWidth: number, textScale: number): number =>
-  CANDIDATE_LENGTHS.filter((chars) => headlineFits(chars, screenWidth, textScale))
-    .length;
+  CANDIDATE_LENGTHS.filter((chars) => headlineFits(chars, screenWidth, textScale)).length;
 
 type Props = {
   readonly summary: LibrarySummary;
@@ -212,11 +191,7 @@ export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
    */
   const { width, fontScale } = useWindowDimensions();
   const textScale = effectiveTextScale(fontScale);
-  const headline = formatUnlockHeadline(
-    summary.unlocked,
-    headlineMaxChars(width, textScale),
-    t,
-  );
+  const headline = formatUnlockHeadline(summary.unlocked, headlineMaxChars(width, textScale), t);
 
   return (
     <LinearGradient
@@ -238,10 +213,7 @@ export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
             <Text style={styles.big} maxFontSizeMultiplier={HEADLINE_MAX_FONT_SCALE}>
               {headline}
             </Text>
-            <Text
-              style={styles.caption}
-              maxFontSizeMultiplier={HEADLINE_MAX_FONT_SCALE}
-            >
+            <Text style={styles.caption} maxFontSizeMultiplier={HEADLINE_MAX_FONT_SCALE}>
               {t("library.statsCard.caption")}
             </Text>
           </View>
@@ -255,7 +227,10 @@ export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
       </View>
 
       <View style={styles.stats}>
-        <StatBlock value={String(summary.perfectGames)} label={t("library.statsCard.perfectGames")} />
+        <StatBlock
+          value={String(summary.perfectGames)}
+          label={t("library.statsCard.perfectGames")}
+        />
         <StatBlock value={summary.playtimeLabel} label={t("library.statsCard.played")} />
         <StatBlock value={String(gameCount)} label={t("library.statsCard.gamesOwned")} />
       </View>

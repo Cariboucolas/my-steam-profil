@@ -7,11 +7,7 @@ import {
   letTheDeviceAnswer,
 } from "../../accessibility/reduce-motion.test-support";
 import { colors } from "../../theme/tokens";
-import {
-  TallyLoadBar,
-  TALLY_LOAD_BAR_FILL_TEST_ID,
-  TALLY_LOAD_BAR_TEST_ID,
-} from "./TallyLoadBar";
+import { TALLY_LOAD_BAR_FILL_TEST_ID, TALLY_LOAD_BAR_TEST_ID, TallyLoadBar } from "./TallyLoadBar";
 
 /**
  * The slide is handed to the native driver, so the scale it animates never
@@ -20,9 +16,7 @@ import {
  */
 const watchSlides = () => {
   const slide = { start: jest.fn(), stop: jest.fn(), reset: jest.fn() };
-  jest
-    .spyOn(Animated, "timing")
-    .mockReturnValue(slide as unknown as Animated.CompositeAnimation);
+  jest.spyOn(Animated, "timing").mockReturnValue(slide as unknown as Animated.CompositeAnimation);
   return slide;
 };
 

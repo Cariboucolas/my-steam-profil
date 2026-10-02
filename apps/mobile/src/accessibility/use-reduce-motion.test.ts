@@ -21,8 +21,7 @@ const spyOnListening = () =>
     [event: string, handler: ReduceMotionListener]
   >;
 
-const subscription = (remove: () => void) =>
-  ({ remove }) as unknown as EmitterSubscription;
+const subscription = (remove: () => void) => ({ remove }) as unknown as EmitterSubscription;
 
 beforeEach(() => {
   // Both platform functions are shared mocks that outlive the test that set
@@ -38,9 +37,7 @@ describe("useReduceMotion", () => {
    * front of the one player who asked it not to.
    */
   it("says nothing until the device has answered", () => {
-    jest
-      .spyOn(AccessibilityInfo, "isReduceMotionEnabled")
-      .mockReturnValue(new Promise(() => {}));
+    jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockReturnValue(new Promise(() => {}));
 
     const { result } = renderHook(() => useReduceMotion());
 
@@ -100,13 +97,11 @@ describe("useReduceMotion", () => {
    */
   it("keeps a change that arrives before the device has answered", async () => {
     let answer: ((enabled: boolean) => void) | undefined;
-    jest
-      .spyOn(AccessibilityInfo, "isReduceMotionEnabled")
-      .mockReturnValue(
-        new Promise((resolve) => {
-          answer = resolve;
-        }),
-      );
+    jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockReturnValue(
+      new Promise((resolve) => {
+        answer = resolve;
+      }),
+    );
     let announce: ReduceMotionListener | undefined;
     spyOnListening().mockImplementation((event, handler) => {
       if (event === "reduceMotionChanged") {
@@ -141,4 +136,3 @@ describe("useReduceMotion", () => {
     expect(() => unmount()).not.toThrow();
   });
 });
-

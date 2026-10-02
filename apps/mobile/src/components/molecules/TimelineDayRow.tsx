@@ -1,8 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet, Text, View } from "react-native";
-
-import type { TimelineDay } from "../../view-models/game-progress";
 import { colors, fonts, radius, spacing } from "../../theme/tokens";
+import type { TimelineDay } from "../../view-models/game-progress";
 
 const DOT = 7;
 const RAIL = 11;
