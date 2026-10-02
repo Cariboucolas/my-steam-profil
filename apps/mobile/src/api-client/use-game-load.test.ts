@@ -10,6 +10,7 @@ import { createFixtureApiClient, createPendingApiClient } from "./fixture-api-cl
 import { type GameLoad, useGameLoad } from "./use-game-load";
 
 const STEAM_ID = "76561197979269357";
+const OTHER_STEAM_ID = "76561197960287930";
 const SOULSTONE = 2066020;
 /** Owned by somebody, not by this player (ADR-0004). */
 const UNOWNED = 730;
@@ -176,6 +177,47 @@ describe("useGameLoad", () => {
 
       await waitFor(() => expect(getGames).toHaveBeenCalledTimes(2));
     });
+  });
+
+  /** The one retry the cache makes by itself (#162), for the progress as for the library. */
+  it("asks once more, unprompted, for a progress the backend could not be reached for", async () => {
+    let asked = 0;
+    const { client, getGameProgress } = libraryAnswering(() => {
+      asked += 1;
+      return Promise.resolve(asked === 1 ? err("UNAVAILABLE") : ok(PROGRESS));
+    });
+    const { result } = renderLoad(client);
+
+    await waitFor(() => expect(result.current.load.status).toBe("ready"));
+    expect(getGameProgress).toHaveBeenCalledTimes(2);
+  });
+
+  /** The keys carry the SteamId (#162): another Profile starts from nothing. */
+  it("shows nothing of the previous Profile once another is chosen", async () => {
+    type Asked = { readonly steamId: string; readonly client: ApiClient };
+    const { result, rerender } = renderHook(
+      ({ steamId, client }: Asked) => useGameLoad(steamId, client, SOULSTONE),
+      {
+        initialProps: { steamId: STEAM_ID, client: libraryAnswering().client },
+        wrapper: FreshQueries,
+      },
+    );
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    rerender({ steamId: OTHER_STEAM_ID, client: createPendingApiClient() });
+
+    expect(result.current.status).toBe("loading");
+  });
+
+  /** A query nobody watches gives its place up (#162). */
+  it("abandons the progress it was asking for once the page is left", async () => {
+    const { client, getGameProgress } = libraryAnswering(() => new Promise(() => undefined));
+    const { unmount } = renderLoad(client);
+    await waitFor(() => expect(getGameProgress).toHaveBeenCalled());
+
+    unmount();
+
+    expect(getGameProgress.mock.calls[0]?.[1]?.aborted).toBe(true);
   });
 
   /**
