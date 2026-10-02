@@ -9,10 +9,25 @@ import type {
 } from "@steam/contracts";
 
 import type { ApiClient, ApiError } from "./api-client";
+import { createRequestQueue, DROPPED } from "./request-queue";
 
 const BAD_REQUEST = 400;
 const FORBIDDEN = 403;
 const NOT_FOUND = 404;
+
+/**
+ * How many requests the app has in flight at once, whatever is being asked and
+ * whoever asks. Six is what a client opens to one host anyway, so a larger
+ * number would only queue somewhere less visible (ADR-0005).
+ */
+const REQUESTS_IN_FLIGHT = 6;
+
+/**
+ * One queue for every client: `useApiClient` builds a client per component and
+ * per SteamId, and a queue per client would be as many budgets as there are
+ * clients (#162).
+ */
+const backend = createRequestQueue(REQUESTS_IN_FLIGHT);
 
 export type HttpApiClientConfig = {
   /** Where apps/api is listening. */
@@ -51,10 +66,10 @@ export const createHttpApiClient = (config: HttpApiClientConfig): ApiClient => {
   /** Everything the backend knows about this one player, and nothing else. */
   const root = `${api}/profile/${config.steamId}`;
 
-  const getAt = async <T>(url: string) => {
+  const send = async <T>(url: string, signal: AbortSignal | undefined) => {
     let response: Response;
     try {
-      response = await request(url);
+      response = await request(url, { signal: signal ?? null });
     } catch {
       return err<ApiError>("UNAVAILABLE");
     }
@@ -70,20 +85,33 @@ export const createHttpApiClient = (config: HttpApiClientConfig): ApiClient => {
     }
   };
 
+  /**
+   * A call nobody waits for any more answers as a backend that did not: the
+   * port keeps answering `Result`, and whoever aborted is not reading it.
+   */
+  const getAt = async <T>(url: string, signal: AbortSignal | undefined) => {
+    const answer = await backend(() => send<T>(url, signal), signal);
+    return answer === DROPPED ? err<ApiError>("UNAVAILABLE") : answer;
+  };
+
   /** A question about the configured player. Most of them are. */
-  const get = <T>(path: string) => getAt<T>(`${root}${path}`);
+  const get = <T>(path: string, signal: AbortSignal | undefined) =>
+    getAt<T>(`${root}${path}`, signal);
 
   return {
-    getProfile: () => get<ProfileDto>(""),
-    getGames: () => get<readonly GameDto[]>("/games"),
-    getGameProgress: (appId) => get<GameProgressDto>(`/games/${appId}/progress`),
-    getGameTally: (appId) => get<GameTallyDto>(`/games/${appId}/completion`),
+    getProfile: (signal) => get<ProfileDto>("", signal),
+    getGames: (signal) => get<readonly GameDto[]>("/games", signal),
+    getGameProgress: (appId, signal) =>
+      get<GameProgressDto>(`/games/${appId}/progress`, signal),
+    getGameTally: (appId, signal) =>
+      get<GameTallyDto>(`/games/${appId}/completion`, signal),
 
     // Off `api` rather than `root`: no steam id in this address, which is what
     // lets the backend answer every player from one cached entry (ADR-0008).
-    getGameRarity: (appId) => getAt<GameRarityDto>(`${api}/games/${appId}/rarity`),
+    getGameRarity: (appId, signal) =>
+      getAt<GameRarityDto>(`${api}/games/${appId}/rarity`, signal),
 
-    getAchievementNames: (appId) =>
-      getAt<AchievementNamesDto>(`${api}/games/${appId}/achievements`),
+    getAchievementNames: (appId, signal) =>
+      getAt<AchievementNamesDto>(`${api}/games/${appId}/achievements`, signal),
   };
 };

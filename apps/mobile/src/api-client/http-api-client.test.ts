@@ -219,3 +219,142 @@ describe("createHttpApiClient (completion)", () => {
     });
   });
 });
+
+/**
+ * The six places are one budget for the whole app (#162): `useApiClient` builds
+ * a client per component and per SteamId, so the queue is shared by every
+ * instance rather than owned by one.
+ */
+describe("createHttpApiClient (the six-request budget)", () => {
+  /** Every call a test made, dropped when it ends so the next finds six places. */
+  let test: AbortController;
+
+  beforeEach(() => {
+    test = new AbortController();
+  });
+
+  afterEach(() => {
+    test.abort();
+  });
+
+  /** A backend that answers a request only when the test says so. */
+  const heldBackend = () => {
+    const sent: { url: string; signal: AbortSignal | undefined; answer: (body: unknown) => void }[] = [];
+    const fetchHeld = ((input: string | URL | Request, init?: RequestInit) =>
+      new Promise<Response>((resolve) => {
+        sent.push({
+          url: String(input),
+          signal: init?.signal ?? undefined,
+          answer: (body) => resolve(json(body)),
+        });
+      })) as typeof fetch;
+
+    const clientFor = (steamId: string) =>
+      createHttpApiClient({ baseUrl: BASE_URL, steamId, fetch: fetchHeld });
+
+    return { sent, clientFor, appIdsSent: () => sent.map(({ url }) => Number(/games\/(\d+)/.exec(url)?.[1])) };
+  };
+
+  const OTHER_STEAM_ID = "76561198000000000";
+
+  it("leaves six requests in flight when two clients make twenty", () => {
+    const { sent, clientFor } = heldBackend();
+    const one = clientFor(STEAM_ID);
+    const other = clientFor(OTHER_STEAM_ID);
+
+    for (let appId = 1; appId <= 10; appId += 1) {
+      void one.getGameTally(appId, test.signal);
+      void other.getGameTally(appId, test.signal);
+    }
+
+    expect(sent).toHaveLength(6);
+  });
+
+  it("gives the place of a request aborted in flight to the next in the queue", () => {
+    const { clientFor, appIdsSent } = heldBackend();
+    const client = clientFor(STEAM_ID);
+    const left = new AbortController();
+
+    void client.getGameTally(1, left.signal);
+    for (let appId = 2; appId <= 7; appId += 1) {
+      void client.getGameTally(appId, test.signal);
+    }
+    expect(appIdsSent()).toEqual([1, 2, 3, 4, 5, 6]);
+
+    left.abort();
+
+    expect(appIdsSent()).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it("sends what waited in the order it was asked", async () => {
+    const { sent, clientFor, appIdsSent } = heldBackend();
+    const one = clientFor(STEAM_ID);
+    const other = clientFor(OTHER_STEAM_ID);
+
+    const first = [1, 2, 3, 4, 5, 6].map((appId) => one.getGameTally(appId, test.signal));
+    void other.getGameTally(30, test.signal);
+    void one.getGameTally(10, test.signal);
+    void other.getGameTally(20, test.signal);
+
+    sent[3]?.answer({});
+    await first[3];
+    expect(appIdsSent().slice(6)).toEqual([30]);
+
+    sent[0]?.answer({});
+    sent[5]?.answer({});
+    await Promise.all([first[0], first[5]]);
+    expect(appIdsSent().slice(6)).toEqual([30, 10, 20]);
+  });
+
+  it("never sends a request aborted while it waited", async () => {
+    const { sent, clientFor, appIdsSent } = heldBackend();
+    const client = clientFor(STEAM_ID);
+    const left = new AbortController();
+
+    const first = [1, 2, 3, 4, 5, 6].map((appId) => client.getGameTally(appId, test.signal));
+    void client.getGameTally(7, left.signal);
+    void client.getGameTally(8, test.signal);
+
+    left.abort();
+    sent[0]?.answer({});
+    sent[1]?.answer({});
+    await Promise.all([first[0], first[1]]);
+
+    expect(appIdsSent()).toEqual([1, 2, 3, 4, 5, 6, 8]);
+  });
+
+  it("never sends a request whose signal had already aborted", () => {
+    const { sent, clientFor } = heldBackend();
+    const left = new AbortController();
+    left.abort();
+
+    void clientFor(STEAM_ID).getProfile(left.signal);
+
+    expect(sent).toEqual([]);
+  });
+
+  it("hands the signal to the request, so one in flight is aborted with it", () => {
+    const { sent, clientFor } = heldBackend();
+
+    void clientFor(STEAM_ID).getGames(test.signal);
+
+    expect(sent[0]?.signal).toBe(test.signal);
+  });
+
+  /** The port never rejects for an expected failure, an abort included (ADR-0002). */
+  it.each([
+    ["while it waited", 7],
+    ["in flight", 1],
+  ])("answers a call aborted %s as unavailable", async (_when, aborted) => {
+    const { clientFor } = heldBackend();
+    const client = clientFor(STEAM_ID);
+    const left = new AbortController();
+
+    const calls = [1, 2, 3, 4, 5, 6, 7].map((appId) =>
+      client.getGameTally(appId, appId === aborted ? left.signal : test.signal),
+    );
+    left.abort();
+
+    expect(await calls[aborted - 1]).toEqual({ ok: false, error: "UNAVAILABLE" });
+  });
+});
