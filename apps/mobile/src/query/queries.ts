@@ -20,6 +20,12 @@ const NEVER_CACHED = { staleTime: 0, gcTime: 0 } as const;
 const FOR_THE_SESSION = { staleTime: Infinity, gcTime: Infinity } as const;
 
 /**
+ * Names nobody: the SteamId a key is written with while no Profile is chosen.
+ * A query under it is never run, so nothing is ever kept there.
+ */
+export const NOBODY = "";
+
+/**
  * Every query the app makes: the key its answer is kept under, and how long
  * that answer is fresh (#162). A query function is added where the query is
  * used, by whoever holds the `ApiClient`.

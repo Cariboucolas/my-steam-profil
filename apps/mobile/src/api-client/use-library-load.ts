@@ -1,10 +1,11 @@
 import type { GameDto, ProfileDto } from "@steam/contracts";
 import { skipToken, useQuery } from "@tanstack/react-query";
 
-import { queries } from "../query/queries";
+import { isAskingAgain } from "../query/is-asking-again";
+import { NOBODY, queries } from "../query/queries";
 import { codeOf, valueOrThrow } from "../query/value-or-throw";
 import type { ApiClient, ApiError } from "./api-client";
-import { gamesQuery, NO_PROFILE } from "./games-query";
+import { gamesQuery } from "./games-query";
 
 /** Where the library's first load has got to, as the screen experiences it. */
 export type LibraryLoad =
@@ -28,13 +29,6 @@ export type LibraryLoad =
 const LOADING: LibraryLoad = { status: "loading" };
 
 /**
- * A query that had an answer and failed when asked again keeps both, and stays
- * failed while it asks once more. That wait is a load like the first one.
- */
-const isAskingAgain = (load: { readonly isError: boolean; readonly isFetching: boolean }) =>
-  load.isError && load.isFetching;
-
-/**
  * The Profile and the Games it owns, from the cache above the routes (#162):
  * a screen that mounts while they are fresh asks nothing.
  *
@@ -47,7 +41,7 @@ export const useLibraryLoad = (
   apiClient: ApiClient | undefined,
 ): LibraryLoad => {
   const profile = useQuery({
-    ...queries.profile(steamId ?? NO_PROFILE),
+    ...queries.profile(steamId ?? NOBODY),
     queryFn:
       apiClient === undefined
         ? skipToken
