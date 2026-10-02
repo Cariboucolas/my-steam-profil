@@ -35,7 +35,11 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
-      # Cheapest first: a type error should not wait for the test run.
+      # Cheapest first: a second for the whole workspace, so a missing hook
+      # dependency or an unformatted file does not wait for the compiler.
+      - name: Lint
+        run: pnpm lint
+
       - name: Typecheck
         run: pnpm typecheck
 
