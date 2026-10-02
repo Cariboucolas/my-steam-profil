@@ -1,11 +1,8 @@
 import { queryOptions, skipToken } from "@tanstack/react-query";
 
-import { queries } from "../query/queries";
+import { NOBODY, queries } from "../query/queries";
 import { valueOrThrow } from "../query/value-or-throw";
 import type { ApiClient } from "./api-client";
-
-/** Names nobody: the key of a query that is not run while no Profile is chosen. */
-export const NO_PROFILE = "";
 
 /**
  * The Games a Profile owns, as every page asks for them: one key and one
@@ -15,7 +12,7 @@ export const NO_PROFILE = "";
  */
 export const gamesQuery = (steamId: string | undefined, apiClient: ApiClient | undefined) =>
   queryOptions({
-    ...queries.games(steamId ?? NO_PROFILE),
+    ...queries.games(steamId ?? NOBODY),
     queryFn:
       apiClient === undefined
         ? skipToken

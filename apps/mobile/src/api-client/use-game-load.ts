@@ -1,12 +1,13 @@
 import type { GameDto, GameProgressDto } from "@steam/contracts";
 import { skipToken, useQuery, useQueryClient } from "@tanstack/react-query";
 
-import { queries } from "../query/queries";
+import { isAskingAgain } from "../query/is-asking-again";
+import { NOBODY, queries } from "../query/queries";
 import { ApiFailure, codeOf } from "../query/value-or-throw";
 import type { ScreenError } from "../view-models/api-errors";
 import { gameInLibrary } from "../view-models/game-progress";
 import type { ApiClient } from "./api-client";
-import { gamesQuery, NO_PROFILE } from "./games-query";
+import { gamesQuery } from "./games-query";
 
 /** Where the load of one game has got to, as the screen experiences it. */
 export type GameLoad =
@@ -35,12 +36,46 @@ const NOT_A_GAME_ID: GameLoad = {
 };
 
 /**
+ * The player's GameProgress in one Game: asked on every visit and kept for
+ * nobody (ADR-0005). Asks nothing while there is no client, and none is handed
+ * in for a game outside the library.
+ *
+ * Achievements never fetched are an answer, null, and no failure. When a
+ * GameProgress lands, the tally the library holds for that Game is marked out
+ * of date; when none came back, it is left alone.
+ */
+const useProgressIn = (
+  steamId: string | undefined,
+  apiClient: ApiClient | undefined,
+  appId: number,
+) => {
+  const cache = useQueryClient();
+  const steamIdOrNobody = steamId ?? NOBODY;
+
+  return useQuery({
+    ...queries.progress(steamIdOrNobody, appId),
+    queryFn:
+      apiClient === undefined
+        ? skipToken
+        : async ({ signal }): Promise<GameProgressDto | null> => {
+            const answer = await apiClient.getGameProgress(appId, signal);
+            if (answer.ok) {
+              void cache.invalidateQueries(queries.tally(steamIdOrNobody, appId));
+              return answer.value;
+            }
+            if (answer.error === "NOT_LOADED") {
+              return null;
+            }
+            throw new ApiFailure(answer.error);
+          },
+  });
+};
+
+/**
  * One Game and the player's GameProgress in it.
  *
  * The Games are the query the library fills (#162): opened from the library,
- * a game asks nothing for them. The GameProgress is asked on every visit and
- * kept for nobody (ADR-0005), and when one lands, the tally the library holds
- * for that Game is marked out of date.
+ * a game asks nothing for them.
  *
  * `apiClient` must be the client of `steamId`.
  */
@@ -50,9 +85,7 @@ export const useGameLoad = (
   /** As the route read it: not a whole number when the address named no game. */
   appId: number,
 ): GameLoad => {
-  const cache = useQueryClient();
   const isGameId = Number.isInteger(appId);
-  const profile = steamId ?? NO_PROFILE;
 
   const games = useQuery(gamesQuery(steamId, isGameId ? apiClient : undefined));
 
@@ -60,24 +93,7 @@ export const useGameLoad = (
   // is refused here or nowhere, and its progress is never asked for.
   const game = games.data === undefined ? null : gameInLibrary(games.data, appId);
 
-  const progress = useQuery({
-    ...queries.progress(profile, appId),
-    queryFn:
-      apiClient === undefined || game === null
-        ? skipToken
-        : async ({ signal }) => {
-            const answer = await apiClient.getGameProgress(appId, signal);
-            if (answer.ok) {
-              void cache.invalidateQueries(queries.tally(profile, appId));
-              return answer.value;
-            }
-            if (answer.error === "NOT_LOADED") {
-              // Null rather than a failure, and nothing to retry.
-              return null;
-            }
-            throw new ApiFailure(answer.error);
-          },
-  });
+  const progress = useProgressIn(steamId, game === null ? undefined : apiClient, appId);
 
   if (apiClient === undefined) {
     return LOADING;
@@ -86,14 +102,16 @@ export const useGameLoad = (
     return NOT_A_GAME_ID;
   }
 
-  if (games.isPending || (games.isError && games.isFetching)) {
+  const askForTheGamesAgain = () => void games.refetch();
+
+  if (games.isPending || isAskingAgain(games)) {
     return LOADING;
   }
   if (games.isError) {
-    return { status: "error", error: codeOf(games.error), retry: () => void games.refetch() };
+    return { status: "error", error: codeOf(games.error), retry: askForTheGamesAgain };
   }
   if (game === null) {
-    return { status: "error", error: "NOT_IN_LIBRARY", retry: () => void games.refetch() };
+    return { status: "error", error: "NOT_IN_LIBRARY", retry: askForTheGamesAgain };
   }
 
   // Fetching, and not only pending: an answer the cache has not yet let go of
