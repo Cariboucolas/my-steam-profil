@@ -4,11 +4,12 @@ import { type ReactNode, useState } from "react";
 import { createAppQueryClient } from "./query-client";
 
 /**
- * The app's cache, except that it collects nothing on a timer. It lives no
- * longer than one test or one story, and an entry left to expire five minutes
- * after its last reader holds a timer a test run would wait on.
+ * The app's cache, except that it runs nothing on a timer. It lives no longer
+ * than one test or one story: an entry left to expire five minutes after its
+ * last reader holds a timer a test run would wait on, and the pause before an
+ * unavailable backend is asked again is one a test would have to sit through.
  */
-const createShortLivedQueryClient = () => createAppQueryClient({ gcTime: Infinity });
+const createShortLivedQueryClient = () => createAppQueryClient({ gcTime: Infinity, retryDelay: 0 });
 
 /**
  * Serves what it wraps from a cache of its own, built when it mounts: what one

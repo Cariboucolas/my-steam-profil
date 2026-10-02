@@ -2,6 +2,10 @@ import { render, screen } from "@testing-library/react-native";
 
 import { FreshQueries } from "./FreshQueries";
 import { Probe } from "./probe.test-support";
+import { ApiFailure } from "./value-or-throw";
+
+/** Well under the second the app waits before it asks again. */
+const SOONER_THAN_THE_APP_RETRIES_MS = 500;
 
 describe("FreshQueries", () => {
   it("serves a query to what it wraps", async () => {
@@ -33,5 +37,19 @@ describe("FreshQueries", () => {
 
     expect(screen.getByText("answered")).toBeTruthy();
     expect(ask).toHaveBeenCalledTimes(1);
+  });
+
+  /** The app pauses before its one retry; a test or a story has no use for the pause. */
+  it("asks an unavailable backend again without waiting", async () => {
+    const ask = jest
+      .fn<Promise<string>, []>()
+      .mockRejectedValueOnce(new ApiFailure("UNAVAILABLE"))
+      .mockResolvedValue("answered");
+
+    render(<Probe ask={ask} />, { wrapper: FreshQueries });
+
+    expect(
+      await screen.findByText("answered", {}, { timeout: SOONER_THAN_THE_APP_RETRIES_MS }),
+    ).toBeTruthy();
   });
 });

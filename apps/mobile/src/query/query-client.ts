@@ -15,18 +15,29 @@ export const retriesOnceWhenUnavailable = (failureCount: number, failure: unknow
   failure instanceof ApiFailure &&
   failure.code === "UNAVAILABLE";
 
-/** What #162 decided for every query, and nothing a caller may relax. */
+/**
+ * What holds for every query, and nothing a caller may relax: what #162
+ * decided, and what #166 settled when the first screen moved.
+ */
 const DECIDED = {
   refetchOnWindowFocus: false,
   refetchOnReconnect: false,
   retryOnMount: false,
   retry: retriesOnceWhenUnavailable,
+  // The request is sent whatever the browser says of the network, and fails
+  // as it always did: held back, the screen would wait without saying why.
+  networkMode: "always",
 } as const;
 
 /** What a cache may be told on top of what was decided. */
 export type QueryClientOptions = {
   /** How long an entry nobody watches is kept. The library's default if absent. */
   readonly gcTime?: number;
+  /**
+   * How long a query waits before it asks an unavailable backend again, in
+   * milliseconds. The library's default if absent.
+   */
+  readonly retryDelay?: number;
 };
 
 /**
