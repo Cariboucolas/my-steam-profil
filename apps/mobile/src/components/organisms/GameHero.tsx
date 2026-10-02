@@ -3,9 +3,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-
-import { colors, coverPlaceholder, fonts, spacing } from "../../theme/tokens";
 import { gameCoverUrl } from "../../steam/images";
+import { colors, coverPlaceholder, fonts, spacing } from "../../theme/tokens";
 
 const HEIGHT = 196;
 const BACK = 34;
@@ -40,7 +39,7 @@ export function GameHero({ appId, name, meta, topInset, onBack, languageSwitch }
       {/* The mock veils the art so the title stays readable over any cover. */}
       <LinearGradient
         colors={["rgba(11,15,20,0.35)", "rgba(11,15,20,0.62)", colors.bg]}
-        locations={[0, 0.46,0.96]}
+        locations={[0, 0.46, 0.96]}
         style={StyleSheet.absoluteFill}
       />
 

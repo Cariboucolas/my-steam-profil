@@ -1,7 +1,7 @@
 import { render } from "@testing-library/react-native";
 
 import { colors } from "../../theme/tokens";
-import { ProgressBar, PROGRESS_FILL_TEST_ID } from "./ProgressBar";
+import { PROGRESS_FILL_TEST_ID, ProgressBar } from "./ProgressBar";
 
 const fillStyle = (percentage: number | null) => {
   const { getByTestId } = render(<ProgressBar percentage={percentage} />);

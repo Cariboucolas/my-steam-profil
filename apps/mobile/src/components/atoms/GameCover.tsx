@@ -1,8 +1,7 @@
 import { Image } from "expo-image";
 import { StyleSheet, View } from "react-native";
-
-import { colors, coverPlaceholder } from "../../theme/tokens";
 import { gameCoverUrl } from "../../steam/images";
+import { colors, coverPlaceholder } from "../../theme/tokens";
 
 type Props = {
   readonly appId: number;

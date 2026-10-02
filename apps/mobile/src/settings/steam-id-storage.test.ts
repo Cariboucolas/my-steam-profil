@@ -1,4 +1,4 @@
-import { createSteamIdStorage, STEAM_ID_KEY, type KeyValueStore } from "./steam-id-storage";
+import { createSteamIdStorage, type KeyValueStore, STEAM_ID_KEY } from "./steam-id-storage";
 
 const STEAM_ID = "76561197979269357";
 

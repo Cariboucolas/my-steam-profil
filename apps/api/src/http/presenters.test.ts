@@ -1,23 +1,23 @@
-import { describe, it, expect } from "vitest";
 import {
-  toProfileDto,
-  toGameDto,
-  toAchievementDto,
-  toGameProgressDto,
-  toGameTallyDto,
+  type Achievement,
+  buildTimeline,
+  computeGameCompletion,
+  type Game,
+  Playtime,
+  type Profile,
+  SteamId,
+  unlockStateFromSteam,
+} from "@steam/domain";
+import { describe, expect, it } from "vitest";
+import {
   emptyGameProgressDto,
   emptyGameTallyDto,
+  toAchievementDto,
+  toGameDto,
+  toGameProgressDto,
+  toGameTallyDto,
+  toProfileDto,
 } from "./presenters";
-import {
-  SteamId,
-  Playtime,
-  unlockStateFromSteam,
-  computeGameCompletion,
-  buildTimeline,
-  type Profile,
-  type Game,
-  type Achievement,
-} from "@steam/domain";
 
 const UNLOCK_SECONDS = 1697568656;
 const SECONDS_TO_MS = 1000;
@@ -104,9 +104,7 @@ describe("toAchievementDto", () => {
     };
     const dto = toAchievementDto(achievement);
     expect(dto.unlocked).toBe(true);
-    expect(dto.unlockedAt).toBe(
-      new Date(UNLOCK_SECONDS * SECONDS_TO_MS).toISOString(),
-    );
+    expect(dto.unlockedAt).toBe(new Date(UNLOCK_SECONDS * SECONDS_TO_MS).toISOString());
   });
 
   it("serialises a locked achievement with a null date", () => {

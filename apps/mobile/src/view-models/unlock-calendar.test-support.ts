@@ -45,11 +45,7 @@ const at = (iso: string): number => Date.parse(iso) / 1000;
 const LIBRARY: readonly GameDto[] = [game(SOULSTONE), game(HALLS), game(EXILE)];
 
 /** The same three titles in another player's hands: another load entirely. */
-export const ANOTHER_LIBRARY: readonly GameDto[] = [
-  game(SOULSTONE),
-  game(HALLS),
-  game(EXILE),
-];
+export const ANOTHER_LIBRARY: readonly GameDto[] = [game(SOULSTONE), game(HALLS), game(EXILE)];
 
 /**
  * A library, counted. A game named here has been counted; one left out has a
@@ -61,10 +57,7 @@ export const libraryWhereUnlocksHappened = (
 ): LibraryView => ({
   games,
   tallies: Object.fromEntries(
-    Object.entries(unlocks).map(([appId, instants]) => [
-      Number(appId),
-      tally(instants.map(at)),
-    ]),
+    Object.entries(unlocks).map(([appId, instants]) => [Number(appId), tally(instants.map(at))]),
   ),
   sort: "completed",
   pending: new Set<number>(),
@@ -105,10 +98,10 @@ export const withUndatedUnlocks = (
 };
 
 /** The same library, with a tally still on its way for the games named. */
-export const stillCounting = (
-  view: LibraryView,
-  outstanding: readonly number[],
-): LibraryView => ({ ...view, pending: new Set(outstanding) });
+export const stillCounting = (view: LibraryView, outstanding: readonly number[]): LibraryView => ({
+  ...view,
+  pending: new Set(outstanding),
+});
 
 const twoDigits = (value: number): string => String(value).padStart(2, "0");
 
@@ -122,10 +115,7 @@ const twoDigits = (value: number): string => String(value).padStart(2, "0");
 export const heldBy = (date: string, count: number): readonly string[] =>
   Array.from(
     { length: count },
-    (_, index) =>
-      `${date}T${twoDigits(9 + Math.floor(index / 60))}:${twoDigits(
-        index % 60,
-      )}:00Z`,
+    (_, index) => `${date}T${twoDigits(9 + Math.floor(index / 60))}:${twoDigits(index % 60)}:00Z`,
   );
 
 /**

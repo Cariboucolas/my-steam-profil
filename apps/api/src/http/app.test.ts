@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import {
-  createApp,
-  TALLY_CACHE_SECONDS,
-  RARITY_CACHE_SECONDS,
-  ACHIEVEMENT_NAMES_CACHE_SECONDS,
-} from "./app";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createSteamClient } from "../steam/steam-client";
+import {
+  ACHIEVEMENT_NAMES_CACHE_SECONDS,
+  createApp,
+  RARITY_CACHE_SECONDS,
+  TALLY_CACHE_SECONDS,
+} from "./app";
 import { noCache, type ResponseCache } from "./cache";
 import { mapCache } from "./cache.test-support";
 
@@ -130,9 +130,7 @@ describe("an unknown route", () => {
 
 describe("GET /api/profile/:steamId", () => {
   it("answers with the profile Steam knows", async () => {
-    const app = appReaching(
-      steamAnswering({ playerSummaries: [profileOf(STEAM_ID)] }),
-    );
+    const app = appReaching(steamAnswering({ playerSummaries: [profileOf(STEAM_ID)] }));
 
     const response = await app.request(`/api/profile/${STEAM_ID}`);
 
@@ -146,9 +144,7 @@ describe("GET /api/profile/:steamId", () => {
   });
 
   it("is a 404 when Steam knows no such player", async () => {
-    const app = appReaching(
-      steamAnswering({ playerSummaries: [{ response: { players: [] } }] }),
-    );
+    const app = appReaching(steamAnswering({ playerSummaries: [{ response: { players: [] } }] }));
 
     const response = await app.request(`/api/profile/${STEAM_ID}`);
 
@@ -267,7 +263,12 @@ describe("GET /api/profile/:steamId/games", () => {
       response: {
         game_count: 2,
         games: [
-          { appid: 240, name: "Counter-Strike: Source", playtime_forever: 0, img_icon_url: "abc123" },
+          {
+            appid: 240,
+            name: "Counter-Strike: Source",
+            playtime_forever: 0,
+            img_icon_url: "abc123",
+          },
           { appid: 220, name: "Half-Life 2", playtime_forever: 0, img_icon_url: "def456" },
         ],
       },
@@ -282,16 +283,14 @@ describe("GET /api/profile/:steamId/games", () => {
         appId: 240,
         name: "Counter-Strike: Source",
         playtimeMinutes: null,
-        iconUrl:
-          "https://media.steampowered.com/steamcommunity/public/images/apps/240/abc123.jpg",
+        iconUrl: "https://media.steampowered.com/steamcommunity/public/images/apps/240/abc123.jpg",
         lastPlayedAt: null,
       },
       {
         appId: 220,
         name: "Half-Life 2",
         playtimeMinutes: null,
-        iconUrl:
-          "https://media.steampowered.com/steamcommunity/public/images/apps/220/def456.jpg",
+        iconUrl: "https://media.steampowered.com/steamcommunity/public/images/apps/220/def456.jpg",
         lastPlayedAt: null,
       },
     ]);
@@ -506,9 +505,7 @@ describe("when something fails on the way", () => {
   const STEAM_SERVER_ERROR = 503;
 
   it("logs the cause an operator would need, even though the body hides it", async () => {
-    const app = appReaching(
-      steamAnswering({ playerSummaries: [{}, STEAM_SERVER_ERROR] }),
-    );
+    const app = appReaching(steamAnswering({ playerSummaries: [{}, STEAM_SERVER_ERROR] }));
 
     await app.request(`/api/profile/${STEAM_ID}`);
 
@@ -542,9 +539,7 @@ describe("when something fails on the way", () => {
   });
 
   it("is a 502 when Steam is unavailable", async () => {
-    const app = appReaching(
-      steamAnswering({ playerSummaries: [{}, STEAM_SERVER_ERROR] }),
-    );
+    const app = appReaching(steamAnswering({ playerSummaries: [{}, STEAM_SERVER_ERROR] }));
 
     const response = await app.request(`/api/profile/${STEAM_ID}`);
 
@@ -554,9 +549,7 @@ describe("when something fails on the way", () => {
 
   it("is a 502 when Steam rate-limits us", async () => {
     const TOO_MANY_REQUESTS = 429;
-    const app = appReaching(
-      steamAnswering({ ownedGames: [{}, TOO_MANY_REQUESTS] }),
-    );
+    const app = appReaching(steamAnswering({ ownedGames: [{}, TOO_MANY_REQUESTS] }));
 
     const response = await app.request(`/api/profile/${STEAM_ID}/games`);
 
@@ -590,9 +583,7 @@ describe("when something fails on the way", () => {
   });
 
   it("never lets an error body carry the api key", async () => {
-    const app = appReaching(
-      steamAnswering({ playerSummaries: [{}, STEAM_SERVER_ERROR] }),
-    );
+    const app = appReaching(steamAnswering({ playerSummaries: [{}, STEAM_SERVER_ERROR] }));
 
     const body = await (await app.request(`/api/profile/${STEAM_ID}`)).text();
 
@@ -600,9 +591,7 @@ describe("when something fails on the way", () => {
   });
 
   it("never lets an error body carry a stack trace", async () => {
-    const app = appReaching(
-      steamAnswering({ playerSummaries: [{}, STEAM_SERVER_ERROR] }),
-    );
+    const app = appReaching(steamAnswering({ playerSummaries: [{}, STEAM_SERVER_ERROR] }));
 
     const body = await (await app.request(`/api/profile/${STEAM_ID}`)).text();
 
@@ -622,9 +611,7 @@ describe("cross-origin requests", () => {
   const ORIGIN = "http://localhost:8081";
 
   it("lets a browser on another port read the answer", async () => {
-    const app = appReaching(
-      steamAnswering({ playerSummaries: [profileOf(STEAM_ID)] }),
-    );
+    const app = appReaching(steamAnswering({ playerSummaries: [profileOf(STEAM_ID)] }));
 
     const response = await app.request(`/api/profile/${STEAM_ID}`, {
       headers: { Origin: ORIGIN },
@@ -677,9 +664,7 @@ describe("GET /api/profile/:steamId/games/:appId/completion", () => {
   });
 
   it("answers with the tally, without ever fetching the schema", async () => {
-    const app = appReaching(
-      steamAnswering({ playerAchievements: [playerWith([1, 0, 1, 0])] }),
-    );
+    const app = appReaching(steamAnswering({ playerAchievements: [playerWith([1, 0, 1, 0])] }));
 
     const response = await app.request(url);
 
@@ -698,9 +683,7 @@ describe("GET /api/profile/:steamId/games/:appId/completion", () => {
    * the unlocks could be added without widening what a GameCompletion is.
    */
   it("keeps the tally exactly as it was, beside the unlocks", async () => {
-    const app = appReaching(
-      steamAnswering({ playerAchievements: [playerWith([1, 0, 1, 0])] }),
-    );
+    const app = appReaching(steamAnswering({ playerAchievements: [playerWith([1, 0, 1, 0])] }));
 
     const body = (await (await app.request(url)).json()) as {
       completion: unknown;
@@ -710,9 +693,7 @@ describe("GET /api/profile/:steamId/games/:appId/completion", () => {
   });
 
   it("reports a game the player has never scored in as zero of its real total", async () => {
-    const app = appReaching(
-      steamAnswering({ playerAchievements: [playerWith([0, 0, 0])] }),
-    );
+    const app = appReaching(steamAnswering({ playerAchievements: [playerWith([0, 0, 0])] }));
 
     expect(await (await app.request(url)).json()).toEqual({
       completion: { unlocked: 0, total: 3, percentage: 0 },
@@ -774,9 +755,7 @@ describe("GET /api/profile/:steamId/games/:appId/completion", () => {
   it("refuses an app id that is not a whole number above zero", async () => {
     const app = appReaching(unreachableSteam);
 
-    const response = await app.request(
-      `/api/profile/${STEAM_ID}/games/not-an-app/completion`,
-    );
+    const response = await app.request(`/api/profile/${STEAM_ID}/games/not-an-app/completion`);
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: "INVALID_APP_ID" });
@@ -907,7 +886,6 @@ describe("caching the library tally", () => {
   });
 });
 
-
 /**
  * What Steam publishes about a Game, for everyone who owns it. The address is
  * the whole design: no SteamId in it, so two players asking about the same game
@@ -921,9 +899,9 @@ describe("GET /api/games/:appId/rarity", () => {
   const url = `/api/games/${APP_ID}/rarity`;
 
   /** Steam publishes the figure as text, so a stub that sends a number lies. */
-  const publishing = (
-    achievements: readonly { name: string; percent: string }[],
-  ) => ({ achievementpercentages: { achievements } });
+  const publishing = (achievements: readonly { name: string; percent: string }[]) => ({
+    achievementpercentages: { achievements },
+  });
 
   it("answers with the share of owners holding each achievement", async () => {
     const app = appReaching(
@@ -953,9 +931,7 @@ describe("GET /api/games/:appId/rarity", () => {
    */
   it("answers with nothing for a game Steam publishes nothing about", async () => {
     // Measured on 2694490 and 24400: a 403 with a bare `{}`, no envelope.
-    const app = appReaching(
-      steamAnswering({ globalPercentages: [{}, FORBIDDEN_FROM_STEAM] }),
-    );
+    const app = appReaching(steamAnswering({ globalPercentages: [{}, FORBIDDEN_FROM_STEAM] }));
 
     const response = await app.request(url);
 
@@ -971,15 +947,11 @@ describe("GET /api/games/:appId/rarity", () => {
       }),
     );
 
-    expect(await (await app.request(url)).json()).toEqual([
-      { apiName: "ACH_0", rarity: 0 },
-    ]);
+    expect(await (await app.request(url)).json()).toEqual([{ apiName: "ACH_0", rarity: 0 }]);
   });
 
   it("refuses an app id that is not a whole number above zero", async () => {
-    const response = await appReaching(unreachableSteam).request(
-      "/api/games/not-an-app/rarity",
-    );
+    const response = await appReaching(unreachableSteam).request("/api/games/not-an-app/rarity");
 
     expect(response.status).toBe(400);
     expect(await response.json()).toEqual({ error: "INVALID_APP_ID" });
@@ -1050,9 +1022,7 @@ describe("caching a game's published rarity", () => {
 
     const response = await app.request(rarityUrl(APP_ID));
 
-    expect(response.headers.get("cache-control")).toBe(
-      `max-age=${RARITY_CACHE_SECONDS}`,
-    );
+    expect(response.headers.get("cache-control")).toBe(`max-age=${RARITY_CACHE_SECONDS}`);
     expect(RARITY_CACHE_SECONDS).toBeGreaterThan(TALLY_CACHE_SECONDS);
   });
 });
@@ -1103,9 +1073,7 @@ describe("GET /api/games/:appId/achievements", () => {
    * it to name.
    */
   it("answers with nothing for a game that defines no achievements", async () => {
-    const app = appReaching(
-      steamAnswering({ schemaForGame: [{ game: {} }, NO_STATS_FROM_STEAM] }),
-    );
+    const app = appReaching(steamAnswering({ schemaForGame: [{ game: {} }, NO_STATS_FROM_STEAM] }));
 
     const response = await app.request(url);
 

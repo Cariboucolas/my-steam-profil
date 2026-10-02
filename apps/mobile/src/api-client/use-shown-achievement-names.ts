@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-
+import type { NamesByAppId } from "../view-models/rarest-unlocks";
 import type { ApiClient } from "./api-client";
 import { askInWaves } from "./request-waves";
-import type { NamesByAppId } from "../view-models/rarest-unlocks";
 
 /** Shared, so a load that learns nothing re-renders nothing. */
 const NO_NAMES: NamesByAppId = {};
@@ -61,9 +60,7 @@ export type ShownAchievementNames = {
  * set of games it shows grows as figures land, so what has been asked is
  * remembered and each change asks only about what it added.
  */
-export const useShownAchievementNames = (
-  shown: ShownGames | null,
-): ShownAchievementNames => {
+export const useShownAchievementNames = (shown: ShownGames | null): ShownAchievementNames => {
   const [names, setNames] = useState<NamesByAppId>(NO_NAMES);
   const [pending, setPending] = useState<ReadonlySet<number>>(NOTHING_OUTSTANDING);
 
@@ -108,10 +105,7 @@ export const useShownAchievementNames = (
   }, [client]);
 
   useEffect(() => {
-    const missing =
-      client === null
-        ? []
-        : appIds.filter((appId) => !asked.current.has(appId));
+    const missing = client === null ? [] : appIds.filter((appId) => !asked.current.has(appId));
 
     if (client === null || missing.length === 0) return;
 

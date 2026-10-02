@@ -30,8 +30,7 @@ const libraryWhere = (
   unlocks: Readonly<Record<number, readonly string[]>>,
   outstanding: readonly number[],
   games?: readonly GameDto[],
-): LibraryView =>
-  stillCounting(libraryWhereUnlocksHappened(unlocks, games), outstanding);
+): LibraryView => stillCounting(libraryWhereUnlocksHappened(unlocks, games), outstanding);
 
 /**
  * Where a cold library really starts: every tally asked for, not one back.
@@ -41,10 +40,7 @@ const AWAITING = libraryWhere({}, [SOULSTONE, HALLS, EXILE]);
 /** One wave in, two to go. */
 const FIRST_WAVE = libraryWhere({ [SOULSTONE]: APRIL_PEAKS }, [HALLS, EXILE]);
 /** The steady month has landed since, and a tally is still outstanding. */
-const SECOND_WAVE = libraryWhere(
-  { [SOULSTONE]: APRIL_PEAKS, [HALLS]: MARCH_STEADY },
-  [EXILE],
-);
+const SECOND_WAVE = libraryWhere({ [SOULSTONE]: APRIL_PEAKS, [HALLS]: MARCH_STEADY }, [EXILE]);
 /** Another player's library, its own load one wave in. */
 const ANOTHER_FIRST_WAVE = libraryWhere(
   { [HALLS]: MARCH_STEADY },
@@ -52,10 +48,7 @@ const ANOTHER_FIRST_WAVE = libraryWhere(
   ANOTHER_LIBRARY,
 );
 /** Everything that was coming has come. */
-const COUNTED = libraryWhere(
-  { [SOULSTONE]: APRIL_PEAKS, [HALLS]: MARCH_STEADY },
-  [],
-);
+const COUNTED = libraryWhere({ [SOULSTONE]: APRIL_PEAKS, [HALLS]: MARCH_STEADY }, []);
 
 const legendOf = (calendar: UnlockCalendar): readonly string[] =>
   calendar.legend.map((band) => band.label);

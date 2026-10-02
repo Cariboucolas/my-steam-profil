@@ -62,9 +62,7 @@ export const incidentsOn = (repository: string, token: string, send: typeof fetc
     });
 
     if (!OK_STATUSES.has(response.status)) {
-      throw new Error(
-        `GitHub refused ${init.method ?? "GET"} ${path}: HTTP ${response.status}`,
-      );
+      throw new Error(`GitHub refused ${init.method ?? "GET"} ${path}: HTTP ${response.status}`);
     }
 
     return response.json();

@@ -1,5 +1,5 @@
-import { translatorFor } from "../i18n/i18n";
 import type { ApiError, ProgressError } from "../api-client";
+import { translatorFor } from "../i18n/i18n";
 import { messageFor } from "./api-errors";
 
 const english = translatorFor("en");

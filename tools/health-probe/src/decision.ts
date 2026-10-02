@@ -3,9 +3,7 @@ import type { Outcome } from "./checks";
 /** At least one, which is what having attempted anything means. */
 export type NonEmpty<T> = readonly [T, ...(readonly T[])];
 
-export type Verdict =
-  | { readonly up: true }
-  | { readonly up: false; readonly reason: string };
+export type Verdict = { readonly up: true } | { readonly up: false; readonly reason: string };
 
 /** An outage already known about: the open issue that records it. */
 export type Incident = {

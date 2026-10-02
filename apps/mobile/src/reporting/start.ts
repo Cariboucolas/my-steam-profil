@@ -2,7 +2,7 @@ import { init } from "@sentry/react-native";
 import * as Updates from "expo-updates";
 import { Platform } from "react-native";
 
-import { resolveReportingConfig, type ReportingEnvironment } from "./config";
+import { type ReportingEnvironment, resolveReportingConfig } from "./config";
 
 /**
  * What this build was told about itself, read where the globals live.

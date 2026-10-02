@@ -23,10 +23,7 @@ const exceptions = JSON.parse(readFileSync(EXCEPTIONS, "utf8")) as readonly stri
 const exceptionsPath = relative(process.cwd(), EXCEPTIONS);
 
 const { unstoried, staleExceptions } = storyGaps(files, exceptions);
-const unfilled = templatesWithoutPageStories([
-  ...files,
-  ...filesUnder(join(COMPONENTS, "pages")),
-]);
+const unfilled = templatesWithoutPageStories([...files, ...filesUnder(join(COMPONENTS, "pages"))]);
 
 if (unstoried.length > 0) {
   console.error("These components have no stories beside them:");

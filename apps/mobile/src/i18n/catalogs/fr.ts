@@ -8,8 +8,18 @@ export const fr: Catalog = {
   date: {
     day: "{{day}} {{month}} {{year}}",
     months: [
-      "janv.", "févr.", "mars", "avr.", "mai", "juin",
-      "juil.", "août", "sept.", "oct.", "nov.", "déc.",
+      "janv.",
+      "févr.",
+      "mars",
+      "avr.",
+      "mai",
+      "juin",
+      "juil.",
+      "août",
+      "sept.",
+      "oct.",
+      "nov.",
+      "déc.",
     ],
   },
   library: {
@@ -97,13 +107,20 @@ export const fr: Catalog = {
   calendar: {
     title: "Activité",
     // Three capitals fit the label column (ADR-0011); the row upper-cases them.
-    months: [
-      "Jan", "Fév", "Mar", "Avr", "Mai", "Jun",
-      "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc",
-    ],
+    months: ["Jan", "Fév", "Mar", "Avr", "Mai", "Jun", "Jul", "Aoû", "Sep", "Oct", "Nov", "Déc"],
     monthNames: [
-      "janvier", "février", "mars", "avril", "mai", "juin",
-      "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+      "janvier",
+      "février",
+      "mars",
+      "avril",
+      "mai",
+      "juin",
+      "juillet",
+      "août",
+      "septembre",
+      "octobre",
+      "novembre",
+      "décembre",
     ],
     monthSpoken_one: "{{month}}, {{count}} succès débloqué",
     monthSpoken_many: "{{month}}, {{count}} de succès débloqués",
@@ -137,7 +154,8 @@ export const fr: Catalog = {
     title: "Quel profil Steam ?",
     hint: "Un SteamID64 — dix-sept chiffres.",
     input: "SteamID64",
-    refused: "Ce n'est pas un SteamID64. Il compte dix-sept chiffres — trouvez le vôtre sur steamid.io.",
+    refused:
+      "Ce n'est pas un SteamID64. Il compte dix-sept chiffres — trouvez le vôtre sur steamid.io.",
     submit: "Afficher ce profil",
     cancel: "Annuler",
     forget: "Oublier ce profil",

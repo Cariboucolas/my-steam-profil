@@ -83,7 +83,10 @@ const rarityOf = (game: GameDto): GameRarityDto =>
  */
 export const libraryServedOn = (
   today: Date,
-  { games = LIBRARY_GAMES, except = [] }: { games?: readonly GameDto[]; except?: readonly number[] } = {},
+  {
+    games = LIBRARY_GAMES,
+    except = [],
+  }: { games?: readonly GameDto[]; except?: readonly number[] } = {},
 ): FixtureData => ({
   profile: FIXTURE_PROFILE,
   games,

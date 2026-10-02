@@ -1,9 +1,7 @@
 import { fileURLToPath } from "node:url";
 
 /** Where the app keeps its artwork and the images built from it. */
-export const ASSETS = fileURLToPath(
-  new URL("../../../apps/mobile/assets/", import.meta.url),
-);
+export const ASSETS = fileURLToPath(new URL("../../../apps/mobile/assets/", import.meta.url));
 
 /** An edit applied to the source before it is rendered. */
 export type Edit = "plate" | "monochrome";

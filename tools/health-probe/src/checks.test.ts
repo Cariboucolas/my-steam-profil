@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { saysItIsHealthy, refusesTheMethod } from "./checks";
+import { refusesTheMethod, saysItIsHealthy } from "./checks";
 
 const answering = (status: number, body: string): Response =>
   new Response(body, { status, headers: { "content-type": "application/json" } });
@@ -22,7 +22,7 @@ describe("what apps/api answering healthily looks like", () => {
   it("refuses a 200 that does not say ok, which is how a misconfigured build is caught", async () => {
     await expect(saysItIsHealthy(answering(200, '{"status":"unhealthy"}'))).resolves.toEqual({
       ok: false,
-      reason: "body was not {\"status\":\"ok\"}",
+      reason: 'body was not {"status":"ok"}',
     });
   });
 

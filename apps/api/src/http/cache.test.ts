@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
 import { Hono } from "hono";
+import { describe, expect, it } from "vitest";
 
 import { cached } from "./cache";
 import { mapCache } from "./cache.test-support";
@@ -9,9 +9,7 @@ const routeKeepingAnswersFor = (seconds: number): Hono => {
   const app = new Hono();
   app.get(
     "/",
-    cached(mapCache(), seconds, (context) =>
-      Promise.resolve(context.json({ answered: true })),
-    ),
+    cached(mapCache(), seconds, (context) => Promise.resolve(context.json({ answered: true }))),
   );
   return app;
 };

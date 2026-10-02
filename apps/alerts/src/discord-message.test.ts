@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 import { describeAlert } from "./discord-message";
 
@@ -49,7 +49,10 @@ describe("describeAlert", () => {
   });
 
   it("colours an error apart from a warning", () => {
-    const warning = { ...alert, data: { ...alert.data, event: { ...alert.data.event, level: "warning" } } };
+    const warning = {
+      ...alert,
+      data: { ...alert.data, event: { ...alert.data.event, level: "warning" } },
+    };
 
     expect(embedOf(alert)?.color).not.toBe(embedOf(warning)?.color);
   });
@@ -94,7 +97,9 @@ describe("describeAlert", () => {
   it("refuses a comment, which shares an action name with a new issue", () => {
     // `comment.created` and `issue.created` both say "created". Routing on the
     // action alone would wake somebody for a comment.
-    expect(describeAlert({ action: "created", data: { comment: { comment: "hi" } } })).toBeUndefined();
+    expect(
+      describeAlert({ action: "created", data: { comment: { comment: "hi" } } }),
+    ).toBeUndefined();
   });
 });
 

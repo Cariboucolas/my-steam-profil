@@ -1,23 +1,16 @@
 import type { AchievementDto, GameDto, GameProgressDto, ProfileDto } from "@steam/contracts";
 import { err } from "@steam/domain";
 import { useLocalSearchParams } from "expo-router";
-import {
-  act,
-  fireEvent,
-  renderRouter,
-  screen,
-  waitFor,
-} from "expo-router/testing-library";
+import { act, fireEvent, renderRouter, screen, waitFor } from "expo-router/testing-library";
 import { Text } from "react-native";
-
+import LibraryScreen from "../../app/index";
 import { deviceAsksForLessMotion } from "../accessibility/reduce-motion.test-support";
 import type { ApiClient, ApiError } from "../api-client/api-client";
 import { createFixtureApiClient } from "../api-client/fixture-api-client";
 import { UNLOCK_CALENDAR_CARD_TEST_ID } from "../components/organisms/UnlockCalendarCard";
 import type { SteamIdStorage } from "../settings/steam-id-storage";
-import { colors } from "../theme/tokens";
 import { SteamIdProvider, useSteamId } from "../settings/steam-id-store";
-import LibraryScreen from "../../app/index";
+import { colors } from "../theme/tokens";
 
 const STEAM_ID = "76561197979269357";
 const OTHER_STEAM_ID = "76561197960287930";
@@ -69,8 +62,7 @@ const GameStub = () => {
   return <Text>{`game screen ${appId}`}</Text>;
 };
 
-const library = (): ApiClient =>
-  createFixtureApiClient({ profile, games, progress: {} });
+const library = (): ApiClient => createFixtureApiClient({ profile, games, progress: {} });
 
 /** Two games whose order differs by whichever sort is asked for. */
 const shelf: readonly GameDto[] = [
@@ -84,8 +76,7 @@ const shelf: readonly GameDto[] = [
   },
 ];
 
-const shelved = (): ApiClient =>
-  createFixtureApiClient({ profile, games: shelf, progress: {} });
+const shelved = (): ApiClient => createFixtureApiClient({ profile, games: shelf, progress: {} });
 
 /**
  * The same two games as they reach a client for a profile whose playtime is
@@ -206,10 +197,7 @@ const ProfileSwitch = () => {
   );
 };
 
-const renderAt = (
-  clients: Readonly<Record<string, ApiClient>>,
-  stored: string | undefined,
-) => {
+const renderAt = (clients: Readonly<Record<string, ApiClient>>, stored: string | undefined) => {
   mockClients = clients;
   return renderRouter(
     { index: LibraryScreen, setup: SetupStub, "game/[appId]": GameStub },
@@ -255,9 +243,7 @@ describe("library screen", () => {
   it("shows the unlock calendar for a library with nothing unlocked", async () => {
     renderLibrary(createFixtureApiClient({ profile, games, progress: {} }));
 
-    await waitFor(() =>
-      expect(screen.getByTestId(UNLOCK_CALENDAR_CARD_TEST_ID)).toBeTruthy(),
-    );
+    await waitFor(() => expect(screen.getByTestId(UNLOCK_CALENDAR_CARD_TEST_ID)).toBeTruthy());
   });
   it("sends a device that remembers no profile to setup", async () => {
     renderWithoutProfile();
@@ -281,9 +267,7 @@ describe("library screen", () => {
     // What this bundle says it was built from, which under a test runner is
     // what a developer's machine says. Asked for with the paint, since the
     // header writes it without reading it aloud.
-    expect(
-      screen.getByText("· revision dev", { includeHiddenElements: true }),
-    ).toBeTruthy();
+    expect(screen.getByText("· revision dev", { includeHiddenElements: true })).toBeTruthy();
   });
 
   it("opens the game the reader presses", async () => {
@@ -291,9 +275,7 @@ describe("library screen", () => {
 
     fireEvent.press(await screen.findByText("Soulstone Survivors"));
 
-    await waitFor(() =>
-      expect(screen.getByText("game screen 2066020")).toBeTruthy(),
-    );
+    await waitFor(() => expect(screen.getByText("game screen 2066020")).toBeTruthy());
   });
 
   describe("when the backend refuses", () => {
@@ -346,9 +328,7 @@ describe("library screen", () => {
 
       fireEvent.press(await screen.findByLabelText("Change profile"));
 
-      await waitFor(() =>
-        expect(screen.getByText("setup screen")).toBeTruthy(),
-      );
+      await waitFor(() => expect(screen.getByText("setup screen")).toBeTruthy());
     });
   });
 
@@ -364,9 +344,7 @@ describe("library screen", () => {
 
     fireEvent.press(screen.getByLabelText("switch profile"));
 
-    await waitFor(() =>
-      expect(screen.queryByText("Soulstone Survivors")).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByText("Soulstone Survivors")).toBeNull());
     expect(screen.queryByTestId(UNLOCK_CALENDAR_CARD_TEST_ID)).toBeNull();
   });
 
@@ -380,15 +358,11 @@ describe("library screen", () => {
 
     fireEvent.press(screen.getByText("Most played"));
 
-    await waitFor(() =>
-      expect(drawnNames()).toEqual(["Soulstone Survivors", "Team Fortress 2"]),
-    );
+    await waitFor(() => expect(drawnNames()).toEqual(["Soulstone Survivors", "Team Fortress 2"]));
 
     fireEvent.press(screen.getByText("Recently played"));
 
-    await waitFor(() =>
-      expect(drawnNames()).toEqual(["Team Fortress 2", "Soulstone Survivors"]),
-    );
+    await waitFor(() => expect(drawnNames()).toEqual(["Team Fortress 2", "Soulstone Survivors"]));
   });
 
   /**
@@ -400,17 +374,13 @@ describe("library screen", () => {
    * screen differ from another's for no stated cause.
    */
   it("offers no order over a figure Steam withholds, and says why", async () => {
-    renderLibrary(
-      createFixtureApiClient({ profile, games: withheldShelf, progress: {} }),
-    );
+    renderLibrary(createFixtureApiClient({ profile, games: withheldShelf, progress: {} }));
     await screen.findByText("Soulstone Survivors");
 
     expect(screen.getByText("Completed first")).toBeTruthy();
     expect(screen.queryByText("Most played")).toBeNull();
     expect(screen.queryByText("Recently played")).toBeNull();
-    expect(
-      screen.getByText(/Steam does not publish this profile's playtime/),
-    ).toBeTruthy();
+    expect(screen.getByText(/Steam does not publish this profile's playtime/)).toBeTruthy();
   });
 
   /**
@@ -437,9 +407,7 @@ describe("library screen", () => {
     fireEvent.press(screen.getByLabelText("switch profile"));
 
     await waitFor(() => expect(screen.queryByText("Most played")).toBeNull());
-    expect(screen.getByText("Completed first").props.style.color).toBe(
-      colors.accent,
-    );
+    expect(screen.getByText("Completed first").props.style.color).toBe(colors.accent);
   });
 
   it("reports a library that will not load even when the profile did", async () => {
@@ -447,9 +415,7 @@ describe("library screen", () => {
 
     await waitFor(() =>
       expect(
-        screen.getByText(
-          "This profile is private, so Steam will not say what has been unlocked.",
-        ),
+        screen.getByText("This profile is private, so Steam will not say what has been unlocked."),
       ).toBeTruthy(),
     );
   });
@@ -473,9 +439,7 @@ describe("library screen", () => {
 
     fireEvent.press(screen.getByText("Rarest"));
 
-    await waitFor(() =>
-      expect(screen.getByText("Nothing unlocked in any game yet")).toBeTruthy(),
-    );
+    await waitFor(() => expect(screen.getByText("Nothing unlocked in any game yet")).toBeTruthy());
   });
 
   it("ranks the rarest unlock first when Steam publishes figures", async () => {
@@ -485,8 +449,9 @@ describe("library screen", () => {
     fireEvent.press(screen.getByText("Rarest"));
 
     await waitFor(() => expect(screen.getByText("BOSS_1")).toBeTruthy());
-    expect(
-      screen.getAllByText(/BOSS_/).map((node) => String(node.children[0])),
-    ).toEqual(["BOSS_1", "BOSS_2"]);
+    expect(screen.getAllByText(/BOSS_/).map((node) => String(node.children[0]))).toEqual([
+      "BOSS_1",
+      "BOSS_2",
+    ]);
   });
 });

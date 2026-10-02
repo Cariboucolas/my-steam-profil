@@ -12,11 +12,7 @@ const GROUP_SEPARATOR = " ";
  * group separator is (a comma, a narrow no-break space) and the width model
  * measures U+0020, so the grouping is done here, once, on the integer part.
  */
-export const formatNumber = (
-  t: Translate,
-  value: number,
-  maximumFractionDigits = 0,
-): string => {
+export const formatNumber = (t: Translate, value: number, maximumFractionDigits = 0): string => {
   const written = t("format.number", {
     value,
     formatParams: { value: { useGrouping: false, maximumFractionDigits } },

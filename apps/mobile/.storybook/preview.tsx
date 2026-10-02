@@ -100,11 +100,16 @@ const preview: Preview = {
     options: {
       storySort: {
         order: [
-          "Atoms", ["Index", "*"],
-          "Molecules", ["Index", "*"],
-          "Organisms", ["Index", "*"],
-          "Templates", ["Index", "*"],
-          "Pages", ["Index", "*"],
+          "Atoms",
+          ["Index", "*"],
+          "Molecules",
+          ["Index", "*"],
+          "Organisms",
+          ["Index", "*"],
+          "Templates",
+          ["Index", "*"],
+          "Pages",
+          ["Index", "*"],
         ],
       },
     },

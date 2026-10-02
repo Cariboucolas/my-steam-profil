@@ -1,7 +1,7 @@
 import type { GameRarityDto } from "@steam/contracts";
 
 import type { Translate } from "../i18n/i18n";
-import { buildRarestUnlocks, nameUnlocks, type NamedUnlock } from "../view-models/rarest-unlocks";
+import { buildRarestUnlocks, type NamedUnlock, nameUnlocks } from "../view-models/rarest-unlocks";
 import { unlockingLibrary } from "./library";
 import { STORY_TODAY } from "./today";
 

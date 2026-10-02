@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { SteamGateway } from "./steam/steam-gateway";
-import { createFetchHandler, cacheFrom } from "./worker";
+import { cacheFrom, createFetchHandler } from "./worker";
 
 const API_KEY = "TEST_KEY";
 const HEALTH = "https://api.example.com/health";
@@ -140,9 +140,7 @@ describe("the Worker's cache", () => {
       },
     });
 
-    await expect(
-      cache.put(new Request(COMPLETION), new Response("{}")),
-    ).resolves.toBeUndefined();
+    await expect(cache.put(new Request(COMPLETION), new Response("{}"))).resolves.toBeUndefined();
     expect(logged).toHaveBeenCalled();
   });
 });

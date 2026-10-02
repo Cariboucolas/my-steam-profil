@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-
-import type { ApiClient } from "./api-client";
-import { askInWaves } from "./request-waves";
 import type { TallyByAppId } from "../view-models/library";
 import type { RarityByAppId } from "../view-models/rarest-unlocks";
+import type { ApiClient } from "./api-client";
+import { askInWaves } from "./request-waves";
 
 /** Shared, so resetting a tab that has fetched nothing re-renders nothing. */
 const NO_RARITY: RarityByAppId = {};
@@ -96,9 +95,7 @@ const statusOf = (
  * The order is nobody's: unlike the tallies, no row on screen is waiting on a
  * particular game, and the ranking is only true once every answer is in.
  */
-export const gamesHoldingAnUnlock = (
-  tallies: TallyByAppId,
-): readonly number[] =>
+export const gamesHoldingAnUnlock = (tallies: TallyByAppId): readonly number[] =>
   Object.entries(tallies)
     .filter(([, tally]) => tally.unlocks.length > 0)
     .map(([appId]) => Number(appId));

@@ -10,10 +10,7 @@ export const unlockedAt = (at: Date): UnlockState => ({ unlocked: true, at });
  * Translates the Steam pair (achieved 0/1, unlocktime in seconds) into an UnlockState.
  * Rule (see FINDINGS.md): unlocked iff achieved === 1 AND unlocktime > 0.
  */
-export const unlockStateFromSteam = (
-  achieved: number,
-  unlocktime: number,
-): UnlockState => {
+export const unlockStateFromSteam = (achieved: number, unlocktime: number): UnlockState => {
   if (achieved === 1 && unlocktime > 0) {
     return unlockedAt(new Date(unlocktime * 1000));
   }

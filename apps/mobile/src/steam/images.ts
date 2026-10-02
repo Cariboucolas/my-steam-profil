@@ -6,5 +6,4 @@
 const CDN = "https://cdn.cloudflare.steamstatic.com/steam/apps";
 
 /** Wide store header art, used behind a game's title. */
-export const gameCoverUrl = (appId: number): string =>
-  `${CDN}/${appId}/header.jpg`;
+export const gameCoverUrl = (appId: number): string => `${CDN}/${appId}/header.jpg`;

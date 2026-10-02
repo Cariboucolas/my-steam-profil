@@ -1,8 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
-
-import { watch, waitUntilHealthy, ATTEMPTS, type Ports } from "./run";
-import type { Target } from "./targets";
+import { describe, expect, it, vi } from "vitest";
 import type { Incident } from "./decision";
+import { ATTEMPTS, type Ports, waitUntilHealthy, watch } from "./run";
+import type { Target } from "./targets";
 
 const target: Target = {
   name: "apps/api",

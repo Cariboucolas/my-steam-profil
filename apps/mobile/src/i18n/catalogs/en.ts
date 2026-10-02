@@ -11,10 +11,7 @@ export const en: Catalog = {
   },
   date: {
     day: "{{day}} {{month}} {{year}}",
-    months: [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ],
+    months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
   },
   library: {
     minutes: "{{minutes}} min",
@@ -96,13 +93,20 @@ export const en: Catalog = {
   calendar: {
     title: "Activity",
     // Three capitals fit the label column (ADR-0011); the row upper-cases them.
-    months: [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-    ],
+    months: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
     monthNames: [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December",
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ],
     monthSpoken_one: "{{month}}, {{count}} unlock",
     monthSpoken_other: "{{month}}, {{count}} unlocks",

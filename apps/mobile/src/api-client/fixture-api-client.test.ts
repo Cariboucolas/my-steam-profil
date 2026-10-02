@@ -40,10 +40,7 @@ const UNLOCK_SECONDS = 1697568656;
 const LATER_SECONDS = 1697655056;
 
 /** Only what a tally reads is filled in; the rest of the shape is nominal. */
-const achievement = (
-  apiName: string,
-  unlockedAt: string | null,
-): AchievementDto => ({
+const achievement = (apiName: string, unlockedAt: string | null): AchievementDto => ({
   apiName,
   displayName: apiName,
   description: "",

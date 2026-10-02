@@ -1,8 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-native-web-vite";
 import { fn } from "storybook/test";
-
-import { english, translatorForGlobals } from "../../fixtures/story-locale";
 import { countedLibrary, landingLibrary, playtimeWithheldLibrary } from "../../fixtures/library";
+import { english, translatorForGlobals } from "../../fixtures/story-locale";
 import type { Translate } from "../../i18n/i18n";
 import { buildLibraryRows, type LibraryView } from "../../view-models/library";
 import { GameListItem } from "./GameListItem";

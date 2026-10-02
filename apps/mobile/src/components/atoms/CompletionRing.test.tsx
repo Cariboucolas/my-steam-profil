@@ -1,11 +1,7 @@
 import { render } from "@testing-library/react-native";
 import { Text } from "react-native";
 
-import {
-  CompletionRing,
-  RING_PROGRESS_TEST_ID,
-  ringGeometry,
-} from "./CompletionRing";
+import { CompletionRing, RING_PROGRESS_TEST_ID, ringGeometry } from "./CompletionRing";
 
 describe("ringGeometry", () => {
   const SIZE = 88;
@@ -23,9 +19,7 @@ describe("ringGeometry", () => {
   });
 
   it("leaves a proportional gap partway round", () => {
-    expect(ringGeometry(SIZE, STROKE, 73).dashOffset).toBeCloseTo(
-      circumference * 0.27,
-    );
+    expect(ringGeometry(SIZE, STROKE, 73).dashOffset).toBeCloseTo(circumference * 0.27);
   });
 
   it("clamps a percentage that falls outside 0-100", () => {
@@ -34,9 +28,7 @@ describe("ringGeometry", () => {
   });
 
   it("treats unknown completion as an empty ring", () => {
-    expect(ringGeometry(SIZE, STROKE, null).dashOffset).toBeCloseTo(
-      circumference,
-    );
+    expect(ringGeometry(SIZE, STROKE, null).dashOffset).toBeCloseTo(circumference);
   });
 });
 
@@ -51,9 +43,7 @@ describe("CompletionRing", () => {
   });
 
   it("exposes the progress arc", () => {
-    const { getByTestId } = render(
-      <CompletionRing size={88} strokeWidth={7} percentage={73} />,
-    );
+    const { getByTestId } = render(<CompletionRing size={88} strokeWidth={7} percentage={73} />);
     expect(getByTestId(RING_PROGRESS_TEST_ID)).toBeTruthy();
   });
 });

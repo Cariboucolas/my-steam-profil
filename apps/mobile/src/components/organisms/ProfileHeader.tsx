@@ -1,9 +1,8 @@
+import type { ProfileDto } from "@steam/contracts";
 import { Image } from "expo-image";
 import type { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-
-import type { ProfileDto } from "@steam/contracts";
 import { NOT_READ } from "../../accessibility/not-read";
 import { colors, fonts, spacing } from "../../theme/tokens";
 

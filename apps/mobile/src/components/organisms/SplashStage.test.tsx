@@ -1,6 +1,4 @@
 import { act, render, screen } from "@testing-library/react-native";
-
-import { SplashStage, SPLASH_WORDMARK } from "./SplashStage";
 import {
   deviceAsksForLessMotion,
   deviceIsFineWithMotion,
@@ -8,17 +6,13 @@ import {
 } from "../../accessibility/reduce-motion.test-support";
 import { HOLD_MS, REVEAL_MS } from "../../splash/splash-timing";
 import { MARK_STOP_COUNT } from "../../theme/mark";
-import {
-  MARK_STOP_TEST_ID,
-  MARK_TIP_TEST_ID,
-  MARK_TRACK_TEST_ID,
-} from "../atoms/BrandMark";
+import { MARK_STOP_TEST_ID, MARK_TIP_TEST_ID, MARK_TRACK_TEST_ID } from "../atoms/BrandMark";
+import { SPLASH_WORDMARK, SplashStage } from "./SplashStage";
 
 /** The mark is hidden from the accessibility tree; structural queries say so. */
 const DRAWN = { includeHiddenElements: true } as const;
 
-const stopsDrawn = (): number =>
-  screen.queryAllByTestId(MARK_STOP_TEST_ID, DRAWN).length;
+const stopsDrawn = (): number => screen.queryAllByTestId(MARK_STOP_TEST_ID, DRAWN).length;
 
 const wait = (ms: number): void => {
   act(() => {

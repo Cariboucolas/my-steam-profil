@@ -1,9 +1,9 @@
 import type {
-  SteamPlayerSummariesResponse,
-  SteamOwnedGamesResponse,
-  SteamSchemaResponse,
-  SteamPlayerAchievementsResponse,
   SteamGlobalAchievementPercentagesResponse,
+  SteamOwnedGamesResponse,
+  SteamPlayerAchievementsResponse,
+  SteamPlayerSummariesResponse,
+  SteamSchemaResponse,
 } from "./steam-types";
 
 /**
@@ -18,10 +18,7 @@ export interface SteamGateway {
   getPlayerSummaries(steamId: string): Promise<SteamPlayerSummariesResponse>;
   getOwnedGames(steamId: string): Promise<SteamOwnedGamesResponse>;
   getSchemaForGame(appId: number): Promise<SteamSchemaResponse>;
-  getPlayerAchievements(
-    steamId: string,
-    appId: number,
-  ): Promise<SteamPlayerAchievementsResponse>;
+  getPlayerAchievements(steamId: string, appId: number): Promise<SteamPlayerAchievementsResponse>;
   /**
    * The share of owners who have unlocked each of a game's achievements. The
    * only method here that names no player: the answer is the same for everyone.

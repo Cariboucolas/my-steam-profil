@@ -1,31 +1,30 @@
-import { Hono, type Context } from "hono";
-import { cors } from "hono/cors";
-import { SteamId } from "@steam/domain";
-
 import type { GameProgressDto, GameTallyDto } from "@steam/contracts";
+import { SteamId } from "@steam/domain";
+import { type Context, Hono } from "hono";
+import { cors } from "hono/cors";
 
-import { SteamGatewayError, type SteamGateway } from "../steam/steam-gateway";
+import { type SteamGateway, SteamGatewayError } from "../steam/steam-gateway";
 import {
-  mapProfile,
-  mapGames,
-  mapGameProgress,
-  mapGameTally,
-  mapGameRarity,
-  mapAchievementNames,
   type AchievementsError,
+  mapAchievementNames,
+  mapGameProgress,
+  mapGameRarity,
+  mapGames,
+  mapGameTally,
+  mapProfile,
 } from "../steam/steam-mapper";
-import {
-  toProfileDto,
-  toGameDto,
-  toGameProgressDto,
-  toGameTallyDto,
-  toGameRarityDto,
-  toAchievementNamesDto,
-  emptyGameProgressDto,
-  emptyGameTallyDto,
-} from "./presenters";
 import { cached, noCache, type ResponseCache } from "./cache";
 import { describeFailure } from "./failure-log";
+import {
+  emptyGameProgressDto,
+  emptyGameTallyDto,
+  toAchievementNamesDto,
+  toGameDto,
+  toGameProgressDto,
+  toGameRarityDto,
+  toGameTallyDto,
+  toProfileDto,
+} from "./presenters";
 
 const BAD_REQUEST = 400;
 const FORBIDDEN = 403;
@@ -94,11 +93,7 @@ const parseAppId = (raw: string): number | null => {
   return Number.isInteger(appId) && appId > 0 ? appId : null;
 };
 
-type GameHandler = (
-  context: Context,
-  steamId: SteamId,
-  appId: number,
-) => Promise<Response>;
+type GameHandler = (context: Context, steamId: SteamId, appId: number) => Promise<Response>;
 
 /**
  * The guard for a route about a game and no player: bad input costs nothing and
@@ -168,9 +163,7 @@ const serveGames = (gateway: SteamGateway): ((c: Context) => Promise<Response>) 
     return context.json(games.map(toGameDto));
   });
 
-const serveGameProgress = (
-  gateway: SteamGateway,
-): ((c: Context) => Promise<Response>) =>
+const serveGameProgress = (gateway: SteamGateway): ((c: Context) => Promise<Response>) =>
   withGame(async (context, steamId, appId) => {
     // What a game asks of you, and what this player has done: two calls, and
     // neither is meaningful without the other.
@@ -192,9 +185,7 @@ const serveGameProgress = (
  * unlock dates come out of that same response, so they cost no call of their
  * own (ADR-0006).
  */
-const serveGameTally = (
-  gateway: SteamGateway,
-): ((c: Context) => Promise<Response>) =>
+const serveGameTally = (gateway: SteamGateway): ((c: Context) => Promise<Response>) =>
   withGame(async (context, steamId, appId) => {
     const player = await gateway.getPlayerAchievements(steamId.value, appId);
 
@@ -214,9 +205,7 @@ const serveGameTally = (
  * true thing to say — a list of zeroes would claim every achievement in it is
  * the rarest the player owns.
  */
-const serveGameRarity = (
-  gateway: SteamGateway,
-): ((c: Context) => Promise<Response>) =>
+const serveGameRarity = (gateway: SteamGateway): ((c: Context) => Promise<Response>) =>
   withApp(async (context, appId) => {
     const published = await gateway.getGlobalAchievementPercentages(appId);
     return context.json(toGameRarityDto(mapGameRarity(published)));
@@ -233,9 +222,7 @@ const serveGameRarity = (
  * A game that defines no achievements answers with an empty list: a true thing
  * to say about a real game, and nothing a ranking could have a row from.
  */
-const serveAchievementNames = (
-  gateway: SteamGateway,
-): ((c: Context) => Promise<Response>) =>
+const serveAchievementNames = (gateway: SteamGateway): ((c: Context) => Promise<Response>) =>
   withApp(async (context, appId) => {
     const schema = await gateway.getSchemaForGame(appId);
     return context.json(toAchievementNamesDto(mapAchievementNames(schema)));
@@ -268,10 +255,7 @@ export const createApp = (
   app.get("/health", (context) => context.json({ status: "ok" }));
   app.get("/api/profile/:steamId", serveProfile(gateway));
   app.get("/api/profile/:steamId/games", serveGames(gateway));
-  app.get(
-    "/api/profile/:steamId/games/:appId/progress",
-    serveGameProgress(gateway),
-  );
+  app.get("/api/profile/:steamId/games/:appId/progress", serveGameProgress(gateway));
   /**
    * The one cached route. The library asks it once per game it owns, and a
    * tally five minutes stale is invisible in a column of numbers — where the

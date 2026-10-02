@@ -5,26 +5,26 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useApiClient } from "../../api-client/use-api-client";
+import { useLocale } from "../../settings/locale-store";
 import { colors, fonts, spacing } from "../../theme/tokens";
 import { messageFor, type ScreenError } from "../../view-models/api-errors";
 import {
+  type AchievementFilter,
   buildAchievementRows,
   buildFilterCounts,
   buildGameSummary,
   buildTimelineDays,
   filterLabel,
   gameInLibrary,
-  type AchievementFilter,
 } from "../../view-models/game-progress";
 import { Chip } from "../atoms/Chip";
+import { LocaleToggle } from "../atoms/LocaleToggle";
 import { Tabs } from "../atoms/Tabs";
 import { AchievementRow } from "../molecules/AchievementRow";
 import { TimelineDayRow } from "../molecules/TimelineDayRow";
 import { CompletionSummary } from "../organisms/CompletionSummary";
 import { ErrorState } from "../organisms/ErrorState";
 import { GameHero } from "../organisms/GameHero";
-import { useLocale } from "../../settings/locale-store";
-import { LocaleToggle } from "../atoms/LocaleToggle";
 import { GameTemplate } from "../templates/GameTemplate";
 
 type Loaded = { readonly game: GameDto; readonly progress: GameProgressDto | null };
@@ -112,10 +112,7 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
   const progress = state.status === "ready" ? state.data.progress : null;
 
   const summary = useMemo(
-    () =>
-      state.status === "ready"
-        ? buildGameSummary(state.data.game, progress, t)
-        : null,
+    () => (state.status === "ready" ? buildGameSummary(state.data.game, progress, t) : null),
     [state, progress, t],
   );
   const counts = useMemo(() => (progress ? buildFilterCounts(progress) : null), [progress]);
@@ -167,7 +164,9 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
         topInset={insets.top}
         onBack={onBack}
         languageSwitch={
-          choose ? <LocaleToggle active={locale} onSelect={(next) => void choose(next)} /> : undefined
+          choose ? (
+            <LocaleToggle active={locale} onSelect={(next) => void choose(next)} />
+          ) : undefined
         }
       />
       {summary && <CompletionSummary summary={summary} />}
@@ -175,23 +174,31 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
 
       {hasAchievements && tab === 0 && counts && (
         <View style={styles.filters}>
-          <Chip label={filterLabel("all", counts, t)} active={filter === "all"} onPress={() => setFilter("all")} />
-          <Chip label={filterLabel("unlocked", counts, t)} active={filter === "unlocked"} onPress={() => setFilter("unlocked")} />
-          <Chip label={filterLabel("locked", counts, t)} active={filter === "locked"} onPress={() => setFilter("locked")} />
+          <Chip
+            label={filterLabel("all", counts, t)}
+            active={filter === "all"}
+            onPress={() => setFilter("all")}
+          />
+          <Chip
+            label={filterLabel("unlocked", counts, t)}
+            active={filter === "unlocked"}
+            onPress={() => setFilter("unlocked")}
+          />
+          <Chip
+            label={filterLabel("locked", counts, t)}
+            active={filter === "locked"}
+            onPress={() => setFilter("locked")}
+          />
         </View>
       )}
 
       {!hasAchievements && (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>
-            {progress === null
-              ? t("game.empty.notLoaded")
-              : t("game.empty.noAchievements")}
+            {progress === null ? t("game.empty.notLoaded") : t("game.empty.noAchievements")}
           </Text>
           {progress === null && (
-            <Text style={styles.emptyHint}>
-              {t("game.empty.notLoadedHint")}
-            </Text>
+            <Text style={styles.emptyHint}>{t("game.empty.notLoadedHint")}</Text>
           )}
         </View>
       )}
@@ -215,9 +222,7 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
     );
   }
 
-  return (
-    <GameTemplate header={header} rows={rows} initialRows={ACHIEVEMENTS_INITIAL_ROWS} />
-  );
+  return <GameTemplate header={header} rows={rows} initialRows={ACHIEVEMENTS_INITIAL_ROWS} />;
 }
 
 const styles = StyleSheet.create({

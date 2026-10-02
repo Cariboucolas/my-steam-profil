@@ -68,7 +68,8 @@ const buildOf = (entry: unknown): Build => {
  * run instead of being read as "no build".
  */
 export const buildsOf = (printed: unknown): readonly Build[] => {
-  if (!Array.isArray(printed)) throw new Error("EAS printed something that is not a list of builds.");
+  if (!Array.isArray(printed))
+    throw new Error("EAS printed something that is not a list of builds.");
   return printed.map(buildOf);
 };
 

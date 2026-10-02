@@ -3,9 +3,7 @@
  * test can say what came back without a network, and so the two contracts this
  * repository depends on are written down in one place.
  */
-export type Outcome =
-  | { readonly ok: true }
-  | { readonly ok: false; readonly reason: string };
+export type Outcome = { readonly ok: true } | { readonly ok: false; readonly reason: string };
 
 export type Check = (response: Response) => Promise<Outcome>;
 

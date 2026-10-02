@@ -38,10 +38,7 @@ const TALLIES: TallyByAppId = {
   367520: tally(17, 63),
 };
 
-const view = (
-  games: readonly GameDto[],
-  tallies: TallyByAppId,
-): LibraryView => ({
+const view = (games: readonly GameDto[], tallies: TallyByAppId): LibraryView => ({
   games,
   tallies,
   sort: "completed",
@@ -97,7 +94,12 @@ const daysBetween = (from: Date, to: Date): number =>
 
 /** One unlock per achievement earned that day, dated in the player's own time. */
 const unlocksOn = (since: Date, offset: number): readonly UnlockDto[] => {
-  const day = new Date(since.getFullYear(), since.getMonth(), since.getDate() + offset, UNLOCK_HOUR);
+  const day = new Date(
+    since.getFullYear(),
+    since.getMonth(),
+    since.getDate() + offset,
+    UNLOCK_HOUR,
+  );
   const count = DAY_PATTERN[offset % DAY_PATTERN.length] ?? 0;
   return Array.from({ length: count }, (_, index) => ({
     apiName: `ACH_${offset}_${index}`,
@@ -133,4 +135,8 @@ export const PLAYED_GAME: GameDto = {
 };
 
 /** The same game on a profile that publishes neither its hours nor when it was last played. */
-export const UNDISCLOSED_GAME: GameDto = { ...PLAYED_GAME, playtimeMinutes: null, lastPlayedAt: null };
+export const UNDISCLOSED_GAME: GameDto = {
+  ...PLAYED_GAME,
+  playtimeMinutes: null,
+  lastPlayedAt: null,
+};

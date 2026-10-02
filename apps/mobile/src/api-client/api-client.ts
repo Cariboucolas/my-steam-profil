@@ -1,4 +1,3 @@
-import type { Result } from "@steam/domain";
 import type {
   AchievementNamesDto,
   GameDto,
@@ -7,6 +6,7 @@ import type {
   GameTallyDto,
   ProfileDto,
 } from "@steam/contracts";
+import type { Result } from "@steam/domain";
 
 /** Failures every call can meet. */
 export type ApiError =
@@ -37,7 +37,10 @@ export type ProgressError = ApiError | "NOT_LOADED";
 export interface ApiClient {
   getProfile(signal?: AbortSignal): Promise<Result<ProfileDto, ApiError>>;
   getGames(signal?: AbortSignal): Promise<Result<readonly GameDto[], ApiError>>;
-  getGameProgress(appId: number, signal?: AbortSignal): Promise<Result<GameProgressDto, ProgressError>>;
+  getGameProgress(
+    appId: number,
+    signal?: AbortSignal,
+  ): Promise<Result<GameProgressDto, ProgressError>>;
   /**
    * How far the player has got in one game, and when they got there. The
    * library asks this once per game it owns, so it is deliberately the cheapest
@@ -68,5 +71,8 @@ export interface ApiClient {
    * A game that defines no achievements answers with an empty list, which is a
    * real answer and not a failure.
    */
-  getAchievementNames(appId: number, signal?: AbortSignal): Promise<Result<AchievementNamesDto, ApiError>>;
+  getAchievementNames(
+    appId: number,
+    signal?: AbortSignal,
+  ): Promise<Result<AchievementNamesDto, ApiError>>;
 }

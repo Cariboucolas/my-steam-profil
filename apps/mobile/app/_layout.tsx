@@ -2,11 +2,11 @@ import { useFonts } from "@expo-google-fonts/ibm-plex-sans";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
+import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import * as SplashScreen from "expo-splash-screen";
 
 import { NOT_READ } from "../src/accessibility/not-read";
 import { resolveInitialSteamId } from "../src/api-client/config";

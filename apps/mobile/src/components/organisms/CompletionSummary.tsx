@@ -1,7 +1,6 @@
 import { StyleSheet, Text, View } from "react-native";
-
-import type { GameSummary } from "../../view-models/game-progress";
 import { colors, fonts, spacing } from "../../theme/tokens";
+import type { GameSummary } from "../../view-models/game-progress";
 import { CompletionRing } from "../atoms/CompletionRing";
 
 const RING = 88;
@@ -18,12 +17,8 @@ export function CompletionSummary({ summary }: Props) {
 
       <View style={styles.text}>
         <Text style={styles.fraction}>{summary.fraction}</Text>
-        {summary.remaining !== "" && (
-          <Text style={styles.line}>{summary.remaining}</Text>
-        )}
-        {summary.lastUnlock !== "" && (
-          <Text style={styles.line}>{summary.lastUnlock}</Text>
-        )}
+        {summary.remaining !== "" && <Text style={styles.line}>{summary.remaining}</Text>}
+        {summary.lastUnlock !== "" && <Text style={styles.line}>{summary.lastUnlock}</Text>}
       </View>
     </View>
   );

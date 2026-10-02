@@ -1,6 +1,6 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
-import { buildsOf, coveringBuild, settle, type Build } from "./builds";
+import { type Build, buildsOf, coveringBuild, settle } from "./builds";
 
 const RUNTIME = "71b5ede68be929e6fa58ee3b0a11cdb080e25f3d";
 
@@ -75,9 +75,7 @@ describe("a runtime is covered by a build that exists or is on its way", () => {
   );
 
   it("finds the one that counts among those that do not", () => {
-    expect(coveringBuild([build("ERRORED"), build("IN_PROGRESS")])).toEqual(
-      build("IN_PROGRESS"),
-    );
+    expect(coveringBuild([build("ERRORED"), build("IN_PROGRESS")])).toEqual(build("IN_PROGRESS"));
   });
 
   it("finds nothing when there is nothing", () => {

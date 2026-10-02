@@ -29,7 +29,9 @@ describe("queries (keys)", () => {
   });
 
   it("keeps two games of one profile apart", () => {
-    expect(queries.tally(ONE, APP_ID).queryKey).not.toEqual(queries.tally(ONE, APP_ID + 1).queryKey);
+    expect(queries.tally(ONE, APP_ID).queryKey).not.toEqual(
+      queries.tally(ONE, APP_ID + 1).queryKey,
+    );
     expect(queries.progress(ONE, APP_ID).queryKey).not.toEqual(
       queries.progress(ONE, APP_ID + 1).queryKey,
     );
@@ -55,10 +57,13 @@ describe("queries (freshness)", () => {
     ["profile", queries.profile(ONE)],
     ["games", queries.games(ONE)],
     ["tally", queries.tally(ONE, APP_ID)],
-  ])("holds the %s fresh for five minutes, kept as long as the library keeps anything", (_kind, query) => {
-    expect(query.staleTime).toBe(FIVE_MINUTES_MS);
-    expect(query).not.toHaveProperty("gcTime");
-  });
+  ])(
+    "holds the %s fresh for five minutes, kept as long as the library keeps anything",
+    (_kind, query) => {
+      expect(query.staleTime).toBe(FIVE_MINUTES_MS);
+      expect(query).not.toHaveProperty("gcTime");
+    },
+  );
 
   /** The game view is not cached (ADR-0005). */
   it("never serves progress from the cache", () => {

@@ -1,9 +1,8 @@
 import { useTranslation } from "react-i18next";
 import { Pressable, StyleSheet, Text, View } from "react-native";
-
-import { openExternalUrl } from "./open-external-url";
-import type { PublishedFigures } from "../../view-models/library";
 import { colors, fonts, spacing } from "../../theme/tokens";
+import type { PublishedFigures } from "../../view-models/library";
+import { openExternalUrl } from "./open-external-url";
 
 /** Where a player changes what their own profile publishes. */
 export const STEAM_PRIVACY_URL = "https://steamcommunity.com/my/edit/settings";
@@ -35,11 +34,7 @@ type Props = {
  */
 export function WithheldFiguresNote({ published }: Props) {
   const { t } = useTranslation();
-  const figure = published.playtime
-    ? published.lastPlayed
-      ? null
-      : "lastPlayed"
-    : "playtime";
+  const figure = published.playtime ? (published.lastPlayed ? null : "lastPlayed") : "playtime";
 
   if (figure === null) {
     return null;

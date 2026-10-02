@@ -1,4 +1,4 @@
-import { type Result, ok, err } from "./result";
+import { err, ok, type Result } from "./result";
 
 export type SteamIdError = "EMPTY" | "INVALID_FORMAT";
 

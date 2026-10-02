@@ -9,8 +9,7 @@ const named = (cause: unknown): string =>
     ? String((cause as { name: unknown }).name)
     : "";
 
-const said = (cause: unknown): string =>
-  cause instanceof Error ? cause.message : String(cause);
+const said = (cause: unknown): string => (cause instanceof Error ? cause.message : String(cause));
 
 /**
  * One attempt. A refusal, a timeout and an unreachable host are all the same

@@ -32,8 +32,7 @@ export const heightOfMonthsInView = (
  * is drawn whole and never scrolls — which is also what decides whether there
  * is anything for a fade or a dot to say.
  */
-export const scrollsThroughTheYear = (monthsDrawn: number): boolean =>
-  monthsDrawn > MONTHS_IN_VIEW;
+export const scrollsThroughTheYear = (monthsDrawn: number): boolean => monthsDrawn > MONTHS_IN_VIEW;
 
 /**
  * Where the reader is in the grid: how far down they have moved it, how much
@@ -59,11 +58,8 @@ export type YearHalf = 0 | 1;
  * the dot has to say which half the reader is mostly looking at, not which
  * page they turned to.
  */
-export const halfInView = ({
-  offset,
-  viewport,
-  content,
-}: ScrolledGrid): YearHalf => (offset + viewport / 2 > content / 2 ? 1 : 0);
+export const halfInView = ({ offset, viewport, content }: ScrolledGrid): YearHalf =>
+  offset + viewport / 2 > content / 2 ? 1 : 0;
 
 /** Which edges of the grid have more of it beyond them. */
 export type FadedEdges = { readonly top: boolean; readonly bottom: boolean };
@@ -86,11 +82,7 @@ const EDGE_SLACK = 1;
  * itself is what says there is more, and the dots below are what can be
  * pressed.
  */
-export const fadedEdges = ({
-  offset,
-  viewport,
-  content,
-}: ScrolledGrid): FadedEdges => ({
+export const fadedEdges = ({ offset, viewport, content }: ScrolledGrid): FadedEdges => ({
   top: offset > EDGE_SLACK,
   bottom: offset + viewport < content - EDGE_SLACK,
 });
@@ -104,7 +96,5 @@ export const fadedEdges = ({
  * are not: the second half is a single row there, and the whole of the
  * movement available is what shows it.
  */
-export const offsetOfHalf = (
-  half: YearHalf,
-  { viewport, content }: ScrolledGrid,
-): number => (half === 0 ? 0 : Math.max(0, content - viewport));
+export const offsetOfHalf = (half: YearHalf, { viewport, content }: ScrolledGrid): number =>
+  half === 0 ? 0 : Math.max(0, content - viewport);

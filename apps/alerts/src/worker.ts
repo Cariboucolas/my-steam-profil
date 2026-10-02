@@ -59,7 +59,9 @@ export const createFetchHandler =
     // The text as it arrived, never a re-serialised object: that is what was
     // signed, and what any two JSON encoders would only agree on by luck.
     const body = await request.text();
-    if (!(await isFromSentry(secret, body, request.headers.get("sentry-hook-signature") ?? undefined))) {
+    if (
+      !(await isFromSentry(secret, body, request.headers.get("sentry-hook-signature") ?? undefined))
+    ) {
       return nothing(UNAUTHORIZED);
     }
 

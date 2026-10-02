@@ -6,8 +6,7 @@ import { createSteamClient } from "./steam/steam-client";
 
 /** What an operator should read when the process refuses to start. */
 const EXPLANATIONS: Readonly<Record<string, string>> = {
-  MISSING_API_KEY:
-    "STEAM_API_KEY is not set. Copy .env.example and fill it in, or export the key.",
+  MISSING_API_KEY: "STEAM_API_KEY is not set. Copy .env.example and fill it in, or export the key.",
   INVALID_PORT: "PORT must be a whole number between 1 and 65535.",
 };
 

@@ -1,9 +1,4 @@
-import type {
-  AchievementNamesDto,
-  GameDto,
-  GameRarityDto,
-  GameTallyDto,
-} from "@steam/contracts";
+import type { AchievementNamesDto, GameDto, GameRarityDto, GameTallyDto } from "@steam/contracts";
 import { err, ok, type Result } from "@steam/domain";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
 
@@ -86,20 +81,12 @@ const client = (
     getGameRarity: (appId) => {
       asked.rarity.push(appId);
       const figures = published[appId];
-      return answer(
-        hold.rarity ?? [],
-        appId,
-        figures ? ok(figures) : err<ApiError>("UNAVAILABLE"),
-      );
+      return answer(hold.rarity ?? [], appId, figures ? ok(figures) : err<ApiError>("UNAVAILABLE"));
     },
     getAchievementNames: (appId) => {
       asked.names.push(appId);
       const named = NAMES[appId];
-      return answer(
-        hold.names ?? [],
-        appId,
-        named ? ok(named) : err<ApiError>("UNAVAILABLE"),
-      );
+      return answer(hold.names ?? [], appId, named ? ok(named) : err<ApiError>("UNAVAILABLE"));
     },
   };
 
@@ -133,10 +120,9 @@ const renderTab = (
   active = true,
   shownView: LibraryView = view(),
 ) =>
-  renderHook(
-    ({ library: l, view: v, active: a }: Props) => useRarestTab(l, v, a),
-    { initialProps: { library, view: shownView, active } },
-  );
+  renderHook(({ library: l, view: v, active: a }: Props) => useRarestTab(l, v, a), {
+    initialProps: { library, view: shownView, active },
+  });
 
 /**
  * More games holding an unlock than one wave carries, so a ranking exists and
@@ -157,10 +143,7 @@ const overOneWave = () => {
     lastPlayedAt: null,
   }));
   const published: Readonly<Record<number, GameRarityDto>> = Object.fromEntries(
-    OVER_ONE_WAVE.map((appId, index) => [
-      appId,
-      [{ apiName: `ACH_${appId}`, rarity: index + 1 }],
-    ]),
+    OVER_ONE_WAVE.map((appId, index) => [appId, [{ apiName: `ACH_${appId}`, rarity: index + 1 }]]),
   );
 
   return { tallies, view: view({ games, tallies }), published };

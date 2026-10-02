@@ -1,5 +1,3 @@
-import { ok, err, type Result } from "@steam/domain";
-import { byWhenUnlocked } from "@steam/contracts";
 import type {
   AchievementNameDto,
   AchievementNamesDto,
@@ -10,6 +8,8 @@ import type {
   ProfileDto,
   UnlockDto,
 } from "@steam/contracts";
+import { byWhenUnlocked } from "@steam/contracts";
+import { err, ok, type Result } from "@steam/domain";
 
 import type { ApiClient, ApiError, ProgressError } from "./api-client";
 
@@ -30,9 +30,7 @@ export type FixtureData = {
 };
 
 /** How the stored progress names a game's achievements, schema order kept. */
-const namesIn = (
-  progress: GameProgressDto | undefined,
-): readonly AchievementNameDto[] =>
+const namesIn = (progress: GameProgressDto | undefined): readonly AchievementNameDto[] =>
   (progress?.achievements ?? []).map((achievement) => ({
     apiName: achievement.apiName,
     displayName: achievement.displayName,
@@ -45,9 +43,7 @@ const namesIn = (
  * state a wire shape and assert what gets drawn from it.
  */
 export const createFixtureApiClient = (data: FixtureData): ApiClient => {
-  const progressOf = (
-    appId: number,
-  ): Result<GameProgressDto, ProgressError> => {
+  const progressOf = (appId: number): Result<GameProgressDto, ProgressError> => {
     const fetched = data.progress[appId];
     if (fetched) {
       return ok(fetched);
@@ -56,21 +52,21 @@ export const createFixtureApiClient = (data: FixtureData): ApiClient => {
     return err(inLibrary ? "NOT_LOADED" : "NOT_FOUND");
   };
 
-/**
- * What the player has earned in one game, as the tally carries it: dated
- * unlocks earliest first, undated ones last, in the epoch seconds the wire
- * uses.
- */
-const unlocksIn = (progress: GameProgressDto): readonly UnlockDto[] =>
-  progress.achievements
-    .filter((achievement) => achievement.unlocked)
-    .map((achievement) => ({
-      apiName: achievement.apiName,
-      at: achievement.unlockedAt
-        ? Math.floor(Date.parse(achievement.unlockedAt) / MS_PER_SECOND)
-        : null,
-    }))
-    .sort(byWhenUnlocked);
+  /**
+   * What the player has earned in one game, as the tally carries it: dated
+   * unlocks earliest first, undated ones last, in the epoch seconds the wire
+   * uses.
+   */
+  const unlocksIn = (progress: GameProgressDto): readonly UnlockDto[] =>
+    progress.achievements
+      .filter((achievement) => achievement.unlocked)
+      .map((achievement) => ({
+        apiName: achievement.apiName,
+        at: achievement.unlockedAt
+          ? Math.floor(Date.parse(achievement.unlockedAt) / MS_PER_SECOND)
+          : null,
+      }))
+      .sort(byWhenUnlocked);
 
   return {
     getProfile: () => Promise.resolve(ok(data.profile)),
@@ -107,8 +103,7 @@ const unlocksIn = (progress: GameProgressDto): readonly UnlockDto[] =>
      * what "Steam publishes no figures for this game" looks like — never a
      * refusal, and never a list of zeroes.
      */
-    getGameRarity: (appId) =>
-      Promise.resolve(ok<GameRarityDto>(data.rarity?.[appId] ?? [])),
+    getGameRarity: (appId) => Promise.resolve(ok<GameRarityDto>(data.rarity?.[appId] ?? [])),
 
     /**
      * Read back out of stored progress, which carries what the schema said: the
@@ -124,7 +119,7 @@ const unlocksIn = (progress: GameProgressDto): readonly UnlockDto[] =>
 };
 
 /** A promise that never settles: the load a page is left waiting on. */
-const never = <T,>(): Promise<T> => new Promise<T>(() => undefined);
+const never = <T>(): Promise<T> => new Promise<T>(() => undefined);
 
 /**
  * A client whose every answer is still on its way, so a page shows its

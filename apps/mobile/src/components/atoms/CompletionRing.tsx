@@ -29,8 +29,7 @@ export const ringGeometry = (
   // Stroke is centred on the path, so the radius is inset by half its width.
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
-  const filled =
-    percentage === null ? 0 : Math.min(FULL, Math.max(0, percentage));
+  const filled = percentage === null ? 0 : Math.min(FULL, Math.max(0, percentage));
 
   return {
     radius,
@@ -54,11 +53,7 @@ export function CompletionRing({
   color = colors.accent,
   children,
 }: Props) {
-  const { radius, circumference, dashOffset } = ringGeometry(
-    size,
-    strokeWidth,
-    percentage,
-  );
+  const { radius, circumference, dashOffset } = ringGeometry(size, strokeWidth, percentage);
   const centre = size / 2;
 
   return (

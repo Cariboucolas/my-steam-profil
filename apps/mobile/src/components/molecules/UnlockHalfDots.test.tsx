@@ -1,25 +1,17 @@
 import { fireEvent, render } from "@testing-library/react-native";
 
 import { colors } from "../../theme/tokens";
-import {
-  HALF_DOT_TARGET,
-  UnlockHalfDots,
-  UNLOCK_HALF_DOT_TEST_ID,
-} from "./UnlockHalfDots";
+import { HALF_DOT_TARGET, UNLOCK_HALF_DOT_TEST_ID, UnlockHalfDots } from "./UnlockHalfDots";
 
 describe("UnlockHalfDots", () => {
   it("shows one dot per half of the year", () => {
-    const { getAllByTestId } = render(
-      <UnlockHalfDots inView={0} onSelect={jest.fn()} />,
-    );
+    const { getAllByTestId } = render(<UnlockHalfDots inView={0} onSelect={jest.fn()} />);
 
     expect(getAllByTestId(UNLOCK_HALF_DOT_TEST_ID)).toHaveLength(2);
   });
 
   it("picks out the half the reader is looking at", () => {
-    const { getAllByTestId } = render(
-      <UnlockHalfDots inView={1} onSelect={jest.fn()} />,
-    );
+    const { getAllByTestId } = render(<UnlockHalfDots inView={1} onSelect={jest.fn()} />);
     const painted = getAllByTestId(UNLOCK_HALF_DOT_TEST_ID).map(
       (dot) => dot.props.style.backgroundColor,
     );
@@ -29,9 +21,7 @@ describe("UnlockHalfDots", () => {
 
   it("asks for the half it was pressed on", () => {
     const onSelect = jest.fn();
-    const { getAllByTestId } = render(
-      <UnlockHalfDots inView={0} onSelect={onSelect} />,
-    );
+    const { getAllByTestId } = render(<UnlockHalfDots inView={0} onSelect={onSelect} />);
 
     fireEvent.press(getAllByTestId(UNLOCK_HALF_DOT_TEST_ID)[1]!);
 
@@ -50,10 +40,7 @@ describe("UnlockHalfDots", () => {
     );
     const dots = getAllByRole("button");
 
-    expect(dots.map((dot) => dot.props.accessibilityState.selected)).toEqual([
-      false,
-      true,
-    ]);
+    expect(dots.map((dot) => dot.props.accessibilityState.selected)).toEqual([false, true]);
     expect(getByLabelText("First half of the year")).toBeTruthy();
     expect(getByLabelText("Second half of the year")).toBeTruthy();
     expect(dots[0]?.props.style.cursor).toBe("pointer");

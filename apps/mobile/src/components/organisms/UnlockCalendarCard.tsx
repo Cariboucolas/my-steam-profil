@@ -50,9 +50,7 @@ type Props = { readonly calendar: UnlockCalendar };
 export function UnlockCalendarCard({ calendar }: Props) {
   const scroll = useUnlockCalendarScroll(calendar.months.length, ROW_GAP);
 
-  const months = calendar.months.map((month) => (
-    <UnlockMonthRow key={month.label} month={month} />
-  ));
+  const months = calendar.months.map((month) => <UnlockMonthRow key={month.label} month={month} />);
 
   // A year the card holds whole is drawn as it always was: no scroll to be
   // had, and so nothing anywhere that speaks of one.
@@ -117,9 +115,7 @@ export function UnlockCalendarCard({ calendar }: Props) {
 
       {grid}
 
-      {scroll.scrolls ? (
-        <UnlockHalfDots inView={scroll.half} onSelect={scroll.goToHalf} />
-      ) : null}
+      {scroll.scrolls ? <UnlockHalfDots inView={scroll.half} onSelect={scroll.goToHalf} /> : null}
 
       <UnlockToneLegend legend={calendar.legend} />
     </View>

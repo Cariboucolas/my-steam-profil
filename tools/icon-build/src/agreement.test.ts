@@ -18,11 +18,7 @@ const artwork = (stops: string[], tip: string, hub: string): string =>
      <circle r="30" fill="${hub}"/>
    </svg>`;
 
-const agreeing = artwork(
-  [PALETTE.darkest, "#d9a05a", PALETTE.lightest],
-  PALETTE.tip,
-  PALETTE.hub,
-);
+const agreeing = artwork([PALETTE.darkest, "#d9a05a", PALETTE.lightest], PALETTE.tip, PALETTE.hub);
 
 describe("paletteOf", () => {
   it("reads the ramp's two ends off the artwork", () => {

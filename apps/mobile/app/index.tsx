@@ -12,10 +12,7 @@ export default function LibraryRoute() {
   const router = useRouter();
   const { state: steamId } = useSteamId();
 
-  const openGame = useCallback(
-    (appId: number) => router.push(`/game/${appId}`),
-    [router],
-  );
+  const openGame = useCallback((appId: number) => router.push(`/game/${appId}`), [router]);
   const changeProfile = useCallback(() => router.push("/setup"), [router]);
 
   if (steamId.status === "absent") {

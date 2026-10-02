@@ -2,10 +2,7 @@ import { render } from "@testing-library/react-native";
 
 import { unlockToneFills } from "../../theme/tokens";
 import type { UnlockToneBand } from "../../view-models/unlock-calendar";
-import {
-  UnlockToneLegend,
-  UNLOCK_LEGEND_SWATCH_TEST_ID,
-} from "./UnlockToneLegend";
+import { UNLOCK_LEGEND_SWATCH_TEST_ID, UnlockToneLegend } from "./UnlockToneLegend";
 
 /** The scale ADR-0007 names, as the builder hands it over. */
 const legend: readonly UnlockToneBand[] = [
@@ -31,8 +28,8 @@ describe("UnlockToneLegend", () => {
 
     // A legend whose swatches are not the grid's own fills is worse than none:
     // it would name boundaries for tones the reader cannot match to a cell.
-    expect(swatches.map((swatch) => swatch.props.style.backgroundColor)).toEqual(
-      [...unlockToneFills],
-    );
+    expect(swatches.map((swatch) => swatch.props.style.backgroundColor)).toEqual([
+      ...unlockToneFills,
+    ]);
   });
 });

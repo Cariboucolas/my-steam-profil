@@ -42,28 +42,34 @@ describe("steam id store", () => {
   it("starts on the profile the device remembers", async () => {
     const { result } = renderStore(createFakeStorage(STEAM_ID));
 
-    await waitFor(() => expect(result.current.state).toEqual({
-      status: "known",
-      steamId: STEAM_ID,
-    }));
+    await waitFor(() =>
+      expect(result.current.state).toEqual({
+        status: "known",
+        steamId: STEAM_ID,
+      }),
+    );
   });
 
   it("falls back to the profile the build was given", async () => {
     const { result } = renderStore(createFakeStorage(), STEAM_ID);
 
-    await waitFor(() => expect(result.current.state).toEqual({
-      status: "known",
-      steamId: STEAM_ID,
-    }));
+    await waitFor(() =>
+      expect(result.current.state).toEqual({
+        status: "known",
+        steamId: STEAM_ID,
+      }),
+    );
   });
 
   it("prefers what the device remembers over what the build offers", async () => {
     const { result } = renderStore(createFakeStorage(STEAM_ID), OTHER_STEAM_ID);
 
-    await waitFor(() => expect(result.current.state).toEqual({
-      status: "known",
-      steamId: STEAM_ID,
-    }));
+    await waitFor(() =>
+      expect(result.current.state).toEqual({
+        status: "known",
+        steamId: STEAM_ID,
+      }),
+    );
   });
 
   it("remembers a steam id it is given", async () => {

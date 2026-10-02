@@ -37,9 +37,7 @@ const EVERY_SORT = Object.keys(SORT_READS) as readonly LibrarySort[];
  * Held here, beside the comparators that read the figures, so the chips that
  * offer an order and the screen that falls back off one read a single answer.
  */
-export const availableSorts = (
-  published: PublishedFigures,
-): readonly LibrarySort[] =>
+export const availableSorts = (published: PublishedFigures): readonly LibrarySort[] =>
   EVERY_SORT.filter((sort) => {
     const reads = SORT_READS[sort];
     return reads === null || published[reads];
@@ -179,14 +177,13 @@ const underUnit = (value: number, decimals: number, t: Translate): string | null
  * truncation: the layout guarantees five characters at the narrowest width it
  * serves, which is what keeps this unreachable.
  */
-export const formatUnlockHeadline = (
-  unlocked: number,
-  maxChars: number,
-  t: Translate,
-): string => {
+export const formatUnlockHeadline = (unlocked: number, maxChars: number, t: Translate): string => {
   const full = group(unlocked, t);
-  const forms = [full, underUnit(unlocked, ONE_DECIMAL, t), underUnit(unlocked, NO_DECIMAL, t)]
-    .filter((form): form is string => form !== null);
+  const forms = [
+    full,
+    underUnit(unlocked, ONE_DECIMAL, t),
+    underUnit(unlocked, NO_DECIMAL, t),
+  ].filter((form): form is string => form !== null);
 
   return forms.find((form) => form.length <= maxChars) ?? forms[forms.length - 1] ?? full;
 };
@@ -286,9 +283,7 @@ const totalMinutes = (games: readonly GameDto[]): number | null => {
   const published = games
     .map((game) => game.playtimeMinutes)
     .filter((minutes): minutes is number => minutes !== null);
-  return published.length === 0
-    ? null
-    : published.reduce((sum, minutes) => sum + minutes, 0);
+  return published.length === 0 ? null : published.reduce((sum, minutes) => sum + minutes, 0);
 };
 
 /**
@@ -318,11 +313,7 @@ export const joined = (parts: readonly (string | null)[]): string =>
 const playedFor = (game: GameDto, t: Translate): string | null =>
   game.playtimeMinutes === null ? null : formatHoursRounded(game.playtimeMinutes, t);
 
-const metaFor = (
-  game: GameDto,
-  tally: GameCompletionDto | undefined,
-  t: Translate,
-): string => {
+const metaFor = (game: GameDto, tally: GameCompletionDto | undefined, t: Translate): string => {
   const played = playedFor(game, t);
   const when = whenFor(game, t);
 
@@ -357,9 +348,7 @@ const bandOf = (tally: GameCompletionDto | undefined): number => {
  * follow by how far along they are, and a game with more to earn leads a game
  * with less at the same rate.
  */
-const byWhatIsFinished = (
-  tallies: TallyByAppId,
-): ((a: GameDto, b: GameDto) => number) => {
+const byWhatIsFinished = (tallies: TallyByAppId): ((a: GameDto, b: GameDto) => number) => {
   const of = (game: GameDto) => tallies[game.appId]?.completion;
   return (a, b) => {
     const [left, right] = [of(a), of(b)];
@@ -419,19 +408,13 @@ const comparatorFor = (
  * sequence does not name rather than dropping it — a library that grew under a
  * running load must still show every game it has.
  */
-const orderedBy = (
-  games: readonly GameDto[],
-  pinned: readonly number[],
-): readonly GameDto[] => {
+const orderedBy = (games: readonly GameDto[], pinned: readonly number[]): readonly GameDto[] => {
   const rank = new Map(pinned.map((appId, index) => [appId, index]));
   const place = (game: GameDto) => rank.get(game.appId) ?? rank.size;
   return [...games].sort((a, b) => place(a) - place(b));
 };
 
-export const buildLibraryRows = (
-  view: LibraryView,
-  t: Translate,
-): readonly GameRow[] => {
+export const buildLibraryRows = (view: LibraryView, t: Translate): readonly GameRow[] => {
   const { games, tallies, sort, pending, frozenOrder } = view;
 
   // Copied before sorting: the caller's list is not ours to reorder.
@@ -459,10 +442,7 @@ export const buildLibraryRows = (
  * though the summary has no use for the chosen order or for what is still
  * outstanding.
  */
-export const buildLibrarySummary = (
-  view: LibraryView,
-  t: Translate,
-): LibrarySummary => {
+export const buildLibrarySummary = (view: LibraryView, t: Translate): LibrarySummary => {
   const { games, tallies } = view;
 
   const loaded = games

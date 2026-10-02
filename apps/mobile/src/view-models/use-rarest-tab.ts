@@ -2,22 +2,17 @@ import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
-  gamesHoldingAnUnlock,
-  useLibraryRarity,
   type CountedLibrary,
+  gamesHoldingAnUnlock,
   type RarityStatus,
+  useLibraryRarity,
 } from "../api-client/use-library-rarity";
 import {
-  useShownAchievementNames,
   type ShownGames,
+  useShownAchievementNames,
 } from "../api-client/use-shown-achievement-names";
 import type { LibraryView } from "./library";
-import {
-  buildRarestUnlocks,
-  gamesShownIn,
-  nameUnlocks,
-  type NamedUnlock,
-} from "./rarest-unlocks";
+import { buildRarestUnlocks, gamesShownIn, type NamedUnlock, nameUnlocks } from "./rarest-unlocks";
 
 export type RarestTab = {
   /**
@@ -72,10 +67,7 @@ export const useRarestTab = (
   const { t } = useTranslation();
   const { rarity, status, loaded } = useLibraryRarity(library, active);
 
-  const ranking = useMemo(
-    () => buildRarestUnlocks(view, rarity, t),
-    [view, rarity, t],
-  );
+  const ranking = useMemo(() => buildRarestUnlocks(view, rarity, t), [view, rarity, t]);
   const appIds = useMemo(() => gamesShownIn(ranking.rows), [ranking.rows]);
 
   /**
@@ -107,7 +99,6 @@ export const useRarestTab = (
     rows,
     countedLabel: ranking.countedLabel,
     loaded,
-    anyUnlock:
-      library !== null && gamesHoldingAnUnlock(library.tallies).length > 0,
+    anyUnlock: library !== null && gamesHoldingAnUnlock(library.tallies).length > 0,
   };
 };

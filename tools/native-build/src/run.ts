@@ -1,4 +1,4 @@
-import { coveringBuild, settle, type Build } from "./builds";
+import { type Build, coveringBuild, settle } from "./builds";
 
 /**
  * Everything this reaches for, as parameters: a fingerprint, EAS, and the

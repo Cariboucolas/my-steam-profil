@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { incidentsOn } from "./github";
 import type { Target } from "./targets";
@@ -32,9 +32,9 @@ describe("the label the incidents are marked with", () => {
   });
 
   it("reports its absence rather than creating it mid-incident", async () => {
-    await expect(
-      incidentsOn("o/r", "t", sending(json({}, 404))).labelExists(),
-    ).resolves.toBe(false);
+    await expect(incidentsOn("o/r", "t", sending(json({}, 404))).labelExists()).resolves.toBe(
+      false,
+    );
   });
 });
 
@@ -51,8 +51,18 @@ describe("finding the incident already open for a target", () => {
   it("recognises its own by title, and carries the moment it opened", async () => {
     const send = sending(
       json([
-        { number: 3, title: "Health: apps/alerts is not answering", html_url: "x", created_at: "2026-09-22T10:00:00Z" },
-        { number: 7, title: "Health: apps/api is not answering", html_url: "y", created_at: "2026-09-22T14:00:00Z" },
+        {
+          number: 3,
+          title: "Health: apps/alerts is not answering",
+          html_url: "x",
+          created_at: "2026-09-22T10:00:00Z",
+        },
+        {
+          number: 7,
+          title: "Health: apps/api is not answering",
+          html_url: "y",
+          created_at: "2026-09-22T14:00:00Z",
+        },
       ]),
     );
 
@@ -64,7 +74,11 @@ describe("finding the incident already open for a target", () => {
   });
 
   it("answers nothing when none of them is this target's", async () => {
-    const send = sending(json([{ number: 3, title: "Something else", html_url: "x", created_at: "2026-09-22T10:00:00Z" }]));
+    const send = sending(
+      json([
+        { number: 3, title: "Something else", html_url: "x", created_at: "2026-09-22T10:00:00Z" },
+      ]),
+    );
 
     await expect(incidentsOn("o/r", "t", send).find(target)).resolves.toBeUndefined();
   });
@@ -72,7 +86,9 @@ describe("finding the incident already open for a target", () => {
 
 describe("opening and closing an incident", () => {
   it("opens one titled after the target, labelled, and naming the reason", async () => {
-    const send = sending(json({ number: 9, html_url: "z", created_at: "2026-09-22T14:47:00Z" }, 201));
+    const send = sending(
+      json({ number: 9, html_url: "z", created_at: "2026-09-22T14:47:00Z" }, 201),
+    );
 
     await expect(incidentsOn("o/r", "t", send).raise(target, "HTTP 503")).resolves.toEqual({
       number: 9,
@@ -111,8 +127,6 @@ describe("opening and closing an incident", () => {
   it("refuses to pretend a rejected write succeeded", async () => {
     const send = sending(json({ message: "Validation Failed" }, 422));
 
-    await expect(incidentsOn("o/r", "t", send).raise(target, "timeout")).rejects.toThrow(
-      /422/,
-    );
+    await expect(incidentsOn("o/r", "t", send).raise(target, "timeout")).rejects.toThrow(/422/);
   });
 });

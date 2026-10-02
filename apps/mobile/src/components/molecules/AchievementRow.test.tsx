@@ -1,8 +1,7 @@
 import { render } from "@testing-library/react-native";
-
-import type { AchievementRow as Row } from "../../view-models/game-progress";
 import { colors } from "../../theme/tokens";
-import { AchievementRow, ACHIEVEMENT_TILE_TEST_ID } from "./AchievementRow";
+import type { AchievementRow as Row } from "../../view-models/game-progress";
+import { ACHIEVEMENT_TILE_TEST_ID, AchievementRow } from "./AchievementRow";
 
 const row = (over: Partial<Row> = {}): Row => ({
   apiName: "SLAY_THE_WARDEN",

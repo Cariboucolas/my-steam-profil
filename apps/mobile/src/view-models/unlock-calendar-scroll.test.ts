@@ -1,14 +1,14 @@
 import {
   fadedEdges,
-  offsetOfHalf,
   halfInView,
   heightOfMonthsInView,
-  scrollsThroughTheYear,
+  offsetOfHalf,
   type ScrolledGrid,
+  scrollsThroughTheYear,
 } from "./unlock-calendar-scroll";
 import {
-  december,
   DECEMBER_HEIGHT,
+  december,
   ROW_GAP,
   SCROLLED_PAST,
   SIX_ROWS,
@@ -105,9 +105,7 @@ describe("offsetOfHalf", () => {
    * to be had, and asking for the second half asks for all of it.
    */
   it("asks for no more movement than a barely-scrolling year has", () => {
-    expect(offsetOfHalf(1, { offset: 0, viewport: SIX_ROWS, content: 94 })).toBe(
-      14,
-    );
+    expect(offsetOfHalf(1, { offset: 0, viewport: SIX_ROWS, content: 94 })).toBe(14);
   });
 
   /**
@@ -123,9 +121,7 @@ describe("offsetOfHalf", () => {
       const grid = { offset: 0, viewport: SIX_ROWS, content };
 
       for (const half of [0, 1] as const) {
-        expect(halfInView({ ...grid, offset: offsetOfHalf(half, grid) })).toBe(
-          half,
-        );
+        expect(halfInView({ ...grid, offset: offsetOfHalf(half, grid) })).toBe(half);
       }
     }
   });

@@ -1,4 +1,3 @@
-import { ok, err } from "@steam/domain";
 import type {
   AchievementNamesDto,
   GameDto,
@@ -7,6 +6,7 @@ import type {
   GameTallyDto,
   ProfileDto,
 } from "@steam/contracts";
+import { err, ok } from "@steam/domain";
 
 import type { ApiClient, ApiError } from "./api-client";
 import { createRequestQueue, DROPPED } from "./request-queue";
@@ -101,15 +101,12 @@ export const createHttpApiClient = (config: HttpApiClientConfig): ApiClient => {
   return {
     getProfile: (signal) => get<ProfileDto>("", signal),
     getGames: (signal) => get<readonly GameDto[]>("/games", signal),
-    getGameProgress: (appId, signal) =>
-      get<GameProgressDto>(`/games/${appId}/progress`, signal),
-    getGameTally: (appId, signal) =>
-      get<GameTallyDto>(`/games/${appId}/completion`, signal),
+    getGameProgress: (appId, signal) => get<GameProgressDto>(`/games/${appId}/progress`, signal),
+    getGameTally: (appId, signal) => get<GameTallyDto>(`/games/${appId}/completion`, signal),
 
     // Off `api` rather than `root`: no steam id in this address, which is what
     // lets the backend answer every player from one cached entry (ADR-0008).
-    getGameRarity: (appId, signal) =>
-      getAt<GameRarityDto>(`${api}/games/${appId}/rarity`, signal),
+    getGameRarity: (appId, signal) => getAt<GameRarityDto>(`${api}/games/${appId}/rarity`, signal),
 
     getAchievementNames: (appId, signal) =>
       getAt<AchievementNamesDto>(`${api}/games/${appId}/achievements`, signal),

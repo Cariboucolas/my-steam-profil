@@ -13,8 +13,7 @@ type Props = {
   readonly height?: number;
 };
 
-const clamp = (value: number): number =>
-  Math.min(PERFECT, Math.max(0, value));
+const clamp = (value: number): number => Math.min(PERFECT, Math.max(0, value));
 
 export function ProgressBar({ percentage, height = 3 }: Props) {
   const filled = percentage === null ? 0 : clamp(percentage);
@@ -27,8 +26,7 @@ export function ProgressBar({ percentage, height = 3 }: Props) {
           ...styles.fill,
           width: `${filled}%`,
           borderRadius: height / 2,
-          backgroundColor:
-            filled >= PERFECT ? colors.success : colors.accent,
+          backgroundColor: filled >= PERFECT ? colors.success : colors.accent,
         }}
       />
     </View>

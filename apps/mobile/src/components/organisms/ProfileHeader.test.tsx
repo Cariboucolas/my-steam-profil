@@ -70,9 +70,7 @@ describe("ProfileHeader", () => {
       />,
     );
 
-    expect(screen.getByTestId(PROFILE_REVISION_TEST_ID, PAINTED).props.selectable).toBe(
-      false,
-    );
+    expect(screen.getByTestId(PROFILE_REVISION_TEST_ID, PAINTED).props.selectable).toBe(false);
   });
 
   it("keeps the revision out of the traversal, on every platform", () => {

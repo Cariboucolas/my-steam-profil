@@ -1,13 +1,13 @@
+import { MARK_STOP_COUNT } from "../theme/mark";
 import {
   FIRST_STOP_MS,
   HOLD_MS,
+  holdFor,
   REVEAL_MS,
   STOP_INTERVAL_MS,
-  holdFor,
   stopsShownAt,
   tipIsShownAt,
 } from "./splash-timing";
-import { MARK_STOP_COUNT } from "../theme/mark";
 
 describe("holdFor", () => {
   /**

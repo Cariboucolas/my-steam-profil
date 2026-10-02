@@ -1,26 +1,14 @@
-import type {
-  AchievementDto,
-  GameDto,
-  GameProgressDto,
-  ProfileDto,
-} from "@steam/contracts";
+import type { AchievementDto, GameDto, GameProgressDto, ProfileDto } from "@steam/contracts";
 import { err } from "@steam/domain";
 import { Link } from "expo-router";
-import {
-  act,
-  fireEvent,
-  renderRouter,
-  screen,
-  waitFor,
-} from "expo-router/testing-library";
+import { act, fireEvent, renderRouter, screen, waitFor } from "expo-router/testing-library";
 import { Text } from "react-native";
-
+import GameScreen from "../../app/game/[appId]";
 import { deviceAsksForLessMotion } from "../accessibility/reduce-motion.test-support";
 import type { ApiClient, ApiError } from "../api-client/api-client";
 import { createFixtureApiClient } from "../api-client/fixture-api-client";
 import type { SteamIdStorage } from "../settings/steam-id-storage";
 import { SteamIdProvider } from "../settings/steam-id-store";
-import GameScreen from "../../app/game/[appId]";
 
 const STEAM_ID = "76561197979269357";
 
@@ -212,17 +200,13 @@ describe("game screen", () => {
   it("shows no game while it is still asking for one", async () => {
     renderGame(silent());
 
-    await waitFor(() =>
-      expect(screen.queryByText("Soulstone Survivors")).toBeNull(),
-    );
+    await waitFor(() => expect(screen.queryByText("Soulstone Survivors")).toBeNull());
   });
 
   it("shows the game and what the player has earned in it", async () => {
     renderGame(withProgress({ [SOULSTONE]: played }));
 
-    await waitFor(() =>
-      expect(screen.getByText("Soulstone Survivors")).toBeTruthy(),
-    );
+    await waitFor(() => expect(screen.getByText("Soulstone Survivors")).toBeTruthy());
     expect(screen.getByText("First Blood")).toBeTruthy();
     expect(screen.getByText("Fourth Wall")).toBeTruthy();
   });
@@ -250,18 +234,11 @@ describe("game screen", () => {
 
       fireEvent.press(screen.getByText("Unlocked 2"));
 
-      await waitFor(() =>
-        expect(drawnAchievements()).toEqual(["Second Wind", "First Blood"]),
-      );
+      await waitFor(() => expect(drawnAchievements()).toEqual(["Second Wind", "First Blood"]));
 
       fireEvent.press(screen.getByText("Locked 2"));
 
-      await waitFor(() =>
-        expect(drawnAchievements()).toEqual([
-          "Third Time Lucky",
-          "Fourth Wall",
-        ]),
-      );
+      await waitFor(() => expect(drawnAchievements()).toEqual(["Third Time Lucky", "Fourth Wall"]));
 
       fireEvent.press(screen.getByText("All 4"));
 
@@ -290,9 +267,7 @@ describe("game screen", () => {
 
       fireEvent.press(screen.getByText("Timeline"));
 
-      await waitFor(() =>
-        expect(screen.getByText("Nothing unlocked yet")).toBeTruthy(),
-      );
+      await waitFor(() => expect(screen.getByText("Nothing unlocked yet")).toBeTruthy());
     });
   });
 
@@ -306,21 +281,15 @@ describe("game screen", () => {
       renderGame(withProgress({}));
 
       await waitFor(() =>
-        expect(
-          screen.getByText("Achievements not loaded for this game"),
-        ).toBeTruthy(),
+        expect(screen.getByText("Achievements not loaded for this game")).toBeTruthy(),
       );
-      expect(
-        screen.getByText("the schema and your unlocks load on first open"),
-      ).toBeTruthy();
+      expect(screen.getByText("the schema and your unlocks load on first open")).toBeTruthy();
     });
 
     it("says a game defines no achievements when it defines none", async () => {
       renderGame(withProgress({ [SOULSTONE]: barren }));
 
-      await waitFor(() =>
-        expect(screen.getByText("This game has no achievements")).toBeTruthy(),
-      );
+      await waitFor(() => expect(screen.getByText("This game has no achievements")).toBeTruthy());
       expect(screen.queryByText("All 0")).toBeNull();
     });
   });
@@ -338,9 +307,7 @@ describe("game screen", () => {
     it("refuses a route param that is not a game id", async () => {
       renderGame(withProgress({}), "not-a-number");
 
-      await waitFor(() =>
-        expect(screen.getByText("That is not a game id.")).toBeTruthy(),
-      );
+      await waitFor(() => expect(screen.getByText("That is not a game id.")).toBeTruthy());
     });
 
     it("reports a library it could not read", async () => {
@@ -393,17 +360,13 @@ describe("game screen", () => {
         ...up,
         getGames: () => {
           asked += 1;
-          return asked === 1
-            ? Promise.resolve(err("UNAVAILABLE"))
-            : up.getGames();
+          return asked === 1 ? Promise.resolve(err("UNAVAILABLE")) : up.getGames();
         },
       });
 
       fireEvent.press(await screen.findByLabelText("Try again"));
 
-      await waitFor(() =>
-        expect(screen.getByText("Soulstone Survivors")).toBeTruthy(),
-      );
+      await waitFor(() => expect(screen.getByText("Soulstone Survivors")).toBeTruthy());
     });
   });
 

@@ -40,7 +40,12 @@
   },
   "overrides": [
     {
-      "includes": ["**/*.test.ts", "**/*.test.tsx", "**/*.test-support.ts", "**/*.test-support.tsx"],
+      "includes": [
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/*.test-support.ts",
+        "**/*.test-support.tsx"
+      ],
       "linter": {
         // Only here: outside a test, a function named `fit` is not a focused test.
         "domains": { "test": "recommended" },

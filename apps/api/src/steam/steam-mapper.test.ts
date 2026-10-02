@@ -1,20 +1,20 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  mapProfile,
-  mapGames,
-  mapGameProgress,
-  mapGameTally,
-  mapGameRarity,
   mapAchievementNames,
+  mapGameProgress,
+  mapGameRarity,
+  mapGames,
+  mapGameTally,
+  mapProfile,
 } from "./steam-mapper";
 import {
-  type SteamPlayerSummariesResponse,
-  type SteamOwnedGamesResponse,
-  type SteamSchemaResponse,
-  type SteamSchemaAchievement,
-  type SteamPlayerAchievementsResponse,
-  type SteamGlobalAchievementPercentagesResponse,
   type SteamGlobalAchievementPercentage,
+  type SteamGlobalAchievementPercentagesResponse,
+  type SteamOwnedGamesResponse,
+  type SteamPlayerAchievementsResponse,
+  type SteamPlayerSummariesResponse,
+  type SteamSchemaAchievement,
+  type SteamSchemaResponse,
 } from "./steam-types";
 
 const summaries = (
@@ -227,9 +227,7 @@ describe("mapGameProgress (errors)", () => {
   const validSchema: SteamSchemaResponse = {
     game: {
       availableGameStats: {
-        achievements: [
-          { name: "A", displayName: "A", hidden: 0, icon: "i", icongray: "g" },
-        ],
+        achievements: [{ name: "A", displayName: "A", hidden: 0, icon: "i", icongray: "g" }],
       },
     },
   };
@@ -487,9 +485,7 @@ describe("mapGameRarity", () => {
  * players asking about one Game ask the same question (ADR-0008).
  */
 describe("mapAchievementNames", () => {
-  const defining = (
-    achievements: readonly SteamSchemaAchievement[],
-  ): SteamSchemaResponse => ({
+  const defining = (achievements: readonly SteamSchemaAchievement[]): SteamSchemaResponse => ({
     game: { gameName: "Demo", availableGameStats: { achievements: [...achievements] } },
   });
 

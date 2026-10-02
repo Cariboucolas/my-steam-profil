@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest";
-import { ok, err, type Result } from "./result";
+import { describe, expect, it } from "vitest";
+import { err, ok, type Result } from "./result";
 
 describe("Result", () => {
   it("creates a success via ok()", () => {

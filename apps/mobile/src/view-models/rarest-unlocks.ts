@@ -1,9 +1,4 @@
-import type {
-  AchievementNamesDto,
-  GameDto,
-  GameRarityDto,
-  UnlockDto,
-} from "@steam/contracts";
+import type { AchievementNamesDto, GameDto, GameRarityDto, UnlockDto } from "@steam/contracts";
 
 import { formatNumber } from "../i18n/format-number";
 import type { Translate } from "../i18n/i18n";
@@ -143,9 +138,7 @@ const candidatesIn = (
 const topWithItsTies = (ranked: readonly Candidate[]): readonly Candidate[] => {
   const last = ranked[ROWS - 1];
   if (!last) return ranked;
-  return ranked.filter(
-    (one, index) => index < ROWS || one.rarityLabel === last.rarityLabel,
-  );
+  return ranked.filter((one, index) => index < ROWS || one.rarityLabel === last.rarityLabel);
 };
 
 const labelFor = (rows: number, counted: number, t: Translate): string =>
@@ -229,9 +222,9 @@ export type NamedUnlock = RarestUnlock & {
  * out of the library's path, and it can only be asked for once the ranking
  * exists: which games matter is a property of the answer, not of the library.
  */
-export const gamesShownIn = (
-  rows: readonly RarestUnlock[],
-): readonly number[] => [...new Set(rows.map((row) => row.appId))];
+export const gamesShownIn = (rows: readonly RarestUnlock[]): readonly number[] => [
+  ...new Set(rows.map((row) => row.appId)),
+];
 
 /**
  * The rows as a reader should see them: named, iconed, and otherwise untouched.
@@ -251,9 +244,7 @@ export const nameUnlocks = (
   pending: ReadonlySet<number>,
 ): readonly NamedUnlock[] =>
   rows.map((row) => {
-    const named = names[row.appId]?.find(
-      (achievement) => achievement.apiName === row.apiName,
-    );
+    const named = names[row.appId]?.find((achievement) => achievement.apiName === row.apiName);
     return {
       ...row,
       // `||` rather than `??`, and deliberately: a name Steam sent empty draws

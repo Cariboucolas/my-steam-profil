@@ -132,8 +132,7 @@ const screenReaderLabelFor = (month: number, total: number, t: Translate): strin
  * of this one, which is also what makes February answer for a leap year without
  * being asked about one.
  */
-const daysIn = (year: number, month: number): number =>
-  new Date(year, month + 1, 0).getDate();
+const daysIn = (year: number, month: number): number => new Date(year, month + 1, 0).getDate();
 
 /** One integer per calendar day, so two days can be compared and subtracted. */
 const dayNumber = (year: number, month: number, day: number): number =>
@@ -179,16 +178,11 @@ const countByDay = (view: LibraryView): ReadonlyMap<number, number> => {
  * unlock in the 365 ending on `now`, today included. The epoch Steam sends for
  * an unlock it will not date (ADR-0006) is half a century outside it.
  */
-const activeCountsWithin = (
-  counts: ReadonlyMap<number, number>,
-  now: Date,
-): readonly number[] => {
+const activeCountsWithin = (counts: ReadonlyMap<number, number>, now: Date): readonly number[] => {
   const lastDay = dayNumberOf(now);
   const firstDay = lastDay - (WINDOW_DAYS - 1);
 
-  return [...counts]
-    .filter(([day]) => day >= firstDay && day <= lastDay)
-    .map(([, count]) => count);
+  return [...counts].filter(([day]) => day >= firstDay && day <= lastDay).map(([, count]) => count);
 };
 
 /**
@@ -237,9 +231,7 @@ const quantile = (sorted: readonly number[], fraction: number): number =>
  * Null where there is no active day to read: no scale can be had from nothing,
  * and saying so is what keeps the stand-in from being mistaken for one.
  */
-const scaleRead = (
-  activeCounts: readonly number[],
-): UnlockToneScale | null => {
+const scaleRead = (activeCounts: readonly number[]): UnlockToneScale | null => {
   if (activeCounts.length === 0) return null;
 
   const sorted = [...activeCounts].sort((left, right) => left - right);
@@ -261,11 +253,7 @@ const bandLabel = (from: number, to: number): string =>
  * the year the grid draws, and printing the boundaries is what turns that
  * mismatch from a silent trap into a stated fact.
  */
-const legendFor = ([
-  first,
-  second,
-  third,
-]: UnlockToneScale): readonly UnlockToneBand[] => [
+const legendFor = ([first, second, third]: UnlockToneScale): readonly UnlockToneBand[] => [
   { tone: 0, label: "0" },
   { tone: 1, label: bandLabel(1, first) },
   { tone: 2, label: bandLabel(first + 1, second) },
@@ -273,10 +261,7 @@ const legendFor = ([
   { tone: 4, label: `${third + 1}+` },
 ];
 
-const toneOf = (
-  count: number,
-  [first, second, third]: UnlockToneScale,
-): UnlockTone => {
+const toneOf = (count: number, [first, second, third]: UnlockToneScale): UnlockTone => {
   if (count === 0) return 0;
   if (count <= first) return 1;
   if (count <= second) return 2;
@@ -326,10 +311,7 @@ export const buildUnlockCalendar = (
   // Held still while the waves land, and read once more when the last of them
   // has: the scale a load ends on has the whole window behind it, not the
   // first wave alone (ADR-0007).
-  const read =
-    counting && held !== null
-      ? held
-      : scaleRead(activeCountsWithin(counts, now));
+  const read = counting && held !== null ? held : scaleRead(activeCountsWithin(counts, now));
   const scale = read ?? UNSCALED_SCALE;
 
   const months = Array.from({ length: currentMonth + 1 }, (_, month) => {

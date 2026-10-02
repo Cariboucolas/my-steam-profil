@@ -2,8 +2,8 @@ import type { Meta, StoryObj } from "@storybook/react-native-web-vite";
 import { fn } from "storybook/test";
 
 import { english, inTheToolbarsLanguage } from "../../fixtures/story-locale";
-import { messageFor, type ScreenError } from "../../view-models/api-errors";
 import type { Translate } from "../../i18n/i18n";
+import { messageFor, type ScreenError } from "../../view-models/api-errors";
 import { ErrorState } from "./ErrorState";
 
 const meta = {

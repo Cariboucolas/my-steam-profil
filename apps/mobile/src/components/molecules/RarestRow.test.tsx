@@ -1,9 +1,9 @@
-import { render, fireEvent } from "@testing-library/react-native";
+import { fireEvent, render } from "@testing-library/react-native";
 
 import { letTheDeviceAnswer } from "../../accessibility/reduce-motion.test-support";
 import type { NamedUnlock } from "../../view-models/rarest-unlocks";
 import { SKELETON_TEST_ID } from "../atoms/Skeleton";
-import { RarestRow, RAREST_ICON_TEST_ID } from "./RarestRow";
+import { RAREST_ICON_TEST_ID, RarestRow } from "./RarestRow";
 
 const row = (over: Partial<NamedUnlock> = {}): NamedUnlock => ({
   appId: 2066020,
@@ -23,9 +23,7 @@ describe("RarestRow", () => {
    * flavour text the game screen shows does not.
    */
   it("shows the achievement over the game it came from", () => {
-    const { getByText, queryByText } = render(
-      <RarestRow row={row()} onPress={() => {}} />,
-    );
+    const { getByText, queryByText } = render(<RarestRow row={row()} onPress={() => {}} />);
 
     expect(getByText("Ascendant")).toBeTruthy();
     expect(getByText("Soulstone Survivors")).toBeTruthy();
@@ -59,10 +57,7 @@ describe("RarestRow", () => {
    */
   it("draws a row whose game named nothing for it", () => {
     const { getByText, queryByTestId } = render(
-      <RarestRow
-        row={row({ displayName: "ACH_ASCEND_10", icon: null })}
-        onPress={() => {}}
-      />,
+      <RarestRow row={row({ displayName: "ACH_ASCEND_10", icon: null })} onPress={() => {}} />,
     );
 
     expect(getByText("ACH_ASCEND_10")).toBeTruthy();
@@ -99,9 +94,7 @@ describe("RarestRow", () => {
    * name is being waited for, so the rest of the row must not flicker.
    */
   it("keeps its figure and its game while it waits", () => {
-    const { getByText } = render(
-      <RarestRow row={row({ pending: true })} onPress={() => {}} />,
-    );
+    const { getByText } = render(<RarestRow row={row({ pending: true })} onPress={() => {}} />);
 
     expect(getByText("0.4%")).toBeTruthy();
     expect(getByText("Soulstone Survivors")).toBeTruthy();
@@ -110,10 +103,7 @@ describe("RarestRow", () => {
   /** A game that answered without naming the row is finished, not waiting. */
   it("shows no skeleton once its game has answered", () => {
     const { queryByTestId, getByText } = render(
-      <RarestRow
-        row={row({ displayName: "ACH_ASCEND_10", icon: null })}
-        onPress={() => {}}
-      />,
+      <RarestRow row={row({ displayName: "ACH_ASCEND_10", icon: null })} onPress={() => {}} />,
     );
 
     expect(queryByTestId(SKELETON_TEST_ID)).toBeNull();

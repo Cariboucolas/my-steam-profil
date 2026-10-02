@@ -76,9 +76,7 @@ export const buildAchievementRows = (
   t: Translate,
 ): readonly AchievementRow[] =>
   progress.achievements
-    .filter((a) =>
-      filter === "unlocked" ? a.unlocked : filter === "locked" ? !a.unlocked : true,
-    )
+    .filter((a) => (filter === "unlocked" ? a.unlocked : filter === "locked" ? !a.unlocked : true))
     // Most recently earned first; anything locked settles at the bottom.
     .slice()
     .sort((a, b) => earnedAt(b) - earnedAt(a))
@@ -196,9 +194,7 @@ export const buildGameSummary = (
     rateLabel: known ? `${Math.round(percentage)}%` : "—",
     fraction: known ? `${unlocked} / ${total}` : t("library.noAchievements"),
     remaining: known ? t("game.remaining", { count: left }) : "",
-    lastUnlock: lastUnlockAt
-      ? t("game.lastUnlock", { day: formatDay(lastUnlockAt, t) })
-      : "",
+    lastUnlock: lastUnlockAt ? t("game.lastUnlock", { day: formatDay(lastUnlockAt, t) }) : "",
     meta,
   };
 };
@@ -217,8 +213,5 @@ export const buildGameSummary = (
  * That makes this rule load-bearing rather than defensive: a stale link or a
  * mistyped appId is refused here or nowhere.
  */
-export const gameInLibrary = (
-  games: readonly GameDto[],
-  appId: number,
-): GameDto | null =>
+export const gameInLibrary = (games: readonly GameDto[], appId: number): GameDto | null =>
   games.find((candidate) => candidate.appId === appId) ?? null;

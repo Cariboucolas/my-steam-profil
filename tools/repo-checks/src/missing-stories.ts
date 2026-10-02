@@ -16,10 +16,7 @@ export type StoryGaps = {
 };
 
 /** Paths are relative to the components root, slash-separated. */
-export const storyGaps = (
-  files: readonly string[],
-  exceptions: readonly string[],
-): StoryGaps => {
+export const storyGaps = (files: readonly string[], exceptions: readonly string[]): StoryGaps => {
   const present = new Set(files);
   const components = files.filter((one) => COMPONENT.test(one) && !NOT_A_COMPONENT.test(one));
   const withoutStories = components.filter(

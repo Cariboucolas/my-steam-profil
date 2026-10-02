@@ -1,12 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { ScrollView, StyleSheet } from "react-native";
-
-import {
-  availableSorts,
-  type LibrarySort,
-  type PublishedFigures,
-} from "../../view-models/library";
 import { spacing } from "../../theme/tokens";
+import { availableSorts, type LibrarySort, type PublishedFigures } from "../../view-models/library";
 import { Chip } from "../atoms/Chip";
 
 /**
@@ -45,12 +40,7 @@ export function SortChips({ active, onSelect, published }: Props) {
       contentContainerStyle={styles.row}
     >
       {offered.map(([sort, label]) => (
-        <Chip
-          key={sort}
-          label={label}
-          active={sort === active}
-          onPress={() => onSelect(sort)}
-        />
+        <Chip key={sort} label={label} active={sort === active} onPress={() => onSelect(sort)} />
       ))}
     </ScrollView>
   );

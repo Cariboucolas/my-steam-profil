@@ -14,5 +14,4 @@ export type SurveyedPackage = {
 
 export const packagesWhoseTestsNeverRun = (
   surveyed: readonly SurveyedPackage[],
-): readonly SurveyedPackage[] =>
-  surveyed.filter((one) => one.testFileCount > 0 && !one.runsTests);
+): readonly SurveyedPackage[] => surveyed.filter((one) => one.testFileCount > 0 && !one.runsTests);

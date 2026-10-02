@@ -1,35 +1,33 @@
-import {
-  SteamId,
-  Playtime,
-  unlockStateFromSteam,
-  computeGameCompletion,
-  CompletionRate,
-  buildTimeline,
-  type Profile,
-  type Game,
-  type Achievement,
-  type GameCompletion,
-  type TimelineEntry,
-  type Result,
-  ok,
-  err,
-} from "@steam/domain";
 import { byWhenUnlocked } from "@steam/contracts";
 import {
-  type SteamPlayerSummariesResponse,
+  type Achievement,
+  buildTimeline,
+  CompletionRate,
+  computeGameCompletion,
+  err,
+  type Game,
+  type GameCompletion,
+  ok,
+  Playtime,
+  type Profile,
+  type Result,
+  SteamId,
+  type TimelineEntry,
+  unlockStateFromSteam,
+} from "@steam/domain";
+import {
+  type SteamGlobalAchievementPercentage,
+  type SteamGlobalAchievementPercentagesResponse,
   type SteamOwnedGamesResponse,
-  type SteamSchemaResponse,
   type SteamPlayerAchievement,
   type SteamPlayerAchievementsResponse,
-  type SteamGlobalAchievementPercentagesResponse,
-  type SteamGlobalAchievementPercentage,
+  type SteamPlayerSummariesResponse,
+  type SteamSchemaResponse,
 } from "./steam-types";
 
 export type MapProfileError = "NOT_FOUND" | "INVALID_STEAM_ID";
 
-export const mapProfile = (
-  raw: SteamPlayerSummariesResponse,
-): Result<Profile, MapProfileError> => {
+export const mapProfile = (raw: SteamPlayerSummariesResponse): Result<Profile, MapProfileError> => {
   const player = raw.response.players[0];
   if (!player) return err("NOT_FOUND");
 
@@ -46,8 +44,7 @@ export const mapProfile = (
 
 const SECONDS_TO_MS = 1000;
 
-const ICON_BASE =
-  "https://media.steampowered.com/steamcommunity/public/images/apps";
+const ICON_BASE = "https://media.steampowered.com/steamcommunity/public/images/apps";
 
 /** Steam sends epoch seconds, and 0 for a game that was never launched. */
 const lastPlayedFromSteam = (seconds: number | undefined): Date | null =>
@@ -139,9 +136,7 @@ export interface GameTally {
  * arrive as `success: false`, so the two readings are told apart here and
  * nowhere else — every caller of the player response goes through this.
  */
-const refusalIn = (
-  player: SteamPlayerAchievementsResponse,
-): AchievementsError | null => {
+const refusalIn = (player: SteamPlayerAchievementsResponse): AchievementsError | null => {
   if (player.playerstats.success) return null;
   const message = player.playerstats.error ?? "";
   return message.includes("not public") ? "PRIVATE_PROFILE" : "NO_ACHIEVEMENTS";
@@ -207,10 +202,7 @@ export const mapGameProgress = (
 
   // Index player unlocks by apiname for the join (schema.name === player.apiname).
   const unlockByApiName = new Map(
-    (player.playerstats.achievements ?? []).map((unlock) => [
-      unlock.apiname,
-      unlock,
-    ]),
+    (player.playerstats.achievements ?? []).map((unlock) => [unlock.apiname, unlock]),
   );
 
   const achievements: Achievement[] = schemaAchievements.map((definition) => {
@@ -222,10 +214,7 @@ export const mapGameProgress = (
       hidden: definition.hidden === 1,
       icon: definition.icon,
       iconGray: definition.icongray,
-      unlockState: unlockStateFromSteam(
-        unlock?.achieved ?? 0,
-        unlock?.unlocktime ?? 0,
-      ),
+      unlockState: unlockStateFromSteam(unlock?.achieved ?? 0, unlock?.unlocktime ?? 0),
     };
   });
 
@@ -257,9 +246,7 @@ export interface AchievementRarity {
 const figureIn = (published: SteamGlobalAchievementPercentage): number | null => {
   const figure = Number(published.percent);
   // Number("") is 0 and Number(" ") is 0, so emptiness is refused by hand.
-  return published.percent.trim() !== "" && Number.isFinite(figure)
-    ? figure
-    : null;
+  return published.percent.trim() !== "" && Number.isFinite(figure) ? figure : null;
 };
 
 /**
@@ -310,9 +297,7 @@ export interface AchievementName {
  * measured here, and an answer with no `game` in it should be a game that names
  * nothing rather than a 500.
  */
-export const mapAchievementNames = (
-  schema: SteamSchemaResponse,
-): AchievementName[] =>
+export const mapAchievementNames = (schema: SteamSchemaResponse): AchievementName[] =>
   (schema.game?.availableGameStats?.achievements ?? []).map((definition) => ({
     apiName: definition.name,
     displayName: definition.displayName,

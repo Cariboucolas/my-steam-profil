@@ -1,11 +1,5 @@
 import type { Outcome } from "./checks";
-import {
-  verdictOf,
-  decide,
-  type Incident,
-  type NonEmpty,
-  type Verdict,
-} from "./decision";
+import { decide, type Incident, type NonEmpty, type Verdict, verdictOf } from "./decision";
 import { outageLine, recoveryLine } from "./message";
 import type { Target } from "./targets";
 

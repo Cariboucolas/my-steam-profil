@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 
-import { buildsOf, isRecord, type Build } from "./builds";
+import { type Build, buildsOf, isRecord } from "./builds";
 
 const PROFILE = "preview";
 const PLATFORM = "android";
@@ -59,9 +59,12 @@ export const buildsListedIn =
           "eas",
           [
             "build:list",
-            "--platform", PLATFORM,
-            "--build-profile", PROFILE,
-            "--runtime-version", runtime,
+            "--platform",
+            PLATFORM,
+            "--build-profile",
+            PROFILE,
+            "--runtime-version",
+            runtime,
             "--json",
             "--non-interactive",
           ],
@@ -82,8 +85,10 @@ export const buildStartedIn = (mobile: string) => async (): Promise<readonly Bui
         "eas",
         [
           "build",
-          "--profile", PROFILE,
-          "--platform", PLATFORM,
+          "--profile",
+          PROFILE,
+          "--platform",
+          PLATFORM,
           "--non-interactive",
           "--json",
           "--wait",

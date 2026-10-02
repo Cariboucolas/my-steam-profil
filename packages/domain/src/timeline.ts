@@ -6,14 +6,10 @@ export interface TimelineEntry {
 }
 
 /** Unlocked achievements only, sorted by ascending unlock date. */
-export const buildTimeline = (
-  achievements: readonly Achievement[],
-): TimelineEntry[] => {
+export const buildTimeline = (achievements: readonly Achievement[]): TimelineEntry[] => {
   return achievements
     .flatMap((achievement) =>
-      achievement.unlockState.unlocked
-        ? [{ achievement, at: achievement.unlockState.at }]
-        : [],
+      achievement.unlockState.unlocked ? [{ achievement, at: achievement.unlockState.at }] : [],
     )
     .sort((a, b) => a.at.getTime() - b.at.getTime());
 };

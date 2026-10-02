@@ -9,6 +9,5 @@
 const TEST_FILE = /\.(test|spec)\.[cm]?[jt]sx?$/;
 
 /** Paths are relative to the router root, slash-separated. */
-export const testFilesTheRouterWouldPublish = (
-  routerFiles: readonly string[],
-): readonly string[] => routerFiles.filter((one) => TEST_FILE.test(one));
+export const testFilesTheRouterWouldPublish = (routerFiles: readonly string[]): readonly string[] =>
+  routerFiles.filter((one) => TEST_FILE.test(one));

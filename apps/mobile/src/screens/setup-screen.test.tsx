@@ -1,17 +1,10 @@
-import {
-  act,
-  fireEvent,
-  renderRouter,
-  screen,
-  waitFor,
-} from "expo-router/testing-library";
 import { Redirect, useRouter } from "expo-router";
+import { act, fireEvent, renderRouter, screen, waitFor } from "expo-router/testing-library";
 import { Pressable, Text } from "react-native";
-
+import SetupScreen from "../../app/setup";
 import { deviceAsksForLessMotion } from "../accessibility/reduce-motion.test-support";
 import type { SteamIdStorage } from "../settings/steam-id-storage";
 import { SteamIdProvider, useSteamId } from "../settings/steam-id-store";
-import SetupScreen from "../../app/setup";
 
 const STEAM_ID = "76561197979269357";
 const OTHER_STEAM_ID = "76561197960287930";
@@ -82,9 +75,7 @@ describe("setup screen", () => {
   it("asks which profile to show", async () => {
     renderSetup(undefined);
 
-    await waitFor(() =>
-      expect(screen.getByText("Which Steam profile?")).toBeTruthy(),
-    );
+    await waitFor(() => expect(screen.getByText("Which Steam profile?")).toBeTruthy());
     expect(screen.getByLabelText("SteamID64")).toBeTruthy();
   });
 
