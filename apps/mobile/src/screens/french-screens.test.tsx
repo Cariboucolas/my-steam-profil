@@ -8,6 +8,7 @@ import { deviceAsksForLessMotion } from "../accessibility/reduce-motion.test-sup
 import type { ApiClient } from "../api-client/api-client";
 import { createFixtureApiClient } from "../api-client/fixture-api-client";
 import type { Locale } from "../i18n/locale";
+import { FreshQueries } from "../query/FreshQueries";
 import type { LocaleStorage } from "../settings/locale-storage";
 import { LocaleProvider } from "../settings/locale-store";
 import type { SteamIdStorage } from "../settings/steam-id-storage";
@@ -88,9 +89,11 @@ const renderAt = (url: string, stored: Locale) => {
     {
       initialUrl: url,
       wrapper: ({ children }) => (
-        <LocaleProvider storage={locale.storage}>
-          <SteamIdProvider storage={steamIdStorage}>{children}</SteamIdProvider>
-        </LocaleProvider>
+        <FreshQueries>
+          <LocaleProvider storage={locale.storage}>
+            <SteamIdProvider storage={steamIdStorage}>{children}</SteamIdProvider>
+          </LocaleProvider>
+        </FreshQueries>
       ),
     },
   );
