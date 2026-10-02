@@ -286,6 +286,25 @@ describe("createHttpApiClient (the six-request budget)", () => {
     expect(appIdsSent()).toEqual([1, 2, 3, 4, 5, 6, 7]);
   });
 
+  /** A place given up at the abort is not given up again when the answer lands. */
+  it("frees one place, not two, when an aborted request is answered after all", async () => {
+    const { sent, clientFor, appIdsSent } = heldBackend();
+    const client = clientFor(STEAM_ID);
+    const left = new AbortController();
+
+    const aborted = client.getGameTally(1, left.signal);
+    for (let appId = 2; appId <= 9; appId += 1) {
+      void client.getGameTally(appId, test.signal);
+    }
+
+    left.abort();
+    sent[0]?.answer({});
+    await aborted;
+    await Promise.resolve();
+
+    expect(appIdsSent()).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
   it("sends what waited in the order it was asked", async () => {
     const { sent, clientFor, appIdsSent } = heldBackend();
     const one = clientFor(STEAM_ID);
