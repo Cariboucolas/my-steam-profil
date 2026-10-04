@@ -21,8 +21,13 @@ const attempt = <T>(send: () => Promise<T>): Promise<T> =>
 
 /**
  * A FIFO queue letting `places` requests be in flight at once. A place freed is
- * handed straight to whoever has waited longest, so the count never dips and
- * nobody jumps the line.
+ * handed to whoever has waited longest, so the count never dips and nobody
+ * jumps the line.
+ *
+ * It is handed over once the turn that freed it is over. A screen that leaves
+ * aborts what it asked one call after the other, in flight first: handed over
+ * at once, the first place would go to a call that screen is about to abort
+ * next, and send it to answer nobody (#168).
  */
 export const createRequestQueue = (places: number): RequestQueue => {
   let inFlight = 0;
@@ -56,7 +61,7 @@ export const createRequestQueue = (places: number): RequestQueue => {
         const heldAPlace = stage === "sent";
         stage = "over";
         signal?.removeEventListener("abort", drop);
-        if (heldAPlace) leave();
+        if (heldAPlace) queueMicrotask(leave);
         settle();
       };
 
