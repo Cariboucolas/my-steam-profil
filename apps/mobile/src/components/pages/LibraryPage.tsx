@@ -94,7 +94,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
   // chosen, and nothing on the render where another one has just been chosen.
   const games = library.status === "ready" ? library.games : NO_GAMES;
 
-  // Where the tallies have got to. Fetching them, bounding them, abandoning
+  // Where the tallies have got to. Fetching them from the shared cache, abandoning
   // them on a profile switch and holding the list still while they land are
   // all its concern, and none of them are state this screen keeps.
   const { tallies, pending, counted, loaded, frozenOrder, repin } = useLibraryTallies(
@@ -134,7 +134,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
   const { locale, choose } = useLocale();
   const rows = useMemo(() => buildLibraryRows(view, t), [view, t]);
   const summary = useMemo(() => buildLibrarySummary(view, t), [view, t]);
-  // The tones hold still while the waves land, which is the hook's own doing
+  // The tones hold still while the tallies land, which is the hook's own doing
   // and not this screen's: it is the calendar's half of what `frozenOrder` is
   // to the list below.
   const calendar = useUnlockCalendar(view, today);
@@ -156,7 +156,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
 
   /**
    * Choosing an order is a request to see things move, so the list re-sorts at
-   * once — and then re-pins to the result, so the waves still arriving do not
+   * once — and then re-pins to the result, so the tallies still arriving do not
    * carry on shuffling it afterwards. Movement happens when the reader asks for
    * it, and at no other time.
    */
