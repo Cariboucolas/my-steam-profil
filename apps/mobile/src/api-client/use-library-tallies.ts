@@ -1,5 +1,5 @@
 import type { GameDto, GameTallyDto } from "@steam/contracts";
-import { type QueryObserverResult, skipToken, useQueries } from "@tanstack/react-query";
+import { type QueryObserverResult, useQueries } from "@tanstack/react-query";
 import { useCallback, useMemo, useState } from "react";
 
 import { NOBODY, queries } from "../query/queries";
@@ -136,8 +136,8 @@ const landingOf =
     };
   };
 
-/** An order the reader chose, and the library it was chosen over. */
-type Chosen = { readonly over: readonly number[]; readonly order: readonly number[] };
+/** An order the reader chose, and the games being counted when they chose it. */
+type Chosen = { readonly whileCounting: readonly number[]; readonly order: readonly number[] };
 
 /**
  * How far a library's tallies have got, from the games it holds: one query per
@@ -168,14 +168,14 @@ export const useLibraryTallies = (
   );
 
   const { tallies, pending } = useQueries({
-    queries: wanted.map((appId) => ({
-      ...queries.tally(steamId ?? NOBODY, appId),
-      queryFn:
-        client === undefined
-          ? skipToken
-          : ({ signal }: { readonly signal: AbortSignal }) =>
+    queries:
+      client === undefined
+        ? []
+        : wanted.map((appId) => ({
+            ...queries.tally(steamId ?? NOBODY, appId),
+            queryFn: ({ signal }: { readonly signal: AbortSignal }) =>
               client.getGameTally(appId, signal).then(valueOrThrow),
-    })),
+          })),
     combine: useMemo(() => landingOf(wanted), [wanted]),
   });
 
@@ -184,7 +184,7 @@ export const useLibraryTallies = (
 
   const repin = useCallback(
     (order: readonly number[]) => {
-      if (outstanding) setChosen({ over: wanted, order });
+      if (outstanding) setChosen({ whileCounting: wanted, order });
     },
     [outstanding, wanted],
   );
@@ -193,7 +193,8 @@ export const useLibraryTallies = (
   // profile at all there is nothing that could be counted, so it stays
   // uncounted and whatever waits on the count keeps waiting.
   const counted = client !== undefined && !outstanding;
-  const frozenOrder = !outstanding ? null : chosen?.over === wanted ? chosen.order : wanted;
+  const chosenOrder = chosen?.whileCounting === wanted ? chosen.order : null;
+  const frozenOrder = outstanding ? (chosenOrder ?? wanted) : null;
   const loaded = outstanding ? (wanted.length - pending.size) / wanted.length : null;
 
   return { tallies, pending, loaded, counted, frozenOrder, repin };
