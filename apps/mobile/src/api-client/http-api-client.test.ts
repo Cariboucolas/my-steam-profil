@@ -275,7 +275,7 @@ describe("createHttpApiClient (the six-request budget)", () => {
     expect(sent).toHaveLength(6);
   });
 
-  it("gives the place of a request aborted in flight to the next in the queue", () => {
+  it("gives the place of a request aborted in flight to the next in the queue", async () => {
     const { clientFor, appIdsSent } = heldBackend();
     const client = clientFor(STEAM_ID);
     const left = new AbortController();
@@ -287,8 +287,26 @@ describe("createHttpApiClient (the six-request budget)", () => {
     expect(appIdsSent()).toEqual([1, 2, 3, 4, 5, 6]);
 
     left.abort();
+    await Promise.resolve();
 
     expect(appIdsSent()).toEqual([1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  /**
+   * A screen that leaves aborts every request it made, one after the other.
+   * Were a place handed over at the first abort, a request the screen is about
+   * to abort next would be sent in it, to answer nobody (#168).
+   */
+  it("sends nothing in the place of a request abandoned with the ones waiting behind it", async () => {
+    const { clientFor, appIdsSent } = heldBackend();
+    const client = clientFor(STEAM_ID);
+    const leaving = [1, 2, 3, 4, 5, 6, 7, 8].map(() => new AbortController());
+
+    leaving.forEach((left, index) => void client.getGameTally(index + 1, left.signal));
+    for (const left of leaving) left.abort();
+    await Promise.resolve();
+
+    expect(appIdsSent()).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
   /** A place given up at the abort is not given up again when the answer lands. */
