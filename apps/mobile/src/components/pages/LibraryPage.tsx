@@ -80,8 +80,9 @@ type Props = {
  * leads is handed in — so it renders anywhere a client can be served.
  */
 export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: Props) {
+  const steamId = useChosenSteamId();
   const apiClient = useApiClient();
-  const library = useLibraryLoad(useChosenSteamId(), apiClient);
+  const library = useLibraryLoad(steamId, apiClient);
   const [chosenSort, setChosenSort] = useState<LibrarySort>("completed");
   const [tab, setTab] = useState(COMPLETION);
   // Today, read once when the screen opens. The calendar is a statement about
@@ -97,6 +98,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
   // them on a profile switch and holding the list still while they land are
   // all its concern, and none of them are state this screen keeps.
   const { tallies, pending, counted, loaded, frozenOrder, repin } = useLibraryTallies(
+    steamId,
     apiClient,
     games,
   );

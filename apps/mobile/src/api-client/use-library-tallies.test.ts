@@ -1,11 +1,18 @@
 import type { GameDto, GameTallyDto } from "@steam/contracts";
 import { err, ok, type Result } from "@steam/domain";
+import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
-
+import { createElement, type ReactNode } from "react";
+import { queries } from "../query/queries";
+import { createAppQueryClient } from "../query/query-client";
 import type { ApiClient, ProgressError } from "./api-client";
+import { createRequestQueue, DROPPED } from "./request-queue";
 import { useLibraryTallies } from "./use-library-tallies";
 
 type Tally = Result<GameTallyDto, ProgressError>;
+
+const STEAM_ID = "76561197979269357";
+const OTHER_STEAM_ID = "76561197960287930";
 
 /** Null minutes is a playtime Steam withheld, not a game never launched. */
 const game = (
@@ -56,14 +63,24 @@ const refuse = () => {
   throw new Error("the library should not have called this");
 };
 
-const clientAsking = (answer: (appId: number) => Promise<Tally>): ApiClient => ({
-  getProfile: refuse,
-  getGames: refuse,
-  getGameProgress: refuse,
-  getGameTally: answer,
-  getGameRarity: refuse,
-  getAchievementNames: refuse,
-});
+/**
+ * Paced as the backend's client is, by a queue of six: the budget is the
+ * client's to hold, not the hook's (#162).
+ */
+const clientAsking = (answer: (appId: number) => Promise<Tally>): ApiClient => {
+  const queue = createRequestQueue(6);
+  return {
+    getProfile: refuse,
+    getGames: refuse,
+    getGameProgress: refuse,
+    getGameTally: async (appId, signal) => {
+      const answered = await queue(() => answer(appId), signal);
+      return answered === DROPPED ? err("UNAVAILABLE") : answered;
+    },
+    getGameRarity: refuse,
+    getAchievementNames: refuse,
+  };
+};
 
 /** Answers every game at once, and records the order it was asked in. */
 const eagerClient = () => {
@@ -103,14 +120,31 @@ const heldClient = (
 };
 
 type Props = {
+  readonly steamId?: string;
   readonly client: ApiClient | undefined;
   readonly games: readonly GameDto[];
 };
 
-const renderTallies = (client: ApiClient | undefined, games: readonly GameDto[] = GAMES) =>
-  renderHook(({ client: c, games: g }: Props) => useLibraryTallies(c, g), {
-    initialProps: { client, games },
-  });
+/**
+ * A cache of the test's own, as the app's would be: kept for as long as the
+ * test runs, so a screen mounted after another one finds what it left.
+ */
+const freshCache = (): QueryClient => createAppQueryClient({ gcTime: Infinity, retryDelay: 0 });
+
+/** The library's tallies, read from `cache`: a fresh one unless the test shares one. */
+const renderTallies = (
+  client: ApiClient | undefined,
+  games: readonly GameDto[] = GAMES,
+  cache: QueryClient = freshCache(),
+) =>
+  renderHook(
+    ({ steamId = STEAM_ID, client: c, games: g }: Props) => useLibraryTallies(steamId, c, g),
+    {
+      initialProps: { client, games } as Props,
+      wrapper: ({ children }: { readonly children: ReactNode }) =>
+        createElement(QueryClientProvider, { client: cache }, children),
+    },
+  );
 
 describe("useLibraryTallies", () => {
   it("counts every game the player has launched", async () => {
@@ -283,7 +317,7 @@ describe("useLibraryTallies", () => {
     const { result, rerender } = renderTallies(previous.client);
     await waitFor(() => expect(result.current.pending.size).toBe(8));
 
-    rerender({ client: next.client, games: OTHER_GAMES });
+    rerender({ steamId: OTHER_STEAM_ID, client: next.client, games: OTHER_GAMES });
     expect(result.current.tallies).toEqual({});
 
     await previous.release();
@@ -429,7 +463,7 @@ describe("useLibraryTallies", () => {
     const { result, rerender } = renderTallies(previous.client);
     await waitFor(() => expect(result.current.counted).toBe(true));
 
-    rerender({ client: heldClient([500]).client, games: OTHER_GAMES });
+    rerender({ steamId: OTHER_STEAM_ID, client: heldClient([500]).client, games: OTHER_GAMES });
 
     expect(result.current.counted).toBe(false);
   });
@@ -441,18 +475,118 @@ describe("useLibraryTallies", () => {
   });
 
   /**
-   * The card's figures grow as waves land, and something has to say they are
-   * not final yet. Six of the eight launched games make up the first wave, so
-   * holding one of the second leaves the load visibly part done.
+   * The card's figures grow as tallies land, and something has to say they
+   * are not final yet. Holding one of the eight launched games leaves the load
+   * visibly part done.
    */
   it("reports how far the tallies have got while they are landing", async () => {
     const { client, release } = heldClient([7]);
     const { result } = renderTallies(client);
 
-    await waitFor(() => expect(result.current.loaded).toBe(0.75));
+    await waitFor(() => expect(result.current.loaded).toBe(7 / 8));
 
     await release();
 
     expect(result.current.loaded).toBeNull();
+  });
+
+  describe("on a cache shared with other screens", () => {
+    /** What the Statistics page is waiting on (#162): the library counted once. */
+    it("asks nothing for a second reader mounted while the tallies are fresh", async () => {
+      const cache = freshCache();
+      const { client, asked } = eagerClient();
+      const first = renderTallies(client, GAMES, cache);
+      await waitFor(() => expect(first.result.current.counted).toBe(true));
+      const askedByTheFirst = asked.length;
+
+      const second = renderTallies(client, GAMES, cache);
+
+      expect(second.result.current.counted).toBe(true);
+      expect(second.result.current.tallies).toEqual(first.result.current.tallies);
+      expect(asked).toHaveLength(askedByTheFirst);
+    });
+
+    /**
+     * Leaving the library while it counts stops the count, and what landed is
+     * not counted again. Fourteen games, so that six have landed, six are in
+     * flight and two still wait for a place when the reader leaves.
+     */
+    it("asks nothing more once left, and only for what is missing when back", async () => {
+      const cache = freshCache();
+      const unanswered = [7, 8, 9, 10, 11, 12, 13, 14];
+      const leaving = heldClient(unanswered);
+      const first = renderTallies(leaving.client, LONG_LIBRARY, cache);
+      await waitFor(() => expect(first.result.current.pending.size).toBe(8));
+
+      first.unmount();
+      await leaving.release();
+
+      expect(leaving.asked).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+
+      const back = eagerClient();
+      const second = renderTallies(back.client, LONG_LIBRARY, cache);
+      await waitFor(() => expect(second.result.current.counted).toBe(true));
+
+      expect(back.asked).toEqual(unanswered);
+    });
+
+    /**
+     * A failure holds for as long as an answer would have (#162): asking again
+     * is a gesture of the player's (#164), not something a second screen does.
+     */
+    it("leaves a failed game out, and does not ask a second reader's turn again", async () => {
+      const cache = freshCache();
+      const { client, asked } = heldClient([], (appId) =>
+        appId === 2 ? err("NOT_FOUND") : ok(tally(appId)),
+      );
+      const first = renderTallies(client, GAMES, cache);
+      await waitFor(() => expect(first.result.current.counted).toBe(true));
+
+      expect(first.result.current.tallies[2]).toBeUndefined();
+      expect(first.result.current.pending.has(2)).toBe(false);
+
+      renderTallies(client, GAMES, cache);
+
+      expect(asked.filter((appId) => appId === 2)).toHaveLength(1);
+    });
+
+    /** Opening a game marks its tally out of date: one request when back, not a recount. */
+    it("asks once, for the game just opened, when the reader comes back", async () => {
+      const cache = freshCache();
+      const firstVisit = renderTallies(eagerClient().client, GAMES, cache);
+      await waitFor(() => expect(firstVisit.result.current.counted).toBe(true));
+      firstVisit.unmount();
+
+      await act(() => cache.invalidateQueries(queries.tally(STEAM_ID, 3)));
+      const back = eagerClient();
+      const { result } = renderTallies(back.client, GAMES, cache);
+      await waitFor(() => expect(back.asked).toHaveLength(1));
+
+      expect(back.asked).toEqual([3]);
+      expect(result.current.counted).toBe(true);
+    });
+
+    /**
+     * A tally asked again over one already shown is a figure being refreshed,
+     * not a library being counted: nothing pulses, and the order is not pinned.
+     */
+    it("keeps the library counted while a tally it already shows is asked again", async () => {
+      const cache = freshCache();
+      const held: number[] = [];
+      const { client, asked, release } = heldClient(held);
+      const { result } = renderTallies(client, GAMES, cache);
+      await waitFor(() => expect(result.current.counted).toBe(true));
+
+      held.push(3);
+      await act(async () => {
+        void cache.invalidateQueries(queries.tally(STEAM_ID, 3));
+      });
+
+      expect(asked.filter((appId) => appId === 3)).toHaveLength(2);
+      expect(result.current.counted).toBe(true);
+      expect(result.current.pending.size).toBe(0);
+      expect(result.current.frozenOrder).toBeNull();
+      await release();
+    });
   });
 });
