@@ -1,13 +1,12 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import type { ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import { gameCoverUrl } from "../../steam/images";
 import { colors, coverPlaceholder, fonts, spacing } from "../../theme/tokens";
+import { BackButton } from "../atoms/BackButton";
 
 const HEIGHT = 196;
-const BACK = 34;
 
 type Props = {
   readonly appId: number;
@@ -26,8 +25,6 @@ type Props = {
 };
 
 export function GameHero({ appId, name, meta, topInset, onBack, languageSwitch }: Props) {
-  const { t } = useTranslation();
-
   return (
     <View style={styles.hero}>
       <Image
@@ -43,14 +40,7 @@ export function GameHero({ appId, name, meta, topInset, onBack, languageSwitch }
         style={StyleSheet.absoluteFill}
       />
 
-      <Pressable
-        onPress={onBack}
-        accessibilityRole="button"
-        accessibilityLabel={t("game.back")}
-        style={{ ...styles.back, top: topInset + spacing.sm }}
-      >
-        <Text style={styles.chevron}>‹</Text>
-      </Pressable>
+      <BackButton onPress={onBack} top={topInset + spacing.sm} />
 
       {languageSwitch === undefined ? null : (
         <View style={{ ...styles.switch, top: topInset + spacing.sm }}>{languageSwitch}</View>
@@ -75,26 +65,9 @@ const styles = StyleSheet.create({
     height: HEIGHT,
     backgroundColor: coverPlaceholder,
   },
-  back: {
-    position: "absolute",
-    left: 14,
-    width: BACK,
-    height: BACK,
-    borderRadius: BACK / 2,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(11,15,20,0.55)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.12)",
-  },
   switch: {
     position: "absolute",
     right: 14,
-  },
-  chevron: {
-    fontSize: 20,
-    lineHeight: 22,
-    color: colors.text,
   },
   caption: {
     position: "absolute",
