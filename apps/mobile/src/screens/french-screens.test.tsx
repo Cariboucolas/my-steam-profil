@@ -4,6 +4,7 @@ import { act, fireEvent, renderRouter, screen, waitFor } from "expo-router/testi
 import { Text } from "react-native";
 import GameScreen from "../../app/game/[appId]";
 import LibraryScreen from "../../app/index";
+import StatsScreen from "../../app/stats";
 import { deviceAsksForLessMotion } from "../accessibility/reduce-motion.test-support";
 import type { ApiClient } from "../api-client/api-client";
 import { createFixtureApiClient } from "../api-client/fixture-api-client";
@@ -85,7 +86,13 @@ const SetupStub = () => <Text>setup screen</Text>;
 const renderAt = (url: string, stored: Locale) => {
   const locale = localeStorage(stored);
   renderRouter(
-    { index: LibraryScreen, setup: SetupStub, "game/[appId]": GameScreen, library: LibraryStub },
+    {
+      index: LibraryScreen,
+      setup: SetupStub,
+      "game/[appId]": GameScreen,
+      stats: StatsScreen,
+      library: LibraryStub,
+    },
     {
       initialUrl: url,
       wrapper: ({ children }) => (
@@ -124,6 +131,14 @@ describe("the app in French", () => {
     expect(screen.getByText("Soulstone Survivors")).toBeTruthy();
     expect(screen.queryByText("Activity")).toBeNull();
     expect(screen.queryByText("Completion")).toBeNull();
+  });
+
+  it("writes the stats screen in French", async () => {
+    renderAt("/stats", "fr");
+
+    expect(await screen.findByText("Statistiques")).toBeTruthy();
+    expect(screen.getByText("ANNÉES ET CUMUL")).toBeTruthy();
+    expect(screen.queryByText("Statistics")).toBeNull();
   });
 
   it("writes the game screen in French, dates and filters included", async () => {
