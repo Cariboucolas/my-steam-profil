@@ -1,10 +1,9 @@
 import type { GameDto, GameTallyDto } from "@steam/contracts";
 import { err, ok, type Result } from "@steam/domain";
-import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
-import { createElement, type ReactNode } from "react";
+import { createShortLivedQueryClient, servedFrom } from "../query/FreshQueries";
 import { queries } from "../query/queries";
-import { createAppQueryClient } from "../query/query-client";
 import type { ApiClient, ProgressError } from "./api-client";
 import { useLibraryTallies } from "./use-library-tallies";
 
@@ -114,24 +113,17 @@ type Props = {
   readonly games: readonly GameDto[];
 };
 
-/**
- * A cache of the test's own, as the app's would be: kept for as long as the
- * test runs, so a screen mounted after another one finds what it left.
- */
-const freshCache = (): QueryClient => createAppQueryClient({ gcTime: Infinity, retryDelay: 0 });
-
 /** The library's tallies, read from `cache`: a fresh one unless the test shares one. */
 const renderTallies = (
   client: ApiClient | undefined,
   games: readonly GameDto[] = GAMES,
-  cache: QueryClient = freshCache(),
+  cache: QueryClient = createShortLivedQueryClient(),
 ) =>
   renderHook(
     ({ steamId = STEAM_ID, client: c, games: g }: Props) => useLibraryTallies(steamId, c, g),
     {
       initialProps: { client, games } as Props,
-      wrapper: ({ children }: { readonly children: ReactNode }) =>
-        createElement(QueryClientProvider, { client: cache }, children),
+      wrapper: servedFrom(cache),
     },
   );
 
@@ -482,7 +474,7 @@ describe("useLibraryTallies", () => {
   describe("on a cache shared with other screens", () => {
     /** What the Statistics page is waiting on (#162): the library counted once. */
     it("asks nothing for a second reader mounted while the tallies are fresh", async () => {
-      const cache = freshCache();
+      const cache = createShortLivedQueryClient();
       const { client, asked } = eagerClient();
       const first = renderTallies(client, GAMES, cache);
       await waitFor(() => expect(first.result.current.counted).toBe(true));
@@ -502,7 +494,7 @@ describe("useLibraryTallies", () => {
      * still to come when the reader leaves.
      */
     it("asks nothing more once left, and only for what is missing when back", async () => {
-      const cache = freshCache();
+      const cache = createShortLivedQueryClient();
       const leaving = heldClient([7, 8, 9, 10, 11, 12, 13, 14]);
       const first = renderTallies(leaving.client, LONG_LIBRARY, cache);
       await waitFor(() => expect(first.result.current.pending.size).toBe(8));
@@ -524,7 +516,7 @@ describe("useLibraryTallies", () => {
      * is a gesture of the player's (#164), not something a second screen does.
      */
     it("leaves a failed game out, and does not ask a second reader's turn again", async () => {
-      const cache = freshCache();
+      const cache = createShortLivedQueryClient();
       const { client, asked } = heldClient([], (appId) =>
         appId === 2 ? err("NOT_FOUND") : ok(tally(appId)),
       );
@@ -541,7 +533,7 @@ describe("useLibraryTallies", () => {
 
     /** Opening a game marks its tally out of date: one request when back, not a recount. */
     it("asks once, for the game just opened, when the reader comes back", async () => {
-      const cache = freshCache();
+      const cache = createShortLivedQueryClient();
       const firstVisit = renderTallies(eagerClient().client, GAMES, cache);
       await waitFor(() => expect(firstVisit.result.current.counted).toBe(true));
       firstVisit.unmount();
@@ -557,7 +549,7 @@ describe("useLibraryTallies", () => {
 
     /** Only this Profile's tallies are this library's to refresh. */
     it("asks nothing when another Profile's tally is marked out of date", async () => {
-      const cache = freshCache();
+      const cache = createShortLivedQueryClient();
       const { client, asked } = eagerClient();
       const { result } = renderTallies(client, GAMES, cache);
       await waitFor(() => expect(result.current.counted).toBe(true));
@@ -572,7 +564,7 @@ describe("useLibraryTallies", () => {
      * not a library being counted: nothing pulses, and the order is not pinned.
      */
     it("keeps the library counted while a tally it already shows is asked again", async () => {
-      const cache = freshCache();
+      const cache = createShortLivedQueryClient();
       const held: number[] = [];
       const { client, asked, release } = heldClient(held);
       const { result } = renderTallies(client, GAMES, cache);

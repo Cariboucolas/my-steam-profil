@@ -1,9 +1,8 @@
 import type { GameRarityDto, GameTallyDto } from "@steam/contracts";
 import { err, ok, type Result } from "@steam/domain";
-import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
-import { createElement, type ReactNode } from "react";
-import { createAppQueryClient } from "../query/query-client";
+import { createShortLivedQueryClient, servedFrom } from "../query/FreshQueries";
 import type { TallyByAppId } from "../view-models/library";
 import type { ApiClient, ApiError } from "./api-client";
 import { type CountedLibrary, useLibraryRarity } from "./use-library-rarity";
@@ -98,22 +97,15 @@ type Props = {
   readonly active: boolean;
 };
 
-/**
- * A cache of the test's own, as the app's would be: kept for as long as the
- * test runs, so a tab mounted after another one finds what it left.
- */
-const freshCache = (): QueryClient => createAppQueryClient({ gcTime: Infinity, retryDelay: 0 });
-
 /** The tab's rarity, read from `cache`: a fresh one unless the test shares one. */
 const renderRarity = (
   library: CountedLibrary | null,
   active = true,
-  cache: QueryClient = freshCache(),
+  cache: QueryClient = createShortLivedQueryClient(),
 ) =>
   renderHook(({ library: l, active: a }: Props) => useLibraryRarity(l, a), {
     initialProps: { library, active },
-    wrapper: ({ children }: { readonly children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: cache }, children),
+    wrapper: servedFrom(cache),
   });
 
 describe("useLibraryRarity", () => {
@@ -306,7 +298,7 @@ describe("useLibraryRarity", () => {
 
   /** Rarity is the same for every player and every screen (ADR-0008). */
   it("asks nothing again when the tab mounts once more in the same session", async () => {
-    const cache = freshCache();
+    const cache = createShortLivedQueryClient();
     const { client, asked } = eagerClient();
     const first = renderRarity(counted(client), true, cache);
     await waitFor(() => expect(first.result.current.status).toBe("ready"));
@@ -339,7 +331,7 @@ describe("useLibraryRarity", () => {
 
   /** A failure holds for the session, as an answer would: asking again is #164. */
   it("does not ask again about a game that failed", async () => {
-    const cache = freshCache();
+    const cache = createShortLivedQueryClient();
     const { client, asked } = heldClient([], (appId) =>
       appId === 2 ? err<ApiError>("NOT_FOUND") : ok(published(appId)),
     );

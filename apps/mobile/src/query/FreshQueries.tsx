@@ -1,4 +1,4 @@
-import { QueryClientProvider } from "@tanstack/react-query";
+import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
 
 import { createAppQueryClient } from "./query-client";
@@ -9,7 +9,18 @@ import { createAppQueryClient } from "./query-client";
  * last reader holds a timer a test run would wait on, and the pause before an
  * unavailable backend is asked again is one a test would have to sit through.
  */
-const createShortLivedQueryClient = () => createAppQueryClient({ gcTime: Infinity, retryDelay: 0 });
+export const createShortLivedQueryClient = (): QueryClient =>
+  createAppQueryClient({ gcTime: Infinity, retryDelay: 0 });
+
+/**
+ * Serves what it wraps from `cache`, which a test hands to every render that
+ * must find what an earlier one left.
+ */
+export const servedFrom =
+  (cache: QueryClient) =>
+  ({ children }: { readonly children: ReactNode }) => (
+    <QueryClientProvider client={cache}>{children}</QueryClientProvider>
+  );
 
 /**
  * Serves what it wraps from a cache of its own, built when it mounts: what one

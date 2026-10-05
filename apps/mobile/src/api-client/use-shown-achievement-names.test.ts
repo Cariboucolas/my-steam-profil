@@ -1,10 +1,9 @@
 import type { AchievementNamesDto } from "@steam/contracts";
 import { err, ok, type Result } from "@steam/domain";
-import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { QueryClient } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
-import { createElement, type ReactNode } from "react";
 
-import { createAppQueryClient } from "../query/query-client";
+import { createShortLivedQueryClient, servedFrom } from "../query/FreshQueries";
 
 import type { ApiClient, ApiError } from "./api-client";
 import { type ShownGames, useShownAchievementNames } from "./use-shown-achievement-names";
@@ -79,18 +78,14 @@ const shown = (client: ApiClient, appIds: readonly number[]): ShownGames => ({
   appIds,
 });
 
-/**
- * A cache of the test's own, as the app's would be: kept for as long as the
- * test runs, so a ranking mounted after another one finds what it left.
- */
-const freshCache = (): QueryClient => createAppQueryClient({ gcTime: Infinity, retryDelay: 0 });
-
 /** The rows' names, read from `cache`: a fresh one unless the test shares one. */
-const renderNames = (initial: ShownGames | null, cache: QueryClient = freshCache()) =>
+const renderNames = (
+  initial: ShownGames | null,
+  cache: QueryClient = createShortLivedQueryClient(),
+) =>
   renderHook(({ games }: { games: ShownGames | null }) => useShownAchievementNames(games), {
     initialProps: { games: initial },
-    wrapper: ({ children }: { readonly children: ReactNode }) =>
-      createElement(QueryClientProvider, { client: cache }, children),
+    wrapper: servedFrom(cache),
   });
 
 describe("useShownAchievementNames", () => {
@@ -242,7 +237,7 @@ describe("useShownAchievementNames", () => {
 
   /** A game names its achievements the same for every player (ADR-0008). */
   it("asks nothing again when a ranking mounts once more in the same session", async () => {
-    const cache = freshCache();
+    const cache = createShortLivedQueryClient();
     const { client, asked } = eagerClient();
     const first = renderNames(shown(client, [SOULSTONE]), cache);
     await waitFor(() => expect(first.result.current.names[SOULSTONE]).toBeDefined());

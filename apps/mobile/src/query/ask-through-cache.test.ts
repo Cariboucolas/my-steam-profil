@@ -2,7 +2,7 @@ import { err, ok } from "@steam/domain";
 
 import type { ApiError } from "../api-client";
 import { askThroughCache } from "./ask-through-cache";
-import { createAppQueryClient } from "./query-client";
+import { createShortLivedQueryClient } from "./FreshQueries";
 
 const QUERY = { queryKey: ["answer", 1], staleTime: 1000 } as const;
 
@@ -16,13 +16,11 @@ const backend = <Value>(answer: () => Value) => {
   return { ask, asked };
 };
 
-const freshCache = () => createAppQueryClient({ gcTime: Infinity, retryDelay: 0 });
-
 describe("askThroughCache", () => {
   afterEach(() => jest.restoreAllMocks());
 
   it("answers what the backend answered, and asks it once while that is fresh", async () => {
-    const cache = freshCache();
+    const cache = createShortLivedQueryClient();
     const { ask, asked } = backend(() => ok("named"));
 
     await expect(askThroughCache(cache, QUERY, ask)).resolves.toEqual(ok("named"));
@@ -33,7 +31,7 @@ describe("askThroughCache", () => {
 
   /** A failure holds as long as an answer would (#162): asking again is a gesture (#164). */
   it("answers a failure without asking again while it is fresh", async () => {
-    const cache = freshCache();
+    const cache = createShortLivedQueryClient();
     const { ask, asked } = backend(() => err<ApiError>("NOT_FOUND"));
 
     expect((await askThroughCache(cache, QUERY, ask)).ok).toBe(false);
@@ -43,7 +41,7 @@ describe("askThroughCache", () => {
   });
 
   it("asks again once a failure is older than the query's freshness", async () => {
-    const cache = freshCache();
+    const cache = createShortLivedQueryClient();
     const { ask, asked } = backend(() => err<ApiError>("NOT_FOUND"));
     await askThroughCache(cache, QUERY, ask);
 
