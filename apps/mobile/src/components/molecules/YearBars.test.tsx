@@ -1,4 +1,5 @@
 import { render, screen } from "@testing-library/react-native";
+import { StyleSheet } from "react-native";
 
 import type { YearBar } from "../../view-models/years-and-cumulative";
 import { RUNNING_TOTAL_TEST_ID, YearBars } from "./YearBars";
@@ -45,6 +46,28 @@ describe("YearBars", () => {
       />,
     );
     expect(screen.getByText("1 104")).toBeTruthy();
+  });
+
+  /**
+   * Seventeen years on a phone leave each bar about 13 px: a label or a figure
+   * held to that wraps or is cut short. Each is given its own width instead,
+   * centred over its bar, and spills over the bars beside it.
+   */
+  it("gives labels and figures a width of their own, on one line", () => {
+    const years = Array.from({ length: 17 }, (_, index) => 2010 + index);
+    render(
+      <YearBars
+        bars={years.map((year) => bar(year, { figure: year === 2026 ? "1 104" : null }))}
+        cumulative={null}
+        screenReaderLabel="chart"
+      />,
+    );
+    for (const text of [screen.getByText("’10"), screen.getByText("1 104")]) {
+      expect(text.props.numberOfLines).toBe(1);
+      expect(StyleSheet.flatten(text.props.style)).toEqual(
+        expect.objectContaining({ width: expect.any(Number), textAlign: "center" }),
+      );
+    }
   });
 
   it("draws the running total when it has one, and none without", () => {
