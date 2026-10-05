@@ -1,11 +1,14 @@
 import type { GameDto, GameProgressDto, ProfileDto } from "@steam/contracts";
-import { act, render, screen } from "@testing-library/react-native";
+import { act, fireEvent, render, screen } from "@testing-library/react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { deviceAsksForLessMotion } from "../../accessibility/reduce-motion.test-support";
 import type { ApiClient } from "../../api-client/api-client";
 import { ApiClientProvider } from "../../api-client/api-client-provider";
-import { createFixtureApiClient } from "../../api-client/fixture-api-client";
+import {
+  createFixtureApiClient,
+  createPendingApiClient,
+} from "../../api-client/fixture-api-client";
 import { FreshQueries } from "../../query/FreshQueries";
 import type { SteamIdStorage } from "../../settings/steam-id-storage";
 import { SteamIdProvider } from "../../settings/steam-id-store";
@@ -88,6 +91,29 @@ describe("GamePage", () => {
   /** Lets what is still in flight land before the screen is torn down. */
   afterEach(async () => {
     await act(async () => {});
+  });
+
+  /**
+   * The game can wait on a library still counting, and a wait with no way out
+   * is a screen the player can only kill the app to leave.
+   */
+  it("offers the way back while the game is still loading", () => {
+    const onBack = jest.fn();
+    render(
+      <SafeAreaProvider initialMetrics={PHONE}>
+        <FreshQueries>
+          <SteamIdProvider storage={steamIdStorage}>
+            <ApiClientProvider create={createPendingApiClient}>
+              <GamePage appId={SOULSTONE} onBack={onBack} onChangeProfile={nowhere} />
+            </ApiClientProvider>
+          </SteamIdProvider>
+        </FreshQueries>
+      </SafeAreaProvider>,
+    );
+
+    fireEvent.press(screen.getByLabelText("Back to library"));
+
+    expect(onBack).toHaveBeenCalledTimes(1);
   });
 
   /** What the cache above the routes is for (#162): the library already holds the Games. */
