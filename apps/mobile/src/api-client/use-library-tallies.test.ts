@@ -449,6 +449,41 @@ describe("useLibraryTallies", () => {
     expect(result.current.counted).toBe(false);
   });
 
+  /**
+   * The reset happens in an effect, so the render that first hands over the
+   * new games runs before it. That render must not report the previous
+   * library's state against them: a page would draw a mix of both, or call a
+   * library counted that nobody has counted yet.
+   */
+  it("never reports the previous library's state against the next one's games", async () => {
+    const seen: Array<{ games: readonly GameDto[]; counted: boolean; tallied: number }> = [];
+    const previous = eagerClient();
+    const cache = createShortLivedQueryClient();
+    const { result, rerender } = renderHook(
+      ({ steamId, client, games }: Required<Props>) => {
+        const state = useLibraryTallies(steamId, client, games);
+        seen.push({ games, counted: state.counted, tallied: Object.keys(state.tallies).length });
+        return state;
+      },
+      {
+        initialProps: {
+          steamId: STEAM_ID,
+          client: previous.client,
+          games: GAMES,
+        } as Required<Props>,
+        wrapper: servedFrom(cache),
+      },
+    );
+    await waitFor(() => expect(result.current.counted).toBe(true));
+    seen.length = 0;
+
+    rerender({ steamId: OTHER_STEAM_ID, client: heldClient([500]).client, games: OTHER_GAMES });
+
+    const onNextGames = seen.filter((render) => render.games === OTHER_GAMES);
+    expect(onNextGames.length).toBeGreaterThan(0);
+    expect(onNextGames.every((render) => !render.counted && render.tallied === 0)).toBe(true);
+  });
+
   it("has nothing to report before a load has started", () => {
     const { result } = renderTallies(undefined);
 

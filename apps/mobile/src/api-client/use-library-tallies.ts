@@ -156,6 +156,12 @@ export const useLibraryTallies = (
   const [asked, setAsked] = useState(0);
   const [frozenOrder, setFrozenOrder] = useState<readonly number[] | null>(null);
   const [counted, setCounted] = useState(false);
+  /**
+   * The library everything above belongs to. The reset below runs in an
+   * effect, after the render that first hands over another library, so that
+   * render must not read the previous one's state against the new games.
+   */
+  const [heldFor, setHeldFor] = useState({ steamId, games });
 
   useEffect(() => {
     let cancelled = false;
@@ -168,6 +174,7 @@ export const useLibraryTallies = (
     setAsked(0);
     setFrozenOrder(null);
     setCounted(false);
+    setHeldFor({ steamId, games });
 
     if (steamId !== undefined && client !== undefined) {
       const wanted = gamesWorthTallying(games);
@@ -246,6 +253,17 @@ export const useLibraryTallies = (
   const repin = useCallback((order: readonly number[]) => {
     setFrozenOrder((pinned) => (pinned === null ? null : order));
   }, []);
+
+  if (heldFor.steamId !== steamId || heldFor.games !== games) {
+    return {
+      tallies: NO_TALLIES,
+      pending: NOTHING_OUTSTANDING,
+      loaded: null,
+      counted: false,
+      frozenOrder: null,
+      repin,
+    };
+  }
 
   const loaded = pending.size === 0 ? null : (asked - pending.size) / asked;
 
