@@ -1,10 +1,10 @@
 import type { GameDto, GameTallyDto } from "@steam/contracts";
-import { err, ok, type Result } from "@steam/domain";
+import type { Result } from "@steam/domain";
 import { type QueryClient, type QueryKey, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState } from "react";
 
+import { askThroughCache } from "../query/ask-through-cache";
 import { queries } from "../query/queries";
-import { valueOrThrow } from "../query/value-or-throw";
 import { longestFirst, type TallyByAppId } from "../view-models/library";
 import type { ApiClient } from "./api-client";
 import { askInWaves } from "./request-waves";
@@ -109,45 +109,16 @@ export type LibraryTallies = {
   repin(order: readonly number[]): void;
 };
 
-/**
- * Whether the tally under `key` failed less than a freshness ago. A failure
- * holds as long as an answer would (#162): asking again is the player's
- * gesture (#164), not another screen's.
- *
- * On the date alone: the cache marks a query out of date the moment it fails,
- * so a failure cannot be told from one marked out of date afterwards.
- */
-const failedRecently = (cache: QueryClient, key: QueryKey, freshFor: number): boolean => {
-  const state = cache.getQueryState(key);
-  return state?.status === "error" && Date.now() - state.errorUpdatedAt < freshFor;
-};
-
-/**
- * One Game's tally, from the cache above the routes when it holds a fresh one,
- * from the backend otherwise. Answers a `Result` again, as a wave expects: the
- * cache is a detail of where the tally came from.
- */
-const askTally = async (
+/** One Game's tally, through the cache above the routes. */
+const askTally = (
   cache: QueryClient,
   steamId: string,
   client: ApiClient,
   appId: number,
-): Promise<Result<GameTallyDto, unknown>> => {
-  const tally = queries.tally(steamId, appId);
-  if (failedRecently(cache, tally.queryKey, tally.staleTime)) {
-    return err("FAILED_RECENTLY");
-  }
-  try {
-    return ok(
-      await cache.fetchQuery({
-        ...tally,
-        queryFn: ({ signal }) => client.getGameTally(appId, signal).then(valueOrThrow),
-      }),
-    );
-  } catch (failure) {
-    return err(failure);
-  }
-};
+): Promise<Result<GameTallyDto, unknown>> =>
+  askThroughCache(cache, queries.tally(steamId, appId), (signal) =>
+    client.getGameTally(appId, signal),
+  );
 
 /** The Game a tally key names, when it is one of `steamId`'s tallies. */
 const tallyOf = (key: QueryKey, steamId: string): number | null => {
