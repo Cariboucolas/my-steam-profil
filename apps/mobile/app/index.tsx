@@ -13,11 +13,14 @@ export default function LibraryRoute() {
   const { state: steamId } = useSteamId();
 
   const openGame = useCallback((appId: number) => router.push(`/game/${appId}`), [router]);
+  const openStats = useCallback(() => router.push("/stats"), [router]);
   const changeProfile = useCallback(() => router.push("/setup"), [router]);
 
   if (steamId.status === "absent") {
     return <Redirect href="/setup" />;
   }
 
-  return <LibraryPage onOpenGame={openGame} onChangeProfile={changeProfile} />;
+  return (
+    <LibraryPage onOpenGame={openGame} onOpenStats={openStats} onChangeProfile={changeProfile} />
+  );
 }

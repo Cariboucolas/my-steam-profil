@@ -71,7 +71,9 @@ const App = ({ shown }: { readonly shown: Shown }) => (
     <FreshQueries>
       <SteamIdProvider storage={steamIdStorage}>
         <ApiClientProvider create={createClient}>
-          {shown === "library" && <LibraryPage onOpenGame={nowhere} onChangeProfile={nowhere} />}
+          {shown === "library" && (
+            <LibraryPage onOpenGame={nowhere} onOpenStats={nowhere} onChangeProfile={nowhere} />
+          )}
           {shown === "game" && (
             <GamePage appId={SOULSTONE} onBack={nowhere} onChangeProfile={nowhere} />
           )}

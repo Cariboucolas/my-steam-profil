@@ -126,4 +126,26 @@ describe("stats screen", () => {
     await waitFor(() => expect(chartSentence()).not.toBe(before));
     await recordsShown();
   });
+
+  it("asks nothing more for the stats once the library has counted them", async () => {
+    const client = served();
+    const getGameTally = jest.fn(client.getGameTally);
+    renderAt({ [STEAM_ID]: { ...client, getGameTally } }, "/");
+
+    // The first visit finishes the count the library started.
+    fireEvent.press(await screen.findByText("Statistics ›"));
+    await recordsShown();
+    const asked = getGameTally.mock.calls.length;
+
+    fireEvent.press(screen.getByLabelText("Back to library"));
+    fireEvent.press(await screen.findByText("Statistics ›"));
+    await recordsShown();
+    expect(getGameTally.mock.calls.length).toBe(asked);
+  });
+
+  it("goes back to the library when it is the only screen", async () => {
+    renderAt({ [STEAM_ID]: served() }, "/stats");
+    fireEvent.press(await screen.findByLabelText("Back to library"));
+    expect(await screen.findByText("Statistics ›")).toBeTruthy();
+  });
 });

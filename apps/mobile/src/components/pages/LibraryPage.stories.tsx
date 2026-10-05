@@ -21,7 +21,7 @@ const clientOn = (today: Date, options?: Parameters<typeof libraryServedOn>[1]) 
 const meta = {
   title: "Pages/LibraryPage",
   component: LibraryPage,
-  args: { onOpenGame: fn(), onChangeProfile: fn(), today: STORY_TODAY },
+  args: { onOpenGame: fn(), onOpenStats: fn(), onChangeProfile: fn(), today: STORY_TODAY },
 } satisfies Meta<typeof LibraryPage>;
 
 export default meta;

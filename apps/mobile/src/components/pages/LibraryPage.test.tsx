@@ -55,7 +55,9 @@ const App = ({ onLibrary }: { readonly onLibrary: boolean }) => (
     <FreshQueries>
       <SteamIdProvider storage={steamIdStorage}>
         <ApiClientProvider create={createClient}>
-          {onLibrary ? <LibraryPage onOpenGame={nowhere} onChangeProfile={nowhere} /> : null}
+          {onLibrary ? (
+            <LibraryPage onOpenGame={nowhere} onOpenStats={nowhere} onChangeProfile={nowhere} />
+          ) : null}
         </ApiClientProvider>
       </SteamIdProvider>
     </FreshQueries>
