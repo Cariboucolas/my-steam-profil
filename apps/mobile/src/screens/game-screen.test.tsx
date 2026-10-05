@@ -392,4 +392,18 @@ describe("game screen", () => {
 
     await waitFor(() => expect(screen.getByText("library screen")).toBeTruthy());
   });
+
+  /**
+   * Opened from a link, the game is the only entry in the history: going back
+   * has nowhere to go, so the way back leads to the library instead of
+   * doing nothing.
+   */
+  it("goes to the library when it was opened from a link", async () => {
+    renderAt({ [STEAM_ID]: withProgress({ [SOULSTONE]: played }) }, `/game/${SOULSTONE}`, STEAM_ID);
+    await screen.findByText("Soulstone Survivors");
+
+    fireEvent.press(screen.getByLabelText("Back to library"));
+
+    await waitFor(() => expect(screen.getByText("library screen")).toBeTruthy());
+  });
 });

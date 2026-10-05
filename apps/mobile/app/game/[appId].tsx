@@ -16,7 +16,12 @@ export default function GameRoute() {
   const appId = Number.parseInt(appIdParam ?? "", 10);
   const { state: steamId } = useSteamId();
 
-  const back = useCallback(() => router.back(), [router]);
+  // Opened from a link, the game is the only entry in the history, and going
+  // back would do nothing: the library is where back leads then.
+  const back = useCallback(
+    () => (router.canGoBack() ? router.back() : router.replace("/")),
+    [router],
+  );
   const changeProfile = useCallback(() => router.push("/setup"), [router]);
 
   if (steamId.status === "absent") {
