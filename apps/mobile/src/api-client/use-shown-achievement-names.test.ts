@@ -1,6 +1,10 @@
 import type { AchievementNamesDto } from "@steam/contracts";
 import { err, ok, type Result } from "@steam/domain";
+import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
+import { createElement, type ReactNode } from "react";
+
+import { createAppQueryClient } from "../query/query-client";
 
 import type { ApiClient, ApiError } from "./api-client";
 import { type ShownGames, useShownAchievementNames } from "./use-shown-achievement-names";
@@ -75,9 +79,18 @@ const shown = (client: ApiClient, appIds: readonly number[]): ShownGames => ({
   appIds,
 });
 
-const renderNames = (initial: ShownGames | null) =>
+/**
+ * A cache of the test's own, as the app's would be: kept for as long as the
+ * test runs, so a ranking mounted after another one finds what it left.
+ */
+const freshCache = (): QueryClient => createAppQueryClient({ gcTime: Infinity, retryDelay: 0 });
+
+/** The rows' names, read from `cache`: a fresh one unless the test shares one. */
+const renderNames = (initial: ShownGames | null, cache: QueryClient = freshCache()) =>
   renderHook(({ games }: { games: ShownGames | null }) => useShownAchievementNames(games), {
     initialProps: { games: initial },
+    wrapper: ({ children }: { readonly children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: cache }, children),
   });
 
 describe("useShownAchievementNames", () => {
@@ -227,6 +240,37 @@ describe("useShownAchievementNames", () => {
     expect([...result.current.pending]).toEqual([]);
   });
 
+  /** A game names its achievements the same for every player (ADR-0008). */
+  it("asks nothing again when a ranking mounts once more in the same session", async () => {
+    const cache = freshCache();
+    const { client, asked } = eagerClient();
+    const first = renderNames(shown(client, [SOULSTONE]), cache);
+    await waitFor(() => expect(first.result.current.names[SOULSTONE]).toBeDefined());
+    first.unmount();
+
+    const { result } = renderNames(shown(client, [SOULSTONE]), cache);
+
+    await waitFor(() => expect(result.current.names[SOULSTONE]).toEqual(naming(SOULSTONE)));
+    expect(asked).toEqual([SOULSTONE]);
+  });
+
+  it("asks another player only about the games the first was not told about", async () => {
+    const previous = eagerClient();
+    const { result, rerender } = renderNames(shown(previous.client, [SOULSTONE]));
+    await waitFor(() => expect(result.current.names[SOULSTONE]).toBeDefined());
+
+    const next = eagerClient();
+    rerender({ games: shown(next.client, [SOULSTONE, EXILE]) });
+
+    await waitFor(() =>
+      expect(result.current.names).toEqual({
+        [SOULSTONE]: naming(SOULSTONE),
+        [EXILE]: naming(EXILE),
+      }),
+    );
+    expect(next.asked).toEqual([EXILE]);
+  });
+
   /** An answer landing after the screen is gone is a state update on nothing. */
   it("drops an answer that lands after the reader has left", async () => {
     const { client, release } = heldClient([SOULSTONE]);
@@ -263,7 +307,7 @@ describe("useShownAchievementNames", () => {
    * row keeps the apiName it was ranked under, and must stop pulsing to say so.
    */
   it("stops waiting on a game that could not be named", async () => {
-    const { client, release } = heldClient([SOULSTONE], () => err<ApiError>("UNAVAILABLE"));
+    const { client, release } = heldClient([SOULSTONE], () => err<ApiError>("NOT_FOUND"));
     const { result } = renderNames(shown(client, [SOULSTONE]));
 
     await waitFor(() => expect([...result.current.pending]).toEqual([SOULSTONE]));
