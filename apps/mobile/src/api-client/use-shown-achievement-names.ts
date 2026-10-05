@@ -1,4 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { askThroughCache } from "../query/ask-through-cache";
+import { queries } from "../query/queries";
 import type { NamesByAppId } from "../view-models/rarest-unlocks";
 import type { ApiClient } from "./api-client";
 import { askInWaves } from "./request-waves";
@@ -13,10 +16,10 @@ const NOTHING_OUTSTANDING: ReadonlySet<number> = new Set();
  * The games carrying the rows a ranking actually shows, and the client that
  * ranked them.
  *
- * The two travel together for the reason the counted library does: names
- * fetched with one player's client would name another player's rows after
- * achievements they never unlocked. A caller with no ranking yet — the tab
- * unopened, or the figures still landing — hands over null.
+ * The two travel together for the reason the counted library does: a new
+ * client is a new player, whose rows are other achievements, so what this
+ * hook shows starts again from nothing. A caller with no ranking yet — the
+ * tab unopened, or the figures still landing — hands over null.
  */
 export type ShownGames = {
   readonly client: ApiClient;
@@ -54,13 +57,17 @@ export type ShownAchievementNames = {
  * the ranking has already been decided: which games are worth it is a property
  * of the answer, so this can never run before there is one (#31).
  *
- * A game is asked about once and then never again while the player lasts —
+ * A game is asked about once and then never again while the session lasts —
  * including one that could not answer, whose rows keep the apiName they were
- * ranked under. The ranking is rebuilt on every render it is drawn in, and the
- * set of games it shows grows as figures land, so what has been asked is
- * remembered and each change asks only about what it added.
+ * ranked under. Every answer is read through the cache above the routes and
+ * kept there for the session: names are the same for every player (ADR-0008),
+ * so another mount, or another player ranking the same game, asks nothing for
+ * it (#169). Within one player, the ranking is rebuilt on every render it is
+ * drawn in, and the set of games it shows grows as figures land, so what has
+ * been asked is remembered and each change asks only about what it added.
  */
 export const useShownAchievementNames = (shown: ShownGames | null): ShownAchievementNames => {
+  const cache = useQueryClient();
   const [names, setNames] = useState<NamesByAppId>(NO_NAMES);
   const [pending, setPending] = useState<ReadonlySet<number>>(NOTHING_OUTSTANDING);
 
@@ -91,7 +98,7 @@ export const useShownAchievementNames = (shown: ShownGames | null): ShownAchieve
    */
   const live = useRef({ cancelled: false });
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: a new `client` is a new player, which is what clears. Goes with the hook in #169.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new `client` is a new player, which is what clears.
   useEffect(() => {
     // A new player is a new library: nothing learned about one names the other.
     const forThisPlayer = { cancelled: false };
@@ -118,7 +125,10 @@ export const useShownAchievementNames = (shown: ShownGames | null): ShownAchieve
 
     void askInWaves(
       missing,
-      (appId) => client.getAchievementNames(appId),
+      (appId) =>
+        askThroughCache(cache, queries.achievementNames(appId), (signal) =>
+          client.getAchievementNames(appId, signal),
+        ),
       (landed, asked) => {
         if (load.cancelled) return;
         setNames((known) => ({ ...known, ...landed }));
@@ -133,7 +143,7 @@ export const useShownAchievementNames = (shown: ShownGames | null): ShownAchieve
       () => !load.cancelled,
     );
     // `wanted` stands in for `appIds`, whose identity changes on every render.
-  }, [client, wanted]);
+  }, [cache, client, wanted]);
 
   return { names, pending };
 };

@@ -229,8 +229,9 @@ describe("useRarestTab", () => {
     await held.release();
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
-    await waitFor(() => expect(held.asked.names).toHaveLength(8));
-    expect([...new Set(held.asked.names)]).toHaveLength(8);
+    // Counted by game: none of them is named, and an unavailable answer is
+    // asked once more (#162).
+    await waitFor(() => expect(new Set(held.asked.names).size).toBe(8));
   });
 
   /**
