@@ -239,6 +239,8 @@ export function LibraryStatsCard({ summary, gameCount, loaded, onOpenStats }: Pr
 
       <Pressable
         accessibilityRole="link"
+        // The chevron is drawn, not said: a screen reader would read it aloud.
+        accessibilityLabel={t("stats.title")}
         onPress={onOpenStats}
         hitSlop={spacing.sm}
         style={styles.statsLink}
