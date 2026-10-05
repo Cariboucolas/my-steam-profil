@@ -1,5 +1,8 @@
 # Only a page loads what it shows
 
+> Amended by [ADR-0025](0025-the-cache-lives-above-the-routes-and-a-page-still-loads.md):
+> a page still loads, but what it loaded is kept above the routes, in one `QueryClient`.
+
 The components follow the five levels of atomic design, and data is loaded at the last of them
 only. A page, under `src/components/pages/`, asks the `ApiClient` for what it shows and hands it
 to its template; templates, organisms, molecules and atoms take everything through their props and
@@ -14,8 +17,6 @@ Decided in #75, and binding since the routes were split into pages and templates
 - `app/*.tsx`: reduced to reading route parameters and rendering a page.
 - `useApiClient`, which reads its client from an `ApiClientProvider` so that a story, or a test,
   can serve the fixture client instead.
-
-Where a loaded answer is kept, above the routes, is ADR-0025.
 
 ## Why
 
