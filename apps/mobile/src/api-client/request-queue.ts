@@ -2,8 +2,16 @@
 export const DROPPED = Symbol("dropped");
 
 /**
- * Sends `send` once a place is free, in the order the calls were made, and
- * answers with what it answered.
+ * Who is waiting on a request. `foreground` is what the player just asked to
+ * see — a profile, a library, a game — and waits on one answer. `background`
+ * is counting over the whole library, hundreds of answers nobody waits on
+ * one at a time.
+ */
+export type Lane = "foreground" | "background";
+
+/**
+ * Sends `send` once a place is free, in the order the calls of its lane were
+ * made, and answers with what it answered.
  *
  * A call whose `signal` aborts answers `DROPPED` at once: still waiting, it is
  * never sent; already sent, it gives its place up without waiting for an answer
@@ -13,6 +21,7 @@ export const DROPPED = Symbol("dropped");
 export type RequestQueue = <T>(
   send: () => Promise<T>,
   signal?: AbortSignal,
+  lane?: Lane,
 ) => Promise<T | typeof DROPPED>;
 
 /** `send`, with a throw on the way in turned into the rejection it stands for. */
@@ -20,9 +29,12 @@ const attempt = <T>(send: () => Promise<T>): Promise<T> =>
   new Promise<T>((settle) => settle(send()));
 
 /**
- * A FIFO queue letting `places` requests be in flight at once. A place freed is
- * handed to whoever has waited longest, so the count never dips and nobody
- * jumps the line.
+ * A queue letting `places` requests be in flight at once. A place freed is
+ * handed to whoever has waited longest in the foreground, or else in the
+ * background, so the count never dips and nobody jumps the line of their own
+ * lane. The background only ever waits on the foreground, which is a handful
+ * of requests: a game opened while the library counts is not sent after the
+ * whole count (#168).
  *
  * It is handed over once the turn that freed it is over. A screen that leaves
  * aborts what it asked one call after the other, in flight first: handed over
@@ -31,19 +43,23 @@ const attempt = <T>(send: () => Promise<T>): Promise<T> =>
  */
 export const createRequestQueue = (places: number): RequestQueue => {
   let inFlight = 0;
-  let waiting: readonly (() => void)[] = [];
+  let waiting: Readonly<Record<Lane, readonly (() => void)[]>> = {
+    foreground: [],
+    background: [],
+  };
 
   const leave = () => {
-    const [next, ...rest] = waiting;
+    const lane: Lane = waiting.foreground.length > 0 ? "foreground" : "background";
+    const [next, ...rest] = waiting[lane];
     if (next === undefined) {
       inFlight -= 1;
       return;
     }
-    waiting = rest;
+    waiting = { ...waiting, [lane]: rest };
     next();
   };
 
-  return <T>(send: () => Promise<T>, signal?: AbortSignal) =>
+  return <T>(send: () => Promise<T>, signal?: AbortSignal, lane: Lane = "foreground") =>
     new Promise<T | typeof DROPPED>((resolve, reject) => {
       if (signal?.aborted) {
         resolve(DROPPED);
@@ -74,7 +90,7 @@ export const createRequestQueue = (places: number): RequestQueue => {
       };
 
       const drop = () => {
-        waiting = waiting.filter((one) => one !== start);
+        waiting = { ...waiting, [lane]: waiting[lane].filter((one) => one !== start) };
         end(() => resolve(DROPPED));
       };
 
@@ -84,7 +100,7 @@ export const createRequestQueue = (places: number): RequestQueue => {
         inFlight += 1;
         start();
       } else {
-        waiting = [...waiting, start];
+        waiting = { ...waiting, [lane]: [...waiting[lane], start] };
       }
     });
 };
