@@ -80,6 +80,15 @@ const recordsShown = () =>
 const chartSentence = (): string | undefined =>
   screen.getByLabelText(/dated unlock/).props.accessibilityLabel;
 
+/** What the chart says for a library served by `client` alone, counted through. */
+const sentenceServedBy = async (client: ApiClient): Promise<string | undefined> => {
+  const { unmount } = renderAt({ [STEAM_ID]: client }, "/stats");
+  await recordsShown();
+  const sentence = chartSentence();
+  unmount();
+  return sentence;
+};
+
 describe("stats screen", () => {
   beforeEach(deviceAsksForLessMotion);
   afterEach(async () => {
@@ -106,25 +115,42 @@ describe("stats screen", () => {
     expect(await screen.findByTestId(YEARS_CARD_TEST_ID)).toBeTruthy();
   });
 
-  it("leaves a failed game out", async () => {
+  it("leaves a failed game out, and counts the others", async () => {
+    const [first] = LIBRARY_GAMES;
+    if (first === undefined) throw new Error("the fixture library has games");
+    const failing = first.appId;
+    const withoutIt = await sentenceServedBy(
+      createFixtureApiClient(libraryServedOn(STORY_TODAY, { except: [failing] })),
+    );
+    const everything = await sentenceServedBy(served());
+
     const client = served();
-    const getGameTally = jest.fn(client.getGameTally).mockResolvedValueOnce(err("NOT_FOUND"));
+    const getGameTally: ApiClient["getGameTally"] = (appId, signal) =>
+      appId === failing ? Promise.resolve(err("NOT_FOUND")) : client.getGameTally(appId, signal);
     renderAt({ [STEAM_ID]: { ...client, getGameTally } }, "/stats");
     await recordsShown();
-    expect(screen.getByTestId(YEARS_CARD_TEST_ID)).toBeTruthy();
+
+    expect(chartSentence()).toBe(withoutIt);
+    expect(chartSentence()).not.toBe(everything);
   });
 
-  it("recounts for another profile", async () => {
-    const smaller = createFixtureApiClient(
-      libraryServedOn(STORY_TODAY, { games: LIBRARY_GAMES.slice(0, 1) }),
-    );
-    renderAt({ [STEAM_ID]: served(), [OTHER_STEAM_ID]: smaller }, "/stats");
+  it("recounts for another profile, with nothing of the previous one", async () => {
+    // Another library, dated up to another day: its total and its span both differ.
+    const other = () =>
+      createFixtureApiClient(
+        libraryServedOn(new Date(2022, 5, 15), { games: LIBRARY_GAMES.slice(0, 3) }),
+      );
+    const expected = await sentenceServedBy(other());
+
+    renderAt({ [STEAM_ID]: served(), [OTHER_STEAM_ID]: other() }, "/stats");
     await recordsShown();
     const before = chartSentence();
+    expect(before).not.toBe(expected);
 
     fireEvent.press(screen.getByText("switch"));
     await waitFor(() => expect(chartSentence()).not.toBe(before));
     await recordsShown();
+    expect(chartSentence()).toBe(expected);
   });
 
   it("asks nothing more for the stats once the library has counted them", async () => {
