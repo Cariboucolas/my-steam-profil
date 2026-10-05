@@ -132,6 +132,31 @@ export const fr: Catalog = {
       second: "Seconde moitié de l'année",
     },
   },
+  stats: {
+    title: "Statistiques",
+    years: {
+      eyebrow: "ANNÉES ET CUMUL",
+      subtitle: "Ce que chaque année a apporté, et la pile qui monte depuis le premier succès.",
+      span: "succès datés · {{first}} → {{last}}",
+      empty: "Aucun succès daté",
+      perYear: "par année",
+      thisYear: "année en cours",
+      cumulative: "cumul",
+      bestMonth: "meilleur mois",
+      bestDay: "meilleur jour",
+      longestStreak: "plus longue série",
+      month: "{{month}} {{year}}",
+      streakDays_one: "{{count}} jour",
+      streakDays_many: "{{count}} de jours",
+      streakDays_other: "{{count}} jours",
+      spoken_one:
+        "De {{first}} à {{last}} : {{total}} succès daté, meilleure année {{best}} avec {{bestTotal}}",
+      spoken_many:
+        "De {{first}} à {{last}} : {{total}} de succès datés, meilleure année {{best}} avec {{bestTotal}}",
+      spoken_other:
+        "De {{first}} à {{last}} : {{total}} succès datés, meilleure année {{best}} avec {{bestTotal}}",
+    },
+  },
   errors: {
     INVALID_STEAM_ID: "Le serveur a refusé cet identifiant Steam. Essayez un autre profil.",
     NOT_FOUND: "Steam n'a aucun profil avec cet identifiant.",
