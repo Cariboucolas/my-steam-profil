@@ -15,6 +15,13 @@ const MIN_BAR = 2;
 /** The line's own coordinate space, stretched over the plot. */
 const VIEWBOX = 100;
 const GAP = 5;
+/**
+ * What a label or a figure is given, whatever its bar is given. Seventeen years
+ * on a phone leave a bar about 13 px, where `’10` wraps and `1 104` is cut
+ * short. Wide enough for `12 345` in the mono face; it spills over the bars
+ * beside it, which carry no label of their own past MAX_LABELLED_BARS.
+ */
+const SLOT_WIDTH = 44;
 
 type Props = {
   readonly bars: readonly YearBar[];
@@ -42,7 +49,7 @@ export function YearBars({ bars, cumulative, screenReaderLabel }: Props) {
           {bars.map((bar) => (
             <View key={bar.year} style={styles.column}>
               {bar.figure !== null && (
-                <Text style={styles.figure} numberOfLines={1}>
+                <Text style={[styles.slotText, styles.figure]} numberOfLines={1}>
                   {bar.figure}
                 </Text>
               )}
@@ -78,9 +85,16 @@ export function YearBars({ bars, cumulative, screenReaderLabel }: Props) {
       </View>
       <View style={styles.axis}>
         {bars.map((bar) => (
-          <Text key={bar.year} style={[styles.label, bar.current ? styles.currentLabel : null]}>
-            {bar.label ?? ""}
-          </Text>
+          <View key={bar.year} style={styles.labelSlot}>
+            {bar.label !== null && (
+              <Text
+                style={[styles.slotText, styles.label, bar.current ? styles.currentLabel : null]}
+                numberOfLines={1}
+              >
+                {bar.label}
+              </Text>
+            )}
+          </View>
         ))}
       </View>
     </View>
@@ -122,10 +136,9 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.hairline,
   },
+  labelSlot: { flex: 1, minWidth: 0, alignItems: "center" },
+  slotText: { width: SLOT_WIDTH, textAlign: "center" },
   label: {
-    flex: 1,
-    minWidth: 0,
-    textAlign: "center",
     fontFamily: fonts.mono,
     fontSize: 9.5,
     lineHeight: 12,
