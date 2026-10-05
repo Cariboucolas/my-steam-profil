@@ -39,6 +39,9 @@ export const colors = {
   /** Reserved for a perfect game: 100 % turns the bar green. */
   success: "#8fd18a",
 
+  /** The running-total line over a bar chart. */
+  runningTotal: "#6fb2e0",
+
   /** Hairline separators and card outlines. */
   hairline: "rgba(255,255,255,0.07)",
   /** Track behind a progress bar. */
