@@ -31,14 +31,17 @@ already counted; before this, a second screen would have counted the whole libra
 
 **What is the player's carries their SteamId.** A new Profile starts from empty entries and cannot
 read another's. Switching Profile abandons what was still to be asked for the previous one; its
-entries are not removed by hand. They are no longer shown, expire on their own, and make a quick return instant.
+entries are not removed by hand. They are no longer shown, expire on their own, and make a quick
+return instant.
 
 **`rarity` and `achievementNames` name nobody**, for the reason ADR-0008 gave the backend: every
-player reads the same answer. A new Profile keeps the rarity already fetched.
+player reads the same answer. A new Profile keeps the rarity already fetched. The backend keeps
+them a day, as ADR-0008 says; the app keeps what it read for as long as it
+runs. ADR-0008 is about the backend's cache and is unchanged.
 
 **Five minutes is the backend's own duration (ADR-0005).** An answer the backend held for five
 minutes can then be held five more by the app, so a tally can be up to ten minutes old. That was
-accepted: a player who wants a fresh figure opens the game.
+accepted.
 
 **`progress` is never served from the cache**, which is what "the game view is not cached" says.
 When a GameProgress lands, that Game's tally is marked out of date, and the library mounted
@@ -66,7 +69,7 @@ never sent, and one in flight gives its place up. The queue has two lanes (#179)
 just asked to see — a profile, a library, a game — goes ahead of the counting over the library, so
 a game opened mid-count waits only on the requests already in flight.
 
-## Nothing asked that nobody asked for
+## No refetch the player did not ask for
 
 `refetchOnWindowFocus` and `refetchOnReconnect` are off, and no `focusManager` or `onlineManager`
 is wired on native. A recount comes from the player or not at all. A failure holds for as long as
