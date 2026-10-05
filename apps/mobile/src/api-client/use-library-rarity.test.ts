@@ -1,6 +1,9 @@
 import type { GameRarityDto, GameTallyDto } from "@steam/contracts";
 import { err, ok, type Result } from "@steam/domain";
+import { type QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react-native";
+import { createElement, type ReactNode } from "react";
+import { createAppQueryClient } from "../query/query-client";
 import type { TallyByAppId } from "../view-models/library";
 import type { ApiClient, ApiError } from "./api-client";
 import { type CountedLibrary, useLibraryRarity } from "./use-library-rarity";
@@ -95,9 +98,22 @@ type Props = {
   readonly active: boolean;
 };
 
-const renderRarity = (library: CountedLibrary | null, active = true) =>
+/**
+ * A cache of the test's own, as the app's would be: kept for as long as the
+ * test runs, so a tab mounted after another one finds what it left.
+ */
+const freshCache = (): QueryClient => createAppQueryClient({ gcTime: Infinity, retryDelay: 0 });
+
+/** The tab's rarity, read from `cache`: a fresh one unless the test shares one. */
+const renderRarity = (
+  library: CountedLibrary | null,
+  active = true,
+  cache: QueryClient = freshCache(),
+) =>
   renderHook(({ library: l, active: a }: Props) => useLibraryRarity(l, a), {
     initialProps: { library, active },
+    wrapper: ({ children }: { readonly children: ReactNode }) =>
+      createElement(QueryClientProvider, { client: cache }, children),
   });
 
 describe("useLibraryRarity", () => {
@@ -272,7 +288,9 @@ describe("useLibraryRarity", () => {
     // Back to Completion, and then another profile is chosen from there.
     rerender({ library, active: false });
     rerender({ library: null, active: false });
-    const other = counted(next.client, { 1: tally(["ACH_1"]) });
+    // A game the first profile did not hold: the figures of one it did are
+    // already known, and would be read without asking.
+    const other = counted(next.client, { 42: tally(["ACH_42"]) });
     rerender({ library: other, active: false });
 
     await waitFor(() => expect(result.current.status).toBe("idle"));
@@ -283,7 +301,57 @@ describe("useLibraryRarity", () => {
     rerender({ library: other, active: true });
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
-    expect(next.asked).toEqual([1]);
+    expect(next.asked).toEqual([42]);
+  });
+
+  /** Rarity is the same for every player and every screen (ADR-0008). */
+  it("asks nothing again when the tab mounts once more in the same session", async () => {
+    const cache = freshCache();
+    const { client, asked } = eagerClient();
+    const first = renderRarity(counted(client), true, cache);
+    await waitFor(() => expect(first.result.current.status).toBe("ready"));
+    first.unmount();
+
+    const { result } = renderRarity(counted(client), true, cache);
+
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(asked).toHaveLength(HOLDS_UNLOCKS.length);
+    expect(result.current.rarity[1]).toEqual(published(1));
+  });
+
+  /** Two players who own a game read the same figures for it. */
+  it("asks another profile only about the games the first did not hold", async () => {
+    const previous = eagerClient();
+    const next = eagerClient();
+    const { result, rerender } = renderRarity(counted(previous.client));
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    rerender({ library: null, active: true });
+    rerender({
+      library: counted(next.client, { 1: tally(["ACH_1"]), 42: tally(["ACH_42"]) }),
+      active: true,
+    });
+
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(next.asked).toEqual([42]);
+    expect(result.current.rarity).toEqual({ 1: published(1), 42: published(42) });
+  });
+
+  /** A failure holds for the session, as an answer would: asking again is #164. */
+  it("does not ask again about a game that failed", async () => {
+    const cache = freshCache();
+    const { client, asked } = heldClient([], (appId) =>
+      appId === 2 ? err<ApiError>("NOT_FOUND") : ok(published(appId)),
+    );
+    const first = renderRarity(counted(client), true, cache);
+    await waitFor(() => expect(first.result.current.status).toBe("ready"));
+    first.unmount();
+
+    const { result } = renderRarity(counted(client), true, cache);
+
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    expect(asked.filter((appId) => appId === 2)).toHaveLength(1);
+    expect(result.current.rarity[2]).toBeUndefined();
   });
 
   it("has nothing to ask about in a library holding no unlock at all", async () => {
