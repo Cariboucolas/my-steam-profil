@@ -15,6 +15,8 @@ Decided in #75, and binding since the routes were split into pages and templates
 - `useApiClient`, which reads its client from an `ApiClientProvider` so that a story, or a test,
   can serve the fixture client instead.
 
+Where a loaded answer is kept, above the routes, is ADR-0025.
+
 ## Why
 
 **One loading point per screen.** The library screen counts a whole library, and ADR-0005 caches
