@@ -117,6 +117,28 @@ export const en: Catalog = {
       second: "Second half of the year",
     },
   },
+  stats: {
+    title: "Statistics",
+    years: {
+      eyebrow: "YEARS AND RUNNING TOTAL",
+      subtitle: "What each year brought, and the pile growing since the first unlock.",
+      span: "dated unlocks · {{first}} → {{last}}",
+      empty: "No dated unlocks",
+      perYear: "per year",
+      thisYear: "this year",
+      cumulative: "running total",
+      bestMonth: "best month",
+      bestDay: "best day",
+      longestStreak: "longest streak",
+      month: "{{month}} {{year}}",
+      streakDays_one: "{{count}} day",
+      streakDays_other: "{{count}} days",
+      spoken_one:
+        "{{first}} to {{last}}: {{total}} dated unlock, best year {{best}} with {{bestTotal}}",
+      spoken_other:
+        "{{first}} to {{last}}: {{total}} dated unlocks, best year {{best}} with {{bestTotal}}",
+    },
+  },
   errors: {
     INVALID_STEAM_ID: "The backend refused this Steam ID. Try a different profile.",
     NOT_FOUND: "Steam has no profile with that ID.",
