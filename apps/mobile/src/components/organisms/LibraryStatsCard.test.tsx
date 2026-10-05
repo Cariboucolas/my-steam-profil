@@ -269,4 +269,11 @@ describe("the headline, on a real phone", () => {
     fireEvent.press(screen.getByRole("link", { name: "Statistics ›" }));
     expect(onOpenStats).toHaveBeenCalledTimes(1);
   });
+
+  it("names the link without the chevron a screen reader would read aloud", () => {
+    render(
+      <LibraryStatsCard summary={summary()} gameCount={12} loaded={null} onOpenStats={jest.fn()} />,
+    );
+    expect(screen.getByRole("link").props.accessibilityLabel).toBe("Statistics");
+  });
 });
