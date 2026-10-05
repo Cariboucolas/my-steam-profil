@@ -17,6 +17,7 @@ import {
   buildTimelineDays,
   filterLabel,
 } from "../../view-models/game-progress";
+import { BackButton } from "../atoms/BackButton";
 import { Chip } from "../atoms/Chip";
 import { LocaleToggle } from "../atoms/LocaleToggle";
 import { Tabs } from "../atoms/Tabs";
@@ -76,8 +77,11 @@ export function GamePage({ appId, onBack, onChangeProfile }: Props) {
   );
 
   if (load.status === "loading") {
+    // The game can wait on a library still counting: the way back stays, and
+    // taking it abandons what this page was waiting for.
     return (
       <View style={styles.centred}>
+        <BackButton onPress={onBack} top={insets.top + spacing.sm} />
         <ActivityIndicator color={colors.accent} />
       </View>
     );
