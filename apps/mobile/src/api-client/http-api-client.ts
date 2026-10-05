@@ -9,7 +9,7 @@ import type {
 import { err, ok } from "@steam/domain";
 
 import type { ApiClient, ApiError } from "./api-client";
-import { createRequestQueue, DROPPED } from "./request-queue";
+import { createRequestQueue, DROPPED, type Lane } from "./request-queue";
 
 const BAD_REQUEST = 400;
 const FORBIDDEN = 403;
@@ -89,26 +89,31 @@ export const createHttpApiClient = (config: HttpApiClientConfig): ApiClient => {
    * A call nobody waits for any more answers as a backend that did not: the
    * port keeps answering `Result`, and whoever aborted is not reading it.
    */
-  const getAt = async <T>(url: string, signal: AbortSignal | undefined) => {
-    const answer = await backendQueue(() => send<T>(url, signal), signal);
+  const getAt = async <T>(url: string, signal: AbortSignal | undefined, lane: Lane) => {
+    const answer = await backendQueue(() => send<T>(url, signal), signal, lane);
     return answer === DROPPED ? err<ApiError>("UNAVAILABLE") : answer;
   };
 
   /** A question about the configured player. Most of them are. */
-  const get = <T>(path: string, signal: AbortSignal | undefined) =>
-    getAt<T>(`${root}${path}`, signal);
+  const get = <T>(path: string, signal: AbortSignal | undefined, lane: Lane) =>
+    getAt<T>(`${root}${path}`, signal, lane);
 
+  // What a screen waits on goes in the foreground; what is asked once per game
+  // to count a library goes behind it.
   return {
-    getProfile: (signal) => get<ProfileDto>("", signal),
-    getGames: (signal) => get<readonly GameDto[]>("/games", signal),
-    getGameProgress: (appId, signal) => get<GameProgressDto>(`/games/${appId}/progress`, signal),
-    getGameTally: (appId, signal) => get<GameTallyDto>(`/games/${appId}/completion`, signal),
+    getProfile: (signal) => get<ProfileDto>("", signal, "foreground"),
+    getGames: (signal) => get<readonly GameDto[]>("/games", signal, "foreground"),
+    getGameProgress: (appId, signal) =>
+      get<GameProgressDto>(`/games/${appId}/progress`, signal, "foreground"),
+    getGameTally: (appId, signal) =>
+      get<GameTallyDto>(`/games/${appId}/completion`, signal, "background"),
 
     // Off `api` rather than `root`: no steam id in this address, which is what
     // lets the backend answer every player from one cached entry (ADR-0008).
-    getGameRarity: (appId, signal) => getAt<GameRarityDto>(`${api}/games/${appId}/rarity`, signal),
+    getGameRarity: (appId, signal) =>
+      getAt<GameRarityDto>(`${api}/games/${appId}/rarity`, signal, "background"),
 
     getAchievementNames: (appId, signal) =>
-      getAt<AchievementNamesDto>(`${api}/games/${appId}/achievements`, signal),
+      getAt<AchievementNamesDto>(`${api}/games/${appId}/achievements`, signal, "background"),
   };
 };

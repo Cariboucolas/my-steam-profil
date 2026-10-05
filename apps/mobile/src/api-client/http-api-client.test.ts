@@ -350,6 +350,52 @@ describe("createHttpApiClient (the six-request budget)", () => {
     expect(appIdsSent().slice(6)).toEqual([30, 10, 20]);
   });
 
+  /**
+   * A game opened while the library counts is waiting on one request, and the
+   * count on hundreds: the player's goes first, or the game page waits for the
+   * whole library.
+   */
+  it("sends what the player opened ahead of the counting still waiting", async () => {
+    const { sent, clientFor } = heldBackend();
+    const client = clientFor(STEAM_ID);
+
+    const counting = [1, 2, 3, 4, 5, 6].map((appId) =>
+      client.getGameTally(appId, untilTheTestEnds.signal),
+    );
+    void client.getGameTally(7, untilTheTestEnds.signal);
+    void client.getGameRarity(8, untilTheTestEnds.signal);
+    void client.getAchievementNames(9, untilTheTestEnds.signal);
+    void client.getGameProgress(10, untilTheTestEnds.signal);
+
+    sent[0]?.answer({});
+    await counting[0];
+    await Promise.resolve();
+
+    expect(sent[6]?.url).toBe(`${BASE_URL}/api/profile/${STEAM_ID}/games/10/progress`);
+  });
+
+  it("sends the Profile and the Games ahead of the counting still waiting", async () => {
+    const { sent, clientFor } = heldBackend();
+    const client = clientFor(STEAM_ID);
+
+    const counting = [1, 2, 3, 4, 5, 6].map((appId) =>
+      client.getGameTally(appId, untilTheTestEnds.signal),
+    );
+    void client.getGameTally(7, untilTheTestEnds.signal);
+    void client.getProfile(untilTheTestEnds.signal);
+    void client.getGames(untilTheTestEnds.signal);
+
+    sent[0]?.answer({});
+    sent[1]?.answer({});
+    await Promise.all([counting[0], counting[1]]);
+    await Promise.resolve();
+
+    expect(sent.slice(6).map(({ url }) => url)).toEqual([
+      `${BASE_URL}/api/profile/${STEAM_ID}`,
+      `${BASE_URL}/api/profile/${STEAM_ID}/games`,
+    ]);
+  });
+
   it("never sends a request aborted while it waited", async () => {
     const { sent, clientFor, appIdsSent } = heldBackend();
     const client = clientFor(STEAM_ID);
