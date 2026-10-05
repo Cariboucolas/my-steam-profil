@@ -137,7 +137,9 @@ const styles = StyleSheet.create({
     borderTopColor: colors.hairline,
   },
   labelSlot: { flex: 1, minWidth: 0, alignItems: "center" },
-  slotText: { width: SLOT_WIDTH, textAlign: "center" },
+  // maxWidth too: react-native-web caps a one-line text at 100% of its
+  // parent, which is the narrow bar this text is meant to spill over.
+  slotText: { width: SLOT_WIDTH, maxWidth: SLOT_WIDTH, textAlign: "center" },
   label: {
     fontFamily: fonts.mono,
     fontSize: 9.5,

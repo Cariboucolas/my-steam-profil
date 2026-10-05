@@ -65,7 +65,13 @@ describe("YearBars", () => {
     for (const text of [screen.getByText("’10"), screen.getByText("1 104")]) {
       expect(text.props.numberOfLines).toBe(1);
       expect(StyleSheet.flatten(text.props.style)).toEqual(
-        expect.objectContaining({ width: expect.any(Number), textAlign: "center" }),
+        expect.objectContaining({
+          width: expect.any(Number),
+          // react-native-web caps a one-line text at its parent's width
+          // unless the text says otherwise.
+          maxWidth: expect.any(Number),
+          textAlign: "center",
+        }),
       );
     }
   });
