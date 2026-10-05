@@ -65,6 +65,8 @@ const LIBRARY_INITIAL_ROWS = 12;
 type Props = {
   /** Where a row leads. The route knows the address; the page only knows the game. */
   readonly onOpenGame: (appId: number) => void;
+  /** Where the stats link leads. The route knows the address. */
+  readonly onOpenStats: () => void;
   readonly onChangeProfile: () => void;
   /**
    * The day the calendar is a statement about. Left out, the day the page
@@ -79,7 +81,12 @@ type Props = {
  * (ADR-0022). Knows nothing of the router — where a row or the profile control
  * leads is handed in — so it renders anywhere a client can be served.
  */
-export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: Props) {
+export function LibraryPage({
+  onOpenGame,
+  onOpenStats,
+  onChangeProfile,
+  today: givenToday,
+}: Props) {
   const steamId = useChosenSteamId();
   const apiClient = useApiClient();
   const library = useLibraryLoad(steamId, apiClient);
@@ -227,6 +234,7 @@ export function LibraryPage({ onOpenGame, onChangeProfile, today: givenToday }: 
         // count first, and then the figures the rarest ranking is built on.
         // The naming phase behind it reports nothing — see `RarestTab.loaded`.
         loaded={loaded ?? rarest.loaded}
+        onOpenStats={onOpenStats}
       />
       <UnlockCalendarCard calendar={calendar} />
       <Tabs labels={tabLabels} activeIndex={tab} onSelect={setTab} />

@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useTranslation } from "react-i18next";
-import { StyleSheet, Text, useWindowDimensions, View } from "react-native";
+import { Pressable, StyleSheet, Text, useWindowDimensions, View } from "react-native";
 import { colors, fonts, MONO_ADVANCE, NARROWEST_SCREEN, radius, spacing } from "../../theme/tokens";
 import { formatUnlockHeadline, type LibrarySummary } from "../../view-models/library";
 import { CompletionRing } from "../atoms/CompletionRing";
@@ -177,9 +177,11 @@ type Props = {
    * a number they are still growing.
    */
   readonly loaded: number | null;
+  /** Where the link under the figures leads. */
+  readonly onOpenStats: () => void;
 };
 
-export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
+export function LibraryStatsCard({ summary, gameCount, loaded, onOpenStats }: Props) {
   const { t } = useTranslation();
   const rate = summary.total === 0 ? null : Number.parseInt(summary.rateLabel, 10);
 
@@ -234,6 +236,15 @@ export function LibraryStatsCard({ summary, gameCount, loaded }: Props) {
         <StatBlock value={summary.playtimeLabel} label={t("library.statsCard.played")} />
         <StatBlock value={String(gameCount)} label={t("library.statsCard.gamesOwned")} />
       </View>
+
+      <Pressable
+        accessibilityRole="link"
+        onPress={onOpenStats}
+        hitSlop={spacing.sm}
+        style={styles.statsLink}
+      >
+        <Text style={styles.statsLinkLabel}>{t("library.statsCard.openStats")}</Text>
+      </Pressable>
     </LinearGradient>
   );
 }
@@ -305,4 +316,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.hairline,
   },
+  statsLink: {
+    alignSelf: "flex-end",
+    marginTop: spacing.md,
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  statsLinkLabel: { fontFamily: fonts.mono, fontSize: 11, color: colors.accent },
 });

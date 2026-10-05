@@ -207,7 +207,12 @@ const ProfileSwitch = () => {
 const renderAt = (clients: Readonly<Record<string, ApiClient>>, stored: string | undefined) => {
   mockClients = clients;
   return renderRouter(
-    { index: LibraryScreen, setup: SetupStub, "game/[appId]": GameStub },
+    {
+      index: LibraryScreen,
+      setup: SetupStub,
+      "game/[appId]": GameStub,
+      stats: () => <Text>stats screen</Text>,
+    },
     {
       initialUrl: "/",
       wrapper: ({ children }) => (
@@ -226,6 +231,12 @@ const renderLibrary = (client: ApiClient) => renderAt({ [STEAM_ID]: client }, ST
 const renderWithoutProfile = () => renderAt({}, undefined);
 
 describe("library screen", () => {
+  it("leads to the stats page", async () => {
+    renderLibrary(library());
+    fireEvent.press(await screen.findByText("Statistics ›"));
+    expect(await screen.findByText("stats screen")).toBeTruthy();
+  });
+
   /**
    * Nothing here is about motion, and an animation left running is what makes
    * a screen test report an unmounted node rather than what it came to check.

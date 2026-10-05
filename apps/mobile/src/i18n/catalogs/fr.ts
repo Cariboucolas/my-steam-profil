@@ -54,6 +54,7 @@ export const fr: Catalog = {
       perfectGames: "jeux à 100 %",
       played: "joué",
       gamesOwned: "jeux possédés",
+      openStats: "Statistiques ›",
     },
   },
   rarest: {

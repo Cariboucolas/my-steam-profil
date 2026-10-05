@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-native-web-vite";
+import { fn } from "storybook/test";
 import {
   collectorLibrary,
   countedLibrary,
@@ -15,6 +16,7 @@ const argsFor = (view: LibraryView, loaded: number | null = null, t: Translate =
   summary: buildLibrarySummary(view, t),
   gameCount: view.games.length,
   loaded,
+  onOpenStats: fn(),
 });
 
 const meta = {

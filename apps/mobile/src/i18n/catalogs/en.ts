@@ -43,6 +43,7 @@ export const en: Catalog = {
       perfectGames: "perfect games",
       played: "played",
       gamesOwned: "games owned",
+      openStats: "Statistics ›",
     },
   },
   rarest: {

@@ -1,4 +1,4 @@
-import { render, waitFor } from "@testing-library/react-native";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react-native";
 import * as ReactNative from "react-native";
 import {
   deviceAsksForLessMotion,
@@ -57,7 +57,12 @@ afterEach(() => {
 describe("LibraryStatsCard", () => {
   it("shows the figures it was given", async () => {
     const { getByText } = render(
-      <LibraryStatsCard summary={summary()} gameCount={267} loaded={null} />,
+      <LibraryStatsCard
+        onOpenStats={jest.fn()}
+        summary={summary()}
+        gameCount={267}
+        loaded={null}
+      />,
     );
     await letTheDeviceAnswer();
 
@@ -76,7 +81,7 @@ describe("LibraryStatsCard", () => {
     deviceAsksForLessMotion();
 
     const { getByTestId } = render(
-      <LibraryStatsCard summary={summary()} gameCount={267} loaded={0.4} />,
+      <LibraryStatsCard onOpenStats={jest.fn()} summary={summary()} gameCount={267} loaded={0.4} />,
     );
 
     await waitFor(() => {
@@ -87,7 +92,12 @@ describe("LibraryStatsCard", () => {
 
   it("carries no bar once nothing is outstanding", async () => {
     const { queryByTestId } = render(
-      <LibraryStatsCard summary={summary()} gameCount={267} loaded={null} />,
+      <LibraryStatsCard
+        onOpenStats={jest.fn()}
+        summary={summary()}
+        gameCount={267}
+        loaded={null}
+      />,
     );
     await letTheDeviceAnswer();
 
@@ -101,7 +111,7 @@ describe("LibraryStatsCard", () => {
    */
   it("clips what lies on its edges to its own corners", async () => {
     const { getByTestId } = render(
-      <LibraryStatsCard summary={summary()} gameCount={267} loaded={0.4} />,
+      <LibraryStatsCard onOpenStats={jest.fn()} summary={summary()} gameCount={267} loaded={0.4} />,
     );
     await letTheDeviceAnswer();
 
@@ -175,7 +185,12 @@ describe("the cap the model assumes", () => {
   it("is the one both halves of the headline row are drawn under", async () => {
     onAPhone(NARROWEST_SCREEN);
     const { getByText } = render(
-      <LibraryStatsCard summary={summary()} gameCount={267} loaded={null} />,
+      <LibraryStatsCard
+        onOpenStats={jest.fn()}
+        summary={summary()}
+        gameCount={267}
+        loaded={null}
+      />,
     );
     await letTheDeviceAnswer();
 
@@ -214,7 +229,7 @@ describe("the headline, on a real phone", () => {
   it("writes the figure in full when the phone is wide enough", async () => {
     onAPhone(430);
     const { getByText } = render(
-      <LibraryStatsCard summary={player} gameCount={267} loaded={null} />,
+      <LibraryStatsCard onOpenStats={jest.fn()} summary={player} gameCount={267} loaded={null} />,
     );
     await letTheDeviceAnswer();
 
@@ -224,7 +239,7 @@ describe("the headline, on a real phone", () => {
   it("writes it short when it is not", async () => {
     onAPhone(NARROWEST_SCREEN);
     const { getByText } = render(
-      <LibraryStatsCard summary={player} gameCount={267} loaded={null} />,
+      <LibraryStatsCard onOpenStats={jest.fn()} summary={player} gameCount={267} loaded={null} />,
     );
     await letTheDeviceAnswer();
 
@@ -234,10 +249,24 @@ describe("the headline, on a real phone", () => {
   it("gives a screen reader the exact count, however it was written", async () => {
     onAPhone(NARROWEST_SCREEN);
     const { getByLabelText } = render(
-      <LibraryStatsCard summary={player} gameCount={267} loaded={null} />,
+      <LibraryStatsCard onOpenStats={jest.fn()} summary={player} gameCount={267} loaded={null} />,
     );
     await letTheDeviceAnswer();
 
     expect(getByLabelText("45 500 achievements unlocked")).toBeTruthy();
+  });
+
+  it("leads to the stats page", () => {
+    const onOpenStats = jest.fn();
+    render(
+      <LibraryStatsCard
+        summary={summary()}
+        gameCount={12}
+        loaded={null}
+        onOpenStats={onOpenStats}
+      />,
+    );
+    fireEvent.press(screen.getByRole("link", { name: "Statistics ›" }));
+    expect(onOpenStats).toHaveBeenCalledTimes(1);
   });
 });
