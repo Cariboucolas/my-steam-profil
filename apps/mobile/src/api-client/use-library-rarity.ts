@@ -1,4 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
+import { askThroughCache } from "../query/ask-through-cache";
+import { queries } from "../query/queries";
 import type { TallyByAppId } from "../view-models/library";
 import type { RarityByAppId } from "../view-models/rarest-unlocks";
 import type { ApiClient } from "./api-client";
@@ -110,6 +113,10 @@ export const gamesHoldingAnUnlock = (tallies: TallyByAppId): readonly number[] =
  * politeness — it is where the games holding an unlock come from, and it is
  * using the same six connections this load needs (see `request-waves`).
  *
+ * Every figure is read through the cache above the routes, and kept there for
+ * the session: rarity is the same for every player (ADR-0008), so another
+ * mount, or another profile owning the same game, asks nothing for it (#169).
+ *
  * A tab opened once stays opened for as long as that library lasts: a load
  * carries on while the reader is looking at something else, and coming back
  * shows what has landed rather than starting again. A new library disarms it
@@ -124,6 +131,7 @@ export const useLibraryRarity = (
   library: CountedLibrary | null,
   active: boolean,
 ): LibraryRarity => {
+  const cache = useQueryClient();
   const [rarity, setRarity] = useState<RarityByAppId>(NO_RARITY);
   const [progress, setProgress] = useState<Progress>(NOTHING_ASKED);
   /**
@@ -135,7 +143,7 @@ export const useLibraryRarity = (
 
   // Declared before the arming below, so that on the commit where a library is
   // replaced under a reader who is watching, this clears and that re-arms.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: a new `library` is what clears, and nothing of it is read. Goes with the hook in #169.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: a new `library` is what clears, and nothing of it is read.
   useEffect(() => {
     // Another profile's rarity must never be crossed with this one's unlocks:
     // two libraries share appIds, so stale figures would not even look wrong.
@@ -161,7 +169,10 @@ export const useLibraryRarity = (
       void (async () => {
         await askInWaves(
           wanted,
-          (appId) => armed.client.getGameRarity(appId),
+          (appId) =>
+            askThroughCache(cache, queries.rarity(appId), (signal) =>
+              armed.client.getGameRarity(appId, signal),
+            ),
           (landed, asked) => {
             if (cancelled) return;
             setRarity((known) => ({ ...known, ...landed }));
@@ -184,7 +195,7 @@ export const useLibraryRarity = (
     return () => {
       cancelled = true;
     };
-  }, [armed]);
+  }, [cache, armed]);
 
   const outstanding = progress.asked - progress.answered;
 

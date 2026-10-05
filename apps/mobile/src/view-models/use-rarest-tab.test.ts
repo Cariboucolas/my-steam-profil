@@ -4,6 +4,7 @@ import { act, renderHook, waitFor } from "@testing-library/react-native";
 
 import type { ApiClient, ApiError } from "../api-client/api-client";
 import type { CountedLibrary } from "../api-client/use-library-rarity";
+import { FreshQueries } from "../query/FreshQueries";
 import type { LibraryView, TallyByAppId } from "./library";
 import { useRarestTab } from "./use-rarest-tab";
 
@@ -122,6 +123,7 @@ const renderTab = (
 ) =>
   renderHook(({ library: l, view: v, active: a }: Props) => useRarestTab(l, v, a), {
     initialProps: { library, view: shownView, active },
+    wrapper: FreshQueries,
   });
 
 /**
