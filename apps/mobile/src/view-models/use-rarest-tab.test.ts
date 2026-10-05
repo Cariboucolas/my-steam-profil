@@ -229,9 +229,10 @@ describe("useRarestTab", () => {
     await held.release();
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
-    // Counted by game: none of them is named, and an unavailable answer is
-    // asked once more (#162).
-    await waitFor(() => expect(new Set(held.asked.names).size).toBe(8));
+    // None of the eight is named, and an unavailable answer is asked once
+    // more (#162): twice each, and never a third time.
+    await waitFor(() => expect(held.asked.names).toHaveLength(16));
+    expect(new Set(held.asked.names).size).toBe(8);
   });
 
   /**
