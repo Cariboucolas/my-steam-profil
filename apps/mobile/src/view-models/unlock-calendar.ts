@@ -1,5 +1,6 @@
 import type { Translate } from "../i18n/i18n";
 import type { LibraryView } from "./library";
+import { countByDay, dayNumber, dayNumberOf } from "./unlock-days";
 
 /**
  * Every row spans this many columns, whatever its month holds. Deriving a
@@ -7,9 +8,6 @@ import type { LibraryView } from "./library";
  * whole card, and the day axis would stop meaning anything.
  */
 export const COLUMNS = 31;
-
-const MS_PER_SECOND = 1000;
-const MS_PER_DAY = 86_400_000;
 
 /**
  * How wide the window the tones are read over is. It ends today and slides by
@@ -133,45 +131,6 @@ const screenReaderLabelFor = (month: number, total: number, t: Translate): strin
  * being asked about one.
  */
 const daysIn = (year: number, month: number): number => new Date(year, month + 1, 0).getDate();
-
-/** One integer per calendar day, so two days can be compared and subtracted. */
-const dayNumber = (year: number, month: number, day: number): number =>
-  Date.UTC(year, month, day) / MS_PER_DAY;
-
-/**
- * Which day a moment fell on, read in the device's own time zone: an unlock at
- * half past eleven at night belongs to the day the player would name, not to
- * the one UTC has already moved on to.
- */
-const dayNumberOf = (moment: Date): number =>
-  dayNumber(moment.getFullYear(), moment.getMonth(), moment.getDate());
-
-/**
- * How many unlocks fell on each day the player has ever had one, whatever year
- * it belongs to. The grid draws a single year and the tone scale reads a window
- * that overruns it, so nothing is thrown away by date here.
- *
- * Only games the library still holds are counted, as the summary beside it
- * does, and only tallies that have arrived — the rest are still on their way.
- */
-const countByDay = (view: LibraryView): ReadonlyMap<number, number> => {
-  const counts = new Map<number, number>();
-
-  for (const game of view.games) {
-    const tally = view.tallies[game.appId];
-    if (!tally) continue;
-
-    for (const unlock of tally.unlocks) {
-      // An unlock Steam will not date is a real unlock with no day to draw it
-      // on, and inventing one would put it in a month it never happened in.
-      if (unlock.at === null) continue;
-      const day = dayNumberOf(new Date(unlock.at * MS_PER_SECOND));
-      counts.set(day, (counts.get(day) ?? 0) + 1);
-    }
-  }
-
-  return counts;
-};
 
 /**
  * What each active day inside the window held: the days holding at least one
