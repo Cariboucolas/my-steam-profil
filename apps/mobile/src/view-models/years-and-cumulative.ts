@@ -16,6 +16,8 @@ export type YearBar = {
   readonly figure: string | null;
   /** The year's total, written for every year: what a touch on its bar reveals. */
   readonly amount: string;
+  /** The running total at the year's end, revealed with its amount; null for a single year, drawn without a line. */
+  readonly running: string | null;
   /** The year's total against the peak year's, from 0 to 1. */
   readonly share: number;
   readonly current: boolean;
@@ -148,14 +150,9 @@ const recordsOf = (days: readonly DayCount[], t: Translate): YearRecords | null 
 const axisLabel = (year: number, lastYear: number, barCount: number): string | null =>
   barCount <= MAX_LABELLED_BARS || (lastYear - year) % 2 === 0 ? `’${String(year).slice(2)}` : null;
 
-/**
- * The running total at the end of each year, as a share of the grand total.
- * Summed in whole unlocks and divided once, so the last share is exactly 1.
- */
-const runningShares = (totals: readonly number[], grandTotal: number): readonly number[] =>
-  totals.map(
-    (_, index) => totals.slice(0, index + 1).reduce((sum, total) => sum + total, 0) / grandTotal,
-  );
+/** The running total at the end of each year, in whole unlocks. */
+const runningTotals = (totals: readonly number[]): readonly number[] =>
+  totals.map((_, index) => totals.slice(0, index + 1).reduce((sum, total) => sum + total, 0));
 
 /**
  * What the years card draws: each calendar year's dated unlocks, from the
@@ -181,6 +178,8 @@ export const buildYearsAndCumulative = (
   const byYear = new Map(totalsBy(days, (day) => calendarDayOf(day).year));
   const years = Array.from({ length: lastYear - firstYear + 1 }, (_, index) => firstYear + index);
   const totals = years.map((year) => byYear.get(year) ?? 0);
+  // Summed in whole unlocks and divided once, so the last share is exactly 1.
+  const running = years.length === 1 ? null : runningTotals(totals);
   const grandTotal = totals.reduce((sum, total) => sum + total, 0);
   const peak = mostRecentBest(years.map((year, index) => [year, totals[index] ?? 0] as const));
   const peakYear = peak?.key ?? lastYear;
@@ -195,6 +194,7 @@ export const buildYearsAndCumulative = (
       label: axisLabel(year, lastYear, years.length),
       figure: year === peakYear || current ? amount : null,
       amount,
+      running: running === null ? null : formatNumber(t, running[index] ?? 0),
       share: peakTotal === 0 ? 0 : total / peakTotal,
       current,
     };
@@ -209,7 +209,7 @@ export const buildYearsAndCumulative = (
       label: formatNumber(t, value),
       share: value / peakTotal,
     })),
-    cumulative: years.length === 1 ? null : runningShares(totals, grandTotal),
+    cumulative: running?.map((sum) => sum / grandTotal) ?? null,
     records: counted ? recordsOf(days, t) : null,
     screenReaderLabel: t("stats.years.spoken", {
       count: grandTotal,

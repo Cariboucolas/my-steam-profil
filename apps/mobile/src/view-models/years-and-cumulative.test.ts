@@ -98,6 +98,18 @@ describe("buildYearsAndCumulative", () => {
     expect(card.bars.map((bar) => bar.amount)).toEqual(["2", "1", "1"]);
   });
 
+  it("gives every bar the running total at its year's end, for a touch to reveal", () => {
+    const card = counted(
+      viewOf([...times(2, "2024-02-01T10:00:00Z"), "2025-02-01T10:00:00Z", "2026-02-01T10:00:00Z"]),
+    );
+    expect(card.bars.map((bar) => bar.running)).toEqual(["2", "3", "4"]);
+  });
+
+  it("gives no running total to a single year, which has no line", () => {
+    const card = counted(viewOf(["2026-02-01T10:00:00Z"]));
+    expect(card.bars.map((bar) => bar.running)).toEqual([null]);
+  });
+
   it("draws guide lines at round amounts, against the peak year", () => {
     const card = counted(viewOf(times(5, "2025-02-01T10:00:00Z")));
     expect(card.scale).toEqual([
