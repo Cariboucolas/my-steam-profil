@@ -158,7 +158,8 @@ export function YearBars({ bars, cumulative, scale, screenReaderLabel }: Props) 
             ]}
           >
             <Text style={styles.tipText} numberOfLines={1}>
-              {`${touchedBar.year} · ${touchedBar.amount}`}
+              {`${touchedBar.year} · `}
+              <Text style={styles.tipAmount}>{touchedBar.amount}</Text>
             </Text>
             {touchedBar.running !== null && (
               <Text style={[styles.tipText, styles.tipRunning]} numberOfLines={1}>
@@ -228,7 +229,9 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: colors.text,
   },
-  // The line's own colour, as the card's total is: the same running total.
+  // Each figure in the colour of what it measures: the bars' for the year's amount,
+  tipAmount: { color: colors.accent },
+  // the line's for the running total, as the card's total is.
   tipRunning: { color: colors.runningTotal },
   scaleLine: {
     position: "absolute",
