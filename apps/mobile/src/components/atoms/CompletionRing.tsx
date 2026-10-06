@@ -84,15 +84,14 @@ export function CompletionRing({
           transform={`rotate(${START_AT_TOP} ${centre} ${centre})`}
         />
       </Svg>
-      <View style={styles.centre} pointerEvents="none">
-        {children}
-      </View>
+      <View style={styles.centre}>{children}</View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   centre: {
+    pointerEvents: "none",
     position: "absolute",
     top: 0,
     left: 0,

@@ -203,6 +203,17 @@ describe("a year taller than the card", () => {
     expect(queryByTestId(UNLOCK_FADE_BOTTOM_TEST_ID)).toBeNull();
   });
 
+  // By style rather than by prop, which react-native-web reports as deprecated.
+  it("lets touches through its fade to the year under it", () => {
+    const { getByTestId } = december();
+    const fade = getByTestId(UNLOCK_FADE_BOTTOM_TEST_ID);
+
+    expect(fade.props.pointerEvents).toBeUndefined();
+    expect(StyleSheet.flatten(fade.props.style)).toEqual(
+      expect.objectContaining({ pointerEvents: "none" }),
+    );
+  });
+
   it("says which half of the year is in view", () => {
     const { getAllByTestId, grid } = december();
     const painted = () =>
