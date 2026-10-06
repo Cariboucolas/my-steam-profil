@@ -89,6 +89,14 @@ const sentenceServedBy = async (client: ApiClient): Promise<string | undefined> 
   return sentence;
 };
 
+/**
+ * Opened from the library, the stats page stacks over it, and the library
+ * draws every tally that lands beneath it: about a second of rendering per
+ * visit here, twice over in one test, and more under coverage. Jest's five
+ * seconds left it failing on a loaded machine.
+ */
+const TWO_TRIPS_THROUGH_THE_LIBRARY_MS = 15_000;
+
 describe("stats screen", () => {
   beforeEach(deviceAsksForLessMotion);
   afterEach(async () => {
@@ -153,21 +161,25 @@ describe("stats screen", () => {
     expect(chartSentence()).toBe(expected);
   });
 
-  it("asks nothing more for the stats once the library has counted them", async () => {
-    const client = served();
-    const getGameTally = jest.fn(client.getGameTally);
-    renderAt({ [STEAM_ID]: { ...client, getGameTally } }, "/");
+  it(
+    "asks nothing more for the stats once the library has counted them",
+    async () => {
+      const client = served();
+      const getGameTally = jest.fn(client.getGameTally);
+      renderAt({ [STEAM_ID]: { ...client, getGameTally } }, "/");
 
-    // The first visit finishes the count the library started.
-    fireEvent.press(await screen.findByText("Statistics ›"));
-    await recordsShown();
-    const asked = getGameTally.mock.calls.length;
+      // The first visit finishes the count the library started.
+      fireEvent.press(await screen.findByText("Statistics ›"));
+      await recordsShown();
+      const asked = getGameTally.mock.calls.length;
 
-    fireEvent.press(screen.getByLabelText("Back to library"));
-    fireEvent.press(await screen.findByText("Statistics ›"));
-    await recordsShown();
-    expect(getGameTally.mock.calls.length).toBe(asked);
-  });
+      fireEvent.press(screen.getByLabelText("Back to library"));
+      fireEvent.press(await screen.findByText("Statistics ›"));
+      await recordsShown();
+      expect(getGameTally.mock.calls.length).toBe(asked);
+    },
+    TWO_TRIPS_THROUGH_THE_LIBRARY_MS,
+  );
 
   it("goes back to the library when it is the only screen", async () => {
     renderAt({ [STEAM_ID]: served() }, "/stats");
