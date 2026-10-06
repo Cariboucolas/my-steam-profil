@@ -8,6 +8,7 @@ const bar = (year: number, over: Partial<YearBar> = {}): YearBar => ({
   year,
   label: `’${String(year).slice(2)}`,
   figure: null,
+  amount: "12",
   share: 0.5,
   current: false,
   ...over,
