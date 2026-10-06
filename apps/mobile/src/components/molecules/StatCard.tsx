@@ -2,12 +2,15 @@ import type { ReactNode } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, fonts, radius, spacing } from "../../theme/tokens";
+import { TallyLoadBar } from "../atoms/TallyLoadBar";
 
 type Props = {
   /** Already in capitals, as the catalog writes it. */
   readonly eyebrow: string;
   /** The card's key figure, top right. */
   readonly figure?: string | undefined;
+  /** The figure's colour, when it sums up a series drawn in its own colour. The accent otherwise. */
+  readonly figureColor?: string | undefined;
   /** What the figure counts, under it. */
   readonly caption?: string | undefined;
   readonly subtitle: string;
@@ -15,6 +18,11 @@ type Props = {
   readonly empty?: string | undefined;
   readonly children?: ReactNode;
   readonly footer?: ReactNode;
+  /**
+   * How far the library's tallies have got, or null when none are outstanding:
+   * the same bar as the library card's, on this card's top edge.
+   */
+  readonly loaded?: number | null;
 };
 
 /**
@@ -22,14 +30,27 @@ type Props = {
  * figure, a sentence on what the card shows, the chart, and its footer. A
  * card with too little to draw says so in place of the chart.
  */
-export function StatCard({ eyebrow, figure, caption, subtitle, empty, children, footer }: Props) {
+export function StatCard({
+  eyebrow,
+  figure,
+  figureColor,
+  caption,
+  subtitle,
+  empty,
+  children,
+  footer,
+  loaded = null,
+}: Props) {
   return (
     <View style={styles.card}>
+      <TallyLoadBar loaded={loaded} />
       <View style={styles.heading}>
         <Text style={styles.eyebrow}>{eyebrow}</Text>
         {figure !== undefined && (
           <View style={styles.figureBlock}>
-            <Text style={styles.figure}>{figure}</Text>
+            <Text style={[styles.figure, figureColor !== undefined && { color: figureColor }]}>
+              {figure}
+            </Text>
             {caption !== undefined && <Text style={styles.caption}>{caption}</Text>}
           </View>
         )}
@@ -58,6 +79,8 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.hairline,
     backgroundColor: colors.surface,
+    // Clips the load bar to the corner radius.
+    overflow: "hidden",
   },
   heading: {
     flexDirection: "row",
