@@ -21,7 +21,7 @@ const cards = (
 const meta = {
   title: "Templates/StatsTemplate",
   component: StatsTemplate,
-  args: { title: "Statistics", loaded: null, onBack: fn(), children: cards },
+  args: { title: "Statistics", onBack: fn(), children: cards },
 } satisfies Meta<typeof StatsTemplate>;
 
 export default meta;
@@ -29,4 +29,3 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Counted: Story = {};
-export const Counting: Story = { args: { loaded: 0.4 } };

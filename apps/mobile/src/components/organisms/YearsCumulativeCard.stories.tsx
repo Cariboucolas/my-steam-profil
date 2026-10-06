@@ -8,6 +8,8 @@ import type { CountedUnlocks } from "../../view-models/unlock-days";
 import { buildYearsAndCumulative } from "../../view-models/years-and-cumulative";
 import { YearsCumulativeCard } from "./YearsCumulativeCard";
 
+/** How far a library still counting has got, in the stories that show one. */
+const STILL_COUNTING = 0.6;
 const NOTHING_DATED: CountedUnlocks = { games: LIBRARY_GAMES, tallies: {} };
 const SINCE_2019 = unlockingLibrary(STORY_TODAY, new Date(2019, 0, 1));
 const THIS_YEAR_ONLY = unlockingLibrary(STORY_TODAY, new Date(2026, 0, 1));
@@ -16,6 +18,8 @@ const SINCE_2008 = unlockingLibrary(STORY_TODAY, new Date(2008, 0, 1));
 /** The card as the stats page hands it one, in the language `t` speaks. */
 const yearsOf = (view: CountedUnlocks, counted: boolean) => (t: Translate) => ({
   years: buildYearsAndCumulative(view, counted, STORY_TODAY, t),
+  // Part way through while counting, as the page's one load reports it.
+  loaded: counted ? null : STILL_COUNTING,
 });
 
 const meta = {
