@@ -86,7 +86,6 @@ export function UnlockCalendarCard({ calendar }: Props) {
       {scroll.fades.top ? (
         <LinearGradient
           testID={UNLOCK_FADE_TOP_TEST_ID}
-          pointerEvents="none"
           colors={[colors.bg, colors.bgClear]}
           style={styles.fadeTop}
         />
@@ -95,7 +94,6 @@ export function UnlockCalendarCard({ calendar }: Props) {
       {scroll.fades.bottom ? (
         <LinearGradient
           testID={UNLOCK_FADE_BOTTOM_TEST_ID}
-          pointerEvents="none"
           colors={[colors.bgClear, colors.bg]}
           style={styles.fadeBottom}
         />
@@ -131,6 +129,7 @@ const styles = StyleSheet.create({
     gap: ROW_GAP,
   },
   fadeTop: {
+    pointerEvents: "none",
     position: "absolute",
     top: 0,
     left: 0,
@@ -138,6 +137,7 @@ const styles = StyleSheet.create({
     height: FADE_DEPTH,
   },
   fadeBottom: {
+    pointerEvents: "none",
     position: "absolute",
     bottom: 0,
     left: 0,

@@ -1,5 +1,5 @@
 import { render } from "@testing-library/react-native";
-import { Text } from "react-native";
+import { StyleSheet, Text } from "react-native";
 
 import { CompletionRing, RING_PROGRESS_TEST_ID, ringGeometry } from "./CompletionRing";
 
@@ -40,6 +40,21 @@ describe("CompletionRing", () => {
       </CompletionRing>,
     );
     expect(getByText("73%")).toBeTruthy();
+  });
+
+  // By style rather than by prop, which react-native-web reports as deprecated.
+  it("lets touches through its centre to whatever holds the ring", () => {
+    const { getByText } = render(
+      <CompletionRing size={88} strokeWidth={7} percentage={73}>
+        <Text>73%</Text>
+      </CompletionRing>,
+    );
+    const centre = getByText("73%").parent?.parent;
+
+    expect(centre?.props.pointerEvents).toBeUndefined();
+    expect(StyleSheet.flatten(centre?.props.style)).toEqual(
+      expect.objectContaining({ pointerEvents: "none" }),
+    );
   });
 
   it("exposes the progress arc", () => {
