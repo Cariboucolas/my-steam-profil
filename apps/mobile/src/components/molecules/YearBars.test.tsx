@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 
+import { colors } from "../../theme/tokens";
 import type { YearBar } from "../../view-models/years-and-cumulative";
 import {
   RUNNING_TOTAL_TEST_ID,
@@ -156,6 +157,21 @@ describe("YearBars", () => {
       fireEvent.press(column(1));
       expect(screen.queryByText("2019 · 312")).toBeNull();
       expect(screen.getByText("2026 · 1 104")).toBeTruthy();
+    });
+
+    it("reveals the running total under the amount, in the line's colour", () => {
+      render(
+        <YearBars
+          bars={[bar(2025, { running: "40" }), bar(2026, { running: "52" })]}
+          cumulative={[0.75, 1]}
+          scale={[]}
+          screenReaderLabel="chart"
+        />,
+      );
+      fireEvent.press(column(0));
+      expect(StyleSheet.flatten(screen.getByText("40").props.style)).toEqual(
+        expect.objectContaining({ color: colors.runningTotal }),
+      );
     });
 
     it("stands in for the figure the bar already wrote", () => {
