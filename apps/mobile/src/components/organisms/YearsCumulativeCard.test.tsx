@@ -9,7 +9,8 @@ const drawn = (records: boolean): YearsAndCumulative => ({
   kind: "drawn",
   total: "3 912",
   span: "dated unlocks · 2014 → 2026",
-  bars: [{ year: 2026, label: "’26", figure: "688", share: 1, current: true }],
+  bars: [{ year: 2026, label: "’26", figure: "688", amount: "688", share: 1, current: true }],
+  scale: [],
   cumulative: null,
   records: records
     ? {

@@ -91,6 +91,28 @@ describe("buildYearsAndCumulative", () => {
     expect(card.bars.map((bar) => bar.figure)).toEqual(["2", null, "1"]);
   });
 
+  it("gives every bar its amount, for a touch to reveal", () => {
+    const card = counted(
+      viewOf([...times(2, "2024-02-01T10:00:00Z"), "2025-02-01T10:00:00Z", "2026-02-01T10:00:00Z"]),
+    );
+    expect(card.bars.map((bar) => bar.amount)).toEqual(["2", "1", "1"]);
+  });
+
+  it("draws guide lines at round amounts, against the peak year", () => {
+    const card = counted(viewOf(times(5, "2025-02-01T10:00:00Z")));
+    expect(card.scale).toEqual([
+      { label: "2", share: 0.4 },
+      { label: "4", share: 0.8 },
+    ]);
+  });
+
+  it("writes the guide lines' amounts in the reader's language", () => {
+    const card = drawn(
+      buildYearsAndCumulative(viewOf(times(2600, "2025-02-01T10:00:00Z")), true, NOW, french),
+    );
+    expect(card.scale.map((line) => line.label)).toEqual(["1 000", "2 000"]);
+  });
+
   it("takes the most recent year as the peak on a tie", () => {
     const card = counted(viewOf(["2024-02-01T10:00:00Z", "2025-02-01T10:00:00Z"]));
     // 2026 holds nothing but is this year, which always carries its figure.

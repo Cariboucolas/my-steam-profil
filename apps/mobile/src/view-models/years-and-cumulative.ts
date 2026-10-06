@@ -1,5 +1,6 @@
 import { formatNumber } from "../i18n/format-number";
 import type { Translate } from "../i18n/i18n";
+import { scaleValues } from "./chart-scale";
 import { type CountedUnlocks, calendarDayOf, countByDay } from "./unlock-days";
 
 /** Beyond this many bars the axis labels every other year: ’08 to ’26 do not fit a 360 px card. */
@@ -13,10 +14,15 @@ export type YearBar = {
   readonly label: string | null;
   /** The year's total, written only over the peak year and the current one. */
   readonly figure: string | null;
+  /** The year's total, written for every year: what a touch on its bar reveals. */
+  readonly amount: string;
   /** The year's total against the peak year's, from 0 to 1. */
   readonly share: number;
   readonly current: boolean;
 };
+
+/** A guide line across the chart: its amount, and its height against the peak year's. */
+export type ScaleLine = { readonly label: string; readonly share: number };
 
 /** One record under the chart: the figure, what it is, and when it was set. */
 export type YearRecord = { readonly value: string; readonly label: string; readonly when: string };
@@ -37,6 +43,8 @@ export type YearsAndCumulative =
       readonly total: string;
       readonly span: string;
       readonly bars: readonly YearBar[];
+      /** Guide lines at round amounts under the peak year, lowest first. Scales the bars, not the running total. */
+      readonly scale: readonly ScaleLine[];
       /** The running total at the end of each year, against the grand total; null for a single year. */
       readonly cumulative: readonly number[] | null;
       /**
@@ -181,10 +189,12 @@ export const buildYearsAndCumulative = (
   const bars = years.map((year, index): YearBar => {
     const total = totals[index] ?? 0;
     const current = year === thisYear;
+    const amount = formatNumber(t, total);
     return {
       year,
       label: axisLabel(year, lastYear, years.length),
-      figure: year === peakYear || current ? formatNumber(t, total) : null,
+      figure: year === peakYear || current ? amount : null,
+      amount,
       share: peakTotal === 0 ? 0 : total / peakTotal,
       current,
     };
@@ -195,6 +205,10 @@ export const buildYearsAndCumulative = (
     total: formatNumber(t, grandTotal),
     span: t("stats.years.span", { first: firstYear, last: lastYear }),
     bars,
+    scale: scaleValues(peakTotal).map((value) => ({
+      label: formatNumber(t, value),
+      share: value / peakTotal,
+    })),
     cumulative: years.length === 1 ? null : runningShares(totals, grandTotal),
     records: counted ? recordsOf(days, t) : null,
     screenReaderLabel: t("stats.years.spoken", {
