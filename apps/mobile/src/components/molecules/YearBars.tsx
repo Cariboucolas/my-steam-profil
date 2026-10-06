@@ -80,7 +80,6 @@ export function YearBars({ bars, cumulative, scale, screenReaderLabel }: Props) 
           <View
             key={line.label}
             testID={SCALE_LINE_TEST_ID}
-            pointerEvents="none"
             style={[styles.scaleLine, { bottom: line.share * PLOT_HEIGHT }]}
           />
         ))}
@@ -111,14 +110,13 @@ export function YearBars({ bars, cumulative, scale, screenReaderLabel }: Props) 
           // Over the bars, so a tall first year does not hide its amount.
           <Text
             key={line.label}
-            pointerEvents="none"
             style={[styles.scaleLabel, { bottom: line.share * PLOT_HEIGHT + SCALE_LABEL_LIFT }]}
           >
             {line.label}
           </Text>
         ))}
         {cumulative !== null && (
-          <View style={styles.line} testID={RUNNING_TOTAL_TEST_ID} pointerEvents="none">
+          <View style={styles.line} testID={RUNNING_TOTAL_TEST_ID}>
             <Svg
               width="100%"
               height="100%"
@@ -138,7 +136,6 @@ export function YearBars({ bars, cumulative, scale, screenReaderLabel }: Props) 
         )}
         {touchedBar !== undefined && (
           <View
-            pointerEvents="none"
             style={[
               styles.tip,
               {
@@ -214,6 +211,7 @@ const styles = StyleSheet.create({
     borderColor: colors.accent,
   },
   tip: {
+    pointerEvents: "none",
     position: "absolute",
     width: TIP_WIDTH,
     justifyContent: "center",
@@ -234,6 +232,7 @@ const styles = StyleSheet.create({
   // the line's for the running total, as the card's total is.
   tipRunning: { color: colors.runningTotal },
   scaleLine: {
+    pointerEvents: "none",
     position: "absolute",
     left: 0,
     right: 0,
@@ -241,6 +240,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.hairline,
   },
   scaleLabel: {
+    pointerEvents: "none",
     position: "absolute",
     left: 0,
     fontFamily: fonts.mono,
@@ -248,7 +248,14 @@ const styles = StyleSheet.create({
     lineHeight: 10,
     color: colors.textDim,
   },
-  line: { position: "absolute", left: 0, right: 0, bottom: 0, height: PLOT_HEIGHT },
+  line: {
+    pointerEvents: "none",
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: PLOT_HEIGHT,
+  },
   axis: {
     flexDirection: "row",
     gap: GAP,
