@@ -1,8 +1,13 @@
-import { render, screen } from "@testing-library/react-native";
+import { fireEvent, render, screen } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 
 import type { YearBar } from "../../view-models/years-and-cumulative";
-import { RUNNING_TOTAL_TEST_ID, SCALE_LINE_TEST_ID, YearBars } from "./YearBars";
+import {
+  RUNNING_TOTAL_TEST_ID,
+  SCALE_LINE_TEST_ID,
+  YEAR_COLUMN_TEST_ID,
+  YearBars,
+} from "./YearBars";
 
 const bar = (year: number, over: Partial<YearBar> = {}): YearBar => ({
   year,
@@ -113,5 +118,49 @@ describe("YearBars", () => {
     expect(screen.getAllByTestId(SCALE_LINE_TEST_ID)).toHaveLength(2);
     expect(screen.getByText("250")).toBeTruthy();
     expect(screen.getByText("500")).toBeTruthy();
+  });
+
+  describe("a touch on a bar", () => {
+    const touchable = () =>
+      render(
+        <YearBars
+          bars={[bar(2019, { amount: "312" }), bar(2026, { amount: "1 104", figure: "1 104" })]}
+          cumulative={null}
+          scale={[]}
+          screenReaderLabel="chart"
+        />,
+      );
+    const column = (index: number) => {
+      const found = screen.getAllByTestId(YEAR_COLUMN_TEST_ID)[index];
+      if (found === undefined) throw new Error(`no bar at ${index}`);
+      return found;
+    };
+
+    it("reveals the year and its amount", () => {
+      touchable();
+      fireEvent.press(column(0));
+      expect(screen.getByText("2019 · 312")).toBeTruthy();
+    });
+
+    it("hides it again on a second touch", () => {
+      touchable();
+      fireEvent.press(column(0));
+      fireEvent.press(column(0));
+      expect(screen.queryByText("2019 · 312")).toBeNull();
+    });
+
+    it("moves to the bar touched next", () => {
+      touchable();
+      fireEvent.press(column(0));
+      fireEvent.press(column(1));
+      expect(screen.queryByText("2019 · 312")).toBeNull();
+      expect(screen.getByText("2026 · 1 104")).toBeTruthy();
+    });
+
+    it("stands in for the figure the bar already wrote", () => {
+      touchable();
+      fireEvent.press(column(1));
+      expect(screen.queryByText("1 104")).toBeNull();
+    });
   });
 });
