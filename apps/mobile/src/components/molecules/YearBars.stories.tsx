@@ -18,6 +18,7 @@ const argsSince = (since: Date) => {
   return {
     bars: card.bars,
     cumulative: card.cumulative,
+    scale: card.scale,
     screenReaderLabel: card.screenReaderLabel,
   };
 };

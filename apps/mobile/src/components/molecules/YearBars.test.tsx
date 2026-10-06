@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react-native";
 import { StyleSheet } from "react-native";
 
 import type { YearBar } from "../../view-models/years-and-cumulative";
-import { RUNNING_TOTAL_TEST_ID, YearBars } from "./YearBars";
+import { RUNNING_TOTAL_TEST_ID, SCALE_LINE_TEST_ID, YearBars } from "./YearBars";
 
 const bar = (year: number, over: Partial<YearBar> = {}): YearBar => ({
   year,
@@ -20,6 +20,7 @@ describe("YearBars", () => {
       <YearBars
         bars={[bar(2025), bar(2026, { current: true })]}
         cumulative={[0.5, 1]}
+        scale={[]}
         screenReaderLabel="2025 to 2026"
       />,
     );
@@ -31,6 +32,7 @@ describe("YearBars", () => {
       <YearBars
         bars={[bar(2024, { label: null }), bar(2025)]}
         cumulative={[0.5, 1]}
+        scale={[]}
         screenReaderLabel="chart"
       />,
     );
@@ -43,6 +45,7 @@ describe("YearBars", () => {
       <YearBars
         bars={[bar(2025, { figure: "1 104" })]}
         cumulative={null}
+        scale={[]}
         screenReaderLabel="chart"
       />,
     );
@@ -60,6 +63,7 @@ describe("YearBars", () => {
       <YearBars
         bars={years.map((year) => bar(year, { figure: year === 2026 ? "1 104" : null }))}
         cumulative={null}
+        scale={[]}
         screenReaderLabel="chart"
       />,
     );
@@ -79,11 +83,35 @@ describe("YearBars", () => {
 
   it("draws the running total when it has one, and none without", () => {
     const { rerender } = render(
-      <YearBars bars={[bar(2025), bar(2026)]} cumulative={[0.5, 1]} screenReaderLabel="chart" />,
+      <YearBars
+        bars={[bar(2025), bar(2026)]}
+        cumulative={[0.5, 1]}
+        scale={[]}
+        screenReaderLabel="chart"
+      />,
     );
     expect(screen.getByTestId(RUNNING_TOTAL_TEST_ID)).toBeTruthy();
 
-    rerender(<YearBars bars={[bar(2026)]} cumulative={null} screenReaderLabel="chart" />);
+    rerender(
+      <YearBars bars={[bar(2026)]} cumulative={null} scale={[]} screenReaderLabel="chart" />,
+    );
     expect(screen.queryByTestId(RUNNING_TOTAL_TEST_ID)).toBeNull();
+  });
+
+  it("draws a guide line at each amount it is given, written at its height", () => {
+    render(
+      <YearBars
+        bars={[bar(2025, { share: 1 })]}
+        cumulative={null}
+        scale={[
+          { label: "250", share: 0.25 },
+          { label: "500", share: 0.5 },
+        ]}
+        screenReaderLabel="chart"
+      />,
+    );
+    expect(screen.getAllByTestId(SCALE_LINE_TEST_ID)).toHaveLength(2);
+    expect(screen.getByText("250")).toBeTruthy();
+    expect(screen.getByText("500")).toBeTruthy();
   });
 });
