@@ -159,6 +159,14 @@ describe("YearBars", () => {
       expect(screen.getByText("2026 · 1 104")).toBeTruthy();
     });
 
+    it("writes the year's amount in the bars' colour", () => {
+      touchable();
+      fireEvent.press(column(0));
+      expect(StyleSheet.flatten(screen.getByText("312").props.style)).toEqual(
+        expect.objectContaining({ color: colors.accent }),
+      );
+    });
+
     it("reveals the running total under the amount, in the line's colour", () => {
       render(
         <YearBars
@@ -177,7 +185,8 @@ describe("YearBars", () => {
     it("stands in for the figure the bar already wrote", () => {
       touchable();
       fireEvent.press(column(1));
-      expect(screen.queryByText("1 104")).toBeNull();
+      // The tip's own amount, and not the figure over the bar.
+      expect(screen.getAllByText("1 104")).toHaveLength(1);
     });
   });
 });
