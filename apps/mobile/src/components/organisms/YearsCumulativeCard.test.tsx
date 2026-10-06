@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react-native";
+import { StyleSheet } from "react-native";
 
 import { deviceAsksForLessMotion } from "../../accessibility/reduce-motion.test-support";
+import { colors } from "../../theme/tokens";
 import type { YearsAndCumulative } from "../../view-models/years-and-cumulative";
 import { RECORD_FIGURE_SKELETON_TEST_ID } from "../molecules/RecordFigure";
 import { YearsCumulativeCard } from "./YearsCumulativeCard";
@@ -30,6 +32,13 @@ describe("YearsCumulativeCard", () => {
     expect(screen.getByText("3 912")).toBeTruthy();
     expect(screen.getByLabelText("2014 to 2026: 3 912 dated unlocks")).toBeTruthy();
     expect(screen.getByLabelText("longest streak, Nov 2025: 9 days")).toBeTruthy();
+  });
+
+  it("writes the total in the running total's colour, where its line ends", () => {
+    render(<YearsCumulativeCard years={drawn(true)} loaded={null} />);
+    expect(StyleSheet.flatten(screen.getByText("3 912").props.style)).toEqual(
+      expect.objectContaining({ color: colors.runningTotal }),
+    );
   });
 
   it("holds three skeletons where the records will be", () => {

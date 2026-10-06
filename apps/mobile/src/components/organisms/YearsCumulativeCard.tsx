@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { StyleSheet, View } from "react-native";
 
-import { spacing } from "../../theme/tokens";
+import { colors, spacing } from "../../theme/tokens";
 import type { YearsAndCumulative } from "../../view-models/years-and-cumulative";
 import { ChartLegendKey } from "../atoms/ChartLegendKey";
 import { RecordFigure } from "../molecules/RecordFigure";
@@ -29,6 +29,8 @@ export function YearsCumulativeCard({ years, loaded }: Props) {
       <StatCard
         eyebrow={t("stats.years.eyebrow")}
         figure={years.kind === "drawn" ? years.total : undefined}
+        // The total is where the running total ends: written in its colour.
+        figureColor={colors.runningTotal}
         loaded={loaded}
         caption={years.kind === "drawn" ? years.span : undefined}
         subtitle={t("stats.years.subtitle")}
