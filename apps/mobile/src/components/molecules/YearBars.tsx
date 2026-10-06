@@ -1,11 +1,14 @@
-import { StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { type LayoutChangeEvent, Pressable, StyleSheet, Text, View } from "react-native";
 import Svg, { Polyline } from "react-native-svg";
 
 import { colors, fonts } from "../../theme/tokens";
+import { tipLeft } from "../../view-models/bar-tip";
 import type { ScaleLine, YearBar } from "../../view-models/years-and-cumulative";
 
 export const RUNNING_TOTAL_TEST_ID = "running-total";
 export const SCALE_LINE_TEST_ID = "scale-line";
+export const YEAR_COLUMN_TEST_ID = "year-column";
 
 /** The tallest bar, in px; the running total spans the same height. */
 const PLOT_HEIGHT = 140;
@@ -23,6 +26,11 @@ const GAP = 5;
  * beside it, which carry no label of their own past MAX_LABELLED_BARS.
  */
 const SLOT_WIDTH = 44;
+/** Wide enough for `2026 · 12 345` in the mono face. */
+const TIP_WIDTH = 92;
+const TIP_HEIGHT = 20;
+/** Between a bar's top and the tip over it. */
+const TIP_LIFT = 4;
 /** How far a guide line's amount sits above the line, so the line does not strike it. */
 const SCALE_LABEL_LIFT = 2;
 
@@ -45,11 +53,25 @@ const pointsOf = (cumulative: readonly number[]): string =>
     })
     .join(" ");
 
-/** One bar per year, the running total over them, and the years under them. */
+const barHeightOf = (bar: YearBar): number =>
+  Math.max(MIN_BAR, Math.round(bar.share * PLOT_HEIGHT));
+
+/**
+ * One bar per year, the running total over them, and the years under them.
+ * A touch on a bar reveals its year and amount; a second touch hides them.
+ */
 export function YearBars({ bars, cumulative, scale, screenReaderLabel }: Props) {
+  const [touched, setTouched] = useState<number | null>(null);
+  const [plotWidth, setPlotWidth] = useState(0);
+  const touchedIndex = bars.findIndex((bar) => bar.year === touched);
+  const touchedBar = bars[touchedIndex];
+
+  const onPlotLayout = (event: LayoutChangeEvent) => setPlotWidth(event.nativeEvent.layout.width);
+  const toggle = (year: number) => setTouched((shown) => (shown === year ? null : year));
+
   return (
     <View accessible accessibilityLabel={screenReaderLabel}>
-      <View style={styles.plot}>
+      <View style={styles.plot} onLayout={onPlotLayout}>
         {scale.map((line) => (
           <View
             key={line.label}
@@ -60,8 +82,13 @@ export function YearBars({ bars, cumulative, scale, screenReaderLabel }: Props) 
         ))}
         <View style={styles.columns}>
           {bars.map((bar) => (
-            <View key={bar.year} style={styles.column}>
-              {bar.figure !== null && (
+            <Pressable
+              key={bar.year}
+              testID={YEAR_COLUMN_TEST_ID}
+              style={styles.column}
+              onPress={() => toggle(bar.year)}
+            >
+              {bar.figure !== null && bar.year !== touched && (
                 <Text style={[styles.slotText, styles.figure]} numberOfLines={1}>
                   {bar.figure}
                 </Text>
@@ -70,10 +97,10 @@ export function YearBars({ bars, cumulative, scale, screenReaderLabel }: Props) 
                 style={[
                   styles.bar,
                   bar.current ? styles.currentBar : null,
-                  { height: Math.max(MIN_BAR, Math.round(bar.share * PLOT_HEIGHT)) },
+                  { height: barHeightOf(bar) },
                 ]}
               />
-            </View>
+            </Pressable>
           ))}
         </View>
         {scale.map((line) => (
@@ -105,6 +132,31 @@ export function YearBars({ bars, cumulative, scale, screenReaderLabel }: Props) 
             </Svg>
           </View>
         )}
+        {touchedBar !== undefined && (
+          <View
+            pointerEvents="none"
+            style={[
+              styles.tip,
+              {
+                left: tipLeft({
+                  index: touchedIndex,
+                  count: bars.length,
+                  width: plotWidth,
+                  gap: GAP,
+                  tipWidth: TIP_WIDTH,
+                }),
+                bottom: Math.min(
+                  barHeightOf(touchedBar) + TIP_LIFT,
+                  PLOT_HEIGHT + FIGURE_ROOM - TIP_HEIGHT,
+                ),
+              },
+            ]}
+          >
+            <Text style={styles.tipText} numberOfLines={1}>
+              {`${touchedBar.year} · ${touchedBar.amount}`}
+            </Text>
+          </View>
+        )}
       </View>
       <View style={styles.axis}>
         {bars.map((bar) => (
@@ -133,10 +185,10 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     flexDirection: "row",
-    alignItems: "flex-end",
     gap: GAP,
   },
-  column: { flex: 1, minWidth: 0, alignItems: "center", gap: 4 },
+  // The whole plot's height, so a touch lands on a year however short its bar.
+  column: { flex: 1, minWidth: 0, alignItems: "center", justifyContent: "flex-end", gap: 4 },
   figure: { fontFamily: fonts.mono, fontSize: 9.5, lineHeight: 12, color: colors.text },
   bar: {
     alignSelf: "stretch",
@@ -149,6 +201,23 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderBottomWidth: 0,
     borderColor: colors.accent,
+  },
+  tip: {
+    position: "absolute",
+    width: TIP_WIDTH,
+    height: TIP_HEIGHT,
+    justifyContent: "center",
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    backgroundColor: colors.bg,
+  },
+  tipText: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    lineHeight: 12,
+    textAlign: "center",
+    color: colors.text,
   },
   scaleLine: {
     position: "absolute",
