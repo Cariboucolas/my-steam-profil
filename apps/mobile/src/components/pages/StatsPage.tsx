@@ -64,8 +64,8 @@ export function StatsPage({ onBack, onChangeProfile, today: givenToday }: Props)
   }
 
   return (
-    <StatsTemplate title={t("stats.title")} loaded={loaded} onBack={onBack}>
-      <YearsCumulativeCard years={years} />
+    <StatsTemplate title={t("stats.title")} onBack={onBack}>
+      <YearsCumulativeCard years={years} loaded={loaded} />
     </StatsTemplate>
   );
 }

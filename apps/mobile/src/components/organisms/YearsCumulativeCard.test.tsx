@@ -26,24 +26,24 @@ describe("YearsCumulativeCard", () => {
   beforeEach(deviceAsksForLessMotion);
 
   it("draws the total, the chart and the records", () => {
-    render(<YearsCumulativeCard years={drawn(true)} />);
+    render(<YearsCumulativeCard years={drawn(true)} loaded={null} />);
     expect(screen.getByText("3 912")).toBeTruthy();
     expect(screen.getByLabelText("2014 to 2026: 3 912 dated unlocks")).toBeTruthy();
     expect(screen.getByLabelText("longest streak, Nov 2025: 9 days")).toBeTruthy();
   });
 
   it("holds three skeletons where the records will be", () => {
-    render(<YearsCumulativeCard years={drawn(false)} />);
+    render(<YearsCumulativeCard years={drawn(false)} loaded={null} />);
     expect(screen.getAllByTestId(RECORD_FIGURE_SKELETON_TEST_ID)).toHaveLength(3);
   });
 
   it("says it has no dated unlock", () => {
-    render(<YearsCumulativeCard years={{ kind: "empty" }} />);
+    render(<YearsCumulativeCard years={{ kind: "empty" }} loaded={null} />);
     expect(screen.getByText("No dated unlocks")).toBeTruthy();
   });
 
   it("waits as a skeleton before the first dated unlock lands", () => {
-    render(<YearsCumulativeCard years={{ kind: "waiting" }} />);
+    render(<YearsCumulativeCard years={{ kind: "waiting" }} loaded={null} />);
     expect(screen.getAllByTestId(RECORD_FIGURE_SKELETON_TEST_ID)).toHaveLength(3);
     expect(screen.queryByText("No dated unlocks")).toBeNull();
   });

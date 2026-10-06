@@ -13,10 +13,14 @@ export const YEARS_CARD_TEST_ID = "years-cumulative-card";
 /** Height the chart's place is held at while no dated unlock has landed. */
 const WAITING_CHART_HEIGHT = 164;
 
-type Props = { readonly years: YearsAndCumulative };
+type Props = {
+  readonly years: YearsAndCumulative;
+  /** How far the library's tallies have got, or null when none are outstanding. */
+  readonly loaded: number | null;
+};
 
 /** Card C of the stats page: each year's unlocks, the running total, and three records. */
-export function YearsCumulativeCard({ years }: Props) {
+export function YearsCumulativeCard({ years, loaded }: Props) {
   const { t } = useTranslation();
   const records = years.kind === "drawn" ? years.records : null;
 
@@ -25,6 +29,7 @@ export function YearsCumulativeCard({ years }: Props) {
       <StatCard
         eyebrow={t("stats.years.eyebrow")}
         figure={years.kind === "drawn" ? years.total : undefined}
+        loaded={loaded}
         caption={years.kind === "drawn" ? years.span : undefined}
         subtitle={t("stats.years.subtitle")}
         empty={years.kind === "empty" ? t("stats.years.empty") : undefined}
