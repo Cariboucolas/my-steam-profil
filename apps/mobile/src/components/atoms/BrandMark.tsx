@@ -1,3 +1,4 @@
+import { View } from "react-native";
 import Svg, { Circle, G, Path } from "react-native-svg";
 
 import { NOT_READ } from "../../accessibility/not-read";
@@ -64,61 +65,65 @@ export function BrandMark({ size, stops, tip }: Props) {
   const shown = Math.min(MARK_STOPS.length, Math.max(0, Math.floor(stops)));
 
   return (
-    <Svg width={size} height={size} viewBox={`0 0 ${CANVAS} ${CANVAS}`} {...NOT_READ}>
-      <G
-        transform={`translate(${CENTRE} ${CENTRE}) scale(${INSET}) translate(-${CENTRE} -${CENTRE})`}
-      >
-        <Circle
-          testID={MARK_TRACK_TEST_ID}
-          cx={CENTRE}
-          cy={CENTRE}
-          r={RADIUS}
-          fill="none"
-          stroke={MARK_TRACK}
-          strokeWidth={STROKE}
-        />
-
-        {MARK_STOPS.slice(0, shown).map((stop) => (
+    // Out of the traversal by the view around it: on the web the drawing is a
+    // DOM <svg>, which would take the native words for that as attributes.
+    <View style={{ width: size, height: size }} {...NOT_READ}>
+      <Svg width={size} height={size} viewBox={`0 0 ${CANVAS} ${CANVAS}`}>
+        <G
+          transform={`translate(${CENTRE} ${CENTRE}) scale(${INSET}) translate(-${CENTRE} -${CENTRE})`}
+        >
           <Circle
-            key={stop.color}
-            testID={MARK_STOP_TEST_ID}
+            testID={MARK_TRACK_TEST_ID}
             cx={CENTRE}
             cy={CENTRE}
             r={RADIUS}
             fill="none"
-            stroke={stop.color}
+            stroke={MARK_TRACK}
             strokeWidth={STROKE}
-            strokeLinecap="round"
-            strokeDasharray={STOP_DASH}
-            strokeDashoffset={stop.dashOffset}
-            transform={START_AT_TOP}
           />
-        ))}
 
-        {tip ? (
-          <>
+          {MARK_STOPS.slice(0, shown).map((stop) => (
             <Circle
-              testID={MARK_TIP_TEST_ID}
+              key={stop.color}
+              testID={MARK_STOP_TEST_ID}
               cx={CENTRE}
               cy={CENTRE}
               r={RADIUS}
               fill="none"
-              stroke={MARK_TIP}
+              stroke={stop.color}
               strokeWidth={STROKE}
-              strokeDasharray={TIP_DASH}
-              strokeDashoffset={TIP_OFFSET}
+              strokeLinecap="round"
+              strokeDasharray={STOP_DASH}
+              strokeDashoffset={stop.dashOffset}
               transform={START_AT_TOP}
             />
-            <Path
-              d={BEVEL}
-              fill={MARK_TIP}
-              transform={`rotate(${BEVEL_ROTATION} ${CENTRE} ${CENTRE})`}
-            />
-          </>
-        ) : null}
+          ))}
 
-        <Circle cx={CENTRE} cy={CENTRE} r={HUB_RADIUS} fill={colors.accent} />
-      </G>
-    </Svg>
+          {tip ? (
+            <>
+              <Circle
+                testID={MARK_TIP_TEST_ID}
+                cx={CENTRE}
+                cy={CENTRE}
+                r={RADIUS}
+                fill="none"
+                stroke={MARK_TIP}
+                strokeWidth={STROKE}
+                strokeDasharray={TIP_DASH}
+                strokeDashoffset={TIP_OFFSET}
+                transform={START_AT_TOP}
+              />
+              <Path
+                d={BEVEL}
+                fill={MARK_TIP}
+                transform={`rotate(${BEVEL_ROTATION} ${CENTRE} ${CENTRE})`}
+              />
+            </>
+          ) : null}
+
+          <Circle cx={CENTRE} cy={CENTRE} r={HUB_RADIUS} fill={colors.accent} />
+        </G>
+      </Svg>
+    </View>
   );
 }

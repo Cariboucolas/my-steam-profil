@@ -1,4 +1,6 @@
 import { render } from "@testing-library/react-native";
+import Svg from "react-native-svg";
+
 import { MARK_STOP_COUNT, MARK_STOPS } from "../../theme/mark";
 import { BrandMark, MARK_STOP_TEST_ID, MARK_TIP_TEST_ID, MARK_TRACK_TEST_ID } from "./BrandMark";
 
@@ -82,5 +84,18 @@ describe("BrandMark", () => {
     // Drawn, and out of the traversal: the same node answers both ways round.
     expect(queryByTestId(MARK_TRACK_TEST_ID, DRAWN)).toBeTruthy();
     expect(queryByTestId(MARK_TRACK_TEST_ID)).toBeNull();
+  });
+
+  /**
+   * On the web the drawing is a DOM `<svg>`, which takes every prop it is
+   * handed as an attribute: the native words for "not read" would land there
+   * and React would object to each. They belong to the view around it.
+   */
+  it("keeps the native accessibility words off the drawing itself", () => {
+    const { UNSAFE_getByType } = render(<BrandMark size={112} stops={0} tip={false} />);
+    const drawing = UNSAFE_getByType(Svg);
+
+    expect(drawing.props).not.toHaveProperty("accessibilityElementsHidden");
+    expect(drawing.props).not.toHaveProperty("importantForAccessibility");
   });
 });
