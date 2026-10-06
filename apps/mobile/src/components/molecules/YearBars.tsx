@@ -2,9 +2,10 @@ import { StyleSheet, Text, View } from "react-native";
 import Svg, { Polyline } from "react-native-svg";
 
 import { colors, fonts } from "../../theme/tokens";
-import type { YearBar } from "../../view-models/years-and-cumulative";
+import type { ScaleLine, YearBar } from "../../view-models/years-and-cumulative";
 
 export const RUNNING_TOTAL_TEST_ID = "running-total";
+export const SCALE_LINE_TEST_ID = "scale-line";
 
 /** The tallest bar, in px; the running total spans the same height. */
 const PLOT_HEIGHT = 140;
@@ -22,10 +23,14 @@ const GAP = 5;
  * beside it, which carry no label of their own past MAX_LABELLED_BARS.
  */
 const SLOT_WIDTH = 44;
+/** How far a guide line's amount sits above the line, so the line does not strike it. */
+const SCALE_LABEL_LIFT = 2;
 
 type Props = {
   readonly bars: readonly YearBar[];
   readonly cumulative: readonly number[] | null;
+  /** Guide lines at round amounts, which scale the bars and not the running total. */
+  readonly scale: readonly ScaleLine[];
   /** The chart in one sentence: its bars are not stops of their own. */
   readonly screenReaderLabel: string;
 };
@@ -41,10 +46,18 @@ const pointsOf = (cumulative: readonly number[]): string =>
     .join(" ");
 
 /** One bar per year, the running total over them, and the years under them. */
-export function YearBars({ bars, cumulative, screenReaderLabel }: Props) {
+export function YearBars({ bars, cumulative, scale, screenReaderLabel }: Props) {
   return (
     <View accessible accessibilityLabel={screenReaderLabel}>
       <View style={styles.plot}>
+        {scale.map((line) => (
+          <View
+            key={line.label}
+            testID={SCALE_LINE_TEST_ID}
+            pointerEvents="none"
+            style={[styles.scaleLine, { bottom: line.share * PLOT_HEIGHT }]}
+          />
+        ))}
         <View style={styles.columns}>
           {bars.map((bar) => (
             <View key={bar.year} style={styles.column}>
@@ -63,6 +76,16 @@ export function YearBars({ bars, cumulative, screenReaderLabel }: Props) {
             </View>
           ))}
         </View>
+        {scale.map((line) => (
+          // Over the bars, so a tall first year does not hide its amount.
+          <Text
+            key={line.label}
+            pointerEvents="none"
+            style={[styles.scaleLabel, { bottom: line.share * PLOT_HEIGHT + SCALE_LABEL_LIFT }]}
+          >
+            {line.label}
+          </Text>
+        ))}
         {cumulative !== null && (
           <View style={styles.line} testID={RUNNING_TOTAL_TEST_ID} pointerEvents="none">
             <Svg
@@ -126,6 +149,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderBottomWidth: 0,
     borderColor: colors.accent,
+  },
+  scaleLine: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.hairline,
+  },
+  scaleLabel: {
+    position: "absolute",
+    left: 0,
+    fontFamily: fonts.mono,
+    fontSize: 8.5,
+    lineHeight: 10,
+    color: colors.textDim,
   },
   line: { position: "absolute", left: 0, right: 0, bottom: 0, height: PLOT_HEIGHT },
   axis: {

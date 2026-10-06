@@ -41,6 +41,7 @@ export function YearsCumulativeCard({ years }: Props) {
             <YearBars
               bars={years.bars}
               cumulative={years.cumulative}
+              scale={years.scale}
               screenReaderLabel={years.screenReaderLabel}
             />
             <View style={styles.legend}>
