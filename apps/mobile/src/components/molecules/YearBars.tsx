@@ -29,6 +29,8 @@ const SLOT_WIDTH = 44;
 /** Wide enough for `2026 · 12 345` in the mono face. */
 const TIP_WIDTH = 92;
 const TIP_HEIGHT = 20;
+/** The tip's second line, the running total, when the chart draws one. */
+const TIP_RUNNING_LINE = 14;
 /** Between a bar's top and the tip over it. */
 const TIP_LIFT = 4;
 /** How far a guide line's amount sits above the line, so the line does not strike it. */
@@ -58,13 +60,15 @@ const barHeightOf = (bar: YearBar): number =>
 
 /**
  * One bar per year, the running total over them, and the years under them.
- * A touch on a bar reveals its year and amount; a second touch hides them.
+ * A touch on a bar reveals its year, its amount and the running total at its
+ * end; a second touch hides them.
  */
 export function YearBars({ bars, cumulative, scale, screenReaderLabel }: Props) {
   const [touched, setTouched] = useState<number | null>(null);
   const [plotWidth, setPlotWidth] = useState(0);
   const touchedIndex = bars.findIndex((bar) => bar.year === touched);
   const touchedBar = bars[touchedIndex];
+  const tipHeight = touchedBar?.running == null ? TIP_HEIGHT : TIP_HEIGHT + TIP_RUNNING_LINE;
 
   const onPlotLayout = (event: LayoutChangeEvent) => setPlotWidth(event.nativeEvent.layout.width);
   const toggle = (year: number) => setTouched((shown) => (shown === year ? null : year));
@@ -145,9 +149,10 @@ export function YearBars({ bars, cumulative, scale, screenReaderLabel }: Props) 
                   gap: GAP,
                   tipWidth: TIP_WIDTH,
                 }),
+                height: tipHeight,
                 bottom: Math.min(
                   barHeightOf(touchedBar) + TIP_LIFT,
-                  PLOT_HEIGHT + FIGURE_ROOM - TIP_HEIGHT,
+                  PLOT_HEIGHT + FIGURE_ROOM - tipHeight,
                 ),
               },
             ]}
@@ -155,6 +160,11 @@ export function YearBars({ bars, cumulative, scale, screenReaderLabel }: Props) 
             <Text style={styles.tipText} numberOfLines={1}>
               {`${touchedBar.year} · ${touchedBar.amount}`}
             </Text>
+            {touchedBar.running !== null && (
+              <Text style={[styles.tipText, styles.tipRunning]} numberOfLines={1}>
+                {touchedBar.running}
+              </Text>
+            )}
           </View>
         )}
       </View>
@@ -205,7 +215,6 @@ const styles = StyleSheet.create({
   tip: {
     position: "absolute",
     width: TIP_WIDTH,
-    height: TIP_HEIGHT,
     justifyContent: "center",
     borderRadius: 4,
     borderWidth: 1,
@@ -219,6 +228,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: colors.text,
   },
+  // The line's own colour, as the card's total is: the same running total.
+  tipRunning: { color: colors.runningTotal },
   scaleLine: {
     position: "absolute",
     left: 0,
