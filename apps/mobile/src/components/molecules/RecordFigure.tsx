@@ -1,17 +1,19 @@
 import { StyleSheet, Text, View } from "react-native";
 
 import { colors, fonts, spacing } from "../../theme/tokens";
-import type { YearRecord } from "../../view-models/years-and-cumulative";
 import { Skeleton } from "../atoms/Skeleton";
 
 export const RECORD_FIGURE_SKELETON_TEST_ID = "record-figure-skeleton";
 
+/** A figure under a chart; a record also says when it was set. */
+type Figure = { readonly value: string; readonly label: string; readonly when?: string };
+
 type Props = {
-  /** Null while the library is still being counted: a record shown early can move. */
-  readonly record: YearRecord | null;
+  /** Null while the library is still being counted: a figure shown early can move. */
+  readonly record: Figure | null;
 };
 
-/** One record under a chart: the figure, then what it is and when, on two lines. */
+/** One figure under a chart: the value, then what it is — and, for a record, when, on a second line. */
 export function RecordFigure({ record }: Props) {
   if (record === null) {
     return (
@@ -22,14 +24,13 @@ export function RecordFigure({ record }: Props) {
     );
   }
 
+  const said = record.when === undefined ? record.label : `${record.label}, ${record.when}`;
   return (
-    <View
-      style={styles.figure}
-      accessible
-      accessibilityLabel={`${record.label}, ${record.when}: ${record.value}`}
-    >
+    <View style={styles.figure} accessible accessibilityLabel={`${said}: ${record.value}`}>
       <Text style={styles.value}>{record.value}</Text>
-      <Text style={styles.caption}>{`${record.label}\n${record.when}`}</Text>
+      <Text style={styles.caption}>
+        {record.when === undefined ? record.label : `${record.label}\n${record.when}`}
+      </Text>
     </View>
   );
 }
