@@ -14,3 +14,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Known: Story = {};
 export const StillCounting: Story = { args: { record: null } };
+/** A share, which has no date to give: one line under the figure. */
+export const Share: Story = {
+  args: { record: { value: "38%", label: "between 6 pm and midnight" } },
+};
