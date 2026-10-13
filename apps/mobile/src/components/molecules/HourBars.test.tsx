@@ -9,7 +9,7 @@ const HOURS: HourBar[] = Array.from({ length: 24 }, (_, hour) => ({
   share: hour === 21 ? 1 : hour === 9 ? 0.5 : 0,
   busiest: hour === 21,
   figure: hour === 21 ? "642" : null,
-  tick: hour % 6 === 0 ? `${hour} h` : null,
+  tick: hour % 2 === 0 ? `${hour}h` : null,
 }));
 
 describe("HourBars", () => {
@@ -22,7 +22,7 @@ describe("HourBars", () => {
     expect(StyleSheet.flatten(bars[9]?.props.style).backgroundColor).not.toBe(colors.accent);
     expect(screen.getByText("642")).toBeTruthy();
     expect(screen.getByText("500")).toBeTruthy();
-    expect(["0 h", "6 h", "12 h", "18 h"].map((tick) => screen.getByText(tick))).toHaveLength(4);
+    expect(["0h", "12h", "22h"].map((tick) => screen.getByText(tick))).toHaveLength(3);
   });
 
   it("keeps an empty hour visible as a sliver", () => {
