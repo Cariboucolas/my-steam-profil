@@ -13,9 +13,16 @@ const PLOT_HEIGHT = 64;
 const FIGURE_ROOM = 14;
 /** An hour holding nothing still shows where it is. */
 const MIN_BAR = 1;
-/** Wider than a column: the total and the ticks overflow it, centred or from its left. */
+/**
+ * Wider than a column, which is about ten pixels on a phone: the total and the
+ * ticks are placed over the plot rather than inside a column, or they would be
+ * cut to its width.
+ */
 const FIGURE_WIDTH = 40;
 const TICK_WIDTH = 36;
+const TICK_LINE = 11;
+/** Space between the total and the top of its bar. */
+const FIGURE_LIFT = 2;
 /** Where the columns start: under the grid's, after its letters. */
 const COLUMNS_LEFT = WEEK_GUTTER + WEEK_CELL_GAP;
 
@@ -27,6 +34,11 @@ type Props = { readonly hours: readonly HourBar[]; readonly scale: readonly Scal
  * at half strength, measured against the guide lines.
  */
 export function HourBars({ hours, scale }: Props) {
+  // Where an hour starts across the plot, as a share of its width; the gaps
+  // between columns shift this by under two pixels, which the eye cannot see.
+  const startOf = (hour: number) => `${(hour / hours.length) * 100}%` as const;
+  const middleOf = (hour: number) => `${((hour + 0.5) / hours.length) * 100}%` as const;
+
   return (
     <View>
       <View style={styles.plot}>
@@ -42,11 +54,6 @@ export function HourBars({ hours, scale }: Props) {
           {hours.map((hour, index) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: a day's hours never reorder: the index is the hour.
             <View key={index} style={styles.column}>
-              {hour.figure !== null && (
-                <Text style={styles.figure} numberOfLines={1}>
-                  {hour.figure}
-                </Text>
-              )}
               <View
                 testID={HOUR_BAR_TEST_ID}
                 style={[
@@ -58,18 +65,37 @@ export function HourBars({ hours, scale }: Props) {
             </View>
           ))}
         </View>
+        <View style={styles.overColumns}>
+          {hours.map((hour, index) =>
+            hour.figure === null ? null : (
+              <Text
+                // biome-ignore lint/suspicious/noArrayIndexKey: a day's hours never reorder: the index is the hour.
+                key={index}
+                style={[
+                  styles.figure,
+                  { left: middleOf(index), bottom: hour.share * PLOT_HEIGHT + FIGURE_LIFT },
+                ]}
+                numberOfLines={1}
+              >
+                {hour.figure}
+              </Text>
+            ),
+          )}
+        </View>
       </View>
       <View style={styles.axis}>
-        {hours.map((hour, index) => (
-          // biome-ignore lint/suspicious/noArrayIndexKey: a day's hours never reorder: the index is the hour.
-          <View key={index} style={styles.tickSlot}>
-            {hour.tick !== null && (
-              <Text style={styles.tick} numberOfLines={1}>
-                {hour.tick}
-              </Text>
-            )}
-          </View>
-        ))}
+        {hours.map((hour, index) =>
+          hour.tick === null ? null : (
+            <Text
+              // biome-ignore lint/suspicious/noArrayIndexKey: a day's hours never reorder: the index is the hour.
+              key={index}
+              style={[styles.tick, { left: startOf(index) }]}
+              numberOfLines={1}
+            >
+              {hour.tick}
+            </Text>
+          ),
+        )}
       </View>
     </View>
   );
@@ -87,8 +113,18 @@ const styles = StyleSheet.create({
     gap: WEEK_CELL_GAP,
   },
   column: { flex: 1, minWidth: 0, alignItems: "center", justifyContent: "flex-end", gap: 2 },
+  overColumns: {
+    pointerEvents: "none",
+    position: "absolute",
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: COLUMNS_LEFT,
+  },
   figure: {
+    position: "absolute",
     width: FIGURE_WIDTH,
+    marginLeft: -FIGURE_WIDTH / 2,
     textAlign: "center",
     fontFamily: fonts.mono,
     fontSize: 9.5,
@@ -119,7 +155,14 @@ const styles = StyleSheet.create({
     lineHeight: 10,
     color: colors.textDim,
   },
-  axis: { flexDirection: "row", gap: WEEK_CELL_GAP, paddingLeft: COLUMNS_LEFT, marginTop: 3 },
-  tickSlot: { flex: 1, minWidth: 0 },
-  tick: { width: TICK_WIDTH, fontFamily: fonts.mono, fontSize: 8.5, color: colors.textDim },
+  axis: { height: TICK_LINE, marginLeft: COLUMNS_LEFT, marginTop: 3 },
+  tick: {
+    position: "absolute",
+    top: 0,
+    width: TICK_WIDTH,
+    fontFamily: fonts.mono,
+    fontSize: 8.5,
+    lineHeight: TICK_LINE,
+    color: colors.textDim,
+  },
 });
