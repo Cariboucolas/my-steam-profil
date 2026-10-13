@@ -8,6 +8,7 @@ import { deviceAsksForLessMotion } from "../accessibility/reduce-motion.test-sup
 import type { ApiClient } from "../api-client/api-client";
 import { createFixtureApiClient } from "../api-client/fixture-api-client";
 import { RECORD_FIGURE_SKELETON_TEST_ID } from "../components/molecules/RecordFigure";
+import { WEEK_CARD_TEST_ID } from "../components/organisms/UnlockWeekCard";
 import { YEARS_CARD_TEST_ID } from "../components/organisms/YearsCumulativeCard";
 import { libraryServedOn } from "../fixtures/api";
 import { LIBRARY_GAMES } from "../fixtures/library";
@@ -108,6 +109,16 @@ describe("stats screen", () => {
     expect(await screen.findByTestId(YEARS_CARD_TEST_ID)).toBeTruthy();
     await recordsShown();
     expect(screen.getByLabelText(/^best month/)).toBeTruthy();
+  });
+
+  it("draws the typical week under the years, from the same tallies", async () => {
+    renderAt({ [STEAM_ID]: served() }, "/stats");
+    await recordsShown();
+
+    expect(screen.getByTestId(WEEK_CARD_TEST_ID)).toBeTruthy();
+    // The years' sentence is still the only one that speaks of dated unlocks.
+    expect(chartSentence()).toMatch(/dated unlock/);
+    expect(screen.getByLabelText(/^Busiest slot: /)).toBeTruthy();
   });
 
   it("offers a retry when the profile cannot be loaded", async () => {

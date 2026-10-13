@@ -7,13 +7,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useApiClient } from "../../api-client/use-api-client";
 import { useLibraryLoad } from "../../api-client/use-library-load";
 import { useLibraryTallies } from "../../api-client/use-library-tallies";
+import { useLocale } from "../../settings/locale-store";
 import { useChosenSteamId } from "../../settings/steam-id-store";
 import { colors, spacing } from "../../theme/tokens";
 import { messageFor } from "../../view-models/api-errors";
 import type { CountedUnlocks } from "../../view-models/unlock-days";
+import { useUnlockWeek } from "../../view-models/use-unlock-week";
 import { useYearsAndCumulative } from "../../view-models/use-years-and-cumulative";
 import { BackButton } from "../atoms/BackButton";
 import { ErrorState } from "../organisms/ErrorState";
+import { UnlockWeekCard } from "../organisms/UnlockWeekCard";
 import { YearsCumulativeCard } from "../organisms/YearsCumulativeCard";
 import { StatsTemplate } from "../templates/StatsTemplate";
 
@@ -33,6 +36,7 @@ type Props = {
  */
 export function StatsPage({ onBack, onChangeProfile, today: givenToday }: Props) {
   const { t } = useTranslation();
+  const { locale } = useLocale();
   const insets = useSafeAreaInsets();
   const steamId = useChosenSteamId();
   const apiClient = useApiClient();
@@ -43,6 +47,7 @@ export function StatsPage({ onBack, onChangeProfile, today: givenToday }: Props)
   const { tallies, counted, loaded } = useLibraryTallies(steamId, apiClient, games);
   const view = useMemo<CountedUnlocks>(() => ({ games, tallies }), [games, tallies]);
   const years = useYearsAndCumulative(view, counted, today);
+  const week = useUnlockWeek(view, counted, locale);
 
   if (library.status === "loading") {
     return (
@@ -66,6 +71,7 @@ export function StatsPage({ onBack, onChangeProfile, today: givenToday }: Props)
   return (
     <StatsTemplate title={t("stats.title")} onBack={onBack}>
       <YearsCumulativeCard years={years} loaded={loaded} />
+      <UnlockWeekCard week={week} loaded={loaded} />
     </StatsTemplate>
   );
 }
