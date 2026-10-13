@@ -1,10 +1,16 @@
 import type { ComponentType } from "react";
 
 import { type Translate, translatorFor } from "../i18n/i18n";
-import { DEFAULT_LOCALE, isLocale } from "../i18n/locale";
+import { DEFAULT_LOCALE, isLocale, type Locale } from "../i18n/locale";
 
 /** What a story's own args are written in: the controls panel stays English. */
 export const english: Translate = translatorFor(DEFAULT_LOCALE);
+
+/** The Locale the gallery's toolbar is set to, the default where it names none. */
+export const localeForGlobals = (globals: Readonly<Record<string, unknown>>): Locale => {
+  const chosen = globals["locale"];
+  return isLocale(chosen) ? chosen : DEFAULT_LOCALE;
+};
 
 /**
  * The `t` for the language the gallery's toolbar is set to. For a story whose
@@ -12,10 +18,8 @@ export const english: Translate = translatorFor(DEFAULT_LOCALE);
  * so they cannot read the locale from a provider and are handed it instead
  * (ADR-0023).
  */
-export const translatorForGlobals = (globals: Readonly<Record<string, unknown>>): Translate => {
-  const chosen = globals["locale"];
-  return translatorFor(isLocale(chosen) ? chosen : DEFAULT_LOCALE);
-};
+export const translatorForGlobals = (globals: Readonly<Record<string, unknown>>): Translate =>
+  translatorFor(localeForGlobals(globals));
 
 /**
  * A story's `render` for a component whose args a view-model wrote: they are
@@ -25,8 +29,8 @@ export const translatorForGlobals = (globals: Readonly<Record<string, unknown>>)
 export const inTheToolbarsLanguage =
   <Props extends object>(
     Component: ComponentType<Props>,
-    build: (t: Translate) => Partial<Props>,
+    build: (t: Translate, locale: Locale) => Partial<Props>,
   ) =>
   (args: Props, { globals }: { readonly globals: Readonly<Record<string, unknown>> }) => (
-    <Component {...args} {...build(translatorForGlobals(globals))} />
+    <Component {...args} {...build(translatorForGlobals(globals), localeForGlobals(globals))} />
   );
