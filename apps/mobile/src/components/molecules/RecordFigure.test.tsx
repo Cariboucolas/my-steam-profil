@@ -15,4 +15,11 @@ describe("RecordFigure", () => {
     render(<RecordFigure record={null} />);
     expect(screen.getByTestId(RECORD_FIGURE_SKELETON_TEST_ID)).toBeTruthy();
   });
+
+  it("writes a share on one line when it has no date to give", () => {
+    render(<RecordFigure record={{ value: "38%", label: "between 6 pm and midnight" }} />);
+
+    expect(screen.getByText("between 6 pm and midnight")).toBeTruthy();
+    expect(screen.getByLabelText("between 6 pm and midnight: 38%")).toBeTruthy();
+  });
 });
