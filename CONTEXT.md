@@ -61,11 +61,11 @@ One calendar day, in the player's own time zone, and how many achievements they 
 _Avoid_: Bucket, Cell, Entry
 
 **UnlockTone**:
-How dark an UnlockDay is drawn: the empty tile, or one of four strengths of the one accent. A tone says where that day sits among the player's own days, never how much it held — the count is what the UnlockMonth states outright. A day holding nothing takes the empty tile and has no tone from the scale at all.
+How dark an UnlockDay or an UnlockSlot is drawn: the empty tile, or one of four strengths of the one accent. A tone says where that day or slot sits among the others its chart reads, never how much it held — the count is stated elsewhere, by the UnlockMonth or the legend. One holding nothing takes the empty tile and has no tone from the scale at all.
 _Avoid_: Level, Intensity, Heat, Shade
 
 **UnlockToneBand**:
-The counts one UnlockTone stands for, and how the legend writes them — `1-2`, `6-11`, `12+`. The five bands are the quartiles of the player's **active** days — those holding at least one unlock — over the 365 days ending today, a window that slides by a day a day and deliberately does not match the year the UnlockCalendar draws, so that no tone repaints on 1 January (ADR-0007). The bands are printed rather than suggested: a scale that does not match the picture has to be read, never inferred, so the legend states numbers and nowhere says "less" or "more".
+The counts one UnlockTone stands for, and how the legend writes them — `1-2`, `6-11`, `12+`. The five bands are quartiles of what the chart reads that holds at least one unlock, and each chart names that population. The UnlockWeek reads its non-empty UnlockSlots, all history long. The UnlockCalendar reads the player's **active** days over the 365 days ending today, a window that slides by a day a day and deliberately does not match the year the UnlockCalendar draws, so that no tone repaints on 1 January (ADR-0007). The bands are printed rather than suggested: a scale that does not match the picture has to be read, never inferred, so the legend states numbers and nowhere says "less" or "more".
 _Avoid_: Threshold on its own (the bands are the player's own, not fixed), Bucket, Range, Ramp
 
 **UnlockMonth**:
@@ -75,6 +75,14 @@ _Avoid_: Row, Bucket, Period
 **UnlockCalendar**:
 Every UnlockMonth of one year — how a player's unlocking is spread over that year, across the whole library rather than one Game. Unlike a Timeline it does not say **which** achievement was earned, only how many and when. It shows the year in progress; earlier years belong to a statistics view, not to this one.
 _Avoid_: Timeline (that is one Game's, and it names its achievements), Heatmap and Activity (what the screen calls it, not what it is), Graph
+
+**UnlockSlot**:
+One hour of one day of the week — Saturday 9 pm — and how many achievements the player unlocked in that hour across their whole history, every date folded together. The hour is read in the device's time zone today, as an UnlockDay's is, so an unlock earned at 9 pm in Paris falls on 3 pm once the player is in New York. An achievement Steam will not date falls in no UnlockSlot. The **busiest slot** is the UnlockSlot holding most; the **busiest hour** is the hour whose seven slots hold most together, and the two need not coincide.
+_Avoid_: Cell, Bucket, Hour on its own (an hour of the day is seven slots)
+
+**UnlockWeek**:
+All 168 UnlockSlots — the player's typical week, which hours of which days their unlocks fall on. It says nothing of when in the calendar: that is the UnlockCalendar's.
+_Avoid_: Punchcard and Heatmap (what the screen calls it, not what it is), Grid, Schedule
 
 **LastYearsTotal**:
 How many achievements the player unlocked in the whole of the previous calendar year. Set beside the year in progress it is a target, not a measurement — a finished year against a running one, deliberately. Written "all of 2025" wherever it is shown, because the two spans are unequal on purpose and must not be read like for like.
@@ -89,7 +97,7 @@ What the running JavaScript declares about its own origin: the short commit it w
 _Avoid_: Version (the binary's release number, already spoken for), Build (the native artefact), Commit (a Revision may be `dev`, which no commit is), BuildId
 
 **Locale**:
-The language the app writes in, as a BCP 47 tag: `en` or `fr`. It is a setting the reader makes and the app persists, `en` until they choose, and it is the app's own, never read from the device (ADR-0010, ADR-0023). It decides the wording, the plural rules, the decimal mark, the grouping and the date format together, so no one of them is ever chosen apart from the rest. ADR-0010 says "language" for what is named Locale here.
+The language the app writes in, as a BCP 47 tag: `en` or `fr`. It is a setting the reader makes and the app persists, `en` until they choose, and it is the app's own, never read from the device (ADR-0010, ADR-0023). It decides the wording, the plural rules, the decimal mark, the grouping, the date format and the day a week starts on together, so no one of them is ever chosen apart from the rest. ADR-0010 says "language" for what is named Locale here.
 _Avoid_: Language (ambiguous with a game's own language, which Steam sends), Region, Culture, Device locale (the thing the app deliberately does not read)
 
 **Message key**:
