@@ -8,3 +8,9 @@ export const DEFAULT_LOCALE: Locale = "en";
 
 export const isLocale = (value: unknown): value is Locale =>
   LOCALES.some((locale) => locale === value);
+
+/**
+ * The day a week starts on, as `Date.getDay` numbers it: Sunday is 0. Decided
+ * by the Locale with the rest of its conventions, never by the device.
+ */
+export const FIRST_DAY_OF_WEEK: Readonly<Record<Locale, number>> = { en: 0, fr: 1 };
