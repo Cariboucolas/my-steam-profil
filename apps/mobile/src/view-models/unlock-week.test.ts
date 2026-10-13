@@ -75,7 +75,7 @@ describe("buildUnlockWeek", () => {
 
       expect(week.rows.map((row) => row.label)).toEqual(["S", "M", "T", "W", "T", "F", "S"]);
       expect(litCells(week)).toEqual([[6, 21]]);
-      expect(week.busiestSlot).toBe("Sat 9 pm");
+      expect(week.busiestSlot).toBe("Sat 9pm");
     });
 
     it("starts the rows on Monday in French, so Saturday is the sixth", () => {
@@ -84,7 +84,7 @@ describe("buildUnlockWeek", () => {
       expect(week.rows.map((row) => row.label)).toEqual(["L", "M", "M", "J", "V", "S", "D"]);
       expect(week.rows.map((row) => row.day)).toEqual([1, 2, 3, 4, 5, 6, 0]);
       expect(litCells(week)).toEqual([[5, 21]]);
-      expect(week.busiestSlot).toBe("sam. 21 h");
+      expect(week.busiestSlot).toBe("sam. 21h");
     });
 
     it("counts no undated unlock and no game gone from the library", () => {
@@ -118,7 +118,7 @@ describe("buildUnlockWeek", () => {
         ]),
       );
 
-      expect(week.busiestSlot).toBe("Sat 9 pm");
+      expect(week.busiestSlot).toBe("Sat 9pm");
       expect(week.hours.findIndex((hour) => hour.busiest)).toBe(20);
       expect(week.hours[20]?.figure).toBe("4");
       expect(week.hours.filter((hour) => hour.figure !== null)).toHaveLength(1);
@@ -132,7 +132,7 @@ describe("buildUnlockWeek", () => {
         ]),
       );
 
-      expect(week.busiestSlot).toBe("Mon 10 am");
+      expect(week.busiestSlot).toBe("Mon 10am");
       expect(week.hours.findIndex((hour) => hour.busiest)).toBe(10);
     });
 
@@ -144,17 +144,30 @@ describe("buildUnlockWeek", () => {
       expect(week.hours[0]?.share).toBe(0);
     });
 
-    it("ticks the axis every six hours, in the Locale's hours", () => {
+    it("ticks the axis every other hour, in the Locale's hours", () => {
       expect(
         countedIn(viewOf([SATURDAY_9PM]))
           .hours.map((hour) => hour.tick)
           .filter(Boolean),
-      ).toEqual(["12 am", "6 am", "12 pm", "6 pm"]);
+      ).toEqual([
+        "12am",
+        "2am",
+        "4am",
+        "6am",
+        "8am",
+        "10am",
+        "12pm",
+        "2pm",
+        "4pm",
+        "6pm",
+        "8pm",
+        "10pm",
+      ]);
       expect(
         countedIn(viewOf([SATURDAY_9PM]), french, "fr")
           .hours.map((hour) => hour.tick)
           .filter(Boolean),
-      ).toEqual(["0 h", "6 h", "12 h", "18 h"]);
+      ).toEqual(["0h", "2h", "4h", "6h", "8h", "10h", "12h", "14h", "16h", "18h", "20h", "22h"]);
     });
 
     it("rules the guide lines on round steps of the busiest hour's total", () => {
@@ -188,7 +201,7 @@ describe("buildUnlockWeek", () => {
     it("says all of it to a screen reader in one sentence", () => {
       expect(countedIn(FIVE).screenReaderLabel).toBe(
         // Every slot holds one: the latest, Thursday 7 pm, breaks the tie for slot and hour alike.
-        "Busiest slot: Thursday 7 pm. Busiest hour: 7 pm, 1 unlock. 60% in the evening, 40% at the weekend, 20% at night.",
+        "Busiest slot: Thursday 7pm. Busiest hour: 7pm, 1 unlock. 60% in the evening, 40% at the weekend, 20% at night.",
       );
     });
   });
@@ -215,7 +228,7 @@ describe("buildUnlockWeek", () => {
       expect(litCells(week)).toEqual([[6, 21]]);
       expect(week.busiestSlot).toBeNull();
       expect(week.shares).toBeNull();
-      expect(week.screenReaderLabel).toBe("Busiest hour so far: 9 pm, 1 unlock.");
+      expect(week.screenReaderLabel).toBe("Busiest hour so far: 9pm, 1 unlock.");
     });
 
     it("draws against the scale it is handed, the very one", () => {

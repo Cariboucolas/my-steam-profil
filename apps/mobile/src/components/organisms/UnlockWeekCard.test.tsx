@@ -37,10 +37,10 @@ describe("UnlockWeekCard", () => {
     render(<UnlockWeekCard week={weekOf(true)} loaded={null} />);
 
     expect(screen.getByTestId(WEEK_CARD_TEST_ID)).toBeTruthy();
-    expect(screen.getByText("Sat 9 pm")).toBeTruthy();
+    expect(screen.getByText("Sat 9pm")).toBeTruthy();
     expect(screen.getByText("busiest slot")).toBeTruthy();
     expect(screen.getAllByTestId(HOUR_BAR_TEST_ID)).toHaveLength(24);
-    expect(screen.getByLabelText(/^Busiest slot: Saturday 9 pm/)).toBeTruthy();
+    expect(screen.getByLabelText(/^Busiest slot: Saturday 9pm/)).toBeTruthy();
     expect(screen.getByLabelText("between 6 pm and midnight: 100%")).toBeTruthy();
     expect(screen.queryAllByTestId(RECORD_FIGURE_SKELETON_TEST_ID)).toHaveLength(0);
   });
@@ -49,7 +49,7 @@ describe("UnlockWeekCard", () => {
     render(<UnlockWeekCard week={weekOf(false)} loaded={0.4} />);
 
     expect(screen.getAllByTestId(HOUR_BAR_TEST_ID)).toHaveLength(24);
-    expect(screen.queryByText("Sat 9 pm")).toBeNull();
+    expect(screen.queryByText("Sat 9pm")).toBeNull();
     expect(screen.getAllByTestId(RECORD_FIGURE_SKELETON_TEST_ID)).toHaveLength(3);
   });
 

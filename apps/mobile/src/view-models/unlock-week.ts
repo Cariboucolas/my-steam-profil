@@ -21,8 +21,8 @@ const SATURDAY = 6;
 /** The evening runs from 6 pm to midnight, the night from midnight to 6 am. */
 const EVENING_FROM = 18;
 const NIGHT_UNTIL = 6;
-/** The axis names every sixth hour: midnight, 6 am, noon, 6 pm. */
-const TICK_EVERY = 6;
+/** The axis names every other hour, from midnight. */
+const TICK_EVERY = 2;
 const PERCENT = 100;
 
 /** One day of the week, as the grid draws it: its letter, and its 24 hours' tones. */
@@ -40,7 +40,7 @@ export type HourBar = {
   readonly busiest: boolean;
   /** The total, written over the busiest hour only. */
   readonly figure: string | null;
-  /** The hour's name, on every sixth hour of the axis. */
+  /** The hour's name, on every other hour of the axis. */
   readonly tick: string | null;
 };
 
@@ -62,7 +62,7 @@ export type UnlockWeek =
       readonly legend: readonly UnlockToneBand[];
       /** What the tones were read against: what the hook holds while counting. */
       readonly toneScale: UnlockToneScale;
-      /** "Sat 9 pm"; null until counted, since a record shown early can move. */
+      /** "Sat 9pm"; null until counted, since a record shown early can move. */
       readonly busiestSlot: string | null;
       /** Evening, weekend, night; null until counted. */
       readonly shares: readonly ShareFigure[] | null;
