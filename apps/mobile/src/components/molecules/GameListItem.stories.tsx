@@ -50,4 +50,8 @@ export const EveryAchievementUnlocked: Story = storyOf(countedLibrary, ELDEN_RIN
 const waiting = { ...landingLibrary, pending: new Set([STARDEW_VALLEY]) };
 export const TallyPending: Story = storyOf(waiting, STARDEW_VALLEY);
 
+/** A Recount asks again a tally the row already shows: the figure stays, pulsing (#164). */
+const recounting = { ...countedLibrary, pending: new Set([HADES]) };
+export const Recounting: Story = storyOf(recounting, HADES);
+
 export const PlaytimeWithheld: Story = storyOf(playtimeWithheldLibrary, HADES);

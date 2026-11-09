@@ -1,9 +1,10 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Pressable, StyleSheet, Text, View } from "react-native";
 import { colors, fonts, spacing } from "../../theme/tokens";
 import type { GameRow } from "../../view-models/library";
 import { GameCover } from "../atoms/GameCover";
 import { ProgressBar } from "../atoms/ProgressBar";
 import { Skeleton } from "../atoms/Skeleton";
+import { usePulse } from "../atoms/use-pulse";
 
 const COVER_WIDTH = 76;
 const COVER_HEIGHT = 36;
@@ -38,17 +39,29 @@ export function GameListItem({ row, onPress }: Props) {
         <View style={styles.rate}>
           <Skeleton width={RATE_SKELETON_WIDTH} height={RATE_SKELETON_HEIGHT} />
         </View>
+      ) : row.recounting ? (
+        // Asked again by a Recount: the figure it had stays, pulsing, so the
+        // row never goes blank while it waits (#164).
+        <RecountingRate label={row.rateLabel} known={known} />
       ) : (
-        <Text
-          style={{
-            ...styles.rate,
-            color: known ? colors.text : colors.textFaint,
-          }}
-        >
+        <Text style={{ ...styles.rate, color: known ? colors.text : colors.textFaint }}>
           {row.rateLabel}
         </Text>
       )}
     </Pressable>
+  );
+}
+
+function RecountingRate({ label, known }: { readonly label: string; readonly known: boolean }) {
+  const opacity = usePulse();
+
+  return (
+    <Animated.Text
+      accessibilityState={{ busy: true }}
+      style={{ ...styles.rate, color: known ? colors.text : colors.textFaint, opacity }}
+    >
+      {label}
+    </Animated.Text>
   );
 }
 

@@ -379,6 +379,23 @@ describe("buildLibraryRows, while tallies are still arriving", () => {
     expect(rows.find((r) => r.appId === 2066020)?.pending).toBe(true);
   });
 
+  /**
+   * A Recount asks again a tally the row already shows (#164). The figure
+   * stays, pulsing, rather than giving way to a skeleton: nothing goes blank.
+   */
+  it("keeps the figure of a game whose tally is asked again, marked as recounting", () => {
+    const rows = buildLibraryRows(loading(TALLIES, [2066020]), english);
+    const row = rows.find((r) => r.appId === 2066020);
+    expect(row?.recounting).toBe(true);
+    expect(row?.pending).toBe(false);
+    expect(row?.percentage).not.toBeNull();
+  });
+
+  it("does not mark as recounting a game waiting for its first tally", () => {
+    const rows = buildLibraryRows(loading({}, [2066020]), english);
+    expect(rows.find((r) => r.appId === 2066020)?.recounting).toBe(false);
+  });
+
   it("does not mark a game whose tally has landed", () => {
     const rows = buildLibraryRows(loading(TALLIES, [8930]), english);
     expect(rows.find((r) => r.appId === 2066020)?.pending).toBe(false);

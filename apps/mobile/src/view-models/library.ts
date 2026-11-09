@@ -56,6 +56,11 @@ export type GameRow = {
    * the same, or waiting reads as an empty result.
    */
   readonly pending: boolean;
+  /**
+   * A tally this row already shows is being asked again, by a Recount (#164).
+   * The row keeps its figure and pulses it: nothing it showed goes blank.
+   */
+  readonly recounting: boolean;
 };
 
 /** Everything the list needs to lay itself out, including what it is still waiting for. */
@@ -432,6 +437,7 @@ export const buildLibraryRows = (view: LibraryView, t: Translate): readonly Game
       rateLabel: percentage === null ? "—" : `${percentage}%`,
       meta: metaFor(game, tally, t),
       pending: pending.has(game.appId) && tally === undefined,
+      recounting: pending.has(game.appId) && tally !== undefined,
     };
   });
 };
