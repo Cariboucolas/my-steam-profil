@@ -52,6 +52,14 @@ _Avoid_: Progress, Stats, Summary
 What the app asks for per Game while it is counting a whole library: a GameCompletion, and the Unlocks it was counted from. Two named parts rather than one widened shape — a GameCompletion **is** the tally itself, and a tally carrying three hundred unlocks is no longer one (ADR-0006). It carried bare instants until ADR-0009 gave each one its name, without which a player's unlocks cannot be crossed with what Steam publishes about them.
 _Avoid_: widening GameCompletion, Progress, History, Unlocks as a name for the whole (it names one of the two parts, never the tally)
 
+**Library**:
+The Games a Profile owns, each with its GameTally once it has been counted. A Game whose tally has not come back is still in the Library, with nothing known about its Achievements — not with none.
+_Avoid_: Collection, Games list, Catalogue
+
+**Recount**:
+A player asking for their Library to be counted again: the list of Games, so a Game just bought appears, and every GameTally, so one that failed is asked once more. Only the player starts one, never a timer. It leaves the Profile, Rarity and Achievement names as they are, and promises no fresher figures than Steam's last answer kept for a few minutes.
+_Avoid_: Refresh, Reload, Sync
+
 **GameProgress**:
 Everything there is to say about one player in one Game: its GameCompletion, its achievements with their UnlockState, and their Timeline.
 _Avoid_: GameAchievements, Game stats, Game detail
