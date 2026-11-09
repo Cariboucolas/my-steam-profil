@@ -44,22 +44,23 @@ export function GameListItem({ row, onPress }: Props) {
         // row never goes blank while it waits (#164).
         <RecountingRate label={row.rateLabel} known={known} />
       ) : (
-        <Text style={{ ...styles.rate, color: known ? colors.text : colors.textFaint }}>
-          {row.rateLabel}
-        </Text>
+        <Text style={rateStyle(known)}>{row.rateLabel}</Text>
       )}
     </Pressable>
   );
 }
 
+/** The rate, faint where there is no completion to show. */
+const rateStyle = (known: boolean) => ({
+  ...styles.rate,
+  color: known ? colors.text : colors.textFaint,
+});
+
 function RecountingRate({ label, known }: { readonly label: string; readonly known: boolean }) {
   const opacity = usePulse();
 
   return (
-    <Animated.Text
-      accessibilityState={{ busy: true }}
-      style={{ ...styles.rate, color: known ? colors.text : colors.textFaint, opacity }}
-    >
+    <Animated.Text accessibilityState={{ busy: true }} style={{ ...rateStyle(known), opacity }}>
       {label}
     </Animated.Text>
   );
