@@ -19,6 +19,20 @@ export const deviceAsksForLessMotion = (): void => deviceAnswers(true);
 export const deviceIsFineWithMotion = (): void => deviceAnswers(false);
 
 /**
+ * The device will ask for less motion, but only once the returned function
+ * delivers the answer: what a component does before then can be looked at.
+ */
+export const deviceAsksForLessMotionLater = (): (() => Promise<void>) => {
+  let answer: (enabled: boolean) => void = () => undefined;
+  jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockReturnValue(
+    new Promise((resolve) => {
+      answer = resolve;
+    }),
+  );
+  return () => act(async () => answer(true));
+};
+
+/**
  * Waits for that answer to land. The device can only be asked asynchronously,
  * so a test that ends before the answer arrives is a test whose component
  * updates after it, and it never sees the setting it asked for.

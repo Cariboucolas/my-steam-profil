@@ -5,6 +5,7 @@ import { Text } from "react-native";
 import RootLayout from "../../app/_layout";
 import {
   deviceAsksForLessMotion,
+  deviceAsksForLessMotionLater,
   deviceIsFineWithMotion,
 } from "../accessibility/reduce-motion.test-support";
 import { SPLASH_WORDMARK } from "../components/organisms/SplashStage";
@@ -64,14 +65,14 @@ describe("root layout", () => {
    * early would show the wrong one for a frame.
    */
   it("draws nothing of the app until the fonts have arrived", async () => {
-    renderApp(false);
+    await renderApp(false);
 
     await waitFor(() => expect(screen.queryByText("library screen")).toBeNull());
     expect(SplashScreen.hideAsync).not.toHaveBeenCalled();
   });
 
   it("shows the app and lets the splash go once they have", async () => {
-    renderApp(true);
+    await renderApp(true);
 
     await waitFor(() => expect(screen.getByText("library screen")).toBeTruthy());
     expect(SplashScreen.hideAsync).toHaveBeenCalled();
@@ -84,7 +85,10 @@ describe("root layout", () => {
    * than merely quick.
    */
   it("carries the mark on from where the native splash left it", async () => {
-    renderApp(true);
+    // Asked for less motion, the stage gives way the moment the device says
+    // so; held unanswered, it stays up to be seen.
+    deviceAsksForLessMotionLater();
+    await renderApp(true);
 
     await waitFor(() => expect(screen.getByText(SPLASH_WORDMARK)).toBeTruthy());
   });
@@ -102,11 +106,11 @@ describe("root layout", () => {
     };
 
     const routes = { _layout: RootLayout, index: Asking, other: Asking };
-    renderRouter(routes, { initialUrl: "/" });
+    await renderRouter(routes, { initialUrl: "/" });
     await waitFor(() => expect(screen.getByText("asking screen")).toBeTruthy());
     const [first] = caches;
 
-    renderRouter(routes, { initialUrl: "/other" });
+    await renderRouter(routes, { initialUrl: "/other" });
     await waitFor(() => expect(screen.getAllByText("asking screen")).toBeTruthy());
 
     expect(first).toBeDefined();
@@ -129,7 +133,7 @@ describe("root layout", () => {
      * is overlapping with, which is the point of holding at all.
      */
     it("keeps the app out of earshot while it covers it", async () => {
-      renderApp(true);
+      await renderApp(true);
       await act(async () => {});
 
       expect(screen.getByText(SPLASH_WORDMARK)).toBeTruthy();
@@ -138,10 +142,10 @@ describe("root layout", () => {
     });
 
     it("hands the app over once it has run its course", async () => {
-      renderApp(true);
+      await renderApp(true);
       await act(async () => {});
 
-      act(() => {
+      await act(() => {
         jest.advanceTimersByTime(HOLD_MS * 2);
       });
 

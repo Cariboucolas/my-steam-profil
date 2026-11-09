@@ -198,19 +198,19 @@ describe("game screen", () => {
   });
 
   it("sends a device that remembers no profile to setup", async () => {
-    renderAt({}, `/game/${SOULSTONE}`, undefined);
+    await renderAt({}, `/game/${SOULSTONE}`, undefined);
 
     await waitFor(() => expect(screen.getByText("setup screen")).toBeTruthy());
   });
 
   it("shows no game while it is still asking for one", async () => {
-    renderGame(silent());
+    await renderGame(silent());
 
     await waitFor(() => expect(screen.queryByText("Soulstone Survivors")).toBeNull());
   });
 
   it("shows the game and what the player has earned in it", async () => {
-    renderGame(withProgress({ [SOULSTONE]: played }));
+    await renderGame(withProgress({ [SOULSTONE]: played }));
 
     await waitFor(() => expect(screen.getByText("Soulstone Survivors")).toBeTruthy());
     expect(screen.getByText("First Blood")).toBeTruthy();
@@ -219,7 +219,7 @@ describe("game screen", () => {
 
   describe("the achievement filters", () => {
     it("counts each of the three on the chips", async () => {
-      renderGame(withProgress({ [SOULSTONE]: played }));
+      await renderGame(withProgress({ [SOULSTONE]: played }));
 
       await waitFor(() => expect(screen.getByText("All 4")).toBeTruthy());
       expect(screen.getByText("Unlocked 2")).toBeTruthy();
@@ -227,7 +227,7 @@ describe("game screen", () => {
     });
 
     it("narrows the list to what is unlocked, and back", async () => {
-      renderGame(withProgress({ [SOULSTONE]: played }));
+      await renderGame(withProgress({ [SOULSTONE]: played }));
       await screen.findByText("Unlocked 2");
 
       // Most recently earned first, and anything locked settles at the bottom.
@@ -238,15 +238,15 @@ describe("game screen", () => {
         "Fourth Wall",
       ]);
 
-      fireEvent.press(screen.getByText("Unlocked 2"));
+      await fireEvent.press(screen.getByText("Unlocked 2"));
 
       await waitFor(() => expect(drawnAchievements()).toEqual(["Second Wind", "First Blood"]));
 
-      fireEvent.press(screen.getByText("Locked 2"));
+      await fireEvent.press(screen.getByText("Locked 2"));
 
       await waitFor(() => expect(drawnAchievements()).toEqual(["Third Time Lucky", "Fourth Wall"]));
 
-      fireEvent.press(screen.getByText("All 4"));
+      await fireEvent.press(screen.getByText("All 4"));
 
       await waitFor(() => expect(drawnAchievements()).toHaveLength(4));
     });
@@ -254,10 +254,10 @@ describe("game screen", () => {
 
   describe("the timeline", () => {
     it("lists the days the player earned something", async () => {
-      renderGame(withProgress({ [SOULSTONE]: played }));
+      await renderGame(withProgress({ [SOULSTONE]: played }));
       await screen.findByText("Soulstone Survivors");
 
-      fireEvent.press(screen.getByText("Timeline"));
+      await fireEvent.press(screen.getByText("Timeline"));
 
       await waitFor(() => expect(screen.getByText("Second Wind")).toBeTruthy());
       expect(screen.getByText("First Blood")).toBeTruthy();
@@ -268,10 +268,10 @@ describe("game screen", () => {
      * a statement about the player rather than a missing load.
      */
     it("says nothing is unlocked yet rather than drawing an empty list", async () => {
-      renderGame(withProgress({ [SOULSTONE]: untouched }));
+      await renderGame(withProgress({ [SOULSTONE]: untouched }));
       await screen.findByText("Soulstone Survivors");
 
-      fireEvent.press(screen.getByText("Timeline"));
+      await fireEvent.press(screen.getByText("Timeline"));
 
       await waitFor(() => expect(screen.getByText("Nothing unlocked yet")).toBeTruthy());
     });
@@ -284,7 +284,7 @@ describe("game screen", () => {
      * whole truth about the game.
      */
     it("distinguishes achievements never loaded from a game that defines none", async () => {
-      renderGame(withProgress({}));
+      await renderGame(withProgress({}));
 
       await waitFor(() =>
         expect(screen.getByText("Achievements not loaded for this game")).toBeTruthy(),
@@ -293,7 +293,7 @@ describe("game screen", () => {
     });
 
     it("says a game defines no achievements when it defines none", async () => {
-      renderGame(withProgress({ [SOULSTONE]: barren }));
+      await renderGame(withProgress({ [SOULSTONE]: barren }));
 
       await waitFor(() => expect(screen.getByText("This game has no achievements")).toBeTruthy());
       expect(screen.queryByText("All 0")).toBeNull();
@@ -303,7 +303,7 @@ describe("game screen", () => {
   describe("when it cannot show the game", () => {
     /** ADR-0004: the backend answers for any appId, so this is refused here. */
     it("refuses a game outside the library", async () => {
-      renderGame(withProgress({}), UNOWNED);
+      await renderGame(withProgress({}), UNOWNED);
 
       await waitFor(() =>
         expect(screen.getByText("This game is not in the library.")).toBeTruthy(),
@@ -311,13 +311,13 @@ describe("game screen", () => {
     });
 
     it("refuses a route param that is not a game id", async () => {
-      renderGame(withProgress({}), "not-a-number");
+      await renderGame(withProgress({}), "not-a-number");
 
       await waitFor(() => expect(screen.getByText("That is not a game id.")).toBeTruthy());
     });
 
     it("reports a library it could not read", async () => {
-      renderGame(refusing("UNAVAILABLE"));
+      await renderGame(refusing("UNAVAILABLE"));
 
       await waitFor(() =>
         expect(
@@ -329,7 +329,7 @@ describe("game screen", () => {
     });
 
     it("reports progress it could not read, where the library was fine", async () => {
-      renderGame(progressRefused("PRIVATE_PROFILE"));
+      await renderGame(progressRefused("PRIVATE_PROFILE"));
 
       await waitFor(() =>
         expect(
@@ -345,16 +345,16 @@ describe("game screen", () => {
      * back path at all. Both ways out have to be offered on this screen.
      */
     it("offers both ways out", async () => {
-      renderGame(refusing("UNAVAILABLE"));
+      await renderGame(refusing("UNAVAILABLE"));
 
       await screen.findByLabelText("Try again");
       expect(screen.getByLabelText("Change profile")).toBeTruthy();
     });
 
     it("goes to setup when the reader would rather change profile", async () => {
-      renderGame(refusing("NOT_FOUND"));
+      await renderGame(refusing("NOT_FOUND"));
 
-      fireEvent.press(await screen.findByLabelText("Change profile"));
+      await fireEvent.press(await screen.findByLabelText("Change profile"));
 
       await waitFor(() => expect(screen.getByText("setup screen")).toBeTruthy());
     });
@@ -366,7 +366,7 @@ describe("game screen", () => {
     it("loads the game when the reader tries again", async () => {
       const up = withProgress({ [SOULSTONE]: played });
       let asked = 0;
-      renderGame({
+      await renderGame({
         ...up,
         getGames: () => {
           asked += 1;
@@ -376,19 +376,19 @@ describe("game screen", () => {
         },
       });
 
-      fireEvent.press(await screen.findByLabelText("Try again"));
+      await fireEvent.press(await screen.findByLabelText("Try again"));
 
       await waitFor(() => expect(screen.getByText("Soulstone Survivors")).toBeTruthy());
     });
   });
 
   it("goes back to where the reader came from", async () => {
-    renderAt({ [STEAM_ID]: withProgress({ [SOULSTONE]: played }) }, "/", STEAM_ID);
+    await renderAt({ [STEAM_ID]: withProgress({ [SOULSTONE]: played }) }, "/", STEAM_ID);
 
-    fireEvent.press(await screen.findByText("open soulstone"));
+    await fireEvent.press(await screen.findByText("open soulstone"));
     await screen.findByText("Soulstone Survivors");
 
-    fireEvent.press(screen.getByLabelText("Back to library"));
+    await fireEvent.press(screen.getByLabelText("Back to library"));
 
     await waitFor(() => expect(screen.getByText("library screen")).toBeTruthy());
   });
@@ -399,10 +399,14 @@ describe("game screen", () => {
    * doing nothing.
    */
   it("goes to the library when it was opened from a link", async () => {
-    renderAt({ [STEAM_ID]: withProgress({ [SOULSTONE]: played }) }, `/game/${SOULSTONE}`, STEAM_ID);
+    await renderAt(
+      { [STEAM_ID]: withProgress({ [SOULSTONE]: played }) },
+      `/game/${SOULSTONE}`,
+      STEAM_ID,
+    );
     await screen.findByText("Soulstone Survivors");
 
-    fireEvent.press(screen.getByLabelText("Back to library"));
+    await fireEvent.press(screen.getByLabelText("Back to library"));
 
     await waitFor(() => expect(screen.getByText("library screen")).toBeTruthy());
   });

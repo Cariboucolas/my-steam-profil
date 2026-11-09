@@ -17,8 +17,8 @@ const hero = (onBack = () => {}) => (
 );
 
 describe("GameHero", () => {
-  it("draws the language switch it is given", () => {
-    const { getByText } = render(
+  it("draws the language switch it is given", async () => {
+    const { getByText } = await render(
       <GameHero
         appId={240}
         name="Counter-Strike: Source"
@@ -32,8 +32,8 @@ describe("GameHero", () => {
     expect(getByText("switch")).toBeTruthy();
   });
 
-  it("shows the game it heads", () => {
-    const { getByText } = render(hero());
+  it("shows the game it heads", async () => {
+    const { getByText } = await render(hero());
 
     expect(getByText("Soulstone Survivors")).toBeTruthy();
     expect(getByText("353/483 · 83 h")).toBeTruthy();
@@ -44,25 +44,25 @@ describe("GameHero", () => {
    * say under the title, and an empty line still takes up room and still reads
    * as a figure that failed to load.
    */
-  it("draws no line at all when there is nothing to say", () => {
-    const { queryByTestId } = render(
+  it("draws no line at all when there is nothing to say", async () => {
+    const { queryByTestId } = await render(
       <GameHero appId={240} name="Counter-Strike: Source" meta="" topInset={0} onBack={() => {}} />,
     );
 
     expect(queryByTestId("game-hero-meta")).toBeNull();
   });
 
-  it("names the line it does draw", () => {
-    const { getByTestId } = render(hero());
+  it("names the line it does draw", async () => {
+    const { getByTestId } = await render(hero());
 
     expect(getByTestId("game-hero-meta")).toBeTruthy();
   });
 
-  it("goes back when asked", () => {
+  it("goes back when asked", async () => {
     const onBack = jest.fn();
-    const { getByLabelText } = render(hero(onBack));
+    const { getByLabelText } = await render(hero(onBack));
 
-    fireEvent.press(getByLabelText("Back to library"));
+    await fireEvent.press(getByLabelText("Back to library"));
 
     expect(onBack).toHaveBeenCalledTimes(1);
   });
@@ -71,8 +71,8 @@ describe("GameHero", () => {
    * The chevron sits over the cover art, where the status bar also is. It is
    * pushed down by whatever the platform reports rather than by a guess.
    */
-  it("clears the status bar the platform reports", () => {
-    const { getByLabelText } = render(hero());
+  it("clears the status bar the platform reports", async () => {
+    const { getByLabelText } = await render(hero());
 
     expect(getByLabelText("Back to library")).toHaveStyle({ top: 47 + spacing.sm });
   });

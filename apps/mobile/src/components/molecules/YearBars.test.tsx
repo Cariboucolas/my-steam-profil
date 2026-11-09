@@ -22,8 +22,8 @@ const bar = (year: number, over: Partial<YearBar> = {}): YearBar => ({
 });
 
 describe("YearBars", () => {
-  it("is one screen-reader stop for the whole chart", () => {
-    render(
+  it("is one screen-reader stop for the whole chart", async () => {
+    await render(
       <YearBars
         bars={[bar(2025), bar(2026, { current: true })]}
         cumulative={[0.5, 1]}
@@ -34,8 +34,8 @@ describe("YearBars", () => {
     expect(screen.getByLabelText("2025 to 2026")).toBeTruthy();
   });
 
-  it("writes the axis labels it is given and skips the others", () => {
-    render(
+  it("writes the axis labels it is given and skips the others", async () => {
+    await render(
       <YearBars
         bars={[bar(2024, { label: null }), bar(2025)]}
         cumulative={[0.5, 1]}
@@ -47,8 +47,8 @@ describe("YearBars", () => {
     expect(screen.queryByText("’24")).toBeNull();
   });
 
-  it("writes the figures it is given over their bars", () => {
-    render(
+  it("writes the figures it is given over their bars", async () => {
+    await render(
       <YearBars
         bars={[bar(2025, { figure: "1 104" })]}
         cumulative={null}
@@ -64,9 +64,9 @@ describe("YearBars", () => {
    * held to that wraps or is cut short. Each is given its own width instead,
    * centred over its bar, and spills over the bars beside it.
    */
-  it("gives labels and figures a width of their own, on one line", () => {
+  it("gives labels and figures a width of their own, on one line", async () => {
     const years = Array.from({ length: 17 }, (_, index) => 2010 + index);
-    render(
+    await render(
       <YearBars
         bars={years.map((year) => bar(year, { figure: year === 2026 ? "1 104" : null }))}
         cumulative={null}
@@ -88,8 +88,8 @@ describe("YearBars", () => {
     }
   });
 
-  it("draws the running total when it has one, and none without", () => {
-    const { rerender } = render(
+  it("draws the running total when it has one, and none without", async () => {
+    const { rerender } = await render(
       <YearBars
         bars={[bar(2025), bar(2026)]}
         cumulative={[0.5, 1]}
@@ -99,14 +99,14 @@ describe("YearBars", () => {
     );
     expect(screen.getByTestId(RUNNING_TOTAL_TEST_ID)).toBeTruthy();
 
-    rerender(
+    await rerender(
       <YearBars bars={[bar(2026)]} cumulative={null} scale={[]} screenReaderLabel="chart" />,
     );
     expect(screen.queryByTestId(RUNNING_TOTAL_TEST_ID)).toBeNull();
   });
 
-  it("draws a guide line at each amount it is given, written at its height", () => {
-    render(
+  it("draws a guide line at each amount it is given, written at its height", async () => {
+    await render(
       <YearBars
         bars={[bar(2025, { share: 1 })]}
         cumulative={null}
@@ -138,37 +138,37 @@ describe("YearBars", () => {
       return found;
     };
 
-    it("reveals the year and its amount", () => {
-      touchable();
-      fireEvent.press(column(0));
+    it("reveals the year and its amount", async () => {
+      await touchable();
+      await fireEvent.press(column(0));
       expect(screen.getByText("2019 · 312")).toBeTruthy();
     });
 
-    it("hides it again on a second touch", () => {
-      touchable();
-      fireEvent.press(column(0));
-      fireEvent.press(column(0));
+    it("hides it again on a second touch", async () => {
+      await touchable();
+      await fireEvent.press(column(0));
+      await fireEvent.press(column(0));
       expect(screen.queryByText("2019 · 312")).toBeNull();
     });
 
-    it("moves to the bar touched next", () => {
-      touchable();
-      fireEvent.press(column(0));
-      fireEvent.press(column(1));
+    it("moves to the bar touched next", async () => {
+      await touchable();
+      await fireEvent.press(column(0));
+      await fireEvent.press(column(1));
       expect(screen.queryByText("2019 · 312")).toBeNull();
       expect(screen.getByText("2026 · 1 104")).toBeTruthy();
     });
 
-    it("writes the year's amount in the bars' colour", () => {
-      touchable();
-      fireEvent.press(column(0));
+    it("writes the year's amount in the bars' colour", async () => {
+      await touchable();
+      await fireEvent.press(column(0));
       expect(StyleSheet.flatten(screen.getByText("312").props.style)).toEqual(
         expect.objectContaining({ color: colors.accent }),
       );
     });
 
-    it("reveals the running total under the amount, in the line's colour", () => {
-      render(
+    it("reveals the running total under the amount, in the line's colour", async () => {
+      await render(
         <YearBars
           bars={[bar(2025, { running: "40" }), bar(2026, { running: "52" })]}
           cumulative={[0.75, 1]}
@@ -176,15 +176,15 @@ describe("YearBars", () => {
           screenReaderLabel="chart"
         />,
       );
-      fireEvent.press(column(0));
+      await fireEvent.press(column(0));
       expect(StyleSheet.flatten(screen.getByText("40").props.style)).toEqual(
         expect.objectContaining({ color: colors.runningTotal }),
       );
     });
 
-    it("stands in for the figure the bar already wrote", () => {
-      touchable();
-      fireEvent.press(column(1));
+    it("stands in for the figure the bar already wrote", async () => {
+      await touchable();
+      await fireEvent.press(column(1));
       // The tip's own amount, and not the figure over the bar.
       expect(screen.getAllByText("1 104")).toHaveLength(1);
     });

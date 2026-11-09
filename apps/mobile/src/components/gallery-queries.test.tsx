@@ -13,11 +13,11 @@ describe("the gallery's queries", () => {
     const One = storyAsking(ask);
     const Other = storyAsking(ask);
 
-    const first = render(<One />);
+    const first = await render(<One />);
     await screen.findByText("answered");
-    first.unmount();
+    await first.unmount();
 
-    render(<Other />);
+    await render(<Other />);
 
     await screen.findByText("answered");
     expect(ask).toHaveBeenCalledTimes(2);

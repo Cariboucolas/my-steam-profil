@@ -83,10 +83,10 @@ const chartSentence = (): string | undefined =>
 
 /** What the chart says for a library served by `client` alone, counted through. */
 const sentenceServedBy = async (client: ApiClient): Promise<string | undefined> => {
-  const { unmount } = renderAt({ [STEAM_ID]: client }, "/stats");
+  const { unmount } = await renderAt({ [STEAM_ID]: client }, "/stats");
   await recordsShown();
   const sentence = chartSentence();
-  unmount();
+  await unmount();
   return sentence;
 };
 
@@ -105,14 +105,14 @@ describe("stats screen", () => {
   });
 
   it("draws the years card, then its records once the library is counted", async () => {
-    renderAt({ [STEAM_ID]: served() }, "/stats");
+    await renderAt({ [STEAM_ID]: served() }, "/stats");
     expect(await screen.findByTestId(YEARS_CARD_TEST_ID)).toBeTruthy();
     await recordsShown();
     expect(screen.getByLabelText(/^best month/)).toBeTruthy();
   });
 
   it("draws the typical week under the years, from the same tallies", async () => {
-    renderAt({ [STEAM_ID]: served() }, "/stats");
+    await renderAt({ [STEAM_ID]: served() }, "/stats");
     await recordsShown();
 
     expect(screen.getByTestId(WEEK_CARD_TEST_ID)).toBeTruthy();
@@ -128,9 +128,9 @@ describe("stats screen", () => {
       .fn(client.getProfile)
       .mockResolvedValueOnce(err("UNAVAILABLE"))
       .mockResolvedValueOnce(err("UNAVAILABLE"));
-    renderAt({ [STEAM_ID]: { ...client, getProfile } }, "/stats");
+    await renderAt({ [STEAM_ID]: { ...client, getProfile } }, "/stats");
 
-    fireEvent.press(await screen.findByLabelText("Try again"));
+    await fireEvent.press(await screen.findByLabelText("Try again"));
     expect(await screen.findByTestId(YEARS_CARD_TEST_ID)).toBeTruthy();
   });
 
@@ -146,7 +146,7 @@ describe("stats screen", () => {
     const client = served();
     const getGameTally: ApiClient["getGameTally"] = (appId, signal) =>
       appId === failing ? Promise.resolve(err("NOT_FOUND")) : client.getGameTally(appId, signal);
-    renderAt({ [STEAM_ID]: { ...client, getGameTally } }, "/stats");
+    await renderAt({ [STEAM_ID]: { ...client, getGameTally } }, "/stats");
     await recordsShown();
 
     expect(chartSentence()).toBe(withoutIt);
@@ -161,12 +161,12 @@ describe("stats screen", () => {
       );
     const expected = await sentenceServedBy(other());
 
-    renderAt({ [STEAM_ID]: served(), [OTHER_STEAM_ID]: other() }, "/stats");
+    await renderAt({ [STEAM_ID]: served(), [OTHER_STEAM_ID]: other() }, "/stats");
     await recordsShown();
     const before = chartSentence();
     expect(before).not.toBe(expected);
 
-    fireEvent.press(screen.getByText("switch"));
+    await fireEvent.press(screen.getByText("switch"));
     await waitFor(() => expect(chartSentence()).not.toBe(before));
     await recordsShown();
     expect(chartSentence()).toBe(expected);
@@ -177,15 +177,15 @@ describe("stats screen", () => {
     async () => {
       const client = served();
       const getGameTally = jest.fn(client.getGameTally);
-      renderAt({ [STEAM_ID]: { ...client, getGameTally } }, "/");
+      await renderAt({ [STEAM_ID]: { ...client, getGameTally } }, "/");
 
       // The first visit finishes the count the library started.
-      fireEvent.press(await screen.findByText("Statistics ›"));
+      await fireEvent.press(await screen.findByText("Statistics ›"));
       await recordsShown();
       const asked = getGameTally.mock.calls.length;
 
-      fireEvent.press(screen.getByLabelText("Back to library"));
-      fireEvent.press(await screen.findByText("Statistics ›"));
+      await fireEvent.press(screen.getByLabelText("Back to library"));
+      await fireEvent.press(await screen.findByText("Statistics ›"));
       await recordsShown();
       expect(getGameTally.mock.calls.length).toBe(asked);
     },
@@ -193,8 +193,8 @@ describe("stats screen", () => {
   );
 
   it("goes back to the library when it is the only screen", async () => {
-    renderAt({ [STEAM_ID]: served() }, "/stats");
-    fireEvent.press(await screen.findByLabelText("Back to library"));
+    await renderAt({ [STEAM_ID]: served() }, "/stats");
+    await fireEvent.press(await screen.findByLabelText("Back to library"));
     expect(await screen.findByText("Statistics ›")).toBeTruthy();
   });
 });

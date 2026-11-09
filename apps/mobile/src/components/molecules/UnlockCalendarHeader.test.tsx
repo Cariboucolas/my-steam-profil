@@ -10,15 +10,15 @@ const header = {
 } as const;
 
 describe("UnlockCalendarHeader", () => {
-  it("states the running year under the card's own name", () => {
-    const { getByText } = render(<UnlockCalendarHeader {...header} />);
+  it("states the running year under the card's own name", async () => {
+    const { getByText } = await render(<UnlockCalendarHeader {...header} />);
 
     expect(getByText("Activity")).toBeTruthy();
     expect(getByText("82")).toBeTruthy();
   });
 
-  it("names the year and how far it runs", () => {
-    const { getByText } = render(<UnlockCalendarHeader {...header} />);
+  it("names the year and how far it runs", async () => {
+    const { getByText } = await render(<UnlockCalendarHeader {...header} />);
 
     expect(getByText("YEAR 2026 · JAN → DEC")).toBeTruthy();
   });
@@ -28,14 +28,14 @@ describe("UnlockCalendarHeader", () => {
    * sentence it is handed rather than assembling one of its own, so there is
    * one place where the words that keep it honest can go missing.
    */
-  it("sets the running year against all of the one before", () => {
-    const { getByText } = render(<UnlockCalendarHeader {...header} />);
+  it("sets the running year against all of the one before", async () => {
+    const { getByText } = await render(<UnlockCalendarHeader {...header} />);
 
     expect(getByText("-224 vs all of 2025 (306)")).toBeTruthy();
   });
 
-  it("says nothing at all where there is no year to compare", () => {
-    const { getByText, queryByText } = render(
+  it("says nothing at all where there is no year to compare", async () => {
+    const { getByText, queryByText } = await render(
       <UnlockCalendarHeader {...header} deltaLabel={null} />,
     );
 

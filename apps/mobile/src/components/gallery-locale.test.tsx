@@ -23,7 +23,7 @@ describe("the gallery's language switch", () => {
 
   it("is English by default", async () => {
     const Counted = galleryIn(libraryStatsCard)["Counted"]!;
-    const { getByText, queryByText } = render(<Counted />);
+    const { getByText, queryByText } = await render(<Counted />);
     await letTheDeviceAnswer();
 
     expect(getByText("perfect games")).toBeTruthy();
@@ -33,7 +33,7 @@ describe("the gallery's language switch", () => {
 
   it("changes the language of a component and of the sentences a view-model wrote for it", async () => {
     const Counted = galleryIn(libraryStatsCard, "fr")["Counted"]!;
-    const { getByText, queryByText } = render(<Counted />);
+    const { getByText, queryByText } = await render(<Counted />);
     await letTheDeviceAnswer();
 
     expect(getByText("jeux à 100 %")).toBeTruthy();
@@ -43,7 +43,7 @@ describe("the gallery's language switch", () => {
 
   it("changes the language of a story with no view-model in it", async () => {
     const English = galleryIn(localeToggle, "fr")["English"]!;
-    const { getByLabelText } = render(<English />);
+    const { getByLabelText } = await render(<English />);
     await letTheDeviceAnswer();
 
     expect(getByLabelText("Langue")).toBeTruthy();

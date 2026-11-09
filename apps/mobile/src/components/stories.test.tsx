@@ -48,7 +48,7 @@ it("finds the stories it is meant to render", () => {
 
 describe.each(stories)("%s", (_, Story) => {
   it("renders", async () => {
-    const { toJSON } = render(<Story />);
+    const { toJSON } = await render(<Story />);
     await letTheDeviceAnswer();
     await letARetryLand();
 

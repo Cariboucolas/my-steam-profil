@@ -13,8 +13,8 @@ const HOURS: HourBar[] = Array.from({ length: 24 }, (_, hour) => ({
 }));
 
 describe("HourBars", () => {
-  it("draws twenty-four bars, the busiest in the full accent with its total over it", () => {
-    render(<HourBars hours={HOURS} scale={[{ label: "500", share: 500 / 642 }]} />);
+  it("draws twenty-four bars, the busiest in the full accent with its total over it", async () => {
+    await render(<HourBars hours={HOURS} scale={[{ label: "500", share: 500 / 642 }]} />);
 
     const bars = screen.getAllByTestId(HOUR_BAR_TEST_ID);
     expect(bars).toHaveLength(24);
@@ -25,8 +25,8 @@ describe("HourBars", () => {
     expect(["0h", "12h", "22h"].map((tick) => screen.getByText(tick))).toHaveLength(3);
   });
 
-  it("keeps an empty hour visible as a sliver", () => {
-    render(<HourBars hours={HOURS} scale={[]} />);
+  it("keeps an empty hour visible as a sliver", async () => {
+    await render(<HourBars hours={HOURS} scale={[]} />);
 
     expect(
       StyleSheet.flatten(screen.getAllByTestId(HOUR_BAR_TEST_ID)[0]?.props.style).height,

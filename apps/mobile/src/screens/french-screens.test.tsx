@@ -83,9 +83,9 @@ const localeStorage = (stored: Locale) => {
 const LibraryStub = () => <Text>library screen</Text>;
 const SetupStub = () => <Text>setup screen</Text>;
 
-const renderAt = (url: string, stored: Locale) => {
+const renderAt = async (url: string, stored: Locale) => {
   const locale = localeStorage(stored);
-  renderRouter(
+  await renderRouter(
     {
       index: LibraryScreen,
       setup: SetupStub,
@@ -118,7 +118,7 @@ describe("the app in French", () => {
   });
 
   it("writes the library screen in French, spoken labels included", async () => {
-    renderAt("/", "fr");
+    await renderAt("/", "fr");
 
     await screen.findByText("1 jeu");
     expect(screen.getByText("Complétion")).toBeTruthy();
@@ -134,7 +134,7 @@ describe("the app in French", () => {
   });
 
   it("writes the stats screen in French", async () => {
-    renderAt("/stats", "fr");
+    await renderAt("/stats", "fr");
 
     expect(await screen.findByText("Statistiques")).toBeTruthy();
     expect(screen.getByText("ANNÉES ET CUMUL")).toBeTruthy();
@@ -142,7 +142,7 @@ describe("the app in French", () => {
   });
 
   it("writes the game screen in French, dates and filters included", async () => {
-    renderAt(`/game/${SOULSTONE}`, "fr");
+    await renderAt(`/game/${SOULSTONE}`, "fr");
 
     await screen.findByText("Tous 2");
     expect(screen.getByText("Débloqués 1")).toBeTruthy();
@@ -163,7 +163,7 @@ describe("the app in French", () => {
 
   it("writes an error in French, and offers its way out in French", async () => {
     mockClient = { ...client(), getGames: () => Promise.resolve(err("PRIVATE_PROFILE")) };
-    renderAt("/", "fr");
+    await renderAt("/", "fr");
 
     await screen.findByText("Ce profil est privé : Steam ne dira pas ce qui a été débloqué.");
     expect(screen.getByLabelText("Réessayer")).toBeTruthy();
@@ -171,13 +171,13 @@ describe("the app in French", () => {
   });
 
   it("refuses a game the player does not own in French", async () => {
-    renderAt(`/game/${UNOWNED}`, "fr");
+    await renderAt(`/game/${UNOWNED}`, "fr");
 
     await screen.findByText("Ce jeu n'est pas dans la bibliothèque.");
   });
 
   it("refuses an identifier that is no game in French", async () => {
-    renderAt("/game/abc", "fr");
+    await renderAt("/game/abc", "fr");
 
     await screen.findByText("Ce n'est pas un identifiant de jeu.");
   });
@@ -194,10 +194,10 @@ describe("switching the language", () => {
   });
 
   it("re-renders the screen at once, and keeps the choice", async () => {
-    const { writes } = renderAt("/", "en");
+    const { writes } = await renderAt("/", "en");
 
     await screen.findByText("Activity");
-    fireEvent.press(screen.getByText("FR"));
+    await fireEvent.press(screen.getByText("FR"));
 
     await waitFor(() => expect(screen.getByText("Activité")).toBeTruthy());
     expect(screen.queryByText("Activity")).toBeNull();
@@ -205,10 +205,10 @@ describe("switching the language", () => {
   });
 
   it("re-renders the game screen too, texts a view-model wrote included", async () => {
-    renderAt(`/game/${SOULSTONE}`, "en");
+    await renderAt(`/game/${SOULSTONE}`, "en");
 
     await screen.findByText("All 2");
-    fireEvent.press(screen.getByText("FR"));
+    await fireEvent.press(screen.getByText("FR"));
 
     await waitFor(() => expect(screen.getByText("Tous 2")).toBeTruthy());
     expect(screen.getByText("1 juin 2026")).toBeTruthy();

@@ -7,8 +7,8 @@ import { SortChips } from "./SortChips";
 const PUBLISHED = { playtime: true, lastPlayed: true } as const;
 
 describe("SortChips", () => {
-  it("offers every order the library can be read in", () => {
-    const { getByText } = render(
+  it("offers every order the library can be read in", async () => {
+    const { getByText } = await render(
       <SortChips active="completed" onSelect={() => {}} published={PUBLISHED} />,
     );
 
@@ -24,8 +24,8 @@ describe("SortChips", () => {
    * where all 100 games carry neither figure — both chips there ordered
    * nothing, and identically.
    */
-  it("offers no order over a figure Steam withholds", () => {
-    const { getByText, queryByText } = render(
+  it("offers no order over a figure Steam withholds", async () => {
+    const { getByText, queryByText } = await render(
       <SortChips
         active="completed"
         onSelect={() => {}}
@@ -43,8 +43,8 @@ describe("SortChips", () => {
    * carry playtime and not one carries a date, so that library can be ordered
    * by hours and not by recency.
    */
-  it("keeps the order it can still produce when only the dates are withheld", () => {
-    const { getByText, queryByText } = render(
+  it("keeps the order it can still produce when only the dates are withheld", async () => {
+    const { getByText, queryByText } = await render(
       <SortChips
         active="completed"
         onSelect={() => {}}
@@ -56,8 +56,8 @@ describe("SortChips", () => {
     expect(queryByText("Recently played")).toBeNull();
   });
 
-  it("marks the order in force and leaves the others muted", () => {
-    const { getByText } = render(
+  it("marks the order in force and leaves the others muted", async () => {
+    const { getByText } = await render(
       <SortChips active="recent" onSelect={() => {}} published={PUBLISHED} />,
     );
 
@@ -65,13 +65,13 @@ describe("SortChips", () => {
     expect(getByText("Most played").props.style.color).toBe(colors.textMuted);
   });
 
-  it("reports the order that was picked", () => {
+  it("reports the order that was picked", async () => {
     const onSelect = jest.fn();
-    const { getByText } = render(
+    const { getByText } = await render(
       <SortChips active="completed" onSelect={onSelect} published={PUBLISHED} />,
     );
 
-    fireEvent.press(getByText("Most played"));
+    await fireEvent.press(getByText("Most played"));
 
     expect(onSelect).toHaveBeenCalledWith("playtime");
   });

@@ -1,6 +1,7 @@
 import { act, render, screen } from "@testing-library/react-native";
 import {
   deviceAsksForLessMotion,
+  deviceAsksForLessMotionLater,
   deviceIsFineWithMotion,
   letTheDeviceAnswer,
 } from "../../accessibility/reduce-motion.test-support";
@@ -14,8 +15,8 @@ const DRAWN = { includeHiddenElements: true } as const;
 
 const stopsDrawn = (): number => screen.queryAllByTestId(MARK_STOP_TEST_ID, DRAWN).length;
 
-const wait = (ms: number): void => {
-  act(() => {
+const wait = async (ms: number): Promise<void> => {
+  await act(() => {
     jest.advanceTimersByTime(ms);
   });
 };
@@ -40,7 +41,7 @@ describe("SplashStage", () => {
      * one.
      */
     it("draws the mark's track before anything has been revealed", async () => {
-      render(<SplashStage ready={false} onDone={jest.fn()} />);
+      await render(<SplashStage ready={false} onDone={jest.fn()} />);
       await letTheDeviceAnswer();
 
       expect(screen.getByTestId(MARK_TRACK_TEST_ID, DRAWN)).toBeTruthy();
@@ -48,21 +49,21 @@ describe("SplashStage", () => {
     });
 
     it("fills the arc as the stage runs", async () => {
-      render(<SplashStage ready={false} onDone={jest.fn()} />);
+      await render(<SplashStage ready={false} onDone={jest.fn()} />);
       await letTheDeviceAnswer();
 
-      wait(REVEAL_MS / 2);
+      await wait(REVEAL_MS / 2);
       const halfway = stopsDrawn();
       expect(halfway).toBeGreaterThan(0);
       expect(halfway).toBeLessThan(MARK_STOP_COUNT);
 
-      wait(REVEAL_MS);
+      await wait(REVEAL_MS);
       expect(stopsDrawn()).toBe(MARK_STOP_COUNT);
       expect(screen.getByTestId(MARK_TIP_TEST_ID, DRAWN)).toBeTruthy();
     });
 
     it("names the app to a reader who is listening", async () => {
-      render(<SplashStage ready={false} onDone={jest.fn()} />);
+      await render(<SplashStage ready={false} onDone={jest.fn()} />);
       await letTheDeviceAnswer();
 
       expect(screen.getByText(SPLASH_WORDMARK)).toBeTruthy();
@@ -75,10 +76,10 @@ describe("SplashStage", () => {
      */
     it("holds while the work behind it is unfinished", async () => {
       const onDone = jest.fn();
-      render(<SplashStage ready={false} onDone={onDone} />);
+      await render(<SplashStage ready={false} onDone={onDone} />);
       await letTheDeviceAnswer();
 
-      wait(HOLD_MS * 4);
+      await wait(HOLD_MS * 4);
 
       expect(onDone).not.toHaveBeenCalled();
     });
@@ -90,26 +91,26 @@ describe("SplashStage", () => {
      */
     it("holds after the work is done, so the reveal is never cut short", async () => {
       const onDone = jest.fn();
-      render(<SplashStage ready onDone={onDone} />);
+      await render(<SplashStage ready onDone={onDone} />);
       await letTheDeviceAnswer();
 
-      wait(REVEAL_MS / 2);
+      await wait(REVEAL_MS / 2);
       expect(onDone).not.toHaveBeenCalled();
 
-      wait(HOLD_MS);
+      await wait(HOLD_MS);
       expect(onDone).toHaveBeenCalled();
     });
 
     it("gives way once the work is done and the stage has run its course", async () => {
       const onDone = jest.fn();
-      const view = render(<SplashStage ready={false} onDone={onDone} />);
+      const view = await render(<SplashStage ready={false} onDone={onDone} />);
       await letTheDeviceAnswer();
 
-      wait(HOLD_MS * 2);
+      await wait(HOLD_MS * 2);
       expect(onDone).not.toHaveBeenCalled();
 
-      view.rerender(<SplashStage ready onDone={onDone} />);
-      wait(0);
+      await view.rerender(<SplashStage ready onDone={onDone} />);
+      await wait(0);
 
       expect(onDone).toHaveBeenCalled();
     });
@@ -117,10 +118,10 @@ describe("SplashStage", () => {
     /** The parent unmounts on the first call; a second would be a leak. */
     it("gives way once and not again", async () => {
       const onDone = jest.fn();
-      render(<SplashStage ready onDone={onDone} />);
+      await render(<SplashStage ready onDone={onDone} />);
       await letTheDeviceAnswer();
 
-      wait(HOLD_MS * 5);
+      await wait(HOLD_MS * 5);
 
       expect(onDone).toHaveBeenCalledTimes(1);
     });
@@ -136,7 +137,7 @@ describe("SplashStage", () => {
      * is the app's, and it is drawn whole.
      */
     it("draws the mark whole from the first frame", async () => {
-      render(<SplashStage ready={false} onDone={jest.fn()} />);
+      await render(<SplashStage ready={false} onDone={jest.fn()} />);
       await letTheDeviceAnswer();
 
       expect(stopsDrawn()).toBe(MARK_STOP_COUNT);
@@ -146,20 +147,20 @@ describe("SplashStage", () => {
     /** Asking for less motion is not asking to wait longer for it. */
     it("gives way as soon as the work is done", async () => {
       const onDone = jest.fn();
-      render(<SplashStage ready onDone={onDone} />);
+      await render(<SplashStage ready onDone={onDone} />);
       await letTheDeviceAnswer();
 
-      wait(0);
+      await wait(0);
 
       expect(onDone).toHaveBeenCalled();
     });
 
     it("still holds while the work behind it is unfinished", async () => {
       const onDone = jest.fn();
-      render(<SplashStage ready={false} onDone={onDone} />);
+      await render(<SplashStage ready={false} onDone={onDone} />);
       await letTheDeviceAnswer();
 
-      wait(HOLD_MS * 4);
+      await wait(HOLD_MS * 4);
 
       expect(onDone).not.toHaveBeenCalled();
     });
@@ -171,13 +172,16 @@ describe("SplashStage", () => {
    * invisible, where motion shown to someone who asked for none is the whole
    * of what the setting exists to prevent.
    */
-  it("does not give way before the device has said what it wants", () => {
-    deviceAsksForLessMotion();
+  it("does not give way before the device has said what it wants", async () => {
+    const answer = deviceAsksForLessMotionLater();
     const onDone = jest.fn();
-    render(<SplashStage ready onDone={onDone} />);
+    await render(<SplashStage ready onDone={onDone} />);
 
-    wait(0);
-
+    await wait(0);
     expect(onDone).not.toHaveBeenCalled();
+
+    await answer();
+    await wait(0);
+    expect(onDone).toHaveBeenCalled();
   });
 });

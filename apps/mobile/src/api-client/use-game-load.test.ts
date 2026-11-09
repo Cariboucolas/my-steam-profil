@@ -76,21 +76,21 @@ const failureOf = (load: GameLoad): Failed => {
 const TALLY_KEY = queries.tally(STEAM_ID, SOULSTONE).queryKey;
 
 describe("useGameLoad", () => {
-  it("is loading while no Profile is chosen", () => {
-    const { result } = renderLoad(undefined);
+  it("is loading while no Profile is chosen", async () => {
+    const { result } = await renderLoad(undefined);
 
     expect(result.current.load.status).toBe("loading");
   });
 
-  it("is loading until the Games and the GameProgress have answered", () => {
-    const { result } = renderLoad(createPendingApiClient());
+  it("is loading until the Games and the GameProgress have answered", async () => {
+    const { result } = await renderLoad(createPendingApiClient());
 
     expect(result.current.load.status).toBe("loading");
   });
 
   it("hands over the Game and its GameProgress", async () => {
     const { client, getGameProgress } = libraryAnswering();
-    const { result } = renderLoad(client);
+    const { result } = await renderLoad(client);
 
     await waitFor(() => expect(result.current.load.status).toBe("ready"));
     expect(readyOf(result.current.load)).toEqual({
@@ -104,7 +104,7 @@ describe("useGameLoad", () => {
   /** Not a failure: the achievements were simply never fetched for it. */
   it("hands over the Game alone when its achievements were never fetched", async () => {
     const { client } = libraryAnswering(() => Promise.resolve(err("NOT_LOADED")));
-    const { result } = renderLoad(client);
+    const { result } = await renderLoad(client);
 
     await waitFor(() => expect(result.current.load.status).toBe("ready"));
     expect(readyOf(result.current.load).progress).toBeNull();
@@ -114,7 +114,7 @@ describe("useGameLoad", () => {
     /** ADR-0004: the backend answers for any appId, so it is refused here or nowhere. */
     it("refuses a game outside the library without asking for its progress", async () => {
       const { client, getGameProgress } = libraryAnswering();
-      const { result } = renderLoad(client, UNOWNED);
+      const { result } = await renderLoad(client, UNOWNED);
 
       await waitFor(() => expect(result.current.load.status).toBe("error"));
       expect(failureOf(result.current.load).error).toBe("NOT_IN_LIBRARY");
@@ -123,7 +123,7 @@ describe("useGameLoad", () => {
 
     it("refuses what is not a game id without asking anything, retried or not", async () => {
       const { client, getGames, getGameProgress } = libraryAnswering();
-      const { result } = renderLoad(client, Number.NaN);
+      const { result } = await renderLoad(client, Number.NaN);
 
       expect(failureOf(result.current.load).error).toBe("INVALID_GAME_ID");
       await act(async () => failureOf(result.current.load).retry());
@@ -133,7 +133,7 @@ describe("useGameLoad", () => {
 
     it("says why the library could not be read", async () => {
       const { client, getGameProgress } = libraryAnswering();
-      const { result } = renderLoad({
+      const { result } = await renderLoad({
         ...client,
         getGames: () => Promise.resolve(err("NOT_FOUND")),
       });
@@ -145,7 +145,7 @@ describe("useGameLoad", () => {
 
     it("says why the progress could not be read, where the library was fine", async () => {
       const { client } = libraryAnswering(() => Promise.resolve(err("PRIVATE_PROFILE")));
-      const { result } = renderLoad(client);
+      const { result } = await renderLoad(client);
 
       await waitFor(() => expect(result.current.load.status).toBe("error"));
       expect(failureOf(result.current.load).error).toBe("PRIVATE_PROFILE");
@@ -156,11 +156,11 @@ describe("useGameLoad", () => {
       const { client, getGames, getGameProgress } = libraryAnswering(() =>
         Promise.resolve(up ? ok(PROGRESS) : err("NOT_FOUND")),
       );
-      const { result } = renderLoad(client);
+      const { result } = await renderLoad(client);
       await waitFor(() => expect(result.current.load.status).toBe("error"));
 
       up = true;
-      act(() => failureOf(result.current.load).retry());
+      await act(() => failureOf(result.current.load).retry());
 
       await waitFor(() => expect(result.current.load.status).toBe("ready"));
       expect(getGameProgress).toHaveBeenCalledTimes(2);
@@ -170,10 +170,10 @@ describe("useGameLoad", () => {
     /** The game may have been bought since: the library is what is asked again. */
     it("asks for the library again when a game outside it is retried", async () => {
       const { client, getGames } = libraryAnswering();
-      const { result } = renderLoad(client, UNOWNED);
+      const { result } = await renderLoad(client, UNOWNED);
       await waitFor(() => expect(result.current.load.status).toBe("error"));
 
-      act(() => failureOf(result.current.load).retry());
+      await act(() => failureOf(result.current.load).retry());
 
       await waitFor(() => expect(getGames).toHaveBeenCalledTimes(2));
     });
@@ -186,7 +186,7 @@ describe("useGameLoad", () => {
       asked += 1;
       return Promise.resolve(asked === 1 ? err("UNAVAILABLE") : ok(PROGRESS));
     });
-    const { result } = renderLoad(client);
+    const { result } = await renderLoad(client);
 
     await waitFor(() => expect(result.current.load.status).toBe("ready"));
     expect(getGameProgress).toHaveBeenCalledTimes(2);
@@ -195,7 +195,7 @@ describe("useGameLoad", () => {
   /** The keys carry the SteamId (#162): another Profile starts from nothing. */
   it("shows nothing of the previous Profile once another is chosen", async () => {
     type Asked = { readonly steamId: string; readonly client: ApiClient };
-    const { result, rerender } = renderHook(
+    const { result, rerender } = await renderHook(
       ({ steamId, client }: Asked) => useGameLoad(steamId, client, SOULSTONE),
       {
         initialProps: { steamId: STEAM_ID, client: libraryAnswering().client },
@@ -204,7 +204,7 @@ describe("useGameLoad", () => {
     );
     await waitFor(() => expect(result.current.status).toBe("ready"));
 
-    rerender({ steamId: OTHER_STEAM_ID, client: createPendingApiClient() });
+    await rerender({ steamId: OTHER_STEAM_ID, client: createPendingApiClient() });
 
     expect(result.current.status).toBe("loading");
   });
@@ -212,10 +212,10 @@ describe("useGameLoad", () => {
   /** A query nobody watches gives its place up (#162). */
   it("abandons the progress it was asking for once the page is left", async () => {
     const { client, getGameProgress } = libraryAnswering(() => new Promise(() => undefined));
-    const { unmount } = renderLoad(client);
+    const { unmount } = await renderLoad(client);
     await waitFor(() => expect(getGameProgress).toHaveBeenCalled());
 
-    unmount();
+    await unmount();
 
     expect(getGameProgress.mock.calls[0]?.[1]?.aborted).toBe(true);
   });
@@ -227,11 +227,11 @@ describe("useGameLoad", () => {
   it("is loading, and shows no earlier answer, while it asks for the progress again", async () => {
     let answer: () => Promise<Progress> = () => Promise.resolve(ok(PROGRESS));
     const { client } = libraryAnswering(() => answer());
-    const { result } = renderLoad(client);
+    const { result } = await renderLoad(client);
     await waitFor(() => expect(result.current.load.status).toBe("ready"));
 
     answer = () => new Promise(() => undefined);
-    act(() => {
+    await act(() => {
       void result.current.cache.invalidateQueries({
         queryKey: queries.progress(STEAM_ID, SOULSTONE).queryKey,
       });
@@ -248,7 +248,7 @@ describe("useGameLoad", () => {
     it("is marked out of date once a GameProgress lands", async () => {
       let land: (progress: Progress) => void = () => undefined;
       const { client } = libraryAnswering(() => new Promise((resolve) => (land = resolve)));
-      const { result } = renderLoad(client);
+      const { result } = await renderLoad(client);
       result.current.cache.setQueryData(TALLY_KEY, TALLY);
       await waitFor(() => expect(client.getGameProgress).toHaveBeenCalled());
       expect(result.current.cache.getQueryState(TALLY_KEY)?.isInvalidated).toBe(false);
@@ -261,7 +261,7 @@ describe("useGameLoad", () => {
 
     it("is left alone when no GameProgress came back", async () => {
       const { client } = libraryAnswering(() => Promise.resolve(err("NOT_LOADED")));
-      const { result } = renderLoad(client);
+      const { result } = await renderLoad(client);
       result.current.cache.setQueryData(TALLY_KEY, TALLY);
 
       await waitFor(() => expect(result.current.load.status).toBe("ready"));

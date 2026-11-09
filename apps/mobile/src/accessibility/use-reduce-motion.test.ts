@@ -32,10 +32,10 @@ describe("useReduceMotion", () => {
    * for "motion is fine" would animate for the frame it takes to answer — in
    * front of the one player who asked it not to.
    */
-  it("says nothing until the device has answered", () => {
+  it("says nothing until the device has answered", async () => {
     jest.spyOn(AccessibilityInfo, "isReduceMotionEnabled").mockReturnValue(new Promise(() => {}));
 
-    const { result } = renderHook(() => useReduceMotion());
+    const { result } = await renderHook(() => useReduceMotion());
 
     expect(result.current).toBeUndefined();
   });
@@ -43,7 +43,7 @@ describe("useReduceMotion", () => {
   it("answers what the device says once it has asked", async () => {
     deviceAsksForLessMotion();
 
-    const { result } = renderHook(() => useReduceMotion());
+    const { result } = await renderHook(() => useReduceMotion());
 
     await waitFor(() => {
       expect(result.current).toBe(true);
@@ -60,12 +60,12 @@ describe("useReduceMotion", () => {
       return subscription(() => {});
     });
 
-    const { result } = renderHook(() => useReduceMotion());
+    const { result } = await renderHook(() => useReduceMotion());
     await waitFor(() => {
       expect(result.current).toBe(true);
     });
 
-    act(() => {
+    await act(() => {
       announce?.(false);
     });
 
@@ -76,12 +76,12 @@ describe("useReduceMotion", () => {
    * A library open mounts one of these per row and the list unmounts them as it
    * scrolls, so a listener left behind is a listener per row that was ever seen.
    */
-  it("stops listening once the component that asked has gone", () => {
+  it("stops listening once the component that asked has gone", async () => {
     const remove = jest.fn();
     spyOnListening().mockReturnValue(subscription(remove));
 
-    const { unmount } = renderHook(() => useReduceMotion());
-    unmount();
+    const { unmount } = await renderHook(() => useReduceMotion());
+    await unmount();
 
     expect(remove).toHaveBeenCalled();
   });
@@ -106,8 +106,8 @@ describe("useReduceMotion", () => {
       return subscription(() => {});
     });
 
-    const { result } = renderHook(() => useReduceMotion());
-    act(() => {
+    const { result } = await renderHook(() => useReduceMotion());
+    await act(() => {
       announce?.(true);
     });
     expect(result.current).toBe(true);
@@ -124,10 +124,10 @@ describe("useReduceMotion", () => {
    * matchMedia is missing — no DOM, which is what static rendering is — and
    * its types do not admit it. Unmounting must not take the screen down.
    */
-  it("survives a platform that hands back no subscription", () => {
+  it("survives a platform that hands back no subscription", async () => {
     spyOnListening().mockReturnValue(undefined as unknown as EmitterSubscription);
 
-    const { unmount } = renderHook(() => useReduceMotion());
+    const { unmount } = await renderHook(() => useReduceMotion());
 
     expect(() => unmount()).not.toThrow();
   });

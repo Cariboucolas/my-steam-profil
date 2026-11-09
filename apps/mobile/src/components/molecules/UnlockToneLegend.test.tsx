@@ -14,16 +14,16 @@ const legend: readonly UnlockToneBand[] = [
 ];
 
 describe("UnlockToneLegend", () => {
-  it("writes the counts each band stands for", () => {
-    const { getByText } = render(<UnlockToneLegend legend={legend} />);
+  it("writes the counts each band stands for", async () => {
+    const { getByText } = await render(<UnlockToneLegend legend={legend} />);
 
     for (const band of legend) {
       expect(getByText(band.label)).toBeTruthy();
     }
   });
 
-  it("paints each band's swatch in the fill that band's days take", () => {
-    const { getAllByTestId } = render(<UnlockToneLegend legend={legend} />);
+  it("paints each band's swatch in the fill that band's days take", async () => {
+    const { getAllByTestId } = await render(<UnlockToneLegend legend={legend} />);
     const swatches = getAllByTestId(UNLOCK_LEGEND_SWATCH_TEST_ID);
 
     // A legend whose swatches are not the grid's own fills is worse than none:

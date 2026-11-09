@@ -29,7 +29,7 @@ const renderStore = (storage: LocaleStorage) =>
 describe("locale store", () => {
   it("is English with nothing stored, and stores English", async () => {
     const device = createFakeStorage();
-    const { result } = renderStore(device.storage);
+    const { result } = await renderStore(device.storage);
 
     await waitFor(() => expect(device.held()).toBe("en"));
     expect(result.current.setting.locale).toBe("en");
@@ -37,7 +37,7 @@ describe("locale store", () => {
   });
 
   it("starts on the locale the device remembers", async () => {
-    const { result } = renderStore(createFakeStorage("fr").storage);
+    const { result } = await renderStore(createFakeStorage("fr").storage);
 
     await waitFor(() => expect(result.current.setting.locale).toBe("fr"));
     expect(result.current.translation.t("library.neverPlayed")).toBe("jamais lancé");
@@ -45,7 +45,7 @@ describe("locale store", () => {
 
   it("changes language at once and keeps the choice across a restart", async () => {
     const device = createFakeStorage();
-    const first = renderStore(device.storage);
+    const first = await renderStore(device.storage);
     await waitFor(() => expect(device.held()).toBe("en"));
 
     await act(async () => {
@@ -54,9 +54,9 @@ describe("locale store", () => {
 
     expect(first.result.current.translation.t("library.neverPlayed")).toBe("jamais lancé");
     expect(device.held()).toBe("fr");
-    first.unmount();
+    await first.unmount();
 
-    const restarted = renderStore(device.storage);
+    const restarted = await renderStore(device.storage);
     await waitFor(() => expect(restarted.result.current.setting.locale).toBe("fr"));
   });
 
@@ -65,7 +65,7 @@ describe("locale store", () => {
       read: () => Promise.resolve(undefined),
       write: () => Promise.reject(new Error("disk full")),
     };
-    const { result } = renderStore(storage);
+    const { result } = await renderStore(storage);
 
     await act(async () => {
       await result.current.setting.choose?.("fr");
@@ -74,8 +74,8 @@ describe("locale store", () => {
     expect(result.current.setting.locale).toBe("fr");
   });
 
-  it("speaks English and offers no choice where no provider is mounted", () => {
-    const { result } = renderHook(() => useLocale());
+  it("speaks English and offers no choice where no provider is mounted", async () => {
+    const { result } = await renderHook(() => useLocale());
 
     expect(result.current).toEqual({ locale: "en", choose: undefined });
   });

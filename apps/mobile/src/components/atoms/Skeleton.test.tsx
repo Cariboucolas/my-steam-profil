@@ -44,7 +44,7 @@ afterEach(() => {
 
 describe("Skeleton", () => {
   it("takes the width and height it is given", async () => {
-    const { getByTestId } = render(<Skeleton width={44} height={9} />);
+    const { getByTestId } = await render(<Skeleton width={44} height={9} />);
     await letTheDeviceAnswer();
 
     expect(getByTestId(SKELETON_TEST_ID)).toHaveStyle({
@@ -59,7 +59,7 @@ describe("Skeleton", () => {
    * does, which is the faintest surface in the palette.
    */
   it("is drawn in the faintest surface of the palette", async () => {
-    const { getByTestId } = render(<Skeleton width={44} height={9} />);
+    const { getByTestId } = await render(<Skeleton width={44} height={9} />);
     await letTheDeviceAnswer();
 
     expect(getByTestId(SKELETON_TEST_ID)).toHaveStyle({
@@ -68,7 +68,7 @@ describe("Skeleton", () => {
   });
 
   it("tells a screen reader that something is loading", async () => {
-    const { getByTestId } = render(<Skeleton width={44} height={9} />);
+    const { getByTestId } = await render(<Skeleton width={44} height={9} />);
     await letTheDeviceAnswer();
 
     expect(getByTestId(SKELETON_TEST_ID).props.accessibilityLabel).toBe("Loading");
@@ -83,7 +83,7 @@ describe("Skeleton", () => {
   it("holds the block still, and still a block, when less motion is asked for", async () => {
     deviceAsksForLessMotion();
 
-    const { getByTestId } = render(<Skeleton width={44} height={9} />);
+    const { getByTestId } = await render(<Skeleton width={44} height={9} />);
 
     await waitFor(() => {
       expect(getByTestId(SKELETON_TEST_ID)).toHaveStyle({ opacity: 0.675 });
@@ -103,7 +103,7 @@ describe("Skeleton", () => {
     deviceAsksForLessMotion();
     const swing = watchSwings();
 
-    render(<Skeleton width={44} height={9} />);
+    await render(<Skeleton width={44} height={9} />);
     await letTheDeviceAnswer();
 
     expect(swing.start).not.toHaveBeenCalled();
@@ -112,14 +112,14 @@ describe("Skeleton", () => {
   it("swings once the device says nothing stands in the way", async () => {
     const swing = watchSwings();
 
-    render(<Skeleton width={44} height={9} />);
+    await render(<Skeleton width={44} height={9} />);
     await letTheDeviceAnswer();
 
     expect(swing.start).toHaveBeenCalled();
   });
 
   it("starts from the dim end of the swing", async () => {
-    const { getByTestId } = render(<Skeleton width={44} height={9} />);
+    const { getByTestId } = await render(<Skeleton width={44} height={9} />);
     await letTheDeviceAnswer();
 
     expect(getByTestId(SKELETON_TEST_ID)).toHaveStyle({ opacity: 0.35 });
@@ -129,7 +129,7 @@ describe("Skeleton", () => {
     const swing = watchSwings();
     const announce = watchAnnouncements();
 
-    const { getByTestId } = render(<Skeleton width={44} height={9} />);
+    const { getByTestId } = await render(<Skeleton width={44} height={9} />);
     await letTheDeviceAnswer();
     expect(swing.start).toHaveBeenCalled();
 

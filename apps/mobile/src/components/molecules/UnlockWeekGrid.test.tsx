@@ -15,8 +15,8 @@ const ROWS = ["S", "M", "T", "W", "T", "F", "S"].map((label, day) => ({
 const LEGEND = [0, 1, 2, 3, 4].map((tone) => ({ tone: tone as UnlockTone, label: String(tone) }));
 
 describe("UnlockWeekGrid", () => {
-  it("draws seven rows of twenty-four slots, each in its tone, with the legend under them", () => {
-    render(<UnlockWeekGrid rows={ROWS} legend={LEGEND} />);
+  it("draws seven rows of twenty-four slots, each in its tone, with the legend under them", async () => {
+    await render(<UnlockWeekGrid rows={ROWS} legend={LEGEND} />);
 
     const cells = screen.getAllByTestId(UNLOCK_WEEK_CELL_TEST_ID);
     expect(cells).toHaveLength(7 * 24);

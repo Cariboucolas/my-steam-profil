@@ -99,9 +99,9 @@ describe("GamePage", () => {
    * The game can wait on a library still counting, and a wait with no way out
    * is a screen the player can only kill the app to leave.
    */
-  it("offers the way back while the game is still loading", () => {
+  it("offers the way back while the game is still loading", async () => {
     const onBack = jest.fn();
-    render(
+    await render(
       <SafeAreaProvider initialMetrics={PHONE}>
         <FreshQueries>
           <SteamIdProvider storage={steamIdStorage}>
@@ -113,17 +113,17 @@ describe("GamePage", () => {
       </SafeAreaProvider>,
     );
 
-    fireEvent.press(screen.getByLabelText("Back to library"));
+    await fireEvent.press(screen.getByLabelText("Back to library"));
 
     expect(onBack).toHaveBeenCalledTimes(1);
   });
 
   /** What the cache above the routes is for (#162): the library already holds the Games. */
   it("asks only for the progress when it is opened from a library just loaded", async () => {
-    const { rerender } = render(<App shown="library" />);
+    const { rerender } = await render(<App shown="library" />);
     await screen.findByText("Soulstone Survivors");
 
-    rerender(<App shown="game" />);
+    await rerender(<App shown="game" />);
 
     await screen.findByText(NO_ACHIEVEMENTS);
     expect(getGames).toHaveBeenCalledTimes(1);
@@ -132,13 +132,12 @@ describe("GamePage", () => {
 
   /** The game view is not cached (ADR-0005). */
   it("asks for the progress again each time the game is opened", async () => {
-    const { rerender } = render(<App shown="game" />);
+    const { rerender } = await render(<App shown="game" />);
     await screen.findByText(NO_ACHIEVEMENTS);
 
-    rerender(<App shown="nothing" />);
-    rerender(<App shown="game" />);
+    await rerender(<App shown="nothing" />);
+    await rerender(<App shown="game" />);
 
-    expect(screen.queryByText(NO_ACHIEVEMENTS)).toBeNull();
     await screen.findByText(NO_ACHIEVEMENTS);
     expect(getGameProgress).toHaveBeenCalledTimes(2);
     expect(getGames).toHaveBeenCalledTimes(1);

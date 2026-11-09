@@ -76,8 +76,8 @@ const yearTo = (monthsDrawn: number): UnlockCalendar => ({
 const calendar = yearTo(3);
 
 describe("UnlockCalendarCard", () => {
-  it("draws a row for every month the year has reached", () => {
-    const { getByText, queryByText } = render(<UnlockCalendarCard calendar={calendar} />);
+  it("draws a row for every month the year has reached", async () => {
+    const { getByText, queryByText } = await render(<UnlockCalendarCard calendar={calendar} />);
 
     // Which rows exist, asked of the one thing a row always writes. What the
     // label puts beside the month is `UnlockMonthRow`'s own business, and its
@@ -88,8 +88,8 @@ describe("UnlockCalendarCard", () => {
     expect(queryByText(/^APR/, PAINTED)).toBeNull();
   });
 
-  it("draws every day those months hold", () => {
-    const { getAllByTestId } = render(<UnlockCalendarCard calendar={calendar} />);
+  it("draws every day those months hold", async () => {
+    const { getAllByTestId } = await render(<UnlockCalendarCard calendar={calendar} />);
 
     expect(getAllByTestId(UNLOCK_DAY_TEST_ID, PAINTED)).toHaveLength(31 + 28 + 5);
   });
@@ -101,8 +101,8 @@ describe("UnlockCalendarCard", () => {
    * The band runs the full width of the screen instead, and only its own rows
    * hold the grid off the edge.
    */
-  it("spends no width on a horizontal margin", () => {
-    const { getByTestId } = render(<UnlockCalendarCard calendar={calendar} />);
+  it("spends no width on a horizontal margin", async () => {
+    const { getByTestId } = await render(<UnlockCalendarCard calendar={calendar} />);
     const band = getByTestId(UNLOCK_CALENDAR_CARD_TEST_ID);
     const style = StyleSheet.flatten(band.props.style);
 
@@ -114,8 +114,8 @@ describe("UnlockCalendarCard", () => {
    * draws, so the boundaries have to be written down rather than inferred from
    * the picture — and at a size the 9-pixel cells could never carry (ADR-0007).
    */
-  it("prints the numbers behind each tone", () => {
-    const { getByTestId } = render(<UnlockCalendarCard calendar={calendar} />);
+  it("prints the numbers behind each tone", async () => {
+    const { getByTestId } = await render(<UnlockCalendarCard calendar={calendar} />);
     // Read inside the legend: a year total of nothing writes a "0" of its own
     // in the header, and the two zeroes say different things.
     const legend = within(getByTestId(UNLOCK_LEGEND_TEST_ID));
@@ -129,8 +129,8 @@ describe("UnlockCalendarCard", () => {
    * The header is handed its figures written, comparison and all: the card
    * states where the player stands and works none of it out for itself.
    */
-  it("says where the player stands in the year it draws", () => {
-    const { getByTestId } = render(
+  it("says where the player stands in the year it draws", async () => {
+    const { getByTestId } = await render(
       <UnlockCalendarCard
         calendar={{
           ...calendar,
@@ -150,8 +150,8 @@ describe("UnlockCalendarCard", () => {
     expect(header.getByText("-224 vs all of 2025 (306)")).toBeTruthy();
   });
 
-  it("never falls back on less and more", () => {
-    const { queryByText } = render(<UnlockCalendarCard calendar={calendar} />);
+  it("never falls back on less and more", async () => {
+    const { queryByText } = await render(<UnlockCalendarCard calendar={calendar} />);
 
     expect(queryByText(/less/i, PAINTED)).toBeNull();
     expect(queryByText(/more/i, PAINTED)).toBeNull();
@@ -159,18 +159,18 @@ describe("UnlockCalendarCard", () => {
 });
 
 /** A full year, drawn and then measured as layout would measure it. */
-const december = () => {
-  const view = render(<UnlockCalendarCard calendar={yearTo(12)} />);
+const december = async () => {
+  const view = await render(<UnlockCalendarCard calendar={yearTo(12)} />);
   const grid = view.getByTestId(UNLOCK_CALENDAR_GRID_TEST_ID);
 
-  fireEvent(grid, "contentSizeChange", 320, DECEMBER_HEIGHT);
+  await fireEvent(grid, "contentSizeChange", 320, DECEMBER_HEIGHT);
 
   return { ...view, grid };
 };
 
 describe("a year taller than the card", () => {
-  it("holds itself to six rows and scrolls the rest", () => {
-    const { grid } = december();
+  it("holds itself to six rows and scrolls the rest", async () => {
+    const { grid } = await december();
 
     expect(StyleSheet.flatten(grid.props.style).maxHeight).toBe(SIX_ROWS);
   });
@@ -182,21 +182,21 @@ describe("a year taller than the card", () => {
    * bouncing inside it would be pulling away from an edge the card is meant
    * to be holding.
    */
-  it("moves the year down, never sideways, and never past its own edges", () => {
-    const { grid } = december();
+  it("moves the year down, never sideways, and never past its own edges", async () => {
+    const { grid } = await december();
 
     expect(grid.props.horizontal).toBeFalsy();
     expect(grid.props.bounces).toBe(false);
   });
 
-  it("marks the edge that has more year beyond it", () => {
-    const { getByTestId, grid, queryByTestId } = december();
+  it("marks the edge that has more year beyond it", async () => {
+    const { getByTestId, grid, queryByTestId } = await december();
 
     // At rest at the top of the year: December is what is out of sight.
     expect(getByTestId(UNLOCK_FADE_BOTTOM_TEST_ID)).toBeTruthy();
     expect(queryByTestId(UNLOCK_FADE_TOP_TEST_ID)).toBeNull();
 
-    fireEvent.scroll(grid, scrolledTo(SCROLLED_PAST));
+    await fireEvent.scroll(grid, scrolledTo(SCROLLED_PAST));
 
     // Scrolled to the end: now it is January.
     expect(getByTestId(UNLOCK_FADE_TOP_TEST_ID)).toBeTruthy();
@@ -204,8 +204,8 @@ describe("a year taller than the card", () => {
   });
 
   // By style rather than by prop, which react-native-web reports as deprecated.
-  it("lets touches through its fade to the year under it", () => {
-    const { getByTestId } = december();
+  it("lets touches through its fade to the year under it", async () => {
+    const { getByTestId } = await december();
     const fade = getByTestId(UNLOCK_FADE_BOTTOM_TEST_ID);
 
     expect(fade.props.pointerEvents).toBeUndefined();
@@ -214,14 +214,14 @@ describe("a year taller than the card", () => {
     );
   });
 
-  it("says which half of the year is in view", () => {
-    const { getAllByTestId, grid } = december();
+  it("says which half of the year is in view", async () => {
+    const { getAllByTestId, grid } = await december();
     const painted = () =>
       getAllByTestId(UNLOCK_HALF_DOT_TEST_ID).map((dot) => dot.props.style.backgroundColor);
 
     expect(painted()).toEqual([colors.accent, colors.textFaint]);
 
-    fireEvent.scroll(grid, scrolledTo(SCROLLED_PAST));
+    await fireEvent.scroll(grid, scrolledTo(SCROLLED_PAST));
 
     expect(painted()).toEqual([colors.textFaint, colors.accent]);
   });
@@ -234,8 +234,8 @@ describe("a year taller than the card", () => {
  * possible.
  */
 describe("a year the card holds whole", () => {
-  it("draws every month it has reached with no scroll and no dots", () => {
-    const { getByText, queryAllByTestId, queryByTestId } = render(
+  it("draws every month it has reached with no scroll and no dots", async () => {
+    const { getByText, queryAllByTestId, queryByTestId } = await render(
       <UnlockCalendarCard calendar={yearTo(6)} />,
     );
 

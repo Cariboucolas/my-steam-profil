@@ -9,7 +9,7 @@ const inFrench = (form: React.ReactElement) =>
 
 describe("SteamIdForm in French", () => {
   it("asks, refuses and offers its ways out in French", async () => {
-    inFrench(
+    await inFrench(
       <SteamIdForm
         onSubmit={() => Promise.resolve(false)}
         onCancel={() => {}}
@@ -23,7 +23,7 @@ describe("SteamIdForm in French", () => {
     expect(screen.getByText("Annuler")).toBeTruthy();
     expect(screen.getByText("Oublier ce profil")).toBeTruthy();
 
-    fireEvent.press(screen.getByText("Afficher ce profil"));
+    await fireEvent.press(screen.getByText("Afficher ce profil"));
 
     await waitFor(() => expect(screen.getByText(/^Ce n'est pas un SteamID64\./)).toBeTruthy());
     expect(screen.queryByText("Cancel")).toBeNull();

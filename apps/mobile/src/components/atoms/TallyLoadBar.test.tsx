@@ -30,7 +30,7 @@ afterEach(() => {
 
 describe("TallyLoadBar", () => {
   it("is drawn in the accent, on the faintest surface of the palette", async () => {
-    const { getByTestId } = render(<TallyLoadBar loaded={0.37} />);
+    const { getByTestId } = await render(<TallyLoadBar loaded={0.37} />);
     await letTheDeviceAnswer();
 
     expect(getByTestId(TALLY_LOAD_BAR_FILL_TEST_ID)).toHaveStyle({
@@ -49,7 +49,7 @@ describe("TallyLoadBar", () => {
   it("eases to the share that has landed rather than stepping to it", async () => {
     const slide = watchSlides();
 
-    render(<TallyLoadBar loaded={0.37} />);
+    await render(<TallyLoadBar loaded={0.37} />);
     await letTheDeviceAnswer();
 
     expect(slide.start).toHaveBeenCalled();
@@ -68,7 +68,7 @@ describe("TallyLoadBar", () => {
     deviceAsksForLessMotion();
     const slide = watchSlides();
 
-    const { getByTestId } = render(<TallyLoadBar loaded={0.37} />);
+    const { getByTestId } = await render(<TallyLoadBar loaded={0.37} />);
 
     await waitFor(() => {
       const fill = getByTestId(TALLY_LOAD_BAR_FILL_TEST_ID);
@@ -83,7 +83,7 @@ describe("TallyLoadBar", () => {
    * to report is a bar that should not be there.
    */
   it("shows nothing when there is nothing to report", async () => {
-    const { queryByTestId } = render(<TallyLoadBar loaded={null} />);
+    const { queryByTestId } = await render(<TallyLoadBar loaded={null} />);
     await letTheDeviceAnswer();
 
     expect(queryByTestId(TALLY_LOAD_BAR_TEST_ID)).toBeNull();
@@ -98,7 +98,7 @@ describe("TallyLoadBar", () => {
    * it and the rule reads as part of the border.
    */
   it("sits on the card's top edge, out of the flow", async () => {
-    const { getByTestId } = render(<TallyLoadBar loaded={0.5} />);
+    const { getByTestId } = await render(<TallyLoadBar loaded={0.5} />);
     await letTheDeviceAnswer();
 
     expect(getByTestId(TALLY_LOAD_BAR_TEST_ID)).toHaveStyle({

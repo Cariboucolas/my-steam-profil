@@ -53,26 +53,26 @@ describe("useUnlockWeek", () => {
       },
     );
 
-  it("holds the scale the first wave read while the rest land", () => {
-    const { result, rerender } = render(FIRST_WAVE, false);
+  it("holds the scale the first wave read while the rest land", async () => {
+    const { result, rerender } = await render(FIRST_WAVE, false);
     expect(legendOf(result.current)).toEqual(ALONE);
 
-    rerender({ view: SECOND_WAVE, counted: false });
+    await rerender({ view: SECOND_WAVE, counted: false });
     expect(legendOf(result.current)).toEqual(ALONE);
   });
 
-  it("reads the scale afresh once counted", () => {
-    const { result, rerender } = render(FIRST_WAVE, false);
-    rerender({ view: SECOND_WAVE, counted: false });
-    rerender({ view: SECOND_WAVE, counted: true });
+  it("reads the scale afresh once counted", async () => {
+    const { result, rerender } = await render(FIRST_WAVE, false);
+    await rerender({ view: SECOND_WAVE, counted: false });
+    await rerender({ view: SECOND_WAVE, counted: true });
 
     expect(legendOf(result.current)).toEqual(BESIDE_THE_MORNINGS);
   });
 
-  it("lets another library read its own scale mid-count", () => {
-    const { result, rerender } = render(FIRST_WAVE, false);
+  it("lets another library read its own scale mid-count", async () => {
+    const { result, rerender } = await render(FIRST_WAVE, false);
     // Another load: the same games, in a fresh array.
-    rerender({ view: waveOf([...GAMES], BUSY_MORNINGS), counted: false });
+    await rerender({ view: waveOf([...GAMES], BUSY_MORNINGS), counted: false });
 
     expect(legendOf(result.current)).toEqual(BESIDE_THE_MORNINGS);
   });

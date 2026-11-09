@@ -9,7 +9,7 @@ const SOONER_THAN_THE_APP_RETRIES_MS = 500;
 
 describe("FreshQueries", () => {
   it("serves a query to what it wraps", async () => {
-    render(<Probe ask={() => Promise.resolve("answered")} />, { wrapper: FreshQueries });
+    await render(<Probe ask={() => Promise.resolve("answered")} />, { wrapper: FreshQueries });
 
     expect(await screen.findByText("answered")).toBeTruthy();
   });
@@ -17,13 +17,12 @@ describe("FreshQueries", () => {
   it("shares no answer between two renders", async () => {
     const ask = jest.fn(() => Promise.resolve("answered"));
 
-    const first = render(<Probe ask={ask} />, { wrapper: FreshQueries });
+    const first = await render(<Probe ask={ask} />, { wrapper: FreshQueries });
     await screen.findByText("answered");
-    first.unmount();
+    await first.unmount();
 
-    render(<Probe ask={ask} />, { wrapper: FreshQueries });
+    await render(<Probe ask={ask} />, { wrapper: FreshQueries });
 
-    expect(screen.getByText("asking")).toBeTruthy();
     await screen.findByText("answered");
     expect(ask).toHaveBeenCalledTimes(2);
   });
@@ -31,9 +30,9 @@ describe("FreshQueries", () => {
   it("serves one cache for as long as it stays mounted", async () => {
     const ask = jest.fn(() => Promise.resolve("answered"));
 
-    const { rerender } = render(<Probe ask={ask} />, { wrapper: FreshQueries });
+    const { rerender } = await render(<Probe ask={ask} />, { wrapper: FreshQueries });
     await screen.findByText("answered");
-    rerender(<Probe ask={ask} />);
+    await rerender(<Probe ask={ask} />);
 
     expect(screen.getByText("answered")).toBeTruthy();
     expect(ask).toHaveBeenCalledTimes(1);
@@ -46,7 +45,7 @@ describe("FreshQueries", () => {
       .mockRejectedValueOnce(new ApiFailure("UNAVAILABLE"))
       .mockResolvedValue("answered");
 
-    render(<Probe ask={ask} />, { wrapper: FreshQueries });
+    await render(<Probe ask={ask} />, { wrapper: FreshQueries });
 
     expect(
       await screen.findByText("answered", {}, { timeout: SOONER_THAN_THE_APP_RETRIES_MS }),

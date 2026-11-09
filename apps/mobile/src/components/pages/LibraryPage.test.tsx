@@ -77,12 +77,12 @@ describe("LibraryPage", () => {
    * is there for whoever shows it next, while it is fresh.
    */
   it("asks nothing again when the reader comes back to a library just loaded", async () => {
-    const { rerender } = render(<App onLibrary />);
+    const { rerender } = await render(<App onLibrary />);
     await screen.findByText("Soulstone Survivors");
 
-    rerender(<App onLibrary={false} />);
+    await rerender(<App onLibrary={false} />);
     expect(screen.queryByText("Soulstone Survivors")).toBeNull();
-    rerender(<App onLibrary />);
+    await rerender(<App onLibrary />);
 
     expect(screen.getByText("Soulstone Survivors")).toBeTruthy();
     await act(async () => {});
