@@ -187,7 +187,8 @@ export function LibraryPage({
     [view, repin, t],
   );
 
-  // On native, pulling the list down is the Recount. The web has no such
+  // On native, pulling the Library list down is the Recount, and the only
+  // trigger: the rarest tab is not that list. The web has no such
   // gesture and gets no button: reloading the page already counts again.
   const onRefresh = useMemo(
     () => (Platform.OS === "web" ? undefined : () => recount(rows.map((row) => row.appId))),
@@ -278,8 +279,6 @@ export function LibraryPage({
         header={header}
         rows={rarestRows}
         empty={<RarestEmpty status={rarest.status} anyUnlock={rarest.anyUnlock} />}
-        onRefresh={onRefresh}
-        refreshing={refreshing}
       />
     );
   }
