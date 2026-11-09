@@ -1,12 +1,13 @@
 import type { GameDto, GameTallyDto } from "@steam/contracts";
 import type { Result } from "@steam/domain";
 import { type QueryClient, type QueryKey, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { askThroughCache } from "../query/ask-through-cache";
 import { queries } from "../query/queries";
 import { longestFirst, type TallyByAppId } from "../view-models/library";
 import type { ApiClient } from "./api-client";
+import { gamesQuery } from "./games-query";
 import { askInWaves } from "./request-waves";
 
 /** Shared, so resetting a library that is already empty re-renders nothing. */
@@ -69,7 +70,7 @@ const gamesWorthTallying = (games: readonly GameDto[]): readonly number[] => {
     .map((game) => game.appId);
 };
 
-/** Where a library's tallies have got to, and the one lever over that. */
+/** Where a library's tallies have got to, and the levers over that. */
 export type LibraryTallies = {
   /** Every tally that has landed. Absent means "not counted", not "none". */
   readonly tallies: TallyByAppId;
@@ -107,17 +108,37 @@ export type LibraryTallies = {
    * holds.
    */
   repin(order: readonly number[]): void;
+  /**
+   * The Games to draw. The list handed in, except during a Recount, when a
+   * Game gone from the new list keeps its row until the order is released.
+   */
+  readonly games: readonly GameDto[];
+  /** True from the moment a Recount starts until its list of Games is back. */
+  readonly refreshing: boolean;
+  /** Whether the last Recount could not load the list of Games. */
+  readonly recountFailed: boolean;
+  /**
+   * Starts a Recount (#164): the list of Games and every tally are asked
+   * again, past the cache, while the list stays pinned to `order` — the order
+   * on screen — with any Game new to it at the bottom. Does nothing while a
+   * count, first or Recount, is still running.
+   */
+  recount(order: readonly number[]): void;
 };
 
-/** One Game's tally, through the cache above the routes. */
+/** One Game's tally, through the cache above the routes; `again` past it. */
 const askTally = (
   cache: QueryClient,
   steamId: string,
   client: ApiClient,
   appId: number,
+  again = false,
 ): Promise<Result<GameTallyDto, unknown>> =>
-  askThroughCache(cache, queries.tally(steamId, appId), (signal) =>
-    client.getGameTally(appId, signal),
+  askThroughCache(
+    cache,
+    queries.tally(steamId, appId),
+    (signal) => client.getGameTally(appId, signal),
+    { again },
   );
 
 /** The Game a tally key names, when it is one of `steamId`'s tallies. */
@@ -127,10 +148,40 @@ const tallyOf = (key: QueryKey, steamId: string): number | null => {
 };
 
 /**
+ * The rows a Recount draws: every Game shown before it, as the new list
+ * describes it where it still holds it, then the Games new to the list.
+ */
+const keptAlongside = (shown: readonly GameDto[], next: readonly GameDto[]): readonly GameDto[] => {
+  const latest = new Map(next.map((game) => [game.appId, game]));
+  const before = new Set(shown.map((game) => game.appId));
+  return [
+    ...shown.map((game) => latest.get(game.appId) ?? game),
+    ...next.filter((game) => !before.has(game.appId)),
+  ];
+};
+
+/** `order`, then every Game of `games` it does not name yet. */
+const pinnedWithNewcomers = (
+  order: readonly number[],
+  games: readonly GameDto[],
+): readonly number[] => {
+  const named = new Set(order);
+  return [...order, ...games.map((game) => game.appId).filter((appId) => !named.has(appId))];
+};
+
+/** The library a count is of: the effect does not start a second one for it. */
+type CountedOf = {
+  readonly steamId: string | undefined;
+  readonly client: ApiClient | undefined;
+  readonly games: readonly GameDto[] | null;
+};
+
+/**
  * How far a library's tallies have got, from the games it holds. Everything
  * the load needs — the order to fetch in, the waves, abandoning them when the
  * profile changes, merging what lands and taking it out of the outstanding
- * set, pinning the order and releasing it — lives behind this.
+ * set, pinning the order and releasing it — lives behind this, and so does a
+ * Recount (#164).
  *
  * Every tally is read through the cache above the routes (#162), so another
  * screen asks nothing for what this one counted, and a library left mid-count
@@ -138,11 +189,16 @@ const tallyOf = (key: QueryKey, steamId: string): number | null => {
  * render per wave of six is what keeps the list smooth while it counts, which
  * one render per tally was measured not to (#168).
  *
- * Two things are asked of a caller. `games` must keep a stable identity across
- * renders — a fresh array each render restarts the load, so hand over the
- * loaded value or a constant, never a literal. And `games` must be the games
+ * A new `games` array of the same Profile keeps the tallies already known and
+ * counts the new list on top of them; another Profile starts from nothing.
+ *
+ * Three things are asked of a caller. `games` must keep a stable identity
+ * across renders — a fresh array each render restarts the load, so hand over
+ * the loaded value or a constant, never a literal. `games` must be the games
  * `steamId` owns, and `client` the client of `steamId`: a library held over
- * from a previous profile would be counted against the new one.
+ * from a previous profile would be counted against the new one. And `games`
+ * must be read from the cache's Games query, which a Recount asks again: the
+ * library is counted through once that new list has been handed in.
  */
 export const useLibraryTallies = (
   steamId: string | undefined,
@@ -162,18 +218,100 @@ export const useLibraryTallies = (
    * render must not read the previous one's state against the new games.
    */
   const [heldFor, setHeldFor] = useState({ steamId, games });
+  /** During a Recount, the rows drawn: what was shown and what is new. */
+  const [kept, setKept] = useState<readonly GameDto[] | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [recountFailed, setRecountFailed] = useState(false);
+
+  /** Moved on by every count that starts, so the one before stops between waves. */
+  const generation = useRef(0);
+  /** Whether a count, first or Recount, is running: a pull meanwhile is ignored. */
+  const counting = useRef(false);
+  /**
+   * Whether a Recount is waiting on its list of Games. The cache may hand that
+   * list to the page before the Recount reads it, and the Recount counts it.
+   */
+  const askingForList = useRef(false);
+  const mounted = useRef(true);
+  const countedOf = useRef<CountedOf | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
+
+  /** Asks `wanted` in waves into the tallies, for as long as count `mine` is the latest. */
+  const countInWaves = useCallback(
+    async (
+      library: { readonly steamId: string; readonly client: ApiClient },
+      wanted: readonly number[],
+      mine: number,
+      again: boolean,
+    ) => {
+      const live = () => mounted.current && generation.current === mine;
+      await askInWaves(
+        wanted,
+        (appId) => askTally(cache, library.steamId, library.client, appId, again),
+        (landed, askedInWave) => {
+          if (!live()) return;
+          // A tally that failed is absent from `landed`, so the one it had stays.
+          setTallies((known) => ({ ...known, ...landed }));
+          // Cleared for everything asked, not just what landed: a game that
+          // failed is not coming, and must stop pulsing.
+          setPending((waiting) => {
+            const left = new Set(waiting);
+            for (const appId of askedInWave) left.delete(appId);
+            return left;
+          });
+        },
+        live,
+      );
+
+      if (live()) {
+        // Everything that is coming has come: the chosen order applies again,
+        // a Game gone from the list goes, and the library is counted through.
+        counting.current = false;
+        setFrozenOrder(null);
+        setKept(null);
+        setCounted(true);
+      }
+    },
+    [cache],
+  );
+
+  useEffect(() => {
+    const last = countedOf.current;
+    if (
+      last !== null &&
+      last.steamId === steamId &&
+      last.client === client &&
+      last.games === games
+    ) {
+      // A Recount already counts this list.
+      return;
+    }
+    const sameProfile = last !== null && last.steamId === steamId;
+    if (sameProfile && askingForList.current) return;
+    generation.current += 1;
+    const mine = generation.current;
+    countedOf.current = { steamId, client, games };
+    counting.current = false;
 
     // A different profile must not be counted with the previous one's tallies
     // while its own load runs. Without this, switching profiles shows one
     // library's numbers against the other's games.
-    setTallies(NO_TALLIES);
+    if (!sameProfile) {
+      setTallies(NO_TALLIES);
+      setRecountFailed(false);
+    }
     setPending(NOTHING_OUTSTANDING);
     setAsked(0);
     setFrozenOrder(null);
     setCounted(false);
+    setKept(null);
+    setRefreshing(false);
     setHeldFor({ steamId, games });
 
     if (steamId !== undefined && client !== undefined) {
@@ -184,45 +322,25 @@ export const useLibraryTallies = (
         // stays uncounted and whatever waits on the count keeps waiting.
         setCounted(true);
       } else {
+        counting.current = true;
         setPending(new Set(wanted));
         setAsked(wanted.length);
         setFrozenOrder(wanted);
-
-        void (async () => {
-          await askInWaves(
-            wanted,
-            (appId) => askTally(cache, steamId, client, appId),
-            (landed, asked) => {
-              if (cancelled) return;
-              setTallies((known) => ({ ...known, ...landed }));
-              // Cleared for everything asked, not just what landed: a game that
-              // failed is not coming, and must stop pulsing.
-              setPending((waiting) => {
-                const left = new Set(waiting);
-                for (const appId of asked) left.delete(appId);
-                return left;
-              });
-            },
-            () => !cancelled,
-          );
-
-          if (!cancelled) {
-            // Everything that is coming has come: the chosen order applies
-            // again, and the library is counted through.
-            setFrozenOrder(null);
-            setCounted(true);
-          }
-        })();
+        void countInWaves({ steamId, client }, wanted, mine, false);
       }
     }
 
     // Stops the waves where they are, and guards against one landing on a
     // library that is no longer shown. A wave already in flight still lands in
-    // the cache, where the next visit finds it.
+    // the cache, where the next visit finds it. A Recount started since owns
+    // the count, and is left alone.
     return () => {
-      cancelled = true;
+      if (generation.current !== mine) return;
+      generation.current += 1;
+      counting.current = false;
+      countedOf.current = { steamId, client, games: null };
     };
-  }, [cache, steamId, client, games]);
+  }, [steamId, client, games, countInWaves]);
 
   // A game opened from the library marks its tally out of date when its
   // GameProgress lands (#167), while the library is still mounted beneath it.
@@ -254,7 +372,56 @@ export const useLibraryTallies = (
     setFrozenOrder((pinned) => (pinned === null ? null : order));
   }, []);
 
-  if (heldFor.steamId !== steamId || heldFor.games !== games) {
+  const recount = useCallback(
+    (order: readonly number[]) => {
+      if (steamId === undefined || client === undefined || counting.current) return;
+      generation.current += 1;
+      const mine = generation.current;
+      const live = () => mounted.current && generation.current === mine;
+      const shown = games;
+      counting.current = true;
+      askingForList.current = true;
+      setRefreshing(true);
+      setCounted(false);
+
+      void (async () => {
+        const listQuery = gamesQuery(steamId, client);
+        let next: readonly GameDto[];
+        try {
+          // Asked again past the cache, under the key the page reads, so the
+          // page is handed the new list as soon as it lands. Read back from the
+          // cache: that copy, not the one fetched, is the array the page holds.
+          const fetched = await cache.fetchQuery({ ...listQuery, staleTime: 0 });
+          next = cache.getQueryData(listQuery.queryKey) ?? fetched;
+        } catch {
+          askingForList.current = false;
+          if (!live()) return;
+          // The library shown stays as it was; the player is told, and may pull again.
+          counting.current = false;
+          setRefreshing(false);
+          setRecountFailed(true);
+          setCounted(true);
+          return;
+        }
+        askingForList.current = false;
+        if (!live()) return;
+
+        const wanted = gamesWorthTallying(next);
+        countedOf.current = { steamId, client, games: next };
+        setHeldFor({ steamId, games: next });
+        setKept(keptAlongside(shown, next));
+        setFrozenOrder(pinnedWithNewcomers(order, next));
+        setPending(new Set(wanted));
+        setAsked(wanted.length);
+        setRefreshing(false);
+        setRecountFailed(false);
+        await countInWaves({ steamId, client }, wanted, mine, true);
+      })();
+    },
+    [cache, steamId, client, games, countInWaves],
+  );
+
+  if (heldFor.steamId !== steamId) {
     return {
       tallies: NO_TALLIES,
       pending: NOTHING_OUTSTANDING,
@@ -262,10 +429,26 @@ export const useLibraryTallies = (
       counted: false,
       frozenOrder: null,
       repin,
+      games,
+      refreshing: false,
+      recountFailed: false,
+      recount,
     };
   }
 
   const loaded = pending.size === 0 ? null : (asked - pending.size) / asked;
 
-  return { tallies, pending, loaded, counted, frozenOrder, repin };
+  return {
+    tallies,
+    pending,
+    loaded,
+    // A list handed in that no count has reached yet is not counted through.
+    counted: counted && heldFor.games === games,
+    frozenOrder,
+    repin,
+    games: kept ?? games,
+    refreshing,
+    recountFailed,
+    recount,
+  };
 };

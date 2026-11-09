@@ -32,19 +32,24 @@ const failedRecently = (cache: QueryClient, key: QueryKey, freshFor: number): bo
  * What a wave asks once per Game goes through here rather than through a
  * query a screen observes: one render per answer, with hundreds of them, was
  * measured to slow the library down (#168).
+ *
+ * `again` is a player's Recount (#164): the backend is asked whatever the cache
+ * holds, a fresh answer or a recent failure, and its answer is kept as usual.
  */
 export const askThroughCache = async <Value>(
   cache: QueryClient,
   query: CachedQuery,
   ask: (signal: AbortSignal) => Promise<Result<Value, ProgressError>>,
+  { again = false }: { readonly again?: boolean } = {},
 ): Promise<Result<Value, unknown>> => {
-  if (failedRecently(cache, query.queryKey, query.staleTime)) {
+  if (!again && failedRecently(cache, query.queryKey, query.staleTime)) {
     return err("FAILED_RECENTLY");
   }
   try {
     return ok(
       await cache.fetchQuery({
         ...query,
+        ...(again ? { staleTime: 0 } : {}),
         queryFn: ({ signal }) => ask(signal).then(valueOrThrow),
       }),
     );
