@@ -15,7 +15,7 @@ const STILL = (DIMMEST + BRIGHTEST) / 2;
 
 /**
  * The opacity of something waiting on a value: a slow swing between faint and
- * solid, which the skeletons and a row being recounted (#164) share so they
+ * solid, which the skeletons and a row being recounted share so they
  * read as one kind of wait.
  *
  * React Native's own Animated, driven natively: an opacity swing is one of the

@@ -118,7 +118,7 @@ export type LibraryTallies = {
   /** Whether the last Recount could not load the list of Games. */
   readonly recountFailed: boolean;
   /**
-   * Starts a Recount (#164): the list of Games and every tally are asked
+   * Starts a Recount: the list of Games and every tally are asked
    * again, past the cache, while the list stays pinned to `order` — the order
    * on screen — with any Game new to it at the bottom. Does nothing while a
    * count, first or Recount, is still running.
@@ -126,7 +126,7 @@ export type LibraryTallies = {
   recount(order: readonly number[]): void;
 };
 
-/** One Game's tally, through the cache above the routes; `again` past it. */
+/** One Game's tally, through the cache above the routes. */
 const askTally = (
   cache: QueryClient,
   steamId: string,
@@ -160,7 +160,6 @@ const keptAlongside = (shown: readonly GameDto[], next: readonly GameDto[]): rea
   ];
 };
 
-/** `order`, then every Game of `games` it does not name yet. */
 const pinnedWithNewcomers = (
   order: readonly number[],
   games: readonly GameDto[],
@@ -188,7 +187,6 @@ const askListAgain = async (
     // Read back: the cache's copy is the array the page is handed.
     return cache.getQueryData(queryKey) ?? answer.value;
   } catch {
-    // A list that could not be reached is told the player as one that failed.
     return null;
   }
 };
@@ -205,7 +203,7 @@ type CountedOf = {
  * the load needs — the order to fetch in, the waves, abandoning them when the
  * profile changes, merging what lands and taking it out of the outstanding
  * set, pinning the order and releasing it — lives behind this, and so does a
- * Recount (#164).
+ * Recount.
  *
  * Every tally is read through the cache above the routes (#162), so another
  * screen asks nothing for what this one counted, and a library left mid-count
@@ -305,7 +303,6 @@ export const useLibraryTallies = (
     [cache],
   );
 
-  /** Marks `wanted` outstanding, pins the list to `order`, and counts. */
   const startCount = useCallback(
     (
       library: { readonly steamId: string; readonly client: ApiClient },
@@ -427,7 +424,6 @@ export const useLibraryTallies = (
         askingForList.current = false;
         if (!live()) return;
         if (next === null) {
-          // The library shown stays as it was; the player is told, and may pull again.
           counting.current = false;
           setRefreshing(false);
           setRecountFailed(true);

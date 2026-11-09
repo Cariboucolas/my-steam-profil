@@ -105,8 +105,6 @@ export function LibraryPage({
   // Where the tallies have got to. Fetching them from the shared cache, abandoning
   // them on a profile switch and holding the list still while they land are
   // all its concern, and none of them are state this screen keeps.
-  // `games` is what the list draws: during a Recount, a Game gone from the new
-  // list keeps its row until the order is released (#164).
   const {
     tallies,
     pending,
@@ -187,9 +185,8 @@ export function LibraryPage({
     [view, repin, t],
   );
 
-  // On native, pulling the Library list down is the Recount, and the only
-  // trigger: the rarest tab is not that list. The web has no such
-  // gesture and gets no button: reloading the page already counts again.
+  // On native, pulling the Library list down is the Recount. The web gets no
+  // button: reloading the page already counts again.
   const onRefresh = useMemo(
     () => (Platform.OS === "web" ? undefined : () => recount(rows.map((row) => row.appId))),
     [recount, rows],

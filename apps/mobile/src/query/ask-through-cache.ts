@@ -33,8 +33,9 @@ const failedRecently = (cache: QueryClient, key: QueryKey, freshFor: number): bo
  * query a screen observes: one render per answer, with hundreds of them, was
  * measured to slow the library down (#168).
  *
- * `again` is a player's Recount (#164): the backend is asked whatever the cache
- * holds, a fresh answer or a recent failure, and its answer is kept as usual.
+ * `again` is a player's Recount: the backend is asked whatever the cache holds,
+ * a fresh answer or a recent failure. The keys are not invalidated for it:
+ * invalidating a tally asks it again on its own, outside the waves (#167).
  */
 export const askThroughCache = async <Value>(
   cache: QueryClient,

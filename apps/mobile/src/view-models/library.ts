@@ -57,7 +57,7 @@ export type GameRow = {
    */
   readonly pending: boolean;
   /**
-   * A tally this row already shows is being asked again, by a Recount (#164).
+   * A tally this row already shows is being asked again, by a Recount.
    * The row keeps its figure and pulses it: nothing it showed goes blank.
    */
   readonly recounting: boolean;
