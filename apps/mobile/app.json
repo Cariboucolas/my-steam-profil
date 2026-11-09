@@ -45,7 +45,8 @@
           "organization": "cdcraft",
           "project": "steam-achievements"
         }
-      ]
+      ],
+      "expo-status-bar"
     ],
     "extra": {
       "router": {},
