@@ -19,9 +19,21 @@ const config: StorybookConfig = {
   // them as they are, and the browser meets a `require` it does not have — a
   // gallery that builds green and draws nothing. Converting mixed modules in
   // the build turns each `require` into an import of the font's URL.
+  //
+  // React Native 0.87 dropped `@react-native/assets-registry`, which
+  // react-native-svg's web build still imports. Metro sends it to
+  // react-native-web's registry (Expo CLI, until SDK 59); Vite is told the same.
   viteFinal: (config) =>
     mergeConfig(config, {
       build: { commonjsOptions: { transformMixedEsModules: true } },
+      resolve: {
+        alias: [
+          {
+            find: /^@react-native\/assets-registry\/registry(\.js)?$/,
+            replacement: "react-native-web/asset-registry",
+          },
+        ],
+      },
     }),
   // The gallery states its Revision as the app does (ADR-0016), from the same
   // two build-time variables, so a screenshot of a story says which commit
