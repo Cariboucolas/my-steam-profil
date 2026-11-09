@@ -40,8 +40,6 @@ export function GameListItem({ row, onPress }: Props) {
           <Skeleton width={RATE_SKELETON_WIDTH} height={RATE_SKELETON_HEIGHT} />
         </View>
       ) : row.recounting ? (
-        // Asked again by a Recount: the figure it had stays, pulsing, so the
-        // row never goes blank while it waits (#164).
         <RecountingRate label={row.rateLabel} known={known} />
       ) : (
         <Text style={rateStyle(known)}>{row.rateLabel}</Text>
@@ -50,7 +48,6 @@ export function GameListItem({ row, onPress }: Props) {
   );
 }
 
-/** The rate, faint where there is no completion to show. */
 const rateStyle = (known: boolean) => ({
   ...styles.rate,
   color: known ? colors.text : colors.textFaint,
