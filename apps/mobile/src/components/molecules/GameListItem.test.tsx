@@ -16,6 +16,7 @@ const row = (over: Partial<GameRow> = {}): GameRow => ({
   rateLabel: "73%",
   meta: "353/483 · 83 h · 25 Jun 2026",
   pending: false,
+  recounting: false,
   ...over,
 });
 
@@ -73,6 +74,17 @@ describe("GameListItem", () => {
   it("shows no skeleton once the tally has landed", async () => {
     const { queryByTestId } = await render(<GameListItem row={row()} onPress={() => {}} />);
 
+    expect(queryByTestId(SKELETON_TEST_ID)).toBeNull();
+  });
+
+  /** A Recount asks again a tally the row shows: the figure stays, and pulses (#164). */
+  it("keeps its rate while its tally is asked again, marked busy", async () => {
+    const { getByText, queryByTestId } = render(
+      <GameListItem row={row({ recounting: true })} onPress={() => {}} />,
+    );
+    await letTheDeviceAnswer();
+
+    expect(getByText("73%").props.accessibilityState).toEqual({ busy: true });
     expect(queryByTestId(SKELETON_TEST_ID)).toBeNull();
   });
 
