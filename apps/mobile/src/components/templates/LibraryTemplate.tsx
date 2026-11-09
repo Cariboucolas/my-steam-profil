@@ -22,6 +22,12 @@ type Props = {
    * first, after which only what is on screen is. Left out, every row mounts.
    */
   readonly initialRows?: number;
+  /**
+   * What pulling the list down asks for: the platform's own pull-to-refresh,
+   * spinning while `refreshing`. Left out, the list cannot be pulled.
+   */
+  readonly onRefresh?: (() => void) | undefined;
+  readonly refreshing?: boolean;
 };
 
 /**
@@ -31,7 +37,14 @@ type Props = {
  * The rows arrive already drawn rather than as data, so the template knows no
  * game and no ranking, and the list still mounts only the ones on screen.
  */
-export function LibraryTemplate({ header, rows, empty, initialRows }: Props) {
+export function LibraryTemplate({
+  header,
+  rows,
+  empty,
+  initialRows,
+  onRefresh,
+  refreshing = false,
+}: Props) {
   const insets = useSafeAreaInsets();
 
   return (
@@ -47,6 +60,7 @@ export function LibraryTemplate({ header, rows, empty, initialRows }: Props) {
       // biome-ignore lint/complexity/noUselessFragments: the list takes an element, and `header` is any node.
       ListHeaderComponent={<>{header}</>}
       {...(empty === undefined ? {} : { ListEmptyComponent: <>{empty}</> })}
+      {...(onRefresh === undefined ? {} : { onRefresh, refreshing })}
       {...(initialRows === undefined
         ? {}
         : {
