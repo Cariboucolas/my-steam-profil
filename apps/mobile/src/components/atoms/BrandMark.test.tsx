@@ -1,5 +1,4 @@
 import { render } from "@testing-library/react-native";
-import Svg from "react-native-svg";
 
 import { MARK_STOP_COUNT, MARK_STOPS } from "../../theme/mark";
 import { BrandMark, MARK_STOP_TEST_ID, MARK_TIP_TEST_ID, MARK_TRACK_TEST_ID } from "./BrandMark";
@@ -10,6 +9,9 @@ import { BrandMark, MARK_STOP_TEST_ID, MARK_TIP_TEST_ID, MARK_TRACK_TEST_ID } fr
  * to look past that; that it is hidden at all has a test of its own below.
  */
 const DRAWN = { includeHiddenElements: true } as const;
+
+/** The native view react-native-svg renders an `<Svg>` into. */
+const SVG_HOST = "RNSVGSvgView";
 
 describe("MARK_STOPS", () => {
   it("runs from the darkest amber to the lightest", () => {
@@ -30,23 +32,23 @@ describe("BrandMark", () => {
    * The unlit ring the arc is drawn over. It is the whole shape from the first
    * frame, so the mark never appears to grow — only to fill.
    */
-  it("draws its track before any stop has landed", () => {
-    const { getByTestId } = render(<BrandMark size={112} stops={0} tip={false} />);
+  it("draws its track before any stop has landed", async () => {
+    const { getByTestId } = await render(<BrandMark size={112} stops={0} tip={false} />);
     expect(getByTestId(MARK_TRACK_TEST_ID, DRAWN)).toBeTruthy();
   });
 
-  it("draws nothing of the arc before any stop has landed", () => {
-    const { queryAllByTestId } = render(<BrandMark size={112} stops={0} tip={false} />);
+  it("draws nothing of the arc before any stop has landed", async () => {
+    const { queryAllByTestId } = await render(<BrandMark size={112} stops={0} tip={false} />);
     expect(queryAllByTestId(MARK_STOP_TEST_ID, DRAWN)).toHaveLength(0);
   });
 
-  it("draws exactly as many stops as it is given", () => {
-    const { queryAllByTestId } = render(<BrandMark size={112} stops={5} tip={false} />);
+  it("draws exactly as many stops as it is given", async () => {
+    const { queryAllByTestId } = await render(<BrandMark size={112} stops={5} tip={false} />);
     expect(queryAllByTestId(MARK_STOP_TEST_ID, DRAWN)).toHaveLength(5);
   });
 
-  it("draws the whole arc when every stop has landed", () => {
-    const { queryAllByTestId } = render(<BrandMark size={112} stops={MARK_STOP_COUNT} tip />);
+  it("draws the whole arc when every stop has landed", async () => {
+    const { queryAllByTestId } = await render(<BrandMark size={112} stops={MARK_STOP_COUNT} tip />);
     expect(queryAllByTestId(MARK_STOP_TEST_ID, DRAWN)).toHaveLength(MARK_STOP_COUNT);
   });
 
@@ -54,23 +56,25 @@ describe("BrandMark", () => {
    * A caller that has lost count must not be able to ask for an arc the mark
    * does not have, nor for a negative one.
    */
-  it("draws no more stops than it has, however many it is asked for", () => {
-    const { queryAllByTestId } = render(<BrandMark size={112} stops={99} tip={false} />);
+  it("draws no more stops than it has, however many it is asked for", async () => {
+    const { queryAllByTestId } = await render(<BrandMark size={112} stops={99} tip={false} />);
     expect(queryAllByTestId(MARK_STOP_TEST_ID, DRAWN)).toHaveLength(MARK_STOP_COUNT);
   });
 
-  it("draws no stops at all when asked for fewer than none", () => {
-    const { queryAllByTestId } = render(<BrandMark size={112} stops={-4} tip={false} />);
+  it("draws no stops at all when asked for fewer than none", async () => {
+    const { queryAllByTestId } = await render(<BrandMark size={112} stops={-4} tip={false} />);
     expect(queryAllByTestId(MARK_STOP_TEST_ID, DRAWN)).toHaveLength(0);
   });
 
-  it("holds the tip back until it is told to draw it", () => {
-    const { queryByTestId } = render(<BrandMark size={112} stops={MARK_STOP_COUNT} tip={false} />);
+  it("holds the tip back until it is told to draw it", async () => {
+    const { queryByTestId } = await render(
+      <BrandMark size={112} stops={MARK_STOP_COUNT} tip={false} />,
+    );
     expect(queryByTestId(MARK_TIP_TEST_ID, DRAWN)).toBeNull();
   });
 
-  it("draws the tip when it is told to", () => {
-    const { getByTestId } = render(<BrandMark size={112} stops={MARK_STOP_COUNT} tip />);
+  it("draws the tip when it is told to", async () => {
+    const { getByTestId } = await render(<BrandMark size={112} stops={MARK_STOP_COUNT} tip />);
     expect(getByTestId(MARK_TIP_TEST_ID, DRAWN)).toBeTruthy();
   });
 
@@ -78,8 +82,8 @@ describe("BrandMark", () => {
    * The mark is a logo, not a figure. Nothing in it is worth announcing, and a
    * reader listening to the app gets the wordmark beside it instead.
    */
-  it("says nothing to a reader who is listening", () => {
-    const { queryByTestId } = render(<BrandMark size={112} stops={MARK_STOP_COUNT} tip />);
+  it("says nothing to a reader who is listening", async () => {
+    const { queryByTestId } = await render(<BrandMark size={112} stops={MARK_STOP_COUNT} tip />);
 
     // Drawn, and out of the traversal: the same node answers both ways round.
     expect(queryByTestId(MARK_TRACK_TEST_ID, DRAWN)).toBeTruthy();
@@ -91,11 +95,13 @@ describe("BrandMark", () => {
    * handed as an attribute: the native words for "not read" would land there
    * and React would object to each. They belong to the view around it.
    */
-  it("keeps the native accessibility words off the drawing itself", () => {
-    const { UNSAFE_getByType } = render(<BrandMark size={112} stops={0} tip={false} />);
-    const drawing = UNSAFE_getByType(Svg);
+  it("keeps the native accessibility words off the drawing itself", async () => {
+    const { container } = await render(<BrandMark size={112} stops={0} tip={false} />);
+    const drawings = container.queryAll((node) => node.type === SVG_HOST);
+    expect(drawings).toHaveLength(1);
+    const drawn = drawings[0]?.props;
 
-    expect(drawing.props).not.toHaveProperty("accessibilityElementsHidden");
-    expect(drawing.props).not.toHaveProperty("importantForAccessibility");
+    expect(drawn).not.toHaveProperty("accessibilityElementsHidden");
+    expect(drawn).not.toHaveProperty("importantForAccessibility");
   });
 });

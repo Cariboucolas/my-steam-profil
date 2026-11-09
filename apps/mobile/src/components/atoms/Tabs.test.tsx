@@ -6,21 +6,27 @@ import { Tabs } from "./Tabs";
 const LABELS = ["Achievements", "Timeline"] as const;
 
 describe("Tabs", () => {
-  it("renders every label", () => {
-    const { getByText } = render(<Tabs labels={LABELS} activeIndex={0} onSelect={() => {}} />);
+  it("renders every label", async () => {
+    const { getByText } = await render(
+      <Tabs labels={LABELS} activeIndex={0} onSelect={() => {}} />,
+    );
     for (const label of LABELS) expect(getByText(label)).toBeTruthy();
   });
 
-  it("highlights only the active tab", () => {
-    const { getByText } = render(<Tabs labels={LABELS} activeIndex={1} onSelect={() => {}} />);
+  it("highlights only the active tab", async () => {
+    const { getByText } = await render(
+      <Tabs labels={LABELS} activeIndex={1} onSelect={() => {}} />,
+    );
     expect(getByText("Timeline").props.style.color).toBe(colors.text);
     expect(getByText("Achievements").props.style.color).toBe(colors.textDim);
   });
 
-  it("reports the index that was pressed", () => {
+  it("reports the index that was pressed", async () => {
     const onSelect = jest.fn();
-    const { getByText } = render(<Tabs labels={LABELS} activeIndex={0} onSelect={onSelect} />);
-    fireEvent.press(getByText("Timeline"));
+    const { getByText } = await render(
+      <Tabs labels={LABELS} activeIndex={0} onSelect={onSelect} />,
+    );
+    await fireEvent.press(getByText("Timeline"));
     expect(onSelect).toHaveBeenCalledWith(1);
   });
 });

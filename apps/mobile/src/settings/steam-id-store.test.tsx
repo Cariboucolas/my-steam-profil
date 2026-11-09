@@ -34,13 +34,13 @@ const renderStore = (storage: SteamIdStorage, fallback?: string) =>
 
 describe("steam id store", () => {
   it("has no profile when the device holds none and the build offers none", async () => {
-    const { result } = renderStore(createFakeStorage());
+    const { result } = await renderStore(createFakeStorage());
 
     await waitFor(() => expect(result.current.state.status).toBe("absent"));
   });
 
   it("starts on the profile the device remembers", async () => {
-    const { result } = renderStore(createFakeStorage(STEAM_ID));
+    const { result } = await renderStore(createFakeStorage(STEAM_ID));
 
     await waitFor(() =>
       expect(result.current.state).toEqual({
@@ -51,7 +51,7 @@ describe("steam id store", () => {
   });
 
   it("falls back to the profile the build was given", async () => {
-    const { result } = renderStore(createFakeStorage(), STEAM_ID);
+    const { result } = await renderStore(createFakeStorage(), STEAM_ID);
 
     await waitFor(() =>
       expect(result.current.state).toEqual({
@@ -62,7 +62,7 @@ describe("steam id store", () => {
   });
 
   it("prefers what the device remembers over what the build offers", async () => {
-    const { result } = renderStore(createFakeStorage(STEAM_ID), OTHER_STEAM_ID);
+    const { result } = await renderStore(createFakeStorage(STEAM_ID), OTHER_STEAM_ID);
 
     await waitFor(() =>
       expect(result.current.state).toEqual({
@@ -74,7 +74,7 @@ describe("steam id store", () => {
 
   it("remembers a steam id it is given", async () => {
     const storage = createFakeStorage();
-    const { result } = renderStore(storage);
+    const { result } = await renderStore(storage);
     await waitFor(() => expect(result.current.state.status).toBe("absent"));
 
     let accepted = false;
@@ -89,7 +89,7 @@ describe("steam id store", () => {
 
   it("refuses what is not a steam id, and stores nothing", async () => {
     const storage = createFakeStorage();
-    const { result } = renderStore(storage);
+    const { result } = await renderStore(storage);
     await waitFor(() => expect(result.current.state.status).toBe("absent"));
 
     let accepted = true;
@@ -104,7 +104,7 @@ describe("steam id store", () => {
 
   it("forgets the profile", async () => {
     const storage = createFakeStorage(STEAM_ID);
-    const { result } = renderStore(storage);
+    const { result } = await renderStore(storage);
     await waitFor(() => expect(result.current.state.status).toBe("known"));
 
     await act(async () => {
@@ -123,7 +123,7 @@ describe("steam id store", () => {
       write: () => Promise.resolve(),
       forget: () => Promise.resolve(),
     };
-    const { result } = renderStore(storage);
+    const { result } = await renderStore(storage);
 
     await waitFor(() => expect(result.current.state.status).toBe("absent"));
   });
@@ -134,7 +134,7 @@ describe("steam id store", () => {
       write: () => Promise.reject(new Error("storage unavailable")),
       forget: () => Promise.resolve(),
     };
-    const { result } = renderStore(storage);
+    const { result } = await renderStore(storage);
     await waitFor(() => expect(result.current.state.status).toBe("absent"));
 
     let accepted = false;
@@ -154,7 +154,7 @@ describe("steam id store", () => {
       write: () => Promise.resolve(),
       forget: () => Promise.reject(new Error("storage unavailable")),
     };
-    const { result } = renderStore(storage);
+    const { result } = await renderStore(storage);
     await waitFor(() => expect(result.current.state.status).toBe("known"));
 
     await act(async () => {

@@ -4,27 +4,27 @@ import { colors } from "../../theme/tokens";
 import { Chip } from "./Chip";
 
 describe("Chip", () => {
-  it("shows its label", () => {
-    const { getByText } = render(
+  it("shows its label", async () => {
+    const { getByText } = await render(
       <Chip label="Closest to 100%" active={false} onPress={() => {}} />,
     );
     expect(getByText("Closest to 100%")).toBeTruthy();
   });
 
-  it("tints the label with the accent when active", () => {
-    const { getByText } = render(<Chip label="Unlocked" active onPress={() => {}} />);
+  it("tints the label with the accent when active", async () => {
+    const { getByText } = await render(<Chip label="Unlocked" active onPress={() => {}} />);
     expect(getByText("Unlocked").props.style.color).toBe(colors.accent);
   });
 
-  it("stays muted when inactive", () => {
-    const { getByText } = render(<Chip label="Unlocked" active={false} onPress={() => {}} />);
+  it("stays muted when inactive", async () => {
+    const { getByText } = await render(<Chip label="Unlocked" active={false} onPress={() => {}} />);
     expect(getByText("Unlocked").props.style.color).toBe(colors.textMuted);
   });
 
-  it("reports presses", () => {
+  it("reports presses", async () => {
     const onPress = jest.fn();
-    const { getByText } = render(<Chip label="Locked" active={false} onPress={onPress} />);
-    fireEvent.press(getByText("Locked"));
+    const { getByText } = await render(<Chip label="Locked" active={false} onPress={onPress} />);
+    await fireEvent.press(getByText("Locked"));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

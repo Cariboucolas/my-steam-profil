@@ -41,7 +41,7 @@ describe("useApiClient", () => {
       </SteamIdProvider>
     );
 
-    const { result } = renderHook(() => useApiClient(), { wrapper });
+    const { result } = await renderHook(() => useApiClient(), { wrapper });
 
     await waitFor(() => expect(result.current).toBe(fixture));
     expect(create).toHaveBeenCalledWith(STEAM_ID);
@@ -55,7 +55,7 @@ describe("useApiClient", () => {
       </SteamIdProvider>
     );
 
-    const { result } = renderHook(() => useApiClient(), { wrapper });
+    const { result } = await renderHook(() => useApiClient(), { wrapper });
 
     await waitFor(() => expect(create).not.toHaveBeenCalled());
     expect(result.current).toBeUndefined();

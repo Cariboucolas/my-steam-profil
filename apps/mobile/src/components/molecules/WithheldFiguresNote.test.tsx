@@ -13,8 +13,8 @@ beforeEach(() => openedUrl.mockClear());
 
 describe("WithheldFiguresNote", () => {
   /** Nothing is missing, so there is nothing to explain. */
-  it("says nothing when Steam publishes both figures", () => {
-    const { toJSON } = render(
+  it("says nothing when Steam publishes both figures", async () => {
+    const { toJSON } = await render(
       <WithheldFiguresNote published={{ playtime: true, lastPlayed: true }} />,
     );
 
@@ -26,8 +26,8 @@ describe("WithheldFiguresNote", () => {
    * the chips and every row reads a zero it did not earn, and neither is
    * explained by anything else on the screen.
    */
-  it("names the playtime as the figure Steam is not publishing", () => {
-    const { getByText } = render(
+  it("names the playtime as the figure Steam is not publishing", async () => {
+    const { getByText } = await render(
       <WithheldFiguresNote published={{ playtime: false, lastPlayed: false }} />,
     );
 
@@ -38,8 +38,8 @@ describe("WithheldFiguresNote", () => {
    * The 76561197997989573 case: hours throughout, never a date. Only the
    * recency order is gone, so naming the playtime here would be untrue.
    */
-  it("names the last-played time when that alone is withheld", () => {
-    const { getByText, queryByText } = render(
+  it("names the last-played time when that alone is withheld", async () => {
+    const { getByText, queryByText } = await render(
       <WithheldFiguresNote published={{ playtime: true, lastPlayed: false }} />,
     );
 
@@ -52,12 +52,12 @@ describe("WithheldFiguresNote", () => {
    * reading may well not own what they are looking at. The line offers rather
    * than instructs, and the way out is one tap for whoever can take it.
    */
-  it("opens Steam's privacy settings for a reader who owns the profile", () => {
-    const { getByRole } = render(
+  it("opens Steam's privacy settings for a reader who owns the profile", async () => {
+    const { getByRole } = await render(
       <WithheldFiguresNote published={{ playtime: false, lastPlayed: false }} />,
     );
 
-    fireEvent.press(getByRole("link"));
+    await fireEvent.press(getByRole("link"));
 
     expect(openedUrl).toHaveBeenCalledWith(STEAM_PRIVACY_URL);
   });
@@ -70,20 +70,20 @@ describe("WithheldFiguresNote", () => {
    * can fail at all is `openExternalUrl`'s own contract, and pinned there: it
    * resolves either way, so there is no rejection for this to handle.
    */
-  it("keeps its link when it has already been pressed", () => {
-    const { getByRole } = render(
+  it("keeps its link when it has already been pressed", async () => {
+    const { getByRole } = await render(
       <WithheldFiguresNote published={{ playtime: false, lastPlayed: false }} />,
     );
 
-    fireEvent.press(getByRole("link"));
-    fireEvent.press(getByRole("link"));
+    await fireEvent.press(getByRole("link"));
+    await fireEvent.press(getByRole("link"));
 
     expect(getByRole("link")).toBeTruthy();
     expect(openedUrl).toHaveBeenCalledTimes(2);
   });
 
-  it("does not tell a reader it is their own profile", () => {
-    const { queryByText } = render(
+  it("does not tell a reader it is their own profile", async () => {
+    const { queryByText } = await render(
       <WithheldFiguresNote published={{ playtime: false, lastPlayed: false }} />,
     );
 

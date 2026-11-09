@@ -7,8 +7,8 @@ import { TALLY_LOAD_BAR_TEST_ID } from "../atoms/TallyLoadBar";
 import { StatCard } from "./StatCard";
 
 describe("StatCard", () => {
-  it("draws its heading, its content and its footer", () => {
-    render(
+  it("draws its heading, its content and its footer", async () => {
+    await render(
       <StatCard
         eyebrow="YEARS"
         figure="3 912"
@@ -24,8 +24,8 @@ describe("StatCard", () => {
     expect(screen.getByText("records")).toBeTruthy();
   });
 
-  it("says why it is empty instead of drawing content", () => {
-    render(
+  it("says why it is empty instead of drawing content", async () => {
+    await render(
       <StatCard
         eyebrow="YEARS"
         subtitle="What each year brought."
@@ -40,17 +40,17 @@ describe("StatCard", () => {
     expect(screen.queryByText("records")).toBeNull();
   });
 
-  it("carries the library's load bar on its top edge while tallies land", () => {
+  it("carries the library's load bar on its top edge while tallies land", async () => {
     deviceAsksForLessMotion();
-    const { rerender } = render(<StatCard eyebrow="YEARS" subtitle="s" loaded={0.5} />);
+    const { rerender } = await render(<StatCard eyebrow="YEARS" subtitle="s" loaded={0.5} />);
     expect(screen.getByTestId(TALLY_LOAD_BAR_TEST_ID)).toBeTruthy();
 
-    rerender(<StatCard eyebrow="YEARS" subtitle="s" loaded={null} />);
+    await rerender(<StatCard eyebrow="YEARS" subtitle="s" loaded={null} />);
     expect(screen.queryByTestId(TALLY_LOAD_BAR_TEST_ID)).toBeNull();
   });
 
-  it("writes its figure in the colour of what it sums up, when told", () => {
-    render(
+  it("writes its figure in the colour of what it sums up, when told", async () => {
+    await render(
       <StatCard eyebrow="YEARS" subtitle="s" figure="4 954" figureColor={colors.runningTotal} />,
     );
     expect(screen.getByText("4 954")).toHaveStyle({ color: colors.runningTotal });

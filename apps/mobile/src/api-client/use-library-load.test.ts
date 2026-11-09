@@ -43,9 +43,9 @@ type Asked = { readonly steamId: string | undefined; readonly client: ApiClient 
 const mine = (client: ApiClient = library()): Asked => ({ steamId: STEAM_ID, client });
 
 /** Every state the hook handed over, in order, so a test can read each render. */
-const renderLoad = (asked: Asked) => {
+const renderLoad = async (asked: Asked) => {
   const renders: LibraryLoad[] = [];
-  const rendered = renderHook(
+  const rendered = await renderHook(
     ({ steamId, client }: Asked) => {
       const load = useLibraryLoad(steamId, client);
       renders.push(load);
@@ -78,20 +78,20 @@ const timesAnswered = (cache: QueryClient) =>
   cache.getQueryState(queries.games(STEAM_ID).queryKey)?.dataUpdateCount;
 
 describe("useLibraryLoad", () => {
-  it("asks nothing while no Profile is chosen", () => {
-    const { result } = renderLoad({ steamId: undefined, client: undefined });
+  it("asks nothing while no Profile is chosen", async () => {
+    const { result } = await renderLoad({ steamId: undefined, client: undefined });
 
     expect(result.current.load.status).toBe("loading");
   });
 
-  it("is loading until both the Profile and the Games have answered", () => {
-    const { result } = renderLoad(mine(createPendingApiClient()));
+  it("is loading until both the Profile and the Games have answered", async () => {
+    const { result } = await renderLoad(mine(createPendingApiClient()));
 
     expect(result.current.load.status).toBe("loading");
   });
 
   it("hands over the Profile and the Games it owns", async () => {
-    const { result } = renderLoad(mine());
+    const { result } = await renderLoad(mine());
 
     await waitFor(() => expect(result.current.load.status).toBe("ready"));
     expect(readyOf(result.current.load)).toMatchObject({ profile: PROFILE, games: GAMES });
@@ -105,18 +105,18 @@ describe("useLibraryLoad", () => {
      */
     it("is the same across two renders", async () => {
       const asked = mine();
-      const { result, rerender } = renderLoad(asked);
+      const { result, rerender } = await renderLoad(asked);
       await waitFor(() => expect(result.current.load.status).toBe("ready"));
       const before = readyOf(result.current.load).games;
 
-      rerender(asked);
+      await rerender(asked);
 
       expect(readyOf(result.current.load).games).toBe(before);
     });
 
     it("is the same after the backend answered again with what it said before", async () => {
       const getGames = jest.fn(() => Promise.resolve(ok(GAMES.map((each) => ({ ...each })))));
-      const { result } = renderLoad(mine({ ...library(), getGames }));
+      const { result } = await renderLoad(mine({ ...library(), getGames }));
       await waitFor(() => expect(result.current.load.status).toBe("ready"));
       const before = readyOf(result.current.load).games;
 
@@ -130,11 +130,11 @@ describe("useLibraryLoad", () => {
 
   describe("when the Profile changes", () => {
     it("shows nothing of the previous Profile at any render", async () => {
-      const { result, rerender, renders } = renderLoad(mine());
+      const { result, rerender, renders } = await renderLoad(mine());
       await waitFor(() => expect(result.current.load.status).toBe("ready"));
       const rendersBefore = renders.length;
 
-      rerender({ steamId: OTHER_STEAM_ID, client: otherLibrary() });
+      await rerender({ steamId: OTHER_STEAM_ID, client: otherLibrary() });
       await waitFor(() => expect(result.current.load.status).toBe("ready"));
 
       const since = renders.slice(rendersBefore);
@@ -152,10 +152,10 @@ describe("useLibraryLoad", () => {
         return new Promise<Answer>(() => undefined);
       };
       const silent: ApiClient = { ...library(), getProfile: waiting, getGames: waiting };
-      const { result, rerender } = renderLoad(mine(silent));
+      const { result, rerender } = await renderLoad(mine(silent));
       expect(signals).toHaveLength(2);
 
-      rerender({ steamId: OTHER_STEAM_ID, client: otherLibrary() });
+      await rerender({ steamId: OTHER_STEAM_ID, client: otherLibrary() });
       await waitFor(() => expect(result.current.load.status).toBe("ready"));
 
       expect(signals.map((signal) => signal.aborted)).toEqual([true, true]);
@@ -169,7 +169,7 @@ describe("useLibraryLoad", () => {
     });
 
     it("says why the library will not load even when the Profile did", async () => {
-      const { result } = renderLoad(mine(refusingGames("PRIVATE_PROFILE")));
+      const { result } = await renderLoad(mine(refusingGames("PRIVATE_PROFILE")));
 
       await waitFor(() => expect(result.current.load.status).toBe("error"));
       expect(failureOf(result.current.load).error).toBe("PRIVATE_PROFILE");
@@ -180,7 +180,7 @@ describe("useLibraryLoad", () => {
         ...refusingGames("PRIVATE_PROFILE"),
         getProfile: () => Promise.resolve(err("NOT_FOUND")),
       };
-      const { result } = renderLoad(mine(client));
+      const { result } = await renderLoad(mine(client));
 
       await waitFor(() => expect(result.current.load.status).toBe("error"));
       expect(failureOf(result.current.load).error).toBe("NOT_FOUND");
@@ -192,7 +192,7 @@ describe("useLibraryLoad", () => {
         ...library(),
         getGames: () => Promise.reject(new TypeError("undefined is not a function")),
       };
-      const { result } = renderLoad(mine(client));
+      const { result } = await renderLoad(mine(client));
 
       await waitFor(() => expect(result.current.load.status).toBe("error"));
       expect(failureOf(result.current.load).error).toBe("UNAVAILABLE");
@@ -205,11 +205,11 @@ describe("useLibraryLoad", () => {
         up ? answering.getProfile() : Promise.resolve(err("NOT_FOUND" as const)),
       );
       const getGames = jest.fn(() => answering.getGames());
-      const { result } = renderLoad(mine({ ...answering, getProfile, getGames }));
+      const { result } = await renderLoad(mine({ ...answering, getProfile, getGames }));
       await waitFor(() => expect(result.current.load.status).toBe("error"));
 
       up = true;
-      act(() => failureOf(result.current.load).retry());
+      await act(() => failureOf(result.current.load).retry());
 
       await waitFor(() => expect(result.current.load.status).toBe("ready"));
       expect(getProfile).toHaveBeenCalledTimes(2);
@@ -224,7 +224,7 @@ describe("useLibraryLoad", () => {
     it("is loading while it asks again for a library it had once loaded", async () => {
       let answer: () => ReturnType<ApiClient["getGames"]> = () => Promise.resolve(ok(GAMES));
       const client: ApiClient = { ...library(), getGames: () => answer() };
-      const { result } = renderLoad(mine(client));
+      const { result } = await renderLoad(mine(client));
       await waitFor(() => expect(result.current.load.status).toBe("ready"));
 
       answer = () => Promise.resolve(err("PRIVATE_PROFILE"));
@@ -232,7 +232,7 @@ describe("useLibraryLoad", () => {
       await waitFor(() => expect(result.current.load.status).toBe("error"));
 
       answer = () => new Promise(() => undefined);
-      act(() => failureOf(result.current.load).retry());
+      await act(() => failureOf(result.current.load).retry());
 
       await waitFor(() => expect(result.current.load.status).toBe("loading"));
     });

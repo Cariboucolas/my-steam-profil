@@ -22,8 +22,8 @@ describe("RarestRow", () => {
    * Across a whole library, which game a trophy came from places it; the
    * flavour text the game screen shows does not.
    */
-  it("shows the achievement over the game it came from", () => {
-    const { getByText, queryByText } = render(<RarestRow row={row()} onPress={() => {}} />);
+  it("shows the achievement over the game it came from", async () => {
+    const { getByText, queryByText } = await render(<RarestRow row={row()} onPress={() => {}} />);
 
     expect(getByText("Ascendant")).toBeTruthy();
     expect(getByText("Soulstone Survivors")).toBeTruthy();
@@ -34,18 +34,18 @@ describe("RarestRow", () => {
    * `0.4%` alone would read as a completion rate on a screen full of them, and
    * Rarity reads backwards to every other percentage in this app.
    */
-  it("writes the figure with what it is a share of", () => {
-    const { getByText } = render(<RarestRow row={row()} onPress={() => {}} />);
+  it("writes the figure with what it is a share of", async () => {
+    const { getByText } = await render(<RarestRow row={row()} onPress={() => {}} />);
 
     expect(getByText("0.4%")).toBeTruthy();
     expect(getByText("of players")).toBeTruthy();
   });
 
-  it("opens the game the row came from", () => {
+  it("opens the game the row came from", async () => {
     const onPress = jest.fn();
-    const { getByText } = render(<RarestRow row={row()} onPress={onPress} />);
+    const { getByText } = await render(<RarestRow row={row()} onPress={onPress} />);
 
-    fireEvent.press(getByText("Ascendant"));
+    await fireEvent.press(getByText("Ascendant"));
 
     expect(onPress).toHaveBeenCalledWith(2066020);
   });
@@ -55,8 +55,8 @@ describe("RarestRow", () => {
    * name it takes nothing back. The name falls through to the apiName upstream,
    * and the tile is simply left empty rather than the row being dropped.
    */
-  it("draws a row whose game named nothing for it", () => {
-    const { getByText, queryByTestId } = render(
+  it("draws a row whose game named nothing for it", async () => {
+    const { getByText, queryByTestId } = await render(
       <RarestRow row={row({ displayName: "ACH_ASCEND_10", icon: null })} onPress={() => {}} />,
     );
 
@@ -65,8 +65,8 @@ describe("RarestRow", () => {
     expect(queryByTestId(RAREST_ICON_TEST_ID)).toBeNull();
   });
 
-  it("draws the icon its game gave it", () => {
-    const { getByTestId } = render(<RarestRow row={row()} onPress={() => {}} />);
+  it("draws the icon its game gave it", async () => {
+    const { getByTestId } = await render(<RarestRow row={row()} onPress={() => {}} />);
 
     expect(getByTestId(RAREST_ICON_TEST_ID)).toBeTruthy();
   });
@@ -77,7 +77,7 @@ describe("RarestRow", () => {
    * that names its achievements ACH_ASCEND_10.
    */
   it("pulses instead of showing the key it was ranked under", async () => {
-    const { getByTestId, queryByText } = render(
+    const { getByTestId, queryByText } = await render(
       <RarestRow
         row={row({ displayName: "ACH_ASCEND_10", icon: null, pending: true })}
         onPress={() => {}}
@@ -93,16 +93,18 @@ describe("RarestRow", () => {
    * The figure is what the row was ranked on and it is already in: only the
    * name is being waited for, so the rest of the row must not flicker.
    */
-  it("keeps its figure and its game while it waits", () => {
-    const { getByText } = render(<RarestRow row={row({ pending: true })} onPress={() => {}} />);
+  it("keeps its figure and its game while it waits", async () => {
+    const { getByText } = await render(
+      <RarestRow row={row({ pending: true })} onPress={() => {}} />,
+    );
 
     expect(getByText("0.4%")).toBeTruthy();
     expect(getByText("Soulstone Survivors")).toBeTruthy();
   });
 
   /** A game that answered without naming the row is finished, not waiting. */
-  it("shows no skeleton once its game has answered", () => {
-    const { queryByTestId, getByText } = render(
+  it("shows no skeleton once its game has answered", async () => {
+    const { queryByTestId, getByText } = await render(
       <RarestRow row={row({ displayName: "ACH_ASCEND_10", icon: null })} onPress={() => {}} />,
     );
 

@@ -14,16 +14,16 @@ const row = (over: Partial<Row> = {}): Row => ({
 });
 
 describe("AchievementRow", () => {
-  it("shows the achievement and when it was earned", () => {
-    const { getByText } = render(<AchievementRow row={row()} />);
+  it("shows the achievement and when it was earned", async () => {
+    const { getByText } = await render(<AchievementRow row={row()} />);
 
     expect(getByText("Slay the Warden")).toBeTruthy();
     expect(getByText("Defeat the Warden on any difficulty")).toBeTruthy();
     expect(getByText("25 Jun 2026")).toBeTruthy();
   });
 
-  it("lights up one the player has earned", () => {
-    const { getByText, getByTestId } = render(<AchievementRow row={row()} />);
+  it("lights up one the player has earned", async () => {
+    const { getByText, getByTestId } = await render(<AchievementRow row={row()} />);
 
     expect(getByTestId(ACHIEVEMENT_TILE_TEST_ID)).toHaveStyle({
       backgroundColor: colors.accentSoft,
@@ -38,8 +38,8 @@ describe("AchievementRow", () => {
    * A locked icon is already grey coming from Steam, so the row dims the whole
    * tile on top of that rather than relying on the artwork to look locked.
    */
-  it("dims one the player has not", () => {
-    const { getByText, getByTestId } = render(
+  it("dims one the player has not", async () => {
+    const { getByText, getByTestId } = await render(
       <AchievementRow row={row({ unlocked: false, dateLabel: "Locked" })} />,
     );
 

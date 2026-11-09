@@ -112,7 +112,7 @@ describe("useLibraryRarity", () => {
   /** A tab nobody has opened costs nothing: this is a secondary view. */
   it("asks nothing while the tab has not been opened", async () => {
     const { client, asked } = eagerClient();
-    const { result } = renderRarity(counted(client), false);
+    const { result } = await renderRarity(counted(client), false);
 
     await waitFor(() => expect(result.current.status).toBe("idle"));
 
@@ -127,7 +127,7 @@ describe("useLibraryRarity", () => {
    */
   it("asks nothing until the library has been counted", async () => {
     const { client, asked } = eagerClient();
-    const { result } = renderRarity(null);
+    const { result } = await renderRarity(null);
 
     await waitFor(() => expect(result.current.status).toBe("counting"));
 
@@ -137,10 +137,10 @@ describe("useLibraryRarity", () => {
 
   it("starts once a counted library arrives under an open tab", async () => {
     const { client, asked } = eagerClient();
-    const { result, rerender } = renderRarity(null);
+    const { result, rerender } = await renderRarity(null);
     expect(result.current.status).toBe("counting");
 
-    rerender({ library: counted(client), active: true });
+    await rerender({ library: counted(client), active: true });
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
     expect([...asked].sort((a, b) => a - b)).toEqual([...HOLDS_UNLOCKS]);
@@ -154,7 +154,7 @@ describe("useLibraryRarity", () => {
    */
   it("asks about every game holding an unlock and about no other", async () => {
     const { client, asked } = eagerClient();
-    const { result } = renderRarity(counted(client));
+    const { result } = await renderRarity(counted(client));
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
 
@@ -169,7 +169,7 @@ describe("useLibraryRarity", () => {
    */
   it("reports how far the load has got while answers are landing", async () => {
     const { client, release } = heldClient([7]);
-    const { result } = renderRarity(counted(client));
+    const { result } = await renderRarity(counted(client));
 
     await waitFor(() => expect(result.current.loaded).toBe(0.75));
     expect(result.current.status).toBe("loading");
@@ -185,7 +185,7 @@ describe("useLibraryRarity", () => {
     const { client } = heldClient([], (appId) =>
       appId === 2 ? err<ApiError>("UNAVAILABLE") : ok(published(appId)),
     );
-    const { result } = renderRarity(counted(client));
+    const { result } = await renderRarity(counted(client));
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
 
@@ -200,7 +200,7 @@ describe("useLibraryRarity", () => {
    */
   it("keeps a game Steam publishes nothing about as an empty answer", async () => {
     const { client } = heldClient([], (appId) => (appId === 2 ? ok([]) : ok(published(appId))));
-    const { result } = renderRarity(counted(client));
+    const { result } = await renderRarity(counted(client));
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
 
@@ -211,11 +211,11 @@ describe("useLibraryRarity", () => {
   it("does not ask again when the tab is left and opened once more", async () => {
     const { client, asked } = eagerClient();
     const library = counted(client);
-    const { result, rerender } = renderRarity(library);
+    const { result, rerender } = await renderRarity(library);
     await waitFor(() => expect(result.current.status).toBe("ready"));
 
-    rerender({ library, active: false });
-    rerender({ library, active: true });
+    await rerender({ library, active: false });
+    await rerender({ library, active: true });
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
     expect(asked).toHaveLength(HOLDS_UNLOCKS.length);
@@ -229,10 +229,10 @@ describe("useLibraryRarity", () => {
   it("carries on loading after the reader has left the tab", async () => {
     const { client, release } = heldClient([7, 8]);
     const library = counted(client);
-    const { result, rerender } = renderRarity(library);
+    const { result, rerender } = await renderRarity(library);
     await waitFor(() => expect(result.current.loaded).toBe(0.75));
 
-    rerender({ library, active: false });
+    await rerender({ library, active: false });
     await release();
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
@@ -246,14 +246,14 @@ describe("useLibraryRarity", () => {
   it("throws the result away when another profile takes over", async () => {
     const previous = heldClient(HOLDS_UNLOCKS);
     const next = eagerClient();
-    const { result, rerender } = renderRarity(counted(previous.client));
+    const { result, rerender } = await renderRarity(counted(previous.client));
     await waitFor(() => expect(result.current.loaded).toBe(0));
 
-    rerender({ library: null, active: true });
+    await rerender({ library: null, active: true });
     expect(result.current.rarity).toEqual({});
     expect(result.current.status).toBe("counting");
 
-    rerender({ library: counted(next.client, { 1: tally(["ACH_1"]) }), active: true });
+    await rerender({ library: counted(next.client, { 1: tally(["ACH_1"]) }), active: true });
     await previous.release();
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
@@ -274,23 +274,23 @@ describe("useLibraryRarity", () => {
     const first = eagerClient();
     const next = eagerClient();
     const library = counted(first.client);
-    const { result, rerender } = renderRarity(library);
+    const { result, rerender } = await renderRarity(library);
     await waitFor(() => expect(result.current.status).toBe("ready"));
 
     // Back to Completion, and then another profile is chosen from there.
-    rerender({ library, active: false });
-    rerender({ library: null, active: false });
+    await rerender({ library, active: false });
+    await rerender({ library: null, active: false });
     // A game the first profile did not hold: the figures of one it did are
     // already known, and would be read without asking.
     const other = counted(next.client, { 42: tally(["ACH_42"]) });
-    rerender({ library: other, active: false });
+    await rerender({ library: other, active: false });
 
     await waitFor(() => expect(result.current.status).toBe("idle"));
     expect(next.asked).toEqual([]);
     expect(result.current.rarity).toEqual({});
 
     // Disarmed, not disabled: opening the tab on the new profile still loads.
-    rerender({ library: other, active: true });
+    await rerender({ library: other, active: true });
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
     expect(next.asked).toEqual([42]);
@@ -300,11 +300,11 @@ describe("useLibraryRarity", () => {
   it("asks nothing again when the tab mounts once more in the same session", async () => {
     const cache = createShortLivedQueryClient();
     const { client, asked } = eagerClient();
-    const first = renderRarity(counted(client), true, cache);
+    const first = await renderRarity(counted(client), true, cache);
     await waitFor(() => expect(first.result.current.status).toBe("ready"));
-    first.unmount();
+    await first.unmount();
 
-    const { result } = renderRarity(counted(client), true, cache);
+    const { result } = await renderRarity(counted(client), true, cache);
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
     expect(asked).toHaveLength(HOLDS_UNLOCKS.length);
@@ -315,11 +315,11 @@ describe("useLibraryRarity", () => {
   it("asks another profile only about the games the first did not hold", async () => {
     const previous = eagerClient();
     const next = eagerClient();
-    const { result, rerender } = renderRarity(counted(previous.client));
+    const { result, rerender } = await renderRarity(counted(previous.client));
     await waitFor(() => expect(result.current.status).toBe("ready"));
 
-    rerender({ library: null, active: true });
-    rerender({
+    await rerender({ library: null, active: true });
+    await rerender({
       library: counted(next.client, { 1: tally(["ACH_1"]), 42: tally(["ACH_42"]) }),
       active: true,
     });
@@ -335,11 +335,11 @@ describe("useLibraryRarity", () => {
     const { client, asked } = heldClient([], (appId) =>
       appId === 2 ? err<ApiError>("NOT_FOUND") : ok(published(appId)),
     );
-    const first = renderRarity(counted(client), true, cache);
+    const first = await renderRarity(counted(client), true, cache);
     await waitFor(() => expect(first.result.current.status).toBe("ready"));
-    first.unmount();
+    await first.unmount();
 
-    const { result } = renderRarity(counted(client), true, cache);
+    const { result } = await renderRarity(counted(client), true, cache);
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
     expect(asked.filter((appId) => appId === 2)).toHaveLength(1);
@@ -347,7 +347,7 @@ describe("useLibraryRarity", () => {
   });
 
   it("has nothing to ask about in a library holding no unlock at all", async () => {
-    const { result } = renderRarity(counted(clientAsking(refuse), {}));
+    const { result } = await renderRarity(counted(clientAsking(refuse), {}));
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
 

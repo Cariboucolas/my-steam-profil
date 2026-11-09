@@ -37,32 +37,32 @@ const drawn = (records: boolean): YearsAndCumulative => ({
 describe("YearsCumulativeCard", () => {
   beforeEach(deviceAsksForLessMotion);
 
-  it("draws the total, the chart and the records", () => {
-    render(<YearsCumulativeCard years={drawn(true)} loaded={null} />);
+  it("draws the total, the chart and the records", async () => {
+    await render(<YearsCumulativeCard years={drawn(true)} loaded={null} />);
     expect(screen.getByText("3 912")).toBeTruthy();
     expect(screen.getByLabelText("2014 to 2026: 3 912 dated unlocks")).toBeTruthy();
     expect(screen.getByLabelText("longest streak, Nov 2025: 9 days")).toBeTruthy();
   });
 
-  it("writes the total in the running total's colour, where its line ends", () => {
-    render(<YearsCumulativeCard years={drawn(true)} loaded={null} />);
+  it("writes the total in the running total's colour, where its line ends", async () => {
+    await render(<YearsCumulativeCard years={drawn(true)} loaded={null} />);
     expect(StyleSheet.flatten(screen.getByText("3 912").props.style)).toEqual(
       expect.objectContaining({ color: colors.runningTotal }),
     );
   });
 
-  it("holds three skeletons where the records will be", () => {
-    render(<YearsCumulativeCard years={drawn(false)} loaded={null} />);
+  it("holds three skeletons where the records will be", async () => {
+    await render(<YearsCumulativeCard years={drawn(false)} loaded={null} />);
     expect(screen.getAllByTestId(RECORD_FIGURE_SKELETON_TEST_ID)).toHaveLength(3);
   });
 
-  it("says it has no dated unlock", () => {
-    render(<YearsCumulativeCard years={{ kind: "empty" }} loaded={null} />);
+  it("says it has no dated unlock", async () => {
+    await render(<YearsCumulativeCard years={{ kind: "empty" }} loaded={null} />);
     expect(screen.getByText("No dated unlocks")).toBeTruthy();
   });
 
-  it("waits as a skeleton before the first dated unlock lands", () => {
-    render(<YearsCumulativeCard years={{ kind: "waiting" }} loaded={null} />);
+  it("waits as a skeleton before the first dated unlock lands", async () => {
+    await render(<YearsCumulativeCard years={{ kind: "waiting" }} loaded={null} />);
     expect(screen.getAllByTestId(RECORD_FIGURE_SKELETON_TEST_ID)).toHaveLength(3);
     expect(screen.queryByText("No dated unlocks")).toBeNull();
   });

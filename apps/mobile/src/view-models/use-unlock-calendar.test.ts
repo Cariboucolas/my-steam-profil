@@ -68,11 +68,11 @@ describe("useUnlockCalendar", () => {
    * Holding the stand-in it draws against would spend the whole load on fixed
    * thresholds, which is the failure ADR-0007 rules out.
    */
-  it("waits for a day of the player's own before it holds anything", () => {
-    const { result, rerender } = calendarFor(AWAITING);
+  it("waits for a day of the player's own before it holds anything", async () => {
+    const { result, rerender } = await calendarFor(AWAITING);
     expect(legendOf(result.current)).toEqual(STAND_IN);
 
-    rerender({ shown: FIRST_WAVE });
+    await rerender({ shown: FIRST_WAVE });
 
     expect(legendOf(result.current)).toEqual(BUSY_SCALE);
   });
@@ -82,22 +82,22 @@ describe("useUnlockCalendar", () => {
    * before old ones, so a scale read afresh on every wave would repaint the
    * whole grid dozens of times over one cold open (ADR-0007).
    */
-  it("holds the scale it read while the waves land", () => {
-    const { result, rerender } = calendarFor(AWAITING);
-    rerender({ shown: FIRST_WAVE });
+  it("holds the scale it read while the waves land", async () => {
+    const { result, rerender } = await calendarFor(AWAITING);
+    await rerender({ shown: FIRST_WAVE });
 
-    rerender({ shown: SECOND_WAVE });
+    await rerender({ shown: SECOND_WAVE });
 
     expect(legendOf(result.current)).toEqual(BUSY_SCALE);
     // The grid fills all the same: what landed since is drawn, on that scale.
     expect(totalOf(result.current, "MAR")).toBe(60);
   });
 
-  it("reads the scale once more when the last tally has landed", () => {
-    const { result, rerender } = calendarFor(AWAITING);
-    rerender({ shown: FIRST_WAVE });
+  it("reads the scale once more when the last tally has landed", async () => {
+    const { result, rerender } = await calendarFor(AWAITING);
+    await rerender({ shown: FIRST_WAVE });
 
-    rerender({ shown: COUNTED });
+    await rerender({ shown: COUNTED });
 
     expect(legendOf(result.current)).toEqual(STEADY_SCALE);
   });
@@ -114,22 +114,22 @@ describe("useUnlockCalendar", () => {
    * Nothing else can tell the hook that the scale it holds is another
    * player's — the library arriving in an array of its own is what does.
    */
-  it("scales a library that arrives mid-count against its own days", () => {
-    const { result, rerender } = calendarFor(AWAITING);
-    rerender({ shown: FIRST_WAVE });
+  it("scales a library that arrives mid-count against its own days", async () => {
+    const { result, rerender } = await calendarFor(AWAITING);
+    await rerender({ shown: FIRST_WAVE });
     expect(legendOf(result.current)).toEqual(BUSY_SCALE);
 
-    rerender({ shown: ANOTHER_FIRST_WAVE });
+    await rerender({ shown: ANOTHER_FIRST_WAVE });
 
     expect(legendOf(result.current)).toEqual(STEADY_SCALE);
   });
 
-  it("reads a fresh scale for the load after it", () => {
-    const { result, rerender } = calendarFor(AWAITING);
-    rerender({ shown: SECOND_WAVE });
-    rerender({ shown: COUNTED });
+  it("reads a fresh scale for the load after it", async () => {
+    const { result, rerender } = await calendarFor(AWAITING);
+    await rerender({ shown: SECOND_WAVE });
+    await rerender({ shown: COUNTED });
 
-    rerender({ shown: FIRST_WAVE });
+    await rerender({ shown: FIRST_WAVE });
 
     expect(legendOf(result.current)).toEqual(BUSY_SCALE);
   });

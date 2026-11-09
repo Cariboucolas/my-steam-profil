@@ -26,16 +26,16 @@ const day = (over: Partial<TimelineDay> = {}): TimelineDay => ({
 });
 
 describe("TimelineDayRow", () => {
-  it("shows the day it gathers and how much landed on it", () => {
-    const { getByText } = render(<TimelineDayRow day={day()} />);
+  it("shows the day it gathers and how much landed on it", async () => {
+    const { getByText } = await render(<TimelineDayRow day={day()} />);
 
     expect(getByText("25 Jun")).toBeTruthy();
     expect(getByText("2026")).toBeTruthy();
     expect(getByText("2 unlocked")).toBeTruthy();
   });
 
-  it("carries an entry for every achievement of that day", () => {
-    const { getByText } = render(<TimelineDayRow day={day()} />);
+  it("carries an entry for every achievement of that day", async () => {
+    const { getByText } = await render(<TimelineDayRow day={day()} />);
 
     expect(getByText("Survive 10 waves")).toBeTruthy();
     expect(getByText("21:04")).toBeTruthy();

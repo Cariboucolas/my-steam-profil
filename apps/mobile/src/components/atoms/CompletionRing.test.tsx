@@ -33,8 +33,8 @@ describe("ringGeometry", () => {
 });
 
 describe("CompletionRing", () => {
-  it("renders whatever sits at its centre", () => {
-    const { getByText } = render(
+  it("renders whatever sits at its centre", async () => {
+    const { getByText } = await render(
       <CompletionRing size={88} strokeWidth={7} percentage={73}>
         <Text>73%</Text>
       </CompletionRing>,
@@ -43,13 +43,13 @@ describe("CompletionRing", () => {
   });
 
   // By style rather than by prop, which react-native-web reports as deprecated.
-  it("lets touches through its centre to whatever holds the ring", () => {
-    const { getByText } = render(
+  it("lets touches through its centre to whatever holds the ring", async () => {
+    const { getByText } = await render(
       <CompletionRing size={88} strokeWidth={7} percentage={73}>
         <Text>73%</Text>
       </CompletionRing>,
     );
-    const centre = getByText("73%").parent?.parent;
+    const centre = getByText("73%").parent;
 
     expect(centre?.props.pointerEvents).toBeUndefined();
     expect(StyleSheet.flatten(centre?.props.style)).toEqual(
@@ -57,8 +57,10 @@ describe("CompletionRing", () => {
     );
   });
 
-  it("exposes the progress arc", () => {
-    const { getByTestId } = render(<CompletionRing size={88} strokeWidth={7} percentage={73} />);
+  it("exposes the progress arc", async () => {
+    const { getByTestId } = await render(
+      <CompletionRing size={88} strokeWidth={7} percentage={73} />,
+    );
     expect(getByTestId(RING_PROGRESS_TEST_ID)).toBeTruthy();
   });
 });

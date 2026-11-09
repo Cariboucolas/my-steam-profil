@@ -5,32 +5,34 @@ import { ErrorState } from "./ErrorState";
 const MESSAGE = "The backend is unavailable right now. Please wait a moment, then try again.";
 
 describe("ErrorState", () => {
-  it("shows the message", () => {
-    render(<ErrorState message={MESSAGE} onRetry={jest.fn()} />);
+  it("shows the message", async () => {
+    await render(<ErrorState message={MESSAGE} onRetry={jest.fn()} />);
 
     expect(screen.getByText(MESSAGE)).toBeTruthy();
   });
 
-  it("retries on request", () => {
+  it("retries on request", async () => {
     const onRetry = jest.fn();
-    render(<ErrorState message={MESSAGE} onRetry={onRetry} />);
+    await render(<ErrorState message={MESSAGE} onRetry={onRetry} />);
 
-    fireEvent.press(screen.getByLabelText("Try again"));
+    await fireEvent.press(screen.getByLabelText("Try again"));
 
     expect(onRetry).toHaveBeenCalled();
   });
 
-  it("offers no way to change profile when none is given", () => {
-    render(<ErrorState message={MESSAGE} onRetry={jest.fn()} />);
+  it("offers no way to change profile when none is given", async () => {
+    await render(<ErrorState message={MESSAGE} onRetry={jest.fn()} />);
 
     expect(screen.queryByLabelText("Change profile")).toBeNull();
   });
 
-  it("offers a way to change profile when given one", () => {
+  it("offers a way to change profile when given one", async () => {
     const onChangeProfile = jest.fn();
-    render(<ErrorState message={MESSAGE} onRetry={jest.fn()} onChangeProfile={onChangeProfile} />);
+    await render(
+      <ErrorState message={MESSAGE} onRetry={jest.fn()} onChangeProfile={onChangeProfile} />,
+    );
 
-    fireEvent.press(screen.getByLabelText("Change profile"));
+    await fireEvent.press(screen.getByLabelText("Change profile"));
 
     expect(onChangeProfile).toHaveBeenCalled();
   });

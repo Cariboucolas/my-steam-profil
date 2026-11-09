@@ -4,14 +4,14 @@ import { colors } from "../../theme/tokens";
 import { HALF_DOT_TARGET, UNLOCK_HALF_DOT_TEST_ID, UnlockHalfDots } from "./UnlockHalfDots";
 
 describe("UnlockHalfDots", () => {
-  it("shows one dot per half of the year", () => {
-    const { getAllByTestId } = render(<UnlockHalfDots inView={0} onSelect={jest.fn()} />);
+  it("shows one dot per half of the year", async () => {
+    const { getAllByTestId } = await render(<UnlockHalfDots inView={0} onSelect={jest.fn()} />);
 
     expect(getAllByTestId(UNLOCK_HALF_DOT_TEST_ID)).toHaveLength(2);
   });
 
-  it("picks out the half the reader is looking at", () => {
-    const { getAllByTestId } = render(<UnlockHalfDots inView={1} onSelect={jest.fn()} />);
+  it("picks out the half the reader is looking at", async () => {
+    const { getAllByTestId } = await render(<UnlockHalfDots inView={1} onSelect={jest.fn()} />);
     const painted = getAllByTestId(UNLOCK_HALF_DOT_TEST_ID).map(
       (dot) => dot.props.style.backgroundColor,
     );
@@ -19,11 +19,11 @@ describe("UnlockHalfDots", () => {
     expect(painted).toEqual([colors.textFaint, colors.accent]);
   });
 
-  it("asks for the half it was pressed on", () => {
+  it("asks for the half it was pressed on", async () => {
     const onSelect = jest.fn();
-    const { getAllByTestId } = render(<UnlockHalfDots inView={0} onSelect={onSelect} />);
+    const { getAllByTestId } = await render(<UnlockHalfDots inView={0} onSelect={onSelect} />);
 
-    fireEvent.press(getAllByTestId(UNLOCK_HALF_DOT_TEST_ID)[1]!);
+    await fireEvent.press(getAllByTestId(UNLOCK_HALF_DOT_TEST_ID)[1]!);
 
     expect(onSelect).toHaveBeenCalledWith(1);
   });
@@ -34,8 +34,8 @@ describe("UnlockHalfDots", () => {
    * named, they say which one is current, and they carry a pointer's cursor —
    * a mouse reaches them as a finger does.
    */
-  it("offers a named target a pointer can take as well as a finger", () => {
-    const { getAllByRole, getByLabelText } = render(
+  it("offers a named target a pointer can take as well as a finger", async () => {
+    const { getAllByRole, getByLabelText } = await render(
       <UnlockHalfDots inView={1} onSelect={jest.fn()} />,
     );
     const dots = getAllByRole("button");

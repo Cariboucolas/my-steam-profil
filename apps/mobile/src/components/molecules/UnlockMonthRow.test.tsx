@@ -50,22 +50,24 @@ const month = (
 };
 
 describe("UnlockMonthRow", () => {
-  it("draws only the days its month really holds", () => {
-    const { getAllByTestId } = render(<UnlockMonthRow month={month(17)} />);
+  it("draws only the days its month really holds", async () => {
+    const { getAllByTestId } = await render(<UnlockMonthRow month={month(17)} />);
 
     expect(getAllByTestId(UNLOCK_DAY_TEST_ID, PAINTED)).toHaveLength(17);
   });
 
-  it("leaves a day that held nothing on the empty tile", () => {
-    const { getAllByTestId } = render(<UnlockMonthRow month={month(17, { 5: held(3, 2) })} />);
+  it("leaves a day that held nothing on the empty tile", async () => {
+    const { getAllByTestId } = await render(
+      <UnlockMonthRow month={month(17, { 5: held(3, 2) })} />,
+    );
 
     expect(getAllByTestId(UNLOCK_DAY_TEST_ID, PAINTED)[3]?.props.style.backgroundColor).toBe(
       colors.tileEmpty,
     );
   });
 
-  it("draws each tone in its own strength of the accent", () => {
-    const { getAllByTestId } = render(
+  it("draws each tone in its own strength of the accent", async () => {
+    const { getAllByTestId } = await render(
       <UnlockMonthRow
         month={month(17, {
           1: held(1, 1),
@@ -85,14 +87,14 @@ describe("UnlockMonthRow", () => {
     expect(new Set(painted).size).toBe(4);
   });
 
-  it("picks out the label of the month today falls in", () => {
-    const { getByTestId } = render(<UnlockMonthRow month={month(17, {}, true)} />);
+  it("picks out the label of the month today falls in", async () => {
+    const { getByTestId } = await render(<UnlockMonthRow month={month(17, {}, true)} />);
 
     expect(getByTestId(UNLOCK_MONTH_NAME_TEST_ID, PAINTED).props.style.color).toBe(colors.accent);
   });
 
-  it("leaves any other month's label quiet", () => {
-    const { getByTestId } = render(<UnlockMonthRow month={month(30)} />);
+  it("leaves any other month's label quiet", async () => {
+    const { getByTestId } = await render(<UnlockMonthRow month={month(30)} />);
 
     expect(getByTestId(UNLOCK_MONTH_NAME_TEST_ID, PAINTED).props.style.color).toBe(colors.textDim);
   });
@@ -105,16 +107,16 @@ describe("UnlockMonthRow", () => {
    * lost to a reader who cannot read it: the row is one screen-reader stop,
    * and it spells the month and its total out in full.
    */
-  it("keeps both halves of the label out of the system text size", () => {
-    const { getByTestId } = render(<UnlockMonthRow month={month(30)} />);
+  it("keeps both halves of the label out of the system text size", async () => {
+    const { getByTestId } = await render(<UnlockMonthRow month={month(30)} />);
 
     for (const half of [UNLOCK_MONTH_NAME_TEST_ID, UNLOCK_MONTH_TOTAL_TEST_ID]) {
       expect(getByTestId(half, PAINTED).props.allowFontScaling).toBe(false);
     }
   });
 
-  it("states the month's total beside its name", () => {
-    const { getByTestId } = render(
+  it("states the month's total beside its name", async () => {
+    const { getByTestId } = await render(
       <UnlockMonthRow month={month(30, { 5: held(3, 1), 11: held(55, 4) })} />,
     );
 
@@ -128,8 +130,8 @@ describe("UnlockMonthRow", () => {
     expect(label.getByText("58", PAINTED)).toBeTruthy();
   });
 
-  it("writes the month's total in the accent", () => {
-    const { getByTestId } = render(<UnlockMonthRow month={month(30, { 5: held(3, 1) })} />);
+  it("writes the month's total in the accent", async () => {
+    const { getByTestId } = await render(<UnlockMonthRow month={month(30, { 5: held(3, 1) })} />);
 
     expect(getByTestId(UNLOCK_MONTH_TOTAL_TEST_ID, PAINTED).props.style.color).toBe(colors.accent);
   });
@@ -138,19 +140,19 @@ describe("UnlockMonthRow", () => {
    * The sentence arrives written: a row assembling its own would be a second
    * place for the wording to drift from the totals it is describing.
    */
-  it("is a screen-reader stop, named for its month and its total", () => {
-    const { getByLabelText } = render(
+  it("is a screen-reader stop, named for its month and its total", async () => {
+    const { getByLabelText } = await render(
       <UnlockMonthRow month={month(30, { 5: held(3, 1), 11: held(55, 4) })} />,
     );
 
     expect(getByLabelText("April, 58 unlocks").props.accessible).toBe(true);
   });
 
-  it("holds its own contents out of the traversal, on either platform", () => {
+  it("holds its own contents out of the traversal, on either platform", async () => {
     // The stop above is only the whole of the row if nothing inside it is a
     // stop too. `accessible` is `focusable` on Android and does not settle
     // that on its own, so both platforms are told in their own words.
-    const { getByTestId } = render(
+    const { getByTestId } = await render(
       <UnlockMonthRow month={month(30, { 5: held(3, 1), 11: held(55, 4) })} />,
     );
 
@@ -163,8 +165,8 @@ describe("UnlockMonthRow", () => {
     }
   });
 
-  it("writes what the builder gave it for a month that held nothing", () => {
-    const { getByTestId } = render(<UnlockMonthRow month={month(30)} />);
+  it("writes what the builder gave it for a month that held nothing", async () => {
+    const { getByTestId } = await render(<UnlockMonthRow month={month(30)} />);
     const label = within(getByTestId(UNLOCK_MONTH_LABEL_TEST_ID, PAINTED));
 
     expect(label.getByText("APR", PAINTED)).toBeTruthy();

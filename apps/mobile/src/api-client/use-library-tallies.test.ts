@@ -130,7 +130,7 @@ const renderTallies = (
 describe("useLibraryTallies", () => {
   it("counts every game the player has launched", async () => {
     const { client, asked } = eagerClient();
-    const { result } = renderTallies(client);
+    const { result } = await renderTallies(client);
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
@@ -145,7 +145,7 @@ describe("useLibraryTallies", () => {
    */
   it("spends no request on a game that was never launched", async () => {
     const { client, asked } = eagerClient();
-    const { result } = renderTallies(client);
+    const { result } = await renderTallies(client);
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
@@ -159,7 +159,7 @@ describe("useLibraryTallies", () => {
    */
   it("asks about the most recently played first", async () => {
     const { client, asked } = eagerClient();
-    const { result } = renderTallies(client);
+    const { result } = await renderTallies(client);
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
@@ -172,7 +172,7 @@ describe("useLibraryTallies", () => {
    */
   it("hands over each wave as it lands, not everything at the end", async () => {
     const { client, release } = heldClient([7, 8]);
-    const { result } = renderTallies(client);
+    const { result } = await renderTallies(client);
 
     await waitFor(() => expect(Object.keys(result.current.tallies)).toHaveLength(6));
     expect(result.current.pending).toEqual(new Set([7, 8]));
@@ -197,7 +197,7 @@ describe("useLibraryTallies", () => {
       inFlight -= 1;
       return ok(tally(appId));
     });
-    const { result } = renderTallies(client);
+    const { result } = await renderTallies(client);
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
@@ -212,7 +212,7 @@ describe("useLibraryTallies", () => {
     const { client } = heldClient([], (appId) =>
       appId === 2 ? err("UNAVAILABLE") : ok(tally(appId)),
     );
-    const { result } = renderTallies(client);
+    const { result } = await renderTallies(client);
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
@@ -228,7 +228,7 @@ describe("useLibraryTallies", () => {
     const { client, release } = heldClient([7, 8], (appId) =>
       appId === 2 ? err("UNAVAILABLE") : ok(tally(appId)),
     );
-    const { result } = renderTallies(client);
+    const { result } = await renderTallies(client);
 
     await waitFor(() => expect(result.current.pending).toEqual(new Set([7, 8])));
 
@@ -239,7 +239,7 @@ describe("useLibraryTallies", () => {
   /** Without a pinned order every wave would shuffle rows under a finger. */
   it("pins the order it fetches in while tallies are outstanding", async () => {
     const { client, release } = heldClient([7, 8]);
-    const { result } = renderTallies(client);
+    const { result } = await renderTallies(client);
 
     await waitFor(() => expect(result.current.frozenOrder).toEqual([...BY_RECENCY]));
 
@@ -248,7 +248,7 @@ describe("useLibraryTallies", () => {
 
   it("releases the order once nothing is outstanding", async () => {
     const { client } = eagerClient();
-    const { result } = renderTallies(client);
+    const { result } = await renderTallies(client);
 
     await waitFor(() => expect(result.current.pending.size).toBe(0));
     expect(result.current.frozenOrder).toBeNull();
@@ -261,11 +261,11 @@ describe("useLibraryTallies", () => {
    */
   it("re-pins to a chosen order, and the waves after it do not move the list", async () => {
     const { client, release } = heldClient([7, 8, 9, 10, 11, 12, 13, 14]);
-    const { result } = renderTallies(client, LONG_LIBRARY);
+    const { result } = await renderTallies(client, LONG_LIBRARY);
     await waitFor(() => expect(result.current.pending.size).toBe(8));
 
     const chosen = [14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
-    act(() => result.current.repin(chosen));
+    await act(() => result.current.repin(chosen));
     expect(result.current.frozenOrder).toEqual(chosen);
 
     // The second wave lands, and the third is still outstanding behind it.
@@ -280,10 +280,10 @@ describe("useLibraryTallies", () => {
   /** Nothing is arriving to shuffle anything, so there is nothing to pin. */
   it("stays released when an order is chosen with nothing outstanding", async () => {
     const { client } = eagerClient();
-    const { result } = renderTallies(client);
+    const { result } = await renderTallies(client);
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
-    act(() => result.current.repin([8, 7, 6, 5, 4, 3, 2, 1]));
+    await act(() => result.current.repin([8, 7, 6, 5, 4, 3, 2, 1]));
 
     expect(result.current.frozenOrder).toBeNull();
   });
@@ -295,11 +295,12 @@ describe("useLibraryTallies", () => {
   it("does not let a previous library's waves land on the next one", async () => {
     const previous = heldClient(BY_RECENCY);
     const next = eagerClient();
-    const { result, rerender } = renderTallies(previous.client);
+    const { result, rerender } = await renderTallies(previous.client);
     await waitFor(() => expect(result.current.pending.size).toBe(8));
 
-    rerender({ steamId: OTHER_STEAM_ID, client: next.client, games: OTHER_GAMES });
-    expect(result.current.tallies).toEqual({});
+    await rerender({ steamId: OTHER_STEAM_ID, client: next.client, games: OTHER_GAMES });
+    for (const appId of BY_RECENCY)
+      expect(result.current.tallies).not.toHaveProperty(String(appId));
 
     await previous.release();
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
@@ -311,7 +312,7 @@ describe("useLibraryTallies", () => {
   });
 
   it("has nothing outstanding while no profile is chosen", async () => {
-    const { result } = renderTallies(undefined);
+    const { result } = await renderTallies(undefined);
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
@@ -320,7 +321,7 @@ describe("useLibraryTallies", () => {
   });
 
   it("has nothing to count in an empty library", async () => {
-    const { result } = renderTallies(clientAsking(refuse), []);
+    const { result } = await renderTallies(clientAsking(refuse), []);
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
@@ -338,7 +339,7 @@ describe("useLibraryTallies", () => {
   it("counts a game the player has played even with no last-played time", async () => {
     const { client, asked } = eagerClient();
     const played = [game(1, null, 8975), game(2, null, 60)];
-    const { result } = renderTallies(client, [...played, game(NEVER_PLAYED, null, 0)]);
+    const { result } = await renderTallies(client, [...played, game(NEVER_PLAYED, null, 0)]);
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
@@ -353,7 +354,7 @@ describe("useLibraryTallies", () => {
    */
   it("falls back to the most played first when no last-played time is sent", async () => {
     const { client, asked } = eagerClient();
-    const { result } = renderTallies(client, [
+    const { result } = await renderTallies(client, [
       game(1, null, 60),
       game(2, null, 8975),
       game(3, null, 600),
@@ -372,7 +373,7 @@ describe("useLibraryTallies", () => {
    */
   it("keeps Steam's own sequence when neither a date nor an hour is published", async () => {
     const { client, asked } = eagerClient();
-    const { result } = renderTallies(client, [
+    const { result } = await renderTallies(client, [
       game(3, null, null),
       game(1, null, null),
       game(2, null, null),
@@ -397,7 +398,7 @@ describe("useLibraryTallies", () => {
   it("counts every game when the whole library carries no playtime signal", async () => {
     const { client, asked } = eagerClient();
     const withheld = [game(1, null, null), game(2, null, null), game(3, null, null)];
-    const { result } = renderTallies(client, withheld);
+    const { result } = await renderTallies(client, withheld);
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
@@ -413,7 +414,7 @@ describe("useLibraryTallies", () => {
    */
   it("says the library is not counted until the last wave has landed", async () => {
     const { client, release } = heldClient([7, 8]);
-    const { result } = renderTallies(client);
+    const { result } = await renderTallies(client);
 
     await waitFor(() => expect(result.current.pending).toEqual(new Set([7, 8])));
     expect(result.current.counted).toBe(false);
@@ -425,13 +426,13 @@ describe("useLibraryTallies", () => {
 
   /** A library with nothing worth counting is counted through, not pending. */
   it("counts an empty library through at once", async () => {
-    const { result } = renderTallies(clientAsking(refuse), []);
+    const { result } = await renderTallies(clientAsking(refuse), []);
 
     await waitFor(() => expect(result.current.counted).toBe(true));
   });
 
   it("has counted nothing while no profile is chosen", async () => {
-    const { result } = renderTallies(undefined);
+    const { result } = await renderTallies(undefined);
 
     await waitFor(() => expect(result.current.frozenOrder).toBeNull());
 
@@ -441,10 +442,14 @@ describe("useLibraryTallies", () => {
   /** The next library is uncounted the moment it arrives, however far the previous one got. */
   it("stops calling a library counted once another one takes its place", async () => {
     const previous = eagerClient();
-    const { result, rerender } = renderTallies(previous.client);
+    const { result, rerender } = await renderTallies(previous.client);
     await waitFor(() => expect(result.current.counted).toBe(true));
 
-    rerender({ steamId: OTHER_STEAM_ID, client: heldClient([500]).client, games: OTHER_GAMES });
+    await rerender({
+      steamId: OTHER_STEAM_ID,
+      client: heldClient([500]).client,
+      games: OTHER_GAMES,
+    });
 
     expect(result.current.counted).toBe(false);
   });
@@ -459,7 +464,7 @@ describe("useLibraryTallies", () => {
     const seen: Array<{ games: readonly GameDto[]; counted: boolean; tallied: number }> = [];
     const previous = eagerClient();
     const cache = createShortLivedQueryClient();
-    const { result, rerender } = renderHook(
+    const { result, rerender } = await renderHook(
       ({ steamId, client, games }: Required<Props>) => {
         const state = useLibraryTallies(steamId, client, games);
         seen.push({ games, counted: state.counted, tallied: Object.keys(state.tallies).length });
@@ -477,15 +482,19 @@ describe("useLibraryTallies", () => {
     await waitFor(() => expect(result.current.counted).toBe(true));
     seen.length = 0;
 
-    rerender({ steamId: OTHER_STEAM_ID, client: heldClient([500]).client, games: OTHER_GAMES });
+    await rerender({
+      steamId: OTHER_STEAM_ID,
+      client: heldClient([500]).client,
+      games: OTHER_GAMES,
+    });
 
     const onNextGames = seen.filter((render) => render.games === OTHER_GAMES);
     expect(onNextGames.length).toBeGreaterThan(0);
     expect(onNextGames.every((render) => !render.counted && render.tallied === 0)).toBe(true);
   });
 
-  it("has nothing to report before a load has started", () => {
-    const { result } = renderTallies(undefined);
+  it("has nothing to report before a load has started", async () => {
+    const { result } = await renderTallies(undefined);
 
     expect(result.current.loaded).toBeNull();
   });
@@ -497,7 +506,7 @@ describe("useLibraryTallies", () => {
    */
   it("reports how far the tallies have got while they are landing", async () => {
     const { client, release } = heldClient([7]);
-    const { result } = renderTallies(client);
+    const { result } = await renderTallies(client);
 
     await waitFor(() => expect(result.current.loaded).toBe(0.75));
 
@@ -511,11 +520,11 @@ describe("useLibraryTallies", () => {
     it("asks nothing for a second reader mounted while the tallies are fresh", async () => {
       const cache = createShortLivedQueryClient();
       const { client, asked } = eagerClient();
-      const first = renderTallies(client, GAMES, cache);
+      const first = await renderTallies(client, GAMES, cache);
       await waitFor(() => expect(first.result.current.counted).toBe(true));
       const askedByTheFirst = asked.length;
 
-      const second = renderTallies(client, GAMES, cache);
+      const second = await renderTallies(client, GAMES, cache);
       await waitFor(() => expect(second.result.current.counted).toBe(true));
 
       expect(second.result.current.tallies).toEqual(first.result.current.tallies);
@@ -531,16 +540,16 @@ describe("useLibraryTallies", () => {
     it("asks nothing more once left, and only for what is missing when back", async () => {
       const cache = createShortLivedQueryClient();
       const leaving = heldClient([7, 8, 9, 10, 11, 12, 13, 14]);
-      const first = renderTallies(leaving.client, LONG_LIBRARY, cache);
+      const first = await renderTallies(leaving.client, LONG_LIBRARY, cache);
       await waitFor(() => expect(first.result.current.pending.size).toBe(8));
 
-      first.unmount();
+      await first.unmount();
       await leaving.release();
 
       expect(leaving.asked).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
 
       const back = eagerClient();
-      const second = renderTallies(back.client, LONG_LIBRARY, cache);
+      const second = await renderTallies(back.client, LONG_LIBRARY, cache);
       await waitFor(() => expect(second.result.current.counted).toBe(true));
 
       expect(back.asked).toEqual([13, 14]);
@@ -555,13 +564,13 @@ describe("useLibraryTallies", () => {
       const { client, asked } = heldClient([], (appId) =>
         appId === 2 ? err("NOT_FOUND") : ok(tally(appId)),
       );
-      const first = renderTallies(client, GAMES, cache);
+      const first = await renderTallies(client, GAMES, cache);
       await waitFor(() => expect(first.result.current.counted).toBe(true));
 
       expect(first.result.current.tallies[2]).toBeUndefined();
       expect(first.result.current.pending.has(2)).toBe(false);
 
-      renderTallies(client, GAMES, cache);
+      await renderTallies(client, GAMES, cache);
 
       expect(asked.filter((appId) => appId === 2)).toHaveLength(1);
     });
@@ -569,13 +578,13 @@ describe("useLibraryTallies", () => {
     /** Opening a game marks its tally out of date: one request when back, not a recount. */
     it("asks once, for the game just opened, when the reader comes back", async () => {
       const cache = createShortLivedQueryClient();
-      const firstVisit = renderTallies(eagerClient().client, GAMES, cache);
+      const firstVisit = await renderTallies(eagerClient().client, GAMES, cache);
       await waitFor(() => expect(firstVisit.result.current.counted).toBe(true));
-      firstVisit.unmount();
+      await firstVisit.unmount();
 
       await act(() => cache.invalidateQueries(queries.tally(STEAM_ID, 3)));
       const back = eagerClient();
-      const { result } = renderTallies(back.client, GAMES, cache);
+      const { result } = await renderTallies(back.client, GAMES, cache);
       await waitFor(() => expect(back.asked).toHaveLength(1));
 
       await waitFor(() => expect(result.current.counted).toBe(true));
@@ -586,7 +595,7 @@ describe("useLibraryTallies", () => {
     it("asks nothing when another Profile's tally is marked out of date", async () => {
       const cache = createShortLivedQueryClient();
       const { client, asked } = eagerClient();
-      const { result } = renderTallies(client, GAMES, cache);
+      const { result } = await renderTallies(client, GAMES, cache);
       await waitFor(() => expect(result.current.counted).toBe(true));
 
       await act(() => cache.invalidateQueries(queries.tally(OTHER_STEAM_ID, 3)));
@@ -602,7 +611,7 @@ describe("useLibraryTallies", () => {
       const cache = createShortLivedQueryClient();
       const held: number[] = [];
       const { client, asked, release } = heldClient(held);
-      const { result } = renderTallies(client, GAMES, cache);
+      const { result } = await renderTallies(client, GAMES, cache);
       await waitFor(() => expect(result.current.counted).toBe(true));
 
       held.push(3);

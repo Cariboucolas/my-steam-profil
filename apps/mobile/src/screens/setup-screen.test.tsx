@@ -45,12 +45,12 @@ const recordingStorage = (stored: string | undefined) => {
   return { storage, held: () => current };
 };
 
-const renderSetup = (
+const renderSetup = async (
   stored: string | undefined,
   { index = LibraryStub, initialUrl = "/setup" } = {},
 ) => {
   const device = recordingStorage(stored);
-  const router = renderRouter(
+  const router = await renderRouter(
     { index, setup: SetupScreen },
     {
       initialUrl,
@@ -73,18 +73,18 @@ describe("setup screen", () => {
   });
 
   it("asks which profile to show", async () => {
-    renderSetup(undefined);
+    await renderSetup(undefined);
 
     await waitFor(() => expect(screen.getByText("Which Steam profile?")).toBeTruthy());
     expect(screen.getByLabelText("SteamID64")).toBeTruthy();
   });
 
   it("remembers the profile it was given and shows the library", async () => {
-    const { held } = renderSetup(undefined);
+    const { held } = await renderSetup(undefined);
     const field = await screen.findByLabelText("SteamID64");
 
-    fireEvent.changeText(field, OTHER_STEAM_ID);
-    fireEvent.press(screen.getByText("Show this profile"));
+    await fireEvent.changeText(field, OTHER_STEAM_ID);
+    await fireEvent.press(screen.getByText("Show this profile"));
 
     await waitFor(() => expect(screen.getByText("library screen")).toBeTruthy());
     expect(held()).toBe(OTHER_STEAM_ID);
@@ -96,11 +96,11 @@ describe("setup screen", () => {
    * stay put for the reader to correct it.
    */
   it("stays put on something that is not a SteamID64", async () => {
-    const { held } = renderSetup(undefined);
+    const { held } = await renderSetup(undefined);
     const field = await screen.findByLabelText("SteamID64");
 
-    fireEvent.changeText(field, "not-seventeen-digits");
-    fireEvent.press(screen.getByText("Show this profile"));
+    await fireEvent.changeText(field, "not-seventeen-digits");
+    await fireEvent.press(screen.getByText("Show this profile"));
 
     await waitFor(() => expect(screen.getByLabelText("SteamID64")).toBeTruthy());
     expect(screen.queryByText("library screen")).toBeNull();
@@ -114,7 +114,7 @@ describe("setup screen", () => {
      * promise a way out that does not exist.
      */
     it("offers none on a first run", async () => {
-      renderSetup(undefined);
+      await renderSetup(undefined);
 
       await screen.findByText("Which Steam profile?");
       expect(screen.queryByText("Cancel")).toBeNull();
@@ -122,15 +122,15 @@ describe("setup screen", () => {
     });
 
     it("offers one once a profile is already known", async () => {
-      renderSetup(STEAM_ID);
+      await renderSetup(STEAM_ID);
 
       await waitFor(() => expect(screen.getByText("Cancel")).toBeTruthy());
     });
 
     it("goes back to the library, keeping the profile it had", async () => {
-      const { held } = renderSetup(STEAM_ID);
+      const { held } = await renderSetup(STEAM_ID);
 
-      fireEvent.press(await screen.findByText("Cancel"));
+      await fireEvent.press(await screen.findByText("Cancel"));
 
       await waitFor(() => expect(screen.getByText("library screen")).toBeTruthy());
       expect(held()).toBe(STEAM_ID);
@@ -139,9 +139,9 @@ describe("setup screen", () => {
 
   describe("forgetting", () => {
     it("takes the profile off the device", async () => {
-      const { held } = renderSetup(STEAM_ID);
+      const { held } = await renderSetup(STEAM_ID);
 
-      fireEvent.press(await screen.findByText("Forget this profile"));
+      await fireEvent.press(await screen.findByText("Forget this profile"));
 
       await waitFor(() => expect(held()).toBeUndefined());
     });
@@ -153,13 +153,13 @@ describe("setup screen", () => {
      * library between them for back to reveal.
      */
     it("leaves a single first-run form behind", async () => {
-      const { stackedScreens } = renderSetup(STEAM_ID, {
+      const { stackedScreens } = await renderSetup(STEAM_ID, {
         index: RedirectingLibraryStub,
         initialUrl: "/",
       });
 
-      fireEvent.press(await screen.findByLabelText("Change profile"));
-      fireEvent.press(await screen.findByText("Forget this profile"));
+      await fireEvent.press(await screen.findByLabelText("Change profile"));
+      await fireEvent.press(await screen.findByText("Forget this profile"));
 
       await waitFor(() => expect(stackedScreens()).toEqual(["setup"]));
       expect(screen.getByLabelText("SteamID64").props.value).toBe("");

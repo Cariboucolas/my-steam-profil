@@ -33,8 +33,8 @@ const weekOf = (counted: boolean, view = VIEW) =>
 describe("UnlockWeekCard", () => {
   beforeEach(deviceAsksForLessMotion);
 
-  it("names the busiest slot, draws the week, and states the three shares", () => {
-    render(<UnlockWeekCard week={weekOf(true)} loaded={null} />);
+  it("names the busiest slot, draws the week, and states the three shares", async () => {
+    await render(<UnlockWeekCard week={weekOf(true)} loaded={null} />);
 
     expect(screen.getByTestId(WEEK_CARD_TEST_ID)).toBeTruthy();
     expect(screen.getByText("Sat 9pm")).toBeTruthy();
@@ -45,23 +45,23 @@ describe("UnlockWeekCard", () => {
     expect(screen.queryAllByTestId(RECORD_FIGURE_SKELETON_TEST_ID)).toHaveLength(0);
   });
 
-  it("draws the week while counting, but neither the slot nor the shares", () => {
-    render(<UnlockWeekCard week={weekOf(false)} loaded={0.4} />);
+  it("draws the week while counting, but neither the slot nor the shares", async () => {
+    await render(<UnlockWeekCard week={weekOf(false)} loaded={0.4} />);
 
     expect(screen.getAllByTestId(HOUR_BAR_TEST_ID)).toHaveLength(24);
     expect(screen.queryByText("Sat 9pm")).toBeNull();
     expect(screen.getAllByTestId(RECORD_FIGURE_SKELETON_TEST_ID)).toHaveLength(3);
   });
 
-  it("holds the chart's place while nothing dated has landed", () => {
-    render(<UnlockWeekCard week={{ kind: "waiting" }} loaded={0.1} />);
+  it("holds the chart's place while nothing dated has landed", async () => {
+    await render(<UnlockWeekCard week={{ kind: "waiting" }} loaded={0.1} />);
 
     expect(screen.queryAllByTestId(HOUR_BAR_TEST_ID)).toHaveLength(0);
     expect(screen.getAllByTestId(RECORD_FIGURE_SKELETON_TEST_ID)).toHaveLength(3);
   });
 
-  it("says so when nothing was dated", () => {
-    render(<UnlockWeekCard week={{ kind: "empty" }} loaded={null} />);
+  it("says so when nothing was dated", async () => {
+    await render(<UnlockWeekCard week={{ kind: "empty" }} loaded={null} />);
 
     expect(screen.getByText("No dated unlocks")).toBeTruthy();
     expect(screen.queryAllByTestId(RECORD_FIGURE_SKELETON_TEST_ID)).toHaveLength(0);

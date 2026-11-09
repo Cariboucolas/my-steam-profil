@@ -232,8 +232,8 @@ const renderWithoutProfile = () => renderAt({}, undefined);
 
 describe("library screen", () => {
   it("leads to the stats page", async () => {
-    renderLibrary(library());
-    fireEvent.press(await screen.findByText("Statistics ›"));
+    await renderLibrary(library());
+    await fireEvent.press(await screen.findByText("Statistics ›"));
     expect(await screen.findByText("stats screen")).toBeTruthy();
   });
 
@@ -261,25 +261,25 @@ describe("library screen", () => {
    * condition and this goes red.
    */
   it("shows the unlock calendar for a library with nothing unlocked", async () => {
-    renderLibrary(createFixtureApiClient({ profile, games, progress: {} }));
+    await renderLibrary(createFixtureApiClient({ profile, games, progress: {} }));
 
     await waitFor(() => expect(screen.getByTestId(UNLOCK_CALENDAR_CARD_TEST_ID)).toBeTruthy());
   });
   it("sends a device that remembers no profile to setup", async () => {
-    renderWithoutProfile();
+    await renderWithoutProfile();
 
     await waitFor(() => expect(screen.getByText("setup screen")).toBeTruthy());
   });
 
   it("shows no library while it is still asking for one", async () => {
-    renderLibrary(silent());
+    await renderLibrary(silent());
 
     await waitFor(() => expect(screen.queryByText("cariboucolas")).toBeNull());
     expect(screen.queryByTestId(UNLOCK_CALENDAR_CARD_TEST_ID)).toBeNull();
   });
 
   it("shows the profile and the games it owns", async () => {
-    renderLibrary(library());
+    await renderLibrary(library());
 
     await waitFor(() => expect(screen.getByText("cariboucolas")).toBeTruthy());
     expect(screen.getByText("1 games")).toBeTruthy();
@@ -291,9 +291,9 @@ describe("library screen", () => {
   });
 
   it("opens the game the reader presses", async () => {
-    renderLibrary(library());
+    await renderLibrary(library());
 
-    fireEvent.press(await screen.findByText("Soulstone Survivors"));
+    await fireEvent.press(await screen.findByText("Soulstone Survivors"));
 
     await waitFor(() => expect(screen.getByText("game screen 2066020")).toBeTruthy());
   });
@@ -305,7 +305,7 @@ describe("library screen", () => {
      * recovery is killing the app.
      */
     it("says what went wrong and offers both ways out", async () => {
-      renderLibrary(refusing("UNAVAILABLE"));
+      await renderLibrary(refusing("UNAVAILABLE"));
 
       await waitFor(() =>
         expect(
@@ -319,7 +319,7 @@ describe("library screen", () => {
     });
 
     it("distinguishes a private profile from a backend that is down", async () => {
-      renderLibrary(refusing("PRIVATE_PROFILE"));
+      await renderLibrary(refusing("PRIVATE_PROFILE"));
 
       await waitFor(() =>
         expect(
@@ -336,17 +336,17 @@ describe("library screen", () => {
      * is a real one.
      */
     it("loads the library when the reader tries again", async () => {
-      renderLibrary(downThenUp());
+      await renderLibrary(downThenUp());
 
-      fireEvent.press(await screen.findByLabelText("Try again"));
+      await fireEvent.press(await screen.findByLabelText("Try again"));
 
       await waitFor(() => expect(screen.getByText("cariboucolas")).toBeTruthy());
     });
 
     it("goes to setup when the reader would rather change profile", async () => {
-      renderLibrary(refusing("NOT_FOUND"));
+      await renderLibrary(refusing("NOT_FOUND"));
 
-      fireEvent.press(await screen.findByLabelText("Change profile"));
+      await fireEvent.press(await screen.findByLabelText("Change profile"));
 
       await waitFor(() => expect(screen.getByText("setup screen")).toBeTruthy());
     });
@@ -359,10 +359,10 @@ describe("library screen", () => {
    * first library built included.
    */
   it("drops the library it was showing the moment the profile changes", async () => {
-    renderAt({ [STEAM_ID]: library(), [OTHER_STEAM_ID]: silent() }, STEAM_ID);
+    await renderAt({ [STEAM_ID]: library(), [OTHER_STEAM_ID]: silent() }, STEAM_ID);
     await screen.findByText("Soulstone Survivors");
 
-    fireEvent.press(screen.getByLabelText("switch profile"));
+    await fireEvent.press(screen.getByLabelText("switch profile"));
 
     await waitFor(() => expect(screen.queryByText("Soulstone Survivors")).toBeNull());
     expect(screen.queryByTestId(UNLOCK_CALENDAR_CARD_TEST_ID)).toBeNull();
@@ -373,14 +373,14 @@ describe("library screen", () => {
    * once rather than waiting for the waves still arriving.
    */
   it("re-sorts the library when the reader asks for another order", async () => {
-    renderLibrary(shelved());
+    await renderLibrary(shelved());
     await screen.findByText("Soulstone Survivors");
 
-    fireEvent.press(screen.getByText("Most played"));
+    await fireEvent.press(screen.getByText("Most played"));
 
     await waitFor(() => expect(drawnNames()).toEqual(["Soulstone Survivors", "Team Fortress 2"]));
 
-    fireEvent.press(screen.getByText("Recently played"));
+    await fireEvent.press(screen.getByText("Recently played"));
 
     await waitFor(() => expect(drawnNames()).toEqual(["Team Fortress 2", "Soulstone Survivors"]));
   });
@@ -394,7 +394,7 @@ describe("library screen", () => {
    * screen differ from another's for no stated cause.
    */
   it("offers no order over a figure Steam withholds, and says why", async () => {
-    renderLibrary(createFixtureApiClient({ profile, games: withheldShelf, progress: {} }));
+    await renderLibrary(createFixtureApiClient({ profile, games: withheldShelf, progress: {} }));
     await screen.findByText("Soulstone Survivors");
 
     expect(screen.getByText("Completed first")).toBeTruthy();
@@ -410,7 +410,7 @@ describe("library screen", () => {
    * which order the rows are in.
    */
   it("falls back to an order it can produce when the next profile withholds one", async () => {
-    renderAt(
+    await renderAt(
       {
         [STEAM_ID]: shelved(),
         [OTHER_STEAM_ID]: createFixtureApiClient({
@@ -422,16 +422,16 @@ describe("library screen", () => {
       STEAM_ID,
     );
     await screen.findByText("Soulstone Survivors");
-    fireEvent.press(screen.getByText("Most played"));
+    await fireEvent.press(screen.getByText("Most played"));
 
-    fireEvent.press(screen.getByLabelText("switch profile"));
+    await fireEvent.press(screen.getByLabelText("switch profile"));
 
     await waitFor(() => expect(screen.queryByText("Most played")).toBeNull());
     expect(screen.getByText("Completed first").props.style.color).toBe(colors.accent);
   });
 
   it("reports a library that will not load even when the profile did", async () => {
-    renderLibrary(libraryRefused());
+    await renderLibrary(libraryRefused());
 
     await waitFor(() =>
       expect(
@@ -441,9 +441,9 @@ describe("library screen", () => {
   });
 
   it("goes to setup when the reader changes profile from the header", async () => {
-    renderLibrary(library());
+    await renderLibrary(library());
 
-    fireEvent.press(await screen.findByLabelText("Change profile"));
+    await fireEvent.press(await screen.findByLabelText("Change profile"));
 
     await waitFor(() => expect(screen.getByText("setup screen")).toBeTruthy());
   });
@@ -454,19 +454,19 @@ describe("library screen", () => {
    * list.
    */
   it("ranks nothing, and says so, when the Rarest tab is opened", async () => {
-    renderLibrary(library());
+    await renderLibrary(library());
     await screen.findByText("Soulstone Survivors");
 
-    fireEvent.press(screen.getByText("Rarest"));
+    await fireEvent.press(screen.getByText("Rarest"));
 
     await waitFor(() => expect(screen.getByText("Nothing unlocked in any game yet")).toBeTruthy());
   });
 
   it("ranks the rarest unlock first when Steam publishes figures", async () => {
-    renderLibrary(ranked());
+    await renderLibrary(ranked());
     await screen.findByText("Soulstone Survivors");
 
-    fireEvent.press(screen.getByText("Rarest"));
+    await fireEvent.press(screen.getByText("Rarest"));
 
     await waitFor(() => expect(screen.getByText("BOSS_1")).toBeTruthy());
     expect(screen.getAllByText(/BOSS_/).map((node) => String(node.children[0]))).toEqual([

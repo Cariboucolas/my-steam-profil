@@ -15,13 +15,13 @@ const PROFILE = {
 } as const;
 
 describe("ProfileHeader", () => {
-  it("draws the language switch it is given, and none otherwise", () => {
-    const { queryByText, rerender } = render(
+  it("draws the language switch it is given, and none otherwise", async () => {
+    const { queryByText, rerender } = await render(
       <ProfileHeader profile={PROFILE} gameCount={1} revision="dev" onChangeProfile={jest.fn()} />,
     );
     expect(queryByText("switch")).toBeNull();
 
-    rerender(
+    await rerender(
       <ProfileHeader
         profile={PROFILE}
         gameCount={1}
@@ -33,8 +33,8 @@ describe("ProfileHeader", () => {
     expect(queryByText("switch")).toBeTruthy();
   });
 
-  it("shows who is being looked at and how much they own", () => {
-    render(
+  it("shows who is being looked at and how much they own", async () => {
+    await render(
       <ProfileHeader
         profile={PROFILE}
         gameCount={367}
@@ -47,8 +47,8 @@ describe("ProfileHeader", () => {
     expect(screen.getByText("367 games")).toBeTruthy();
   });
 
-  it("states the revision the bundle was built from, beside the count", () => {
-    render(
+  it("states the revision the bundle was built from, beside the count", async () => {
+    await render(
       <ProfileHeader
         profile={PROFILE}
         gameCount={367}
@@ -60,8 +60,8 @@ describe("ProfileHeader", () => {
     expect(screen.getByText("· revision a1b2c3d", PAINTED)).toBeTruthy();
   });
 
-  it("does not let the revision be dragged out with a selection", () => {
-    render(
+  it("does not let the revision be dragged out with a selection", async () => {
+    await render(
       <ProfileHeader
         profile={PROFILE}
         gameCount={367}
@@ -73,13 +73,13 @@ describe("ProfileHeader", () => {
     expect(screen.getByTestId(PROFILE_REVISION_TEST_ID, PAINTED).props.selectable).toBe(false);
   });
 
-  it("keeps the revision out of the traversal, on every platform", () => {
+  it("keeps the revision out of the traversal, on every platform", async () => {
     // Provenance for whoever is looking at the screen, and noise for whoever
     // is listening to it: the header is read as a name, a count and a way out.
     // `accessible` is only `focusable` on Android, and neither native word
     // reaches the DOM, so all three are said — the web build is the one #106
     // was about.
-    render(
+    await render(
       <ProfileHeader
         profile={PROFILE}
         gameCount={367}
@@ -96,9 +96,9 @@ describe("ProfileHeader", () => {
     expect(screen.queryByText("· revision a1b2c3d")).toBeNull();
   });
 
-  it("offers a way to look at somebody else", () => {
+  it("offers a way to look at somebody else", async () => {
     const onChangeProfile = jest.fn();
-    render(
+    await render(
       <ProfileHeader
         profile={PROFILE}
         gameCount={367}
@@ -107,7 +107,7 @@ describe("ProfileHeader", () => {
       />,
     );
 
-    fireEvent.press(screen.getByLabelText("Change profile"));
+    await fireEvent.press(screen.getByLabelText("Change profile"));
 
     expect(onChangeProfile).toHaveBeenCalled();
   });

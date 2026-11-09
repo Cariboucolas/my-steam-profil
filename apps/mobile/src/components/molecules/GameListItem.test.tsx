@@ -24,18 +24,18 @@ beforeEach(() => {
 });
 
 describe("GameListItem", () => {
-  it("shows the game and how far the player has got", () => {
-    const { getByText } = render(<GameListItem row={row()} onPress={() => {}} />);
+  it("shows the game and how far the player has got", async () => {
+    const { getByText } = await render(<GameListItem row={row()} onPress={() => {}} />);
 
     expect(getByText("Soulstone Survivors")).toBeTruthy();
     expect(getByText("73%")).toBeTruthy();
   });
 
-  it("opens the game it was pressed on", () => {
+  it("opens the game it was pressed on", async () => {
     const onPress = jest.fn();
-    const { getByText } = render(<GameListItem row={row()} onPress={onPress} />);
+    const { getByText } = await render(<GameListItem row={row()} onPress={onPress} />);
 
-    fireEvent.press(getByText("Soulstone Survivors"));
+    await fireEvent.press(getByText("Soulstone Survivors"));
 
     expect(onPress).toHaveBeenCalledWith(2066020);
   });
@@ -46,7 +46,7 @@ describe("GameListItem", () => {
    * borrow it.
    */
   it("shows a skeleton, not a dash, while its tally is on its way", async () => {
-    const { getByTestId, queryByText } = render(
+    const { getByTestId, queryByText } = await render(
       <GameListItem
         row={row({ percentage: null, rateLabel: "—", pending: true })}
         onPress={() => {}}
@@ -58,8 +58,8 @@ describe("GameListItem", () => {
     expect(queryByText("—")).toBeNull();
   });
 
-  it("shows a dash once nothing is coming for it", () => {
-    const { getByText, queryByTestId } = render(
+  it("shows a dash once nothing is coming for it", async () => {
+    const { getByText, queryByTestId } = await render(
       <GameListItem
         row={row({ percentage: null, rateLabel: "—", pending: false })}
         onPress={() => {}}
@@ -70,8 +70,8 @@ describe("GameListItem", () => {
     expect(queryByTestId(SKELETON_TEST_ID)).toBeNull();
   });
 
-  it("shows no skeleton once the tally has landed", () => {
-    const { queryByTestId } = render(<GameListItem row={row()} onPress={() => {}} />);
+  it("shows no skeleton once the tally has landed", async () => {
+    const { queryByTestId } = await render(<GameListItem row={row()} onPress={() => {}} />);
 
     expect(queryByTestId(SKELETON_TEST_ID)).toBeNull();
   });
@@ -84,7 +84,7 @@ describe("GameListItem", () => {
   it("shows a skeleton, not a dash, with less motion asked for", async () => {
     deviceAsksForLessMotion();
 
-    const { getByTestId, queryByText } = render(
+    const { getByTestId, queryByText } = await render(
       <GameListItem
         row={row({ percentage: null, rateLabel: "—", pending: true })}
         onPress={() => {}}

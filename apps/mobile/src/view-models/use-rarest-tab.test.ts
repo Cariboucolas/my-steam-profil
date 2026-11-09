@@ -154,8 +154,8 @@ const overOneWave = () => {
 describe("useRarestTab", () => {
   /** A secondary tab that nobody has opened costs nothing. */
   it("has nothing to say while the tab has not been opened", async () => {
-    const { api, asked } = client();
-    const { result } = renderTab({ client: api, tallies: TALLIES }, false);
+    const { api, asked } = await client();
+    const { result } = await renderTab({ client: api, tallies: TALLIES }, false);
 
     await waitFor(() => expect(result.current.status).toBe("idle"));
 
@@ -170,7 +170,7 @@ describe("useRarestTab", () => {
    */
   it("says it is waiting on the count before a counted library arrives", async () => {
     const { asked } = client();
-    const { result } = renderTab(null);
+    const { result } = await renderTab(null);
 
     await waitFor(() => expect(result.current.status).toBe("counting"));
 
@@ -181,7 +181,7 @@ describe("useRarestTab", () => {
 
   it("ranks the rarest first and names each row from its own game", async () => {
     const { api } = client();
-    const { result } = renderTab({ client: api, tallies: TALLIES });
+    const { result } = await renderTab({ client: api, tallies: TALLIES });
 
     await waitFor(() => expect(result.current.rows).toHaveLength(2));
     await waitFor(() => expect(result.current.rows[0]?.displayName).toBe("Ascendant"));
@@ -198,7 +198,7 @@ describe("useRarestTab", () => {
    */
   it("asks for a schema only from the games the shown rows come from", async () => {
     const { api, asked } = client();
-    const { result } = renderTab({ client: api, tallies: TALLIES });
+    const { result } = await renderTab({ client: api, tallies: TALLIES });
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
     await waitFor(() => expect(asked.names.length).toBeGreaterThan(0));
@@ -219,7 +219,7 @@ describe("useRarestTab", () => {
   it("asks for no schema until every figure is in", async () => {
     const { view: wide, tallies, published } = overOneWave();
     const held = client({ rarity: [18] }, published);
-    const { result } = renderTab({ client: held.api, tallies }, true, wide);
+    const { result } = await renderTab({ client: held.api, tallies }, true, wide);
 
     // The first wave has landed, so there is a ranking — and it is not the one.
     await waitFor(() => expect(result.current.rows).toHaveLength(6));
@@ -242,7 +242,7 @@ describe("useRarestTab", () => {
   it("reports phase one's share while the figures are still landing", async () => {
     const { view: wide, tallies, published } = overOneWave();
     const held = client({ rarity: [18] }, published);
-    const { result } = renderTab({ client: held.api, tallies }, true, wide);
+    const { result } = await renderTab({ client: held.api, tallies }, true, wide);
 
     await waitFor(() => expect(result.current.status).toBe("loading"));
     await waitFor(() => expect(result.current.loaded).toBeGreaterThan(0));
@@ -258,7 +258,7 @@ describe("useRarestTab", () => {
    */
   it("reports no share while only the second phase is outstanding", async () => {
     const held = client({ names: [1, 2] });
-    const { result } = renderTab({ client: held.api, tallies: TALLIES });
+    const { result } = await renderTab({ client: held.api, tallies: TALLIES });
 
     // Phase one is over — its rows are ranked — and the wait is not.
     await waitFor(() => expect(result.current.status).toBe("ready"));
@@ -278,7 +278,7 @@ describe("useRarestTab", () => {
    */
   it("keeps a row whose game could not name it", async () => {
     const { api } = renderNamelessClient();
-    const { result } = renderTab({ client: api, tallies: TALLIES });
+    const { result } = await renderTab({ client: api, tallies: TALLIES });
 
     await waitFor(() => expect(result.current.rows).toHaveLength(2));
 
@@ -293,7 +293,7 @@ describe("useRarestTab", () => {
    */
   it("says what the ranking was ranked across", async () => {
     const { api } = client();
-    const { result } = renderTab({ client: api, tallies: TALLIES });
+    const { result } = await renderTab({ client: api, tallies: TALLIES });
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
 
@@ -302,7 +302,7 @@ describe("useRarestTab", () => {
 
   it("has nothing to rank for a player who has unlocked nothing anywhere", async () => {
     const { api } = client();
-    const { result } = renderTab({ client: api, tallies: {} });
+    const { result } = await renderTab({ client: api, tallies: {} });
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
 
@@ -320,7 +320,7 @@ describe("useRarestTab", () => {
    */
   it("does not call a library Steam says nothing about an empty one", async () => {
     const { api } = client({}, {});
-    const { result } = renderTab({ client: api, tallies: TALLIES });
+    const { result } = await renderTab({ client: api, tallies: TALLIES });
 
     await waitFor(() => expect(result.current.status).toBe("ready"));
 

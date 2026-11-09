@@ -95,20 +95,20 @@ describe("useShownAchievementNames", () => {
    */
   it("asks nothing while there is no ranking to name", async () => {
     const { client, asked } = eagerClient();
-    const { result, rerender } = renderNames(null);
+    const { result, rerender } = await renderNames(null);
 
     expect(asked).toEqual([]);
     expect(result.current.names).toEqual({});
 
     // And it starts the moment there is one, without being armed by anything.
-    rerender({ games: shown(client, [SOULSTONE]) });
+    await rerender({ games: shown(client, [SOULSTONE]) });
 
     await waitFor(() => expect(asked).toEqual([SOULSTONE]));
   });
 
   it("asks each game the shown rows come from, once", async () => {
     const { client, asked } = eagerClient();
-    const { result } = renderNames(shown(client, [SOULSTONE, HALLS]));
+    const { result } = await renderNames(shown(client, [SOULSTONE, HALLS]));
 
     await waitFor(() =>
       expect(result.current.names).toEqual({
@@ -127,10 +127,10 @@ describe("useShownAchievementNames", () => {
    */
   it("does not ask again for a game it has already been told about", async () => {
     const { client, asked } = eagerClient();
-    const { result, rerender } = renderNames(shown(client, [SOULSTONE]));
+    const { result, rerender } = await renderNames(shown(client, [SOULSTONE]));
 
     await waitFor(() => expect(asked).toEqual([SOULSTONE]));
-    rerender({ games: shown(client, [SOULSTONE]) });
+    await rerender({ games: shown(client, [SOULSTONE]) });
     await waitFor(() => expect(result.current.names[SOULSTONE]).toBeDefined());
 
     expect(asked).toEqual([SOULSTONE]);
@@ -139,10 +139,10 @@ describe("useShownAchievementNames", () => {
   /** A wave of rarity landing can push a new game into the ranking. */
   it("asks only about the games a changed ranking added", async () => {
     const { client, asked } = eagerClient();
-    const { result, rerender } = renderNames(shown(client, [SOULSTONE]));
+    const { result, rerender } = await renderNames(shown(client, [SOULSTONE]));
 
     await waitFor(() => expect(asked).toEqual([SOULSTONE]));
-    rerender({ games: shown(client, [SOULSTONE, HALLS]) });
+    await rerender({ games: shown(client, [SOULSTONE, HALLS]) });
 
     await waitFor(() => expect(asked).toEqual([SOULSTONE, HALLS]));
     expect(result.current.names[SOULSTONE]).toEqual(naming(SOULSTONE));
@@ -156,10 +156,10 @@ describe("useShownAchievementNames", () => {
    */
   it("keeps an answer that lands after the ranking grew under it", async () => {
     const { client, asked, release } = heldClient([SOULSTONE]);
-    const { result, rerender } = renderNames(shown(client, [SOULSTONE]));
+    const { result, rerender } = await renderNames(shown(client, [SOULSTONE]));
 
     await waitFor(() => expect(asked).toEqual([SOULSTONE]));
-    rerender({ games: shown(client, [SOULSTONE, HALLS]) });
+    await rerender({ games: shown(client, [SOULSTONE, HALLS]) });
     await waitFor(() => expect(asked).toEqual([SOULSTONE, HALLS]));
 
     await release();
@@ -181,7 +181,7 @@ describe("useShownAchievementNames", () => {
     const { client } = heldClient([], (appId) =>
       appId === HALLS ? err<ApiError>("UNAVAILABLE") : ok(naming(appId)),
     );
-    const { result } = renderNames(shown(client, [SOULSTONE, HALLS]));
+    const { result } = await renderNames(shown(client, [SOULSTONE, HALLS]));
 
     await waitFor(() => expect(result.current.names).toEqual({ [SOULSTONE]: naming(SOULSTONE) }));
 
@@ -195,12 +195,12 @@ describe("useShownAchievementNames", () => {
    */
   it("throws away what it learned when the player changes", async () => {
     const { client } = eagerClient();
-    const { result, rerender } = renderNames(shown(client, [SOULSTONE]));
+    const { result, rerender } = await renderNames(shown(client, [SOULSTONE]));
 
     await waitFor(() => expect(result.current.names[SOULSTONE]).toBeDefined());
 
     const other = eagerClient();
-    rerender({ games: shown(other.client, [EXILE]) });
+    await rerender({ games: shown(other.client, [EXILE]) });
 
     await waitFor(() => expect(result.current.names).toEqual({ [EXILE]: naming(EXILE) }));
   });
@@ -212,7 +212,7 @@ describe("useShownAchievementNames", () => {
    */
   it("waits on every game asked about until it has answered", async () => {
     const { client, release } = heldClient([HALLS]);
-    const { result } = renderNames(shown(client, [SOULSTONE, HALLS]));
+    const { result } = await renderNames(shown(client, [SOULSTONE, HALLS]));
 
     await waitFor(() => expect([...result.current.pending]).toEqual([SOULSTONE, HALLS]));
     expect(result.current.names).toEqual({});
@@ -228,7 +228,7 @@ describe("useShownAchievementNames", () => {
 
   it("waits on nothing once there is nothing left to ask about", async () => {
     const { client } = eagerClient();
-    const { result } = renderNames(shown(client, [SOULSTONE]));
+    const { result } = await renderNames(shown(client, [SOULSTONE]));
 
     await waitFor(() => expect(result.current.names[SOULSTONE]).toBeDefined());
 
@@ -239,11 +239,11 @@ describe("useShownAchievementNames", () => {
   it("asks nothing again when a ranking mounts once more in the same session", async () => {
     const cache = createShortLivedQueryClient();
     const { client, asked } = eagerClient();
-    const first = renderNames(shown(client, [SOULSTONE]), cache);
+    const first = await renderNames(shown(client, [SOULSTONE]), cache);
     await waitFor(() => expect(first.result.current.names[SOULSTONE]).toBeDefined());
-    first.unmount();
+    await first.unmount();
 
-    const { result } = renderNames(shown(client, [SOULSTONE]), cache);
+    const { result } = await renderNames(shown(client, [SOULSTONE]), cache);
 
     await waitFor(() => expect(result.current.names[SOULSTONE]).toEqual(naming(SOULSTONE)));
     expect(asked).toEqual([SOULSTONE]);
@@ -251,11 +251,11 @@ describe("useShownAchievementNames", () => {
 
   it("asks another player only about the games the first was not told about", async () => {
     const previous = eagerClient();
-    const { result, rerender } = renderNames(shown(previous.client, [SOULSTONE]));
+    const { result, rerender } = await renderNames(shown(previous.client, [SOULSTONE]));
     await waitFor(() => expect(result.current.names[SOULSTONE]).toBeDefined());
 
     const next = eagerClient();
-    rerender({ games: shown(next.client, [SOULSTONE, EXILE]) });
+    await rerender({ games: shown(next.client, [SOULSTONE, EXILE]) });
 
     await waitFor(() =>
       expect(result.current.names).toEqual({
@@ -269,9 +269,9 @@ describe("useShownAchievementNames", () => {
   /** An answer landing after the screen is gone is a state update on nothing. */
   it("drops an answer that lands after the reader has left", async () => {
     const { client, release } = heldClient([SOULSTONE]);
-    const { unmount } = renderNames(shown(client, [SOULSTONE]));
+    const { unmount } = await renderNames(shown(client, [SOULSTONE]));
 
-    unmount();
+    await unmount();
 
     await expect(release()).resolves.toBeUndefined();
   });
@@ -286,7 +286,7 @@ describe("useShownAchievementNames", () => {
     // Seven, so the answers land in two waves and a ranking is half named.
     const WIDE = [1, 2, 3, 4, 5, 6, 7];
     const { client, release } = heldClient([7]);
-    const { result } = renderNames(shown(client, WIDE));
+    const { result } = await renderNames(shown(client, WIDE));
 
     await waitFor(() => expect(result.current.names[1]).toBeDefined());
 
@@ -303,7 +303,7 @@ describe("useShownAchievementNames", () => {
    */
   it("stops waiting on a game that could not be named", async () => {
     const { client, release } = heldClient([SOULSTONE], () => err<ApiError>("NOT_FOUND"));
-    const { result } = renderNames(shown(client, [SOULSTONE]));
+    const { result } = await renderNames(shown(client, [SOULSTONE]));
 
     await waitFor(() => expect([...result.current.pending]).toEqual([SOULSTONE]));
 
@@ -316,10 +316,10 @@ describe("useShownAchievementNames", () => {
   /** Another player's rows are not waiting on this player's schemas. */
   it("waits on nothing once the player has changed", async () => {
     const previous = heldClient([SOULSTONE]);
-    const { result, rerender } = renderNames(shown(previous.client, [SOULSTONE]));
+    const { result, rerender } = await renderNames(shown(previous.client, [SOULSTONE]));
     await waitFor(() => expect([...result.current.pending]).toEqual([SOULSTONE]));
 
-    rerender({ games: null });
+    await rerender({ games: null });
 
     expect([...result.current.pending]).toEqual([]);
   });
