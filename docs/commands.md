@@ -76,7 +76,7 @@ pnpm dev:api                                # the backend, on :3000
 pnpm --filter @steam/mobile start           # then `w` for the browser
 pnpm --filter @steam/mobile start --android # onto a plugged-in phone
 pnpm --filter @steam/mobile start --tunnel  # when the network refuses to cooperate
-pnpm --filter @steam/mobile storybook       # the component gallery, on :6006
+pnpm --filter @steam/mobile dev:storybook   # the component gallery, on :6006
 ```
 
 The gallery shows a component in a state; it never settles how something looks, which is the
