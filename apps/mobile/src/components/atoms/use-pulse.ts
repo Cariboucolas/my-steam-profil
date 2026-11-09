@@ -1,0 +1,59 @@
+import { useEffect, useRef } from "react";
+import { Animated } from "react-native";
+
+import { useReduceMotion } from "../../accessibility/use-reduce-motion";
+
+/** How faint and how solid the pulse gets at either end of its swing. */
+const DIMMEST = 0.35;
+const BRIGHTEST = 1;
+const HALF_CYCLE_MS = 750;
+/**
+ * Where the block sits when it may not move: the middle of the swing, so it
+ * carries the same weight on the page as the pulse everyone else is watching.
+ */
+const STILL = (DIMMEST + BRIGHTEST) / 2;
+
+/**
+ * The opacity of something waiting on a value: a slow swing between faint and
+ * solid, which the skeletons and a row being recounted (#164) share so they
+ * read as one kind of wait.
+ *
+ * React Native's own Animated, driven natively: an opacity swing is one of the
+ * properties the native driver handles, so the pulse costs no bridge traffic
+ * while several hundred rows are being filled in.
+ *
+ * A player who has asked their device for less motion gets the middle of the
+ * swing, held still.
+ */
+export const usePulse = (): Animated.Value | number => {
+  const pulse = useRef(new Animated.Value(DIMMEST)).current;
+  const reduceMotion = useReduceMotion();
+
+  useEffect(() => {
+    // Only once the device has actually said motion is fine: an unanswered
+    // setting is not permission, and a swing started on the strength of one
+    // would still have run for a frame.
+    if (reduceMotion !== false) {
+      return;
+    }
+
+    const swing = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, {
+          toValue: BRIGHTEST,
+          duration: HALF_CYCLE_MS,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: DIMMEST,
+          duration: HALF_CYCLE_MS,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    swing.start();
+    return () => swing.stop();
+  }, [pulse, reduceMotion]);
+
+  return reduceMotion === true ? STILL : pulse;
+};
