@@ -76,18 +76,18 @@ const gate = <T>() => {
 };
 
 /** The library as the page holds it: the Games read from the cache, then counted. */
-const renderLibrary = (client: ApiClient) =>
+const renderLibrary = (client: ApiClient, cache = createShortLivedQueryClient()) =>
   renderHook(
     () => {
       const games = useQuery(gamesQuery(STEAM_ID, client)).data ?? NO_GAMES;
       return useLibraryTallies(STEAM_ID, client, games);
     },
-    { wrapper: servedFrom(createShortLivedQueryClient()) },
+    { wrapper: servedFrom(cache) },
   );
 
 /** Renders the library and waits for its first count to be through. */
-const counted = async (client: ApiClient) => {
-  const rendered = renderLibrary(client);
+const counted = async (client: ApiClient, cache = createShortLivedQueryClient()) => {
+  const rendered = renderLibrary(client, cache);
   await waitFor(() => expect(rendered.result.current.counted).toBe(true));
   return rendered;
 };
@@ -235,6 +235,21 @@ describe("useLibraryTallies, on a Recount", () => {
     act(() => result.current.recount(SHOWN_ORDER));
     await waitFor(() => expect(result.current.recountFailed).toBe(false));
     await waitFor(() => expect(result.current.counted).toBe(true));
+  });
+
+  /** A failed list in the cache would put the full error screen up instead. */
+  it("leaves the list the page reads loaded when the Recount's list fails", async () => {
+    const { client, answers } = library();
+    const cache = createShortLivedQueryClient();
+    const { result } = await counted(client, cache);
+    answers.games = () => Promise.resolve(err("UNAVAILABLE"));
+
+    act(() => result.current.recount(SHOWN_ORDER));
+    await waitFor(() => expect(result.current.recountFailed).toBe(true));
+
+    const list = cache.getQueryState(gamesQuery(STEAM_ID, client).queryKey);
+    expect(list?.status).toBe("success");
+    expect(list?.data).toEqual(GAMES);
   });
 
   it("never has more than six tallies in flight during a Recount", async () => {

@@ -169,6 +169,30 @@ const pinnedWithNewcomers = (
   return [...order, ...games.map((game) => game.appId).filter((appId) => !named.has(appId))];
 };
 
+/**
+ * The list of Games asked of the backend again, and kept under the key the
+ * page reads; null when it could not be had. Asked directly rather than
+ * refetched in the cache: a list that fails here must leave the one the page
+ * reads as it was, or the full error screen would replace the library shown.
+ */
+const askListAgain = async (
+  cache: QueryClient,
+  steamId: string,
+  client: ApiClient,
+): Promise<readonly GameDto[] | null> => {
+  const { queryKey } = gamesQuery(steamId, client);
+  try {
+    const answer = await client.getGames();
+    if (!answer.ok) return null;
+    cache.setQueryData(queryKey, answer.value);
+    // Read back: the cache's copy is the array the page is handed.
+    return cache.getQueryData(queryKey) ?? answer.value;
+  } catch {
+    // A list that could not be reached is told the player as one that failed.
+    return null;
+  }
+};
+
 /** The library a count is of: the effect does not start a second one for it. */
 type CountedOf = {
   readonly steamId: string | undefined;
@@ -385,17 +409,10 @@ export const useLibraryTallies = (
       setCounted(false);
 
       void (async () => {
-        const listQuery = gamesQuery(steamId, client);
-        let next: readonly GameDto[];
-        try {
-          // Asked again past the cache, under the key the page reads, so the
-          // page is handed the new list as soon as it lands. Read back from the
-          // cache: that copy, not the one fetched, is the array the page holds.
-          const fetched = await cache.fetchQuery({ ...listQuery, staleTime: 0 });
-          next = cache.getQueryData(listQuery.queryKey) ?? fetched;
-        } catch {
-          askingForList.current = false;
-          if (!live()) return;
+        const next = await askListAgain(cache, steamId, client);
+        askingForList.current = false;
+        if (!live()) return;
+        if (next === null) {
           // The library shown stays as it was; the player is told, and may pull again.
           counting.current = false;
           setRefreshing(false);
@@ -403,8 +420,6 @@ export const useLibraryTallies = (
           setCounted(true);
           return;
         }
-        askingForList.current = false;
-        if (!live()) return;
 
         const wanted = gamesWorthTallying(next);
         countedOf.current = { steamId, client, games: next };
