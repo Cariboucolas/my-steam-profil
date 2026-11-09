@@ -32,6 +32,7 @@ export const en: Catalog = {
       recent: "Recently played",
       playtime: "Most played",
     },
+    recountFailed: "Couldn't recount — pull to try again",
     withheld: {
       playtime: "Steam does not publish this profile's playtime",
       lastPlayed: "Steam does not publish when this profile last played",
