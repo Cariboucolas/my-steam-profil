@@ -1,5 +1,5 @@
 import { type RefObject, useRef, useState } from "react";
-import type { ScrollView } from "react-native";
+import type { ScrollViewInstance } from "react-native";
 
 import {
   type FadedEdges,
@@ -24,7 +24,7 @@ export type UnlockCalendarScroll = {
   /** Whether there is more year than the card holds, and so anything to scroll. */
   readonly scrolls: boolean;
   /** The grid the reader moves, so that a dot can move it for them. */
-  readonly ref: RefObject<ScrollView | null>;
+  readonly ref: RefObject<ScrollViewInstance | null>;
   /**
    * The height the card holds itself to, once it knows one. Undefined until
    * the grid has been measured, and the grid draws at its own full height
@@ -52,7 +52,7 @@ export const useUnlockCalendarScroll = (
   monthsDrawn: number,
   rowGap: number,
 ): UnlockCalendarScroll => {
-  const ref = useRef<ScrollView | null>(null);
+  const ref = useRef<ScrollViewInstance | null>(null);
   // Nought stands for "not measured yet": a grid of no height is not one this
   // could hold to six rows of anything.
   const [content, setContent] = useState(0);
