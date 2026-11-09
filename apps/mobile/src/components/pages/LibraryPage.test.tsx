@@ -1,5 +1,7 @@
 import type { GameDto, ProfileDto } from "@steam/contracts";
-import { act, render, screen } from "@testing-library/react-native";
+import { err } from "@steam/domain";
+import { act, render, screen, waitFor } from "@testing-library/react-native";
+import { FlatList } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { deviceAsksForLessMotion } from "../../accessibility/reduce-motion.test-support";
@@ -65,7 +67,11 @@ const App = ({ onLibrary }: { readonly onLibrary: boolean }) => (
 );
 
 describe("LibraryPage", () => {
-  beforeEach(deviceAsksForLessMotion);
+  beforeEach(() => {
+    deviceAsksForLessMotion();
+    getProfile.mockClear();
+    getGames.mockClear();
+  });
 
   /** Lets the tallies still in flight land before the screen is torn down. */
   afterEach(async () => {
@@ -88,5 +94,30 @@ describe("LibraryPage", () => {
     await act(async () => {});
     expect(getProfile).toHaveBeenCalledTimes(1);
     expect(getGames).toHaveBeenCalledTimes(1);
+  });
+
+  /** A pull is the player's Recount (#164): the Games again, never the Profile. */
+  it("asks the Games again, and not the Profile, when the list is pulled", async () => {
+    render(<App onLibrary />);
+    await screen.findByText("Soulstone Survivors");
+    await act(async () => {});
+
+    await act(async () => screen.UNSAFE_getByType(FlatList).props.onRefresh());
+
+    await waitFor(() => expect(getGames).toHaveBeenCalledTimes(2));
+    expect(getProfile).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the library and shows a banner when a pull cannot load the Games", async () => {
+    render(<App onLibrary />);
+    await screen.findByText("Soulstone Survivors");
+    await act(async () => {});
+    getGames.mockImplementationOnce(() => Promise.resolve(err("UNAVAILABLE")));
+
+    await act(async () => screen.UNSAFE_getByType(FlatList).props.onRefresh());
+
+    expect(await screen.findByText("Couldn't recount — pull to try again")).toBeTruthy();
+    expect(screen.getByText("Soulstone Survivors")).toBeTruthy();
+    expect(screen.UNSAFE_getByType(FlatList).props.refreshing).toBe(false);
   });
 });

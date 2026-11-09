@@ -1,7 +1,7 @@
 import type { GameDto } from "@steam/contracts";
 import { useCallback, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from "react-native";
 
 import { resolveRevision } from "../../api-client/config";
 import { useApiClient } from "../../api-client/use-api-client";
@@ -29,6 +29,7 @@ import { Tabs } from "../atoms/Tabs";
 import { GameListItem } from "../molecules/GameListItem";
 import { RarestEmpty } from "../molecules/RarestEmpty";
 import { RarestRow } from "../molecules/RarestRow";
+import { RecountFailedBanner } from "../molecules/RecountFailedBanner";
 import { SortChips } from "../molecules/SortChips";
 import { WithheldFiguresNote } from "../molecules/WithheldFiguresNote";
 import { ErrorState } from "../organisms/ErrorState";
@@ -99,16 +100,25 @@ export function LibraryPage({
 
   // What the screen draws and what gets counted: the library of the Profile
   // chosen, and nothing on the render where another one has just been chosen.
-  const games = library.status === "ready" ? library.games : NO_GAMES;
+  const loadedGames = library.status === "ready" ? library.games : NO_GAMES;
 
   // Where the tallies have got to. Fetching them from the shared cache, abandoning
   // them on a profile switch and holding the list still while they land are
   // all its concern, and none of them are state this screen keeps.
-  const { tallies, pending, counted, loaded, frozenOrder, repin } = useLibraryTallies(
-    steamId,
-    apiClient,
+  // `games` is what the list draws: during a Recount, a Game gone from the new
+  // list keeps its row until the order is released (#164).
+  const {
+    tallies,
+    pending,
+    counted,
+    loaded,
+    frozenOrder,
+    repin,
     games,
-  );
+    refreshing,
+    recountFailed,
+    recount,
+  } = useLibraryTallies(steamId, apiClient, loadedGames);
 
   // What Steam publishes about this library, which decides which orders exist
   // at all. Its own memo rather than part of `view`: it is read by the chips
@@ -177,6 +187,13 @@ export function LibraryPage({
     [view, repin, t],
   );
 
+  // On native, pulling the list down is the Recount. The web has no such
+  // gesture and gets no button: reloading the page already counts again.
+  const onRefresh = useMemo(
+    () => (Platform.OS === "web" ? undefined : () => recount(rows.map((row) => row.appId))),
+    [recount, rows],
+  );
+
   const gameRows = useMemo(
     () =>
       rows.map((row) => <GameListItem key={String(row.appId)} row={row} onPress={onOpenGame} />),
@@ -216,6 +233,7 @@ export function LibraryPage({
 
   const header = (
     <>
+      <RecountFailedBanner failed={recountFailed} />
       <ProfileHeader
         profile={library.profile}
         gameCount={games.length}
@@ -260,11 +278,21 @@ export function LibraryPage({
         header={header}
         rows={rarestRows}
         empty={<RarestEmpty status={rarest.status} anyUnlock={rarest.anyUnlock} />}
+        onRefresh={onRefresh}
+        refreshing={refreshing}
       />
     );
   }
 
-  return <LibraryTemplate header={header} rows={gameRows} initialRows={LIBRARY_INITIAL_ROWS} />;
+  return (
+    <LibraryTemplate
+      header={header}
+      rows={gameRows}
+      initialRows={LIBRARY_INITIAL_ROWS}
+      onRefresh={onRefresh}
+      refreshing={refreshing}
+    />
+  );
 }
 
 const styles = StyleSheet.create({
