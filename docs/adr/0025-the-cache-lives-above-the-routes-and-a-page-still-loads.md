@@ -74,7 +74,8 @@ a game opened mid-count waits only on the requests already in flight.
 `refetchOnWindowFocus` and `refetchOnReconnect` are off, and no `focusManager` or `onlineManager`
 is wired on native. A recount comes from the player or not at all. A failure holds for as long as
 an answer would (`retryOnMount: false`): another screen mounting the same query does not ask
-again. A gesture to ask again is #164.
+again. The one refetch a player starts is a Recount (#164): pulling the Library down on native
+asks the list of Games and every GameTally again, never the Profile, Rarity or Achievement names.
 
 **One retry, on `UNAVAILABLE` only**, back through the same queue. `NOT_FOUND`, `PRIVATE_PROFILE`
 and `INVALID_STEAM_ID` would answer the same a second time and are not retried. It is the one
