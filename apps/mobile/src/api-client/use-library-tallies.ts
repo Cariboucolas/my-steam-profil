@@ -305,6 +305,24 @@ export const useLibraryTallies = (
     [cache],
   );
 
+  /** Marks `wanted` outstanding, pins the list to `order`, and counts. */
+  const startCount = useCallback(
+    (
+      library: { readonly steamId: string; readonly client: ApiClient },
+      wanted: readonly number[],
+      order: readonly number[],
+      mine: number,
+      again: boolean,
+    ) => {
+      counting.current = true;
+      setPending(new Set(wanted));
+      setAsked(wanted.length);
+      setFrozenOrder(order);
+      return countInWaves(library, wanted, mine, again);
+    },
+    [countInWaves],
+  );
+
   useEffect(() => {
     const last = countedOf.current;
     if (
@@ -346,11 +364,7 @@ export const useLibraryTallies = (
         // stays uncounted and whatever waits on the count keeps waiting.
         setCounted(true);
       } else {
-        counting.current = true;
-        setPending(new Set(wanted));
-        setAsked(wanted.length);
-        setFrozenOrder(wanted);
-        void countInWaves({ steamId, client }, wanted, mine, false);
+        void startCount({ steamId, client }, wanted, wanted, mine, false);
       }
     }
 
@@ -364,7 +378,7 @@ export const useLibraryTallies = (
       counting.current = false;
       countedOf.current = { steamId, client, games: null };
     };
-  }, [steamId, client, games, countInWaves]);
+  }, [steamId, client, games, startCount]);
 
   // A game opened from the library marks its tally out of date when its
   // GameProgress lands (#167), while the library is still mounted beneath it.
@@ -425,15 +439,12 @@ export const useLibraryTallies = (
         countedOf.current = { steamId, client, games: next };
         setHeldFor({ steamId, games: next });
         setKept(keptAlongside(shown, next));
-        setFrozenOrder(pinnedWithNewcomers(order, next));
-        setPending(new Set(wanted));
-        setAsked(wanted.length);
         setRefreshing(false);
         setRecountFailed(false);
-        await countInWaves({ steamId, client }, wanted, mine, true);
+        await startCount({ steamId, client }, wanted, pinnedWithNewcomers(order, next), mine, true);
       })();
     },
-    [cache, steamId, client, games, countInWaves],
+    [cache, steamId, client, games, startCount],
   );
 
   if (heldFor.steamId !== steamId) {
