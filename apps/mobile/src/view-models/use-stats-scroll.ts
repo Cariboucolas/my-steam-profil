@@ -2,6 +2,7 @@ import { type RefObject, useRef, useState } from "react";
 import type { ScrollViewInstance } from "react-native";
 
 import { useReduceMotion } from "../accessibility/use-reduce-motion";
+import type { LayoutReport, ScrollReport } from "./scroll-reports";
 import {
   cardInView,
   offsetOfCard,
@@ -9,12 +10,6 @@ import {
   type PlacedCard,
   type StatsCardKey,
 } from "./stats-card-scroll";
-import type { ScrollReport } from "./use-unlock-calendar-scroll";
-
-/** All this reads of a layout: where a view starts and how tall it is. */
-export type LayoutReport = {
-  readonly nativeEvent: { readonly layout: { readonly y: number; readonly height: number } };
-};
 
 /** What the stats template hands its scroll and its parts, for the page to know where it is. */
 export type StatsScrollBinding = {
@@ -61,6 +56,7 @@ export const useStatsScroll = (cards: readonly StatsCardKey[]): StatsScroll => {
 
   const update = (change: Partial<Measured>) => {
     measured.current = { ...measured.current, ...change };
+    // Nothing placed yet is still the top of the page: the first chip is shown active.
     setActive(cardInView(placed(), measured.current) ?? cards[0]);
   };
 
