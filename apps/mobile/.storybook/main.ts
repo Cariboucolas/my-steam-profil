@@ -3,6 +3,27 @@ import { mergeConfig } from "vite";
 
 import { resolveRevision } from "../src/api-client/config";
 
+/**
+ * Two modules import names that do not exist at run time: expo-modules-core's
+ * `ts-declarations/global` imports four types as values (SDK 58), and
+ * react-native-svg's sound module imports `TurboModuleRegistry`, which
+ * react-native-web lacks. A build only warns; the dev server's optimiser
+ * refuses to start. Neither does anything on the web — the first is types
+ * alone, the second is required lazily, on Android — so the optimiser is
+ * handed an empty module for each. An alias cannot do it: both are reached by
+ * relative imports inside their packages, which aliases never see.
+ */
+const WEB_DEAD_MODULES = /[\\/](ts-declarations[\\/]global|fabric[\\/]NativeSvgSoundModule)\.js$/;
+
+const emptyWebDeadModules = {
+  name: "empty-web-dead-modules",
+  setup(build: {
+    onLoad: (options: { filter: RegExp }, load: () => { contents: string }) => void;
+  }) {
+    build.onLoad({ filter: WEB_DEAD_MODULES }, () => ({ contents: "export default undefined;" }));
+  },
+};
+
 const config: StorybookConfig = {
   // Each level's Index first: it says what the level holds before its stories show it.
   stories: ["../src/components/**/Index.mdx", "../src/components/**/*.stories.tsx"],
@@ -26,6 +47,7 @@ const config: StorybookConfig = {
   viteFinal: (config) =>
     mergeConfig(config, {
       build: { commonjsOptions: { transformMixedEsModules: true } },
+      optimizeDeps: { esbuildOptions: { plugins: [emptyWebDeadModules] } },
       resolve: {
         alias: [
           {
