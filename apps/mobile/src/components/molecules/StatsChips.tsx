@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import {
   type LayoutChangeEvent,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   ScrollView,
   type ScrollViewInstance,
   StyleSheet,
@@ -9,8 +11,16 @@ import {
 
 import { useReduceMotion } from "../../accessibility/use-reduce-motion";
 import { spacing } from "../../theme/tokens";
-import type { StatsCardKey } from "../../view-models/stats-card-scroll";
+import {
+  type ChipRowView,
+  type ChipSpan,
+  offsetToShowChip,
+  type StatsCardKey,
+} from "../../view-models/stats-card-scroll";
 import { Chip } from "../atoms/Chip";
+
+/** How often a scroll reports where it is: once a frame. */
+const SCROLL_REPORT_MS = 16;
 
 /** A card of the stats page, as its chip names it. */
 export type ChipCard = { readonly key: StatsCardKey; readonly label: string };
@@ -26,19 +36,29 @@ type Props = {
 /** One chip per card of the stats page: a tab that brings its card into view. */
 export function StatsChips({ cards, active, onSelect }: Props) {
   const ref = useRef<ScrollViewInstance | null>(null);
-  const starts = useRef<Partial<Record<StatsCardKey, number>>>({});
+  const spans = useRef<Partial<Record<StatsCardKey, ChipSpan>>>({});
+  const view = useRef<ChipRowView>({ offset: 0, width: 0 });
   const reduceMotion = useReduceMotion();
 
-  // The row scrolls sideways once it outgrows the screen: the chip of the card
-  // in view is kept on it.
+  // Once the row outgrows the screen, it scrolls sideways when the chip of the
+  // card in view would be off it, and only then.
   useEffect(() => {
-    const start = active === undefined ? undefined : starts.current[active];
-    if (start === undefined) return;
-    ref.current?.scrollTo({ x: Math.max(0, start - spacing.xl), animated: reduceMotion === false });
+    const span = active === undefined ? undefined : spans.current[active];
+    if (span === undefined || view.current.width === 0) return;
+    const x = offsetToShowChip(span, view.current, spacing.xl);
+    // Unanswered is not yet a yes: the row jumps rather than glides.
+    if (x !== undefined) ref.current?.scrollTo({ x, animated: reduceMotion === false });
   }, [active, reduceMotion]);
 
   const measured = (key: StatsCardKey) => (event: LayoutChangeEvent) => {
-    starts.current = { ...starts.current, [key]: event.nativeEvent.layout.x };
+    const { x, width } = event.nativeEvent.layout;
+    spans.current = { ...spans.current, [key]: { start: x, width } };
+  };
+  const scrolled = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    view.current = { ...view.current, offset: event.nativeEvent.contentOffset.x };
+  };
+  const laidOut = (event: LayoutChangeEvent) => {
+    view.current = { ...view.current, width: event.nativeEvent.layout.width };
   };
 
   return (
@@ -47,6 +67,9 @@ export function StatsChips({ cards, active, onSelect }: Props) {
       horizontal
       showsHorizontalScrollIndicator={false}
       accessibilityRole="tablist"
+      onScroll={scrolled}
+      onLayout={laidOut}
+      scrollEventThrottle={SCROLL_REPORT_MS}
       contentContainerStyle={styles.row}
     >
       {cards.map(({ key, label }) => (
