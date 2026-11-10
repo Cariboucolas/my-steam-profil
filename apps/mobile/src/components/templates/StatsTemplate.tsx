@@ -11,7 +11,9 @@ import { BackButton } from "../atoms/BackButton";
 const BOTTOM_ROOM = 40;
 /** Clears the back button, which sits over the title row and, once stuck, the chip row. */
 const TITLE_INDENT = 56;
-/** The chip row is the second child of the scroll, after the title. */
+/** How often the scroll reports where it is: once a frame, for the chips to follow it. */
+const SCROLL_REPORT_MS = 16;
+/** The chip row is the second child of the scroll, after the title: kept so when adding one. */
 const CHIP_ROW_INDEX = 1;
 
 /** A card of the stats page, and the key the chips know it by. */
@@ -41,7 +43,7 @@ export function StatsTemplate({ title, onBack, chips, cards, scroll }: Props) {
       <ScrollView
         ref={scroll.ref}
         stickyHeaderIndices={[CHIP_ROW_INDEX]}
-        scrollEventThrottle={16}
+        scrollEventThrottle={SCROLL_REPORT_MS}
         onScroll={scroll.onScroll}
         onLayout={scroll.onLayout}
         onContentSizeChange={scroll.onContentSizeChange}
