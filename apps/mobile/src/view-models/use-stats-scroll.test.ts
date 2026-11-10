@@ -6,7 +6,8 @@ import {
   deviceIsFineWithMotion,
   letTheDeviceAnswer,
 } from "../accessibility/reduce-motion.test-support";
-import { type LayoutReport, useStatsScroll } from "./use-stats-scroll";
+import type { LayoutReport } from "./scroll-reports";
+import { useStatsScroll } from "./use-stats-scroll";
 
 const laidOut = (y: number, height: number): LayoutReport => ({
   nativeEvent: { layout: { y, height } },
