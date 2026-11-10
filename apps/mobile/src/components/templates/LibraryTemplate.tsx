@@ -37,6 +37,9 @@ type Props = {
  * The rows arrive already drawn rather than as data, so the template knows no
  * game and no ranking, and the list still mounts only the ones on screen.
  */
+/** Lets a test find the list, to pull it down. */
+export const LIBRARY_LIST_TEST_ID = "library-list";
+
 export function LibraryTemplate({
   header,
   rows,
@@ -49,6 +52,7 @@ export function LibraryTemplate({
 
   return (
     <FlatList
+      testID={LIBRARY_LIST_TEST_ID}
       style={styles.screen}
       data={rows}
       keyExtractor={(row) => String(row.key)}

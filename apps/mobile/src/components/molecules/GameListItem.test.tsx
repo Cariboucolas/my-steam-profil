@@ -79,7 +79,7 @@ describe("GameListItem", () => {
 
   /** A Recount asks again a tally the row shows: the figure stays, and pulses (#164). */
   it("keeps its rate while its tally is asked again, marked busy", async () => {
-    const { getByText, queryByTestId } = render(
+    const { getByText, queryByTestId } = await render(
       <GameListItem row={row({ recounting: true })} onPress={() => {}} />,
     );
     await letTheDeviceAnswer();

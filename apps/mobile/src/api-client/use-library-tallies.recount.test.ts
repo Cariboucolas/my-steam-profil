@@ -87,7 +87,7 @@ const renderLibrary = (client: ApiClient, cache = createShortLivedQueryClient())
 
 /** Renders the library and waits for its first count to be through. */
 const counted = async (client: ApiClient, cache = createShortLivedQueryClient()) => {
-  const rendered = renderLibrary(client, cache);
+  const rendered = await renderLibrary(client, cache);
   await waitFor(() => expect(rendered.result.current.counted).toBe(true));
   return rendered;
 };
@@ -99,7 +99,7 @@ describe("useLibraryTallies, on a Recount", () => {
     asked.games = 0;
     asked.tallies = [];
 
-    act(() => result.current.recount(SHOWN_ORDER));
+    await act(() => result.current.recount(SHOWN_ORDER));
     await waitFor(() => expect(result.current.counted).toBe(true));
 
     expect(asked.games).toBe(1);
@@ -113,7 +113,7 @@ describe("useLibraryTallies, on a Recount", () => {
     expect(result.current.tallies[3]).toBeUndefined();
 
     answers.tally = (appId) => Promise.resolve(ok(tally(appId)));
-    act(() => result.current.recount(SHOWN_ORDER));
+    await act(() => result.current.recount(SHOWN_ORDER));
     await waitFor(() => expect(result.current.counted).toBe(true));
 
     expect(result.current.tallies[3]).toEqual(tally(3));
@@ -125,7 +125,7 @@ describe("useLibraryTallies, on a Recount", () => {
     const held = gate<Tally>();
     answers.tally = (appId) => (appId === 8 ? held.promise : Promise.resolve(ok(tally(appId + 1))));
 
-    act(() => result.current.recount(SHOWN_ORDER));
+    await act(() => result.current.recount(SHOWN_ORDER));
     await waitFor(() => expect(result.current.refreshing).toBe(false));
 
     expect(result.current.frozenOrder).toEqual(SHOWN_ORDER);
@@ -143,7 +143,7 @@ describe("useLibraryTallies, on a Recount", () => {
     const { result } = await counted(client);
 
     answers.tally = (appId) => Promise.resolve(appId === 5 ? err("UNAVAILABLE") : ok(tally(appId)));
-    act(() => result.current.recount(SHOWN_ORDER));
+    await act(() => result.current.recount(SHOWN_ORDER));
     await waitFor(() => expect(result.current.counted).toBe(true));
 
     expect(result.current.tallies[5]).toEqual(tally(5));
@@ -157,7 +157,7 @@ describe("useLibraryTallies, on a Recount", () => {
     answers.games = () => Promise.resolve(ok([...GAMES, game(9)]));
     answers.tally = (appId) => (appId === 9 ? held.promise : Promise.resolve(ok(tally(appId))));
 
-    act(() => result.current.recount(SHOWN_ORDER));
+    await act(() => result.current.recount(SHOWN_ORDER));
     await waitFor(() => expect(asked.tallies).toContain(9));
 
     expect(result.current.frozenOrder).toEqual([...SHOWN_ORDER, 9]);
@@ -176,7 +176,7 @@ describe("useLibraryTallies, on a Recount", () => {
     answers.games = () => Promise.resolve(ok(GAMES.filter((g) => g.appId !== 8)));
     answers.tally = (appId) => (appId === 7 ? held.promise : Promise.resolve(ok(tally(appId))));
 
-    act(() => result.current.recount(SHOWN_ORDER));
+    await act(() => result.current.recount(SHOWN_ORDER));
     await waitFor(() => expect(result.current.refreshing).toBe(false));
     expect(result.current.games.map((g) => g.appId)).toContain(8);
 
@@ -189,11 +189,11 @@ describe("useLibraryTallies, on a Recount", () => {
     const { client, answers, asked } = library();
     const held = gate<Tally>();
     answers.tally = (appId) => (appId === 8 ? held.promise : Promise.resolve(ok(tally(appId))));
-    const { result } = renderLibrary(client);
+    const { result } = await renderLibrary(client);
     await waitFor(() => expect(asked.tallies).toContain(8));
     const before = { games: asked.games, tallies: asked.tallies.length };
 
-    act(() => result.current.recount(SHOWN_ORDER));
+    await act(() => result.current.recount(SHOWN_ORDER));
 
     expect(result.current.refreshing).toBe(false);
     expect({ games: asked.games, tallies: asked.tallies.length }).toEqual(before);
@@ -208,7 +208,7 @@ describe("useLibraryTallies, on a Recount", () => {
     answers.games = () => list.promise;
     answers.tally = (appId) => (appId === 8 ? held.promise : Promise.resolve(ok(tally(appId))));
 
-    act(() => result.current.recount(SHOWN_ORDER));
+    await act(() => result.current.recount(SHOWN_ORDER));
     expect(result.current.refreshing).toBe(true);
 
     await list.open(ok(GAMES));
@@ -223,7 +223,7 @@ describe("useLibraryTallies, on a Recount", () => {
     asked.tallies = [];
     answers.games = () => Promise.resolve(err("PRIVATE_PROFILE"));
 
-    act(() => result.current.recount(SHOWN_ORDER));
+    await act(() => result.current.recount(SHOWN_ORDER));
     await waitFor(() => expect(result.current.recountFailed).toBe(true));
 
     expect(result.current.refreshing).toBe(false);
@@ -232,7 +232,7 @@ describe("useLibraryTallies, on a Recount", () => {
     expect(asked.tallies).toEqual([]);
 
     answers.games = () => Promise.resolve(ok(GAMES));
-    act(() => result.current.recount(SHOWN_ORDER));
+    await act(() => result.current.recount(SHOWN_ORDER));
     await waitFor(() => expect(result.current.recountFailed).toBe(false));
     await waitFor(() => expect(result.current.counted).toBe(true));
   });
@@ -244,7 +244,7 @@ describe("useLibraryTallies, on a Recount", () => {
     const { result } = await counted(client, cache);
     answers.games = () => Promise.resolve(err("UNAVAILABLE"));
 
-    act(() => result.current.recount(SHOWN_ORDER));
+    await act(() => result.current.recount(SHOWN_ORDER));
     await waitFor(() => expect(result.current.recountFailed).toBe(true));
 
     const list = cache.getQueryState(gamesQuery(STEAM_ID, client).queryKey);
@@ -265,7 +265,7 @@ describe("useLibraryTallies, on a Recount", () => {
       return ok(tally(appId));
     };
 
-    act(() => result.current.recount(SHOWN_ORDER));
+    await act(() => result.current.recount(SHOWN_ORDER));
     await waitFor(() => expect(result.current.counted).toBe(true));
 
     expect(highWater).toBeGreaterThan(0);
