@@ -11,10 +11,13 @@ import { useLocale } from "../../settings/locale-store";
 import { useChosenSteamId } from "../../settings/steam-id-store";
 import { colors, spacing } from "../../theme/tokens";
 import { messageFor } from "../../view-models/api-errors";
+import { inPageOrder } from "../../view-models/stats-card-scroll";
 import type { CountedUnlocks } from "../../view-models/unlock-days";
+import { useStatsScroll } from "../../view-models/use-stats-scroll";
 import { useUnlockWeek } from "../../view-models/use-unlock-week";
 import { useYearsAndCumulative } from "../../view-models/use-years-and-cumulative";
 import { BackButton } from "../atoms/BackButton";
+import { StatsChips } from "../molecules/StatsChips";
 import { ErrorState } from "../organisms/ErrorState";
 import { UnlockWeekCard } from "../organisms/UnlockWeekCard";
 import { YearsCumulativeCard } from "../organisms/YearsCumulativeCard";
@@ -49,6 +52,22 @@ export function StatsPage({ onBack, onChangeProfile, today: givenToday }: Props)
   const years = useYearsAndCumulative(view, counted, today);
   const week = useUnlockWeek(view, counted, locale);
 
+  // Each card keeps its chip whatever it shows, empty or still counting: the
+  // row never changes shape while the library is counted.
+  const cards = inPageOrder([
+    {
+      key: "years",
+      label: t("stats.chips.years"),
+      node: <YearsCumulativeCard years={years} loaded={loaded} />,
+    },
+    {
+      key: "week",
+      label: t("stats.chips.week"),
+      node: <UnlockWeekCard week={week} loaded={loaded} />,
+    },
+  ] as const);
+  const scroll = useStatsScroll(cards.map((card) => card.key));
+
   if (library.status === "loading") {
     return (
       <View style={styles.centred}>
@@ -69,10 +88,13 @@ export function StatsPage({ onBack, onChangeProfile, today: givenToday }: Props)
   }
 
   return (
-    <StatsTemplate title={t("stats.title")} onBack={onBack}>
-      <YearsCumulativeCard years={years} loaded={loaded} />
-      <UnlockWeekCard week={week} loaded={loaded} />
-    </StatsTemplate>
+    <StatsTemplate
+      title={t("stats.title")}
+      onBack={onBack}
+      chips={<StatsChips cards={cards} active={scroll.active} onSelect={scroll.goTo} />}
+      cards={cards}
+      scroll={scroll.binding}
+    />
   );
 }
 
