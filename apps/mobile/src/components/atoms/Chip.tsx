@@ -6,14 +6,16 @@ type Props = {
   readonly label: string;
   readonly active: boolean;
   readonly onPress: () => void;
+  /** A tab when the chips move between parts of one page, as the stats' do. */
+  readonly role?: "button" | "tab";
 };
 
-/** A pill-shaped toggle: the sort options and the achievement filters. */
-export function Chip({ label, active, onPress }: Props) {
+/** A pill-shaped toggle: the sort options, the achievement filters and the stats' cards. */
+export function Chip({ label, active, onPress, role = "button" }: Props) {
   return (
     <Pressable
       onPress={onPress}
-      accessibilityRole="button"
+      accessibilityRole={role}
       accessibilityState={{ selected: active }}
       style={{
         ...styles.chip,
