@@ -11,12 +11,8 @@ import {
 
 import { useReduceMotion } from "../../accessibility/use-reduce-motion";
 import { spacing } from "../../theme/tokens";
-import {
-  type ChipRowView,
-  type ChipSpan,
-  offsetToShowChip,
-  type StatsCardKey,
-} from "../../view-models/stats-card-scroll";
+import { type ChipRowView, type ChipSpan, offsetToShowChip } from "../../view-models/chip-row-scroll";
+import type { StatsCardKey } from "../../view-models/stats-card-scroll";
 import { Chip } from "../atoms/Chip";
 
 /** How often a scroll reports where it is: once a frame. */
