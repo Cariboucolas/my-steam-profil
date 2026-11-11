@@ -2,6 +2,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ScrollView, StyleSheet, View } from "react-native";
 
 import { colors, spacing } from "../../theme/tokens";
+import { SCROLL_REPORT_MS } from "../../view-models/scroll-reports";
 import type { UnlockCalendar } from "../../view-models/unlock-calendar";
 import { useUnlockCalendarScroll } from "../../view-models/use-unlock-calendar-scroll";
 import { UnlockCalendarHeader } from "../molecules/UnlockCalendarHeader";
@@ -68,7 +69,7 @@ export function UnlockCalendarCard({ calendar }: Props) {
         onScroll={scroll.onScroll}
         // Often enough that the dot answers to the drag rather than to where
         // it came to rest.
-        scrollEventThrottle={16}
+        scrollEventThrottle={SCROLL_REPORT_MS}
         // The fade and the dots are what say there is more year. A native bar
         // would be a third thing saying it, and on the platform where it can
         // be grabbed it is the one that says it least clearly.

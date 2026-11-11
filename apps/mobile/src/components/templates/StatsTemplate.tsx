@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors, fonts, spacing } from "../../theme/tokens";
+import { SCROLL_REPORT_MS } from "../../view-models/scroll-reports";
 import type { StatsCardKey } from "../../view-models/stats-card-scroll";
 import type { StatsScrollBinding } from "../../view-models/use-stats-scroll";
 import { BackButton } from "../atoms/BackButton";
@@ -11,8 +12,6 @@ import { BackButton } from "../atoms/BackButton";
 const BOTTOM_ROOM = 40;
 /** Clears the back button, which sits over the title row and, once stuck, the chip row. */
 const TITLE_INDENT = 56;
-/** How often the scroll reports where it is: once a frame, for the chips to follow it. */
-const SCROLL_REPORT_MS = 16;
 /** The chip row is the second child of the scroll, after the title: kept so when adding one. */
 const CHIP_ROW_INDEX = 1;
 
