@@ -123,3 +123,6 @@ export const fonts = {
  * second copy is a copy that would not learn of a change of face.
  */
 export const MONO_ADVANCE = 0.6;
+
+/** How often a scroll reports where it is: once a frame, for what follows it to keep up. */
+export const SCROLL_REPORT_MS = 16;
