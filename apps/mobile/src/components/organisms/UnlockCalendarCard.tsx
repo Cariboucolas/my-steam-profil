@@ -1,8 +1,7 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { colors, spacing } from "../../theme/tokens";
-import { SCROLL_REPORT_MS } from "../../view-models/scroll-reports";
+import { colors, SCROLL_REPORT_MS, spacing } from "../../theme/tokens";
 import type { UnlockCalendar } from "../../view-models/unlock-calendar";
 import { useUnlockCalendarScroll } from "../../view-models/use-unlock-calendar-scroll";
 import { UnlockCalendarHeader } from "../molecules/UnlockCalendarHeader";

@@ -1,6 +1,3 @@
-/** How often a scroll reports where it is: once a frame, for what follows it to keep up. */
-export const SCROLL_REPORT_MS = 16;
-
 /**
  * All this reads of a scroll: how far down the view has been moved. Narrower
  * than the event the scroll view really sends, so that a test can report a
