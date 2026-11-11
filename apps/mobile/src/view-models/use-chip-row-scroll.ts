@@ -1,7 +1,7 @@
 import { type RefObject, useEffect, useRef } from "react";
 import type { ScrollViewInstance } from "react-native";
 
-import { useReduceMotion } from "../accessibility/use-reduce-motion";
+import { mayAnimate, useReduceMotion } from "../accessibility/use-reduce-motion";
 import { type ChipRowView, type ChipSpan, offsetToShowChip } from "./chip-row-scroll";
 import type { SideLayoutReport, SideScrollReport } from "./scroll-reports";
 
@@ -34,8 +34,7 @@ export const useChipRowScroll = <K extends string>(
     const span = active === undefined ? undefined : spans.current[active];
     if (span === undefined || view.current.width === 0) return;
     const x = offsetToShowChip(span, view.current, margin);
-    // Unanswered is not yet a yes: the row jumps rather than glides.
-    if (x !== undefined) ref.current?.scrollTo({ x, animated: reduceMotion === false });
+    if (x !== undefined) ref.current?.scrollTo({ x, animated: mayAnimate(reduceMotion) });
   }, [active, margin, reduceMotion]);
 
   return {
