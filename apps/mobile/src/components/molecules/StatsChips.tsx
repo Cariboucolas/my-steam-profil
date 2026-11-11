@@ -1,7 +1,6 @@
 import { ScrollView, StyleSheet, View } from "react-native";
 
-import { spacing } from "../../theme/tokens";
-import { SCROLL_REPORT_MS } from "../../view-models/scroll-reports";
+import { SCROLL_REPORT_MS, spacing } from "../../theme/tokens";
 import type { StatsCardKey } from "../../view-models/stats-card-scroll";
 import { useChipRowScroll } from "../../view-models/use-chip-row-scroll";
 import { Chip } from "../atoms/Chip";

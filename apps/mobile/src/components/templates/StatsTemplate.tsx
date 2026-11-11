@@ -1,11 +1,16 @@
-import type { ReactNode } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import type { ReactNode, RefObject } from "react";
+import {
+  ScrollView,
+  type ScrollViewInstance,
+  type ScrollViewProps,
+  StyleSheet,
+  Text,
+  View,
+  type ViewProps,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { colors, fonts, spacing } from "../../theme/tokens";
-import { SCROLL_REPORT_MS } from "../../view-models/scroll-reports";
-import type { StatsCardKey } from "../../view-models/stats-card-scroll";
-import type { StatsScrollBinding } from "../../view-models/use-stats-scroll";
+import { colors, fonts, SCROLL_REPORT_MS, spacing } from "../../theme/tokens";
 import { BackButton } from "../atoms/BackButton";
 
 /** Room left under the last card, over the home indicator. */
@@ -16,17 +21,33 @@ const TITLE_INDENT = 56;
 const CHIP_ROW_INDEX = 1;
 
 /** A card of the stats page, and the key the chips know it by. */
-export type StatsTemplateCard = { readonly key: StatsCardKey; readonly node: ReactNode };
+export type StatsTemplateCard<K extends string> = { readonly key: K; readonly node: ReactNode };
 
-type Props = {
+type LayoutHandler = NonNullable<ViewProps["onLayout"]>;
+
+/**
+ * Where the page hears the scroll and its parts' places, for the chips to
+ * follow. The template only passes them on: what they mean is the page's.
+ */
+export type StatsTemplateScroll<K extends string> = {
+  readonly ref: RefObject<ScrollViewInstance | null>;
+  readonly onScroll: NonNullable<ScrollViewProps["onScroll"]>;
+  /** How much of the page the screen shows. */
+  readonly onLayout: LayoutHandler;
+  /** How much page there is. */
+  readonly onContentSizeChange: NonNullable<ScrollViewProps["onContentSizeChange"]>;
+  readonly onChipRowLayout: LayoutHandler;
+  readonly onCardLayout: (key: K) => LayoutHandler;
+};
+
+type Props<K extends string> = {
   readonly title: string;
   readonly onBack: () => void;
   /** The chip row, stuck to the top of the page while it scrolls. */
   readonly chips: ReactNode;
   /** The cards, in page order. */
-  readonly cards: readonly StatsTemplateCard[];
-  /** Where the page reports its scroll and its parts' places, for the chips to follow. */
-  readonly scroll: StatsScrollBinding;
+  readonly cards: readonly StatsTemplateCard<K>[];
+  readonly scroll: StatsTemplateScroll<K>;
 };
 
 /**
@@ -34,7 +55,7 @@ type Props = {
  * top, and the cards in one scrolling column. Layout only (ADR-0022): what the
  * scroll means is the page's.
  */
-export function StatsTemplate({ title, onBack, chips, cards, scroll }: Props) {
+export function StatsTemplate<K extends string>({ title, onBack, chips, cards, scroll }: Props<K>) {
   const insets = useSafeAreaInsets();
 
   return (
