@@ -11,3 +11,13 @@ export type ScrollReport = {
 export type LayoutReport = {
   readonly nativeEvent: { readonly layout: { readonly y: number; readonly height: number } };
 };
+
+/** All this reads of a sideways scroll: how far along the view has been moved. */
+export type SideScrollReport = {
+  readonly nativeEvent: { readonly contentOffset: { readonly x: number } };
+};
+
+/** All this reads of a layout along a row: where a view starts and how wide it is. */
+export type SideLayoutReport = {
+  readonly nativeEvent: { readonly layout: { readonly x: number; readonly width: number } };
+};
