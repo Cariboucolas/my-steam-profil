@@ -46,3 +46,9 @@ export const useReduceMotion = (): boolean | undefined => {
 
   return reduceMotion;
 };
+
+/**
+ * Whether what moves may glide: only once the device has said motion is fine.
+ * Unanswered is not yet a yes, so until then it jumps.
+ */
+export const mayAnimate = (reduceMotion: boolean | undefined): boolean => reduceMotion === false;

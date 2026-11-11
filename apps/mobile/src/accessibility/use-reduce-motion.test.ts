@@ -2,7 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react-native";
 import { AccessibilityInfo, type EmitterSubscription } from "react-native";
 
 import { deviceAsksForLessMotion, deviceIsFineWithMotion } from "./reduce-motion.test-support";
-import { useReduceMotion } from "./use-reduce-motion";
+import { mayAnimate, useReduceMotion } from "./use-reduce-motion";
 
 type ReduceMotionListener = (enabled: boolean) => void;
 
@@ -130,5 +130,16 @@ describe("useReduceMotion", () => {
     const { unmount } = await renderHook(() => useReduceMotion());
 
     expect(() => unmount()).not.toThrow();
+  });
+});
+
+describe("mayAnimate", () => {
+  /** Unanswered is not yet a yes: what moves jumps until the device has said motion is fine. */
+  it.each([
+    [false, true],
+    [true, false],
+    [undefined, false],
+  ])("for a device that answered %s, animates: %s", (reduceMotion, expected) => {
+    expect(mayAnimate(reduceMotion)).toBe(expected);
   });
 });
