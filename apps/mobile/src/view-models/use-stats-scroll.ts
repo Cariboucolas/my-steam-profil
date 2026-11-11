@@ -1,7 +1,7 @@
 import { type RefObject, useRef, useState } from "react";
 import type { ScrollViewInstance } from "react-native";
 
-import { useReduceMotion } from "../accessibility/use-reduce-motion";
+import { mayAnimate, useReduceMotion } from "../accessibility/use-reduce-motion";
 import type { LayoutReport, ScrollReport } from "./scroll-reports";
 import {
   cardInView,
@@ -67,8 +67,7 @@ export const useStatsScroll = (cards: readonly StatsCardKey[]): StatsScroll => {
       if (top === undefined) return;
       ref.current?.scrollTo({
         y: offsetOfCard(top, measured.current),
-        // Unanswered is not yet a yes: the page jumps rather than glides.
-        animated: reduceMotion === false,
+        animated: mayAnimate(reduceMotion),
       });
     },
     binding: {
