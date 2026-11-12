@@ -11,9 +11,10 @@ What is published, where it goes, and the switches that stop it.
 | The Android app | EAS `preview` channel | EAS Update, over the air |
 | The component gallery | https://steam-achievements-storybook.pages.dev | Cloudflare Pages |
 
-Every merge to `main` deploys all four and publishes a
+Every merge to `main` whose CI passes deploys all four and publishes a
 [Release](https://github.com/Cariboucolas/my-steam-profil/releases) that repeats these
-addresses. To check a merge made it all the way through:
+addresses. Each workflow that publishes runs CI on the merged commit first and waits for it, so a
+red `main` publishes nothing (ADR-0027). To check a merge made it all the way through:
 
 ```sh
 gh release view --web                                    # the latest release
@@ -102,9 +103,9 @@ system that is fine. That is the known limit of ADR-0018, written down rather th
 
 ## On a phone
 
-The `EAS Update` workflow publishes to the `preview` channel on every merge. It stays guarded by
-the `EAS_ENABLED` variable: setting it to anything other than `true` stops publications without
-touching the workflow — a switch, not a waiting room. The Expo project is
+The `EAS Update` workflow publishes to the `preview` channel on every merge whose CI passes. It
+stays guarded by the `EAS_ENABLED` variable: setting it to anything other than `true` stops
+publications without touching the workflow — a switch, not a waiting room. The Expo project is
 `@cariboucolas/steam-achievements`; its `projectId` and `updates.url` are in `app.json`, and the
 robot token is in the `EXPO_TOKEN` secret.
 
@@ -121,8 +122,8 @@ installed build whose runtime is no longer the one `main` publishes updates to. 
 it just never changes again, and nothing on the phone says so. The first one went unnoticed for
 days, and #113 was among the merges it never received.
 
-The `EAS Build` workflow is what prevents one. On every merge it computes the Android fingerprint
-of `main`, asks EAS whether a `preview` build already exists for it — queued, in progress or
+The `EAS Build` workflow is what prevents one. On every merge whose CI passes it computes the
+Android fingerprint of `main`, asks EAS whether a `preview` build already exists for it — queued, in progress or
 finished — and stops there if one does, which is most merges. When none does, it starts the
 build, waits for it, and posts the install link to the Discord builds channel. Install the APK
 from that link and the phone is back on the channel. The workflow is guarded by the same
