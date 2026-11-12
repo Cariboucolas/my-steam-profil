@@ -30,10 +30,13 @@ the five atomic levels in front, routes → `SteamGateway` → Steam behind. Lev
 on the signals ADR-0026 lists.
 
 ## Risk tiers
-A change takes the highest tier of any path it touches, and its pull request says which.
+Until a check enforces the tiers and an independent review exists, the owner merges every pull
+request and an agent never merges one; a tier says only what the owner reads. A change takes
+the highest tier of any path it touches, and its pull request says which. A path no tier lists
+is tier 2.
 
 **Tier 2: the owner reads it before merge.**
-- Guardrails: `AGENTS.md`, `**/AGENTS.md`, `**/CLAUDE.md`, `**/.claude/**`, `.cursor/**`,
+- Guardrails: `AGENTS.md`, `**/AGENTS.md`, `**/CLAUDE.md`, `**/.claude/**`,
   `docs/agents/**`, `docs/adr/**`, `tools/repo-checks/**`
 - CI and the gate: `.github/**`, `package.json` (root), `pnpm-workspace.yaml`, `.nvmrc`,
   `biome.jsonc`, `tsconfig.base.json`, `**/vitest.config.ts`, the `jest` key of
