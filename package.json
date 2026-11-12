@@ -8,6 +8,7 @@
     "typecheck": "pnpm -r run typecheck",
     "check:tests": "pnpm --filter @steam/repo-checks check",
     "check:stories": "pnpm --filter @steam/repo-checks stories",
+    "check:workflows": "pnpm --filter @steam/repo-checks workflows",
     "build:web": "pnpm --filter @steam/mobile exec expo export --platform web --dump-sourcemap",
     "icons:build": "pnpm --filter @steam/icon-build icons",
     "lint": "biome check --error-on-warnings .",

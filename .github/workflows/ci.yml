@@ -59,6 +59,11 @@ jobs:
       - name: Check components have stories
         run: pnpm check:stories
 
+      # A workflow on main that does not wait on this one publishes a red commit
+      # as readily as a green one, as on 2026-10-06 (ADR-0027).
+      - name: Check publishing waits on CI
+        run: pnpm check:workflows
+
       - name: Test
         run: pnpm test
 
