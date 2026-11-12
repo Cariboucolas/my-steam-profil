@@ -1,6 +1,6 @@
 # Steam Achievements
 
-[![CI](https://github.com/Cariboucolas/my-steam-profil/actions/workflows/ci.yml/badge.svg)](https://github.com/Cariboucolas/my-steam-profil/actions/workflows/ci.yml)
+[![Deploy](https://github.com/Cariboucolas/my-steam-profil/actions/workflows/deploy.yml/badge.svg)](https://github.com/Cariboucolas/my-steam-profil/actions/workflows/deploy.yml)
 
 Point it at a Steam profile and it says what that profile has actually finished: how many
 achievements are unlocked out of how many exist, which games are complete and which are stalled

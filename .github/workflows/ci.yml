@@ -2,15 +2,19 @@ name: CI
 
 # Every branch is checked through its pull request; main is checked again after
 # merge, because a rebase can produce a combination no pull request ever saw.
-# That second check is called by deploy.yml, which deploys only if it passes:
-# a push trigger here would run it twice, in parallel with the deploy.
+# That second check is called by the three workflows that publish from main —
+# deploy.yml, eas-update.yml and eas-build.yml — each publishing only if it
+# passes: a push trigger here would run it once more, in parallel with them.
 on:
   pull_request:
   workflow_call:
 
-# A second push to the same branch makes the run in flight pointless.
+# A second push to the same branch makes the run in flight pointless. The
+# workflow's name keeps the three callers apart: called, github.workflow is the
+# caller's, and on one ref alone the three runs of one push would cancel each
+# other.
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:

@@ -9,12 +9,20 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # CI, run on the commit about to be published, under the same kill switch.
+  # The update waits on it, so a red main publishes nothing.
+  ci:
+    if: vars.EAS_ENABLED == 'true'
+    uses: ./.github/workflows/ci.yml
+
   update:
     name: preview channel
+    needs: ci
     # A kill switch, not a waiting room: Expo is configured and this publishes
-    # on every merge. Setting EAS_ENABLED to anything but "true" stops the
-    # updates without editing or reverting this workflow — which is what one
-    # wants when the Expo account, and not the code, is what went wrong.
+    # on every merge whose CI passes. Setting EAS_ENABLED to anything but
+    # "true" stops the updates without editing or reverting this workflow —
+    # which is what one wants when the Expo account, and not the code, is what
+    # went wrong.
     if: vars.EAS_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
