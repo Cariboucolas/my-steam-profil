@@ -2,10 +2,11 @@ name: CI
 
 # Every branch is checked through its pull request; main is checked again after
 # merge, because a rebase can produce a combination no pull request ever saw.
+# That second check is called by deploy.yml, which deploys only if it passes:
+# a push trigger here would run it twice, in parallel with the deploy.
 on:
   pull_request:
-  push:
-    branches: [main]
+  workflow_call:
 
 # A second push to the same branch makes the run in flight pointless.
 concurrency:

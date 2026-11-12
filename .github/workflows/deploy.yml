@@ -1,6 +1,7 @@
 name: Deploy
 
-# Only what is already on main. CI has passed by then, since main is protected.
+# Only what is already on main, and only once CI has passed on that very commit:
+# branch protection checks the pull request, not what the merge put on main.
 on:
   push:
     branches: [main]
@@ -18,8 +19,14 @@ permissions:
   contents: read
 
 jobs:
+  # CI, run on the commit about to be deployed. Every deploy job waits on it,
+  # directly or through a job that does, so a red main deploys nothing.
+  ci:
+    uses: ./.github/workflows/ci.yml
+
   api:
     name: api
+    needs: ci
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -68,6 +75,7 @@ jobs:
 
   alerts:
     name: alerts
+    needs: ci
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -205,6 +213,7 @@ jobs:
     # the app's bundle never carries Storybook, and a gallery that fails to
     # build holds nothing else back. It serves fixtures only, so it waits on no
     # API.
+    needs: ci
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
