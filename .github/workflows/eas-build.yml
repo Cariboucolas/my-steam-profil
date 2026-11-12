@@ -6,7 +6,7 @@ name: EAS Build
 # This makes sure every fingerprint main publishes to has a build to install.
 #
 # Most merges touch JavaScript only: the fingerprint has a build already, and
-# the run ends in a minute having started nothing and posted nothing.
+# the run ends once CI has passed, having started nothing and posted nothing.
 on:
   push:
     branches: [main]
@@ -21,8 +21,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # CI, run on the commit whose fingerprint is about to be built, under the
+  # same conditions as the build. The build waits on it, so a red main builds
+  # nothing.
+  ci:
+    if: vars.EAS_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/ci.yml
+
   build:
     name: android preview
+    needs: ci
     # The same kill switch as the update workflow: one variable stops both.
     # And main only: a dispatch from another branch would build a fingerprint
     # nothing publishes updates to.
