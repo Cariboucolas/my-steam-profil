@@ -10,7 +10,7 @@ ships the wrong artwork with every test green. The two are indistinguishable in 
 
 | | Run by |
 | --- | --- |
-| `lint`, `typecheck`, `check:tests`, `check:stories`, `test`, `build:web` | CI, on every pull request and every push to `main` |
+| `lint`, `typecheck`, `check:tests`, `check:stories`, `check:workflows`, `test`, `build:web` | CI, on every pull request and every push to `main` |
 | The watch modes and dev servers | You, while you work — nothing to remember |
 | `icons:build`, `icons:check`, `spike` | **Nobody.** [See below.](#the-commands-nobody-runs-for-you) |
 | `deploy`, the EAS update, and `eas build` when the fingerprint moved | The merge to `main`, or a dispatch of `eas-build.yml` |
@@ -22,11 +22,12 @@ pnpm lint           # Biome: the lint rules and the formatting, read-only
 pnpm typecheck      # every package in the workspace
 pnpm check:tests    # refuses a package whose tests would never run
 pnpm check:stories  # refuses a component without stories, bar a list that only empties
+pnpm check:workflows # refuses a workflow that publishes from main without waiting on CI
 pnpm test           # every package that defines a test script
 pnpm build:web      # builds the web bundle, to prove that it builds
 ```
 
-These six are the `verify` job, in that order, and `verify` is required before merge. Running
+These seven are the `verify` job, in that order, and `verify` is required before merge. Running
 them yourself before pushing saves the round trip; forgetting them costs only that.
 
 The order is deliberate — cheapest first, so a type error does not wait behind a test run.
@@ -41,6 +42,10 @@ those listed in `apps/mobile/.storybook/unstoried.json`. An entry that no longer
 fails the check too, so the list can only shrink. And every template is shown filled: the page of
 the same name — `LibraryTemplate`, `LibraryPage` — has stories under `pages/`, served through
 `ApiClientProvider` by the fixture client.
+
+`pnpm check:workflows` reads every workflow a push to `main` starts, `ci.yml` aside, and refuses
+one that has no job calling `ci.yml` or a job that does not wait on that call, directly or through
+a job that does — or that waits on it with an `if:` that runs after a red CI anyway (ADR-0027).
 
 `pnpm check:tests` is the least obvious of the others. `pnpm -r test` skips a package with no
 `test` script without saying so, which means a package created with tests but no script would

@@ -16,7 +16,7 @@ Every other command this repository has, and which of them nobody runs for you, 
 
 ## What CI runs
 
-These six commands are exactly what CI executes — in this order — on every pull request and
+These seven commands are exactly what CI executes — in this order — on every pull request and
 every push to `main`:
 
 ```sh
@@ -24,6 +24,7 @@ pnpm lint           # Biome: the lint rules and the formatting (ADR-0024)
 pnpm typecheck      # every package in the workspace
 pnpm check:tests    # refuses a package whose tests would never run
 pnpm check:stories  # refuses a component without stories, bar a list that only empties
+pnpm check:workflows # refuses a workflow that publishes from main without waiting on CI
 pnpm test           # every package that has tests, listed below
 pnpm build:web      # builds the web bundle, to prove that it builds
 ```
