@@ -159,8 +159,9 @@ you need a case the fixtures do not already have.
 
 ## Deploying and probing
 
-Every merge to `main` deploys the site, the API and the Android channel. The commands below
-exist for the cases where you need to do it yourself, or watch it happen.
+Every merge to `main` whose CI passes deploys the site, the API and the Android channel
+(ADR-0027). The commands below exist for the cases where you need to do it yourself, or watch
+it happen.
 
 ```sh
 pnpm --filter @steam/api deploy      # wrangler deploy — deploy.yml does this on every merge
