@@ -31,6 +31,10 @@ pnpm build:web      # builds the web bundle, to prove that it builds
 
 Cheapest first, so a type error does not wait behind a test run.
 
+On a pull request, CI also writes the change's risk tier in the job summary, computed from its
+paths by `pnpm check:tier` (ADR-0028). It informs and fails nothing; `risk-tiers.test.ts`, under
+`pnpm test`, fails when the tiers of `AGENTS.md` and the code that computes them disagree.
+
 Every Storybook story is rendered by `apps/mobile/src/components/stories.test.tsx`, which finds
 them on disk and renders each through `composeStories`. A story that no longer renders fails
 `pnpm test`; no browser is involved, and no pixel is compared (ADR-0021).
