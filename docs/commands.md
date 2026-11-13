@@ -11,6 +11,7 @@ ships the wrong artwork with every test green. The two are indistinguishable in 
 | | Run by |
 | --- | --- |
 | `lint`, `typecheck`, `check:tests`, `check:stories`, `check:workflows`, `test`, `build:web` | CI, on every pull request and every push to `main` |
+| `check:tier` | CI, on every pull request, to inform: it fails nothing |
 | The watch modes and dev servers | You, while you work — nothing to remember |
 | `icons:build`, `icons:check`, `spike` | **Nobody.** [See below.](#the-commands-nobody-runs-for-you) |
 | `deploy`, the EAS update, and `eas build` when the fingerprint moved | The merge to `main`, or a dispatch of `eas-build.yml` |
@@ -46,6 +47,18 @@ the same name — `LibraryTemplate`, `LibraryPage` — has stories under `pages/
 `pnpm check:workflows` reads every workflow a push to `main` starts, `ci.yml` aside, and refuses
 one that has no job calling `ci.yml` or a job that does not wait on that call, directly or through
 a job that does — or that waits on it with an `if:` that runs after a red CI anyway (ADR-0027).
+
+Beside them, on a pull request only, CI runs `pnpm check:tier HEAD^1` and writes the risk tier
+of the change, with the paths that decide it, in the job summary and a notice (ADR-0028). It is
+not part of the gate: the tier says what the owner reads, and no tier fails the job. Run it
+yourself against the branch you will merge into:
+
+```sh
+pnpm check:tier origin/main   # the tier of what HEAD changed since it left origin/main
+```
+
+The globs it reads are the table in `AGENTS.md`, held once in
+`tools/repo-checks/src/risk-tiers.ts`; `pnpm test` fails when the two disagree.
 
 `pnpm check:tests` is the least obvious of the others. `pnpm -r test` skips a package with no
 `test` script without saying so, which means a package created with tests but no script would
