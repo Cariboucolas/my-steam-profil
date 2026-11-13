@@ -48,8 +48,9 @@ the same name — `LibraryTemplate`, `LibraryPage` — has stories under `pages/
 one that has no job calling `ci.yml` or a job that does not wait on that call, directly or through
 a job that does — or that waits on it with an `if:` that runs after a red CI anyway (ADR-0027).
 
-Beside them, on a pull request only, CI runs `pnpm check:tier HEAD^1` and writes the risk tier
-of the change, with the paths that decide it, in the job summary and a notice (ADR-0028). It is
+Beside them, on a pull request only, CI runs the base branch's `tools/repo-checks/src/tier-cli.ts`
+with `node` and writes the risk tier of the change, with the paths that decide it, in the job
+summary and a notice (ADR-0028): a pull request cannot classify itself. It is
 not part of the gate: the tier says what the owner reads, and no tier fails the job. Run it
 yourself against the branch you will merge into:
 

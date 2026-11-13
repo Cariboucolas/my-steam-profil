@@ -1,6 +1,7 @@
 # A risk tier is computed, not declared
-The risk tier of a pull request is computed by CI from the paths it touches, against the table
-in `AGENTS.md`, and written in the summary of its `verify` job. Its author does not choose it.
+The risk tier of a pull request is computed by CI from the paths it touches, by the classifier and
+the table of the base branch, and written in the summary of its `verify` job. Neither its author
+nor its code chooses it.
 While the owner merges every pull request, the tier informs and blocks nothing.
 
 ## Why
@@ -24,11 +25,26 @@ and fails when a tier lists a glob the code does not hold, or the other way roun
   - the `jest` key of `apps/mobile/package.json` was tier 2 and the rest of the file tier 1. The
     whole file is tier 2. A dependency change there was already tier 2 through the lockfile, so
     this costs only a change to its scripts.
-- `pnpm check:tier <base>` prints the tier and the paths that decide it. In `ci.yml` it runs on
-  `pull_request` alone, against the first parent of the merge commit GitHub checks out, and
-  writes to the job summary and a notice. It needs no permission the job did not already have,
-  labels nothing and comments nothing.
-- The step fails only when the tier cannot be computed, never because of the tier it finds.
+- `pnpm check:tier <base>` prints the tier and the paths that decide it. Plain `node` runs it,
+  with nothing installed.
+- In `ci.yml` the `Risk tier` step runs on `pull_request` alone. It checks out the base commit
+  (`pull_request.base.sha`) in a worktree outside the workspace and runs that commit's
+  `tier-cli.ts` with `node`, before the pull request's dependencies are installed, on the diff
+  from the base side of the merge commit GitHub checks out. A pull request that edits the
+  classifier, its globs or its scripts changes the tier of the next pull request, not its own.
+- Independently of that code, the step itself shows tier 2 for any change touching `AGENTS.md`,
+  the root `package.json`, `.github/` or `tools/repo-checks/`, whatever the classifier said.
+- Bootstrap: a base without the classifier, as for the pull request that introduces it, shows
+  tier 2. So does a classifier that fails or answers no tier, with a warning. The step fails the
+  job only when git cannot fetch the base or produce the diff, never because of the tier or of
+  the classifier; it needs no permission the job did not already have, labels
+  nothing and comments nothing.
+
+## What remains open
+The workflow GitHub runs on `pull_request` is the pull request's own `ci.yml`, so a pull request
+can rewrite the step itself, guard included, and display any tier. Nothing technical prevents it;
+what covers it is that `.github/**` is tier 2, which the owner reads before merge. A check that
+holds once the tiers gate merges must run from a workflow the pull request cannot edit.
 
 ## What this does not say
 It does not enforce the tiers: no pull request is merged or held because of its tier, and the

@@ -33,8 +33,9 @@ on the signals ADR-0026 lists.
 Until a check enforces the tiers and an independent review exists, the owner merges every pull
 request and an agent never merges one; a tier says only what the owner reads. A change takes
 the highest tier of any path it touches, a deleted or renamed path included, under both its
-names. A path no tier lists is tier 2. CI computes the tier of every pull request from its paths
-and writes it in the job summary; it informs and blocks nothing (ADR-0028). The globs in
+names. A path no tier lists is tier 2. CI computes the tier of every pull request from its paths,
+with the classifier of the base branch rather than the pull request's own, and writes it in the
+job summary; it informs and blocks nothing (ADR-0028). The globs in
 backquotes in the bullets below are the ones `tools/repo-checks/src/risk-tiers.ts` holds, and a
 test fails when the two disagree.
 
