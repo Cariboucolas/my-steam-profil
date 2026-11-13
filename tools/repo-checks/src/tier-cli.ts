@@ -1,10 +1,14 @@
-import { changedPaths } from "./changed-paths";
-import { LISTED_NOWHERE, riskTier } from "./risk-tiers";
+import { changedPaths } from "./changed-paths.ts";
+import { LISTED_NOWHERE, riskTier } from "./risk-tiers.ts";
 
 /**
  * Prints, as Markdown, the risk tier of what HEAD changed since `base` and the
  * paths that decide it (ADR-0028). It informs: the exit code says only whether
  * the tier could be computed, never which tier it is.
+ *
+ * Plain `node` runs it, with no dependency installed and imports spelled with
+ * their `.ts`: CI runs this file as the base branch has it, from a checkout
+ * where nothing is installed, so a pull request cannot classify itself.
  */
 const base = process.argv[2];
 
