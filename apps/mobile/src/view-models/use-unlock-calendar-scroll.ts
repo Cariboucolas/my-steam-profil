@@ -1,6 +1,7 @@
 import { type RefObject, useRef, useState } from "react";
 import type { ScrollViewInstance } from "react-native";
 
+import type { ScrollReport } from "./scroll-reports";
 import {
   type FadedEdges,
   fadedEdges,
@@ -10,15 +11,6 @@ import {
   scrollsThroughTheYear,
   type YearHalf,
 } from "./unlock-calendar-scroll";
-
-/**
- * All this reads of a scroll: how far down the grid has been moved. Narrower
- * than the event the scroll view really sends, so that a test can report a
- * scroll without building one.
- */
-export type ScrollReport = {
-  readonly nativeEvent: { readonly contentOffset: { readonly y: number } };
-};
 
 export type UnlockCalendarScroll = {
   /** Whether there is more year than the card holds, and so anything to scroll. */

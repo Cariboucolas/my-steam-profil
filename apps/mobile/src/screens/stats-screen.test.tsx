@@ -121,6 +121,27 @@ describe("stats screen", () => {
     expect(screen.getByLabelText(/^Busiest slot: /)).toBeTruthy();
   });
 
+  it("offers a tab per card, in page order, the years in view", async () => {
+    await renderAt({ [STEAM_ID]: served() }, "/stats");
+    await recordsShown();
+
+    const tabs = screen.getAllByRole("tab");
+    expect(tabs.map((tab) => tab.props.accessibilityState?.selected)).toEqual([true, false]);
+    expect(screen.getByRole("tab", { name: "Years" })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: "Week" })).toBeTruthy();
+  });
+
+  /** The row keeps its shape while the library is counted: no chip waits for its card's figures. */
+  it("offers every tab while the library is still being counted", async () => {
+    const client = served();
+    const getGameTally: ApiClient["getGameTally"] = () => new Promise(() => {});
+    await renderAt({ [STEAM_ID]: { ...client, getGameTally } }, "/stats");
+    await screen.findByTestId(YEARS_CARD_TEST_ID);
+
+    expect(screen.queryAllByTestId(RECORD_FIGURE_SKELETON_TEST_ID).length).toBeGreaterThan(0);
+    expect(screen.getAllByRole("tab")).toHaveLength(2);
+  });
+
   it("offers a retry when the profile cannot be loaded", async () => {
     const client = served();
     // Asked once, and once more by itself before it gives up (#162).

@@ -121,6 +121,8 @@ export const en: Catalog = {
   },
   stats: {
     title: "Statistics",
+    // A card's short name, for its chip: not its eyebrow.
+    chips: { years: "Years", week: "Week" },
     years: {
       eyebrow: "YEARS AND RUNNING TOTAL",
       subtitle: "What each year brought, and the pile growing since the first unlock.",
