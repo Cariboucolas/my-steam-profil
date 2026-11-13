@@ -32,15 +32,19 @@ on the signals ADR-0026 lists.
 ## Risk tiers
 Until a check enforces the tiers and an independent review exists, the owner merges every pull
 request and an agent never merges one; a tier says only what the owner reads. A change takes
-the highest tier of any path it touches, and its pull request says which. A path no tier lists
-is tier 2.
+the highest tier of any path it touches, a deleted or renamed path included, under both its
+names. A path no tier lists is tier 2. CI computes the tier of every pull request from its paths
+and writes it in the job summary; it informs and blocks nothing (ADR-0028). The globs in
+backquotes in the bullets below are the ones `tools/repo-checks/src/risk-tiers.ts` holds, and a
+test fails when the two disagree.
 
 **Tier 2: the owner reads it before merge.**
 - Guardrails: `AGENTS.md`, `**/AGENTS.md`, `**/CLAUDE.md`, `**/.claude/**`,
   `docs/agents/**`, `docs/adr/**`, `tools/repo-checks/**`
-- CI and the gate: `.github/**`, `package.json` (root), `pnpm-workspace.yaml`, `.nvmrc`,
-  `biome.jsonc`, `tsconfig.base.json`, `**/vitest.config.ts`, the `jest` key of
-  `apps/mobile/package.json` (coverage thresholds)
+- CI and the gate: `.github/**`, `package.json` (root), `pnpm-lock.yaml`, `pnpm-workspace.yaml`,
+  `.nvmrc`, `biome.jsonc`, `tsconfig.base.json`, `**/vitest.config.ts`,
+  `apps/mobile/package.json` (whole, since its jest key holds the coverage thresholds and only
+  paths are read)
 - Infrastructure and deployment: `apps/*/wrangler.jsonc`, `apps/*/src/worker.ts`,
   `apps/mobile/app.json`, `apps/mobile/eas.json`, `apps/mobile/metro.config.js`,
   `tools/health-probe/**`, `tools/native-build/**`
@@ -50,12 +54,15 @@ is tier 2.
 
 **Tier 1: merged unread when `verify` is green, the change carries its proof — a test that
 failed before it, or a story or preview for what is seen — and an AI review independent of its
-author found nothing.** Every other path under `apps/`, `packages/` and `tools/`, and any change
-to a runtime dependency.
+author found nothing.**
+- Every other path under the app, the packages and the tools: `apps/**`, `packages/**`,
+  `tools/**`
 
-**Tier 0: merged on a green `verify`.** `README.md`, `CONTEXT.md`, `docs/**` outside
-`docs/adr/` and `docs/agents/`; a patch or minor bump of a `devDependencies` entry, with its
-`pnpm-lock.yaml`, in a `package.json` that is not tier 2.
+A change to a dependency, runtime or dev, touches the lockfile and is therefore tier 2: nothing
+yet reads a lockfile to tell a patch bump from anything else.
+
+**Tier 0: merged on a green `verify`.**
+- Prose outside the guardrails: `README.md`, `CONTEXT.md`, `docs/**`
 
 ## Invariants
 Each holds because a check fails without it. A rule nothing checks is not listed here.
@@ -63,6 +70,7 @@ Each holds because a check fails without it. A rule nothing checks is not listed
 | Invariant | Checked by |
 | --- | --- |
 | Nothing leaves `main` unless CI passed on that commit (ADR-0027) | `pnpm check:workflows` |
+| The risk tiers above and the code that computes them list the same globs (ADR-0028) | `pnpm test` (`risk-tiers.test.ts`) |
 | Lint rules and formatting hold everywhere (ADR-0024) | `pnpm lint` |
 | Every package type-checks | `pnpm typecheck` |
 | A package with tests runs them; no test file sits where Expo Router publishes it | `pnpm check:tests` |
