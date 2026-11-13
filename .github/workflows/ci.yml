@@ -39,22 +39,53 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
 
+      # What the owner reads before merge, computed from the paths the pull
+      # request touches (ADR-0028). It informs: whatever the tier, the step
+      # passes. A pull request alone: called from a workflow on main, there is
+      # no change to classify.
+      #
+      # The classifier is the base branch's, run by plain node from a worktree
+      # of the base, before anything of the pull request is installed: a pull
+      # request cannot lower its own tier by changing the classifier, its table
+      # or its scripts. Whatever the classifier says, a change to what computes
+      # the tier is shown as tier 2. HEAD^1 is the base side of the merge commit
+      # checked out, so the diff is the pull request as it would merge.
+      - name: Risk tier
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          base_tree="$RUNNER_TEMP/tier-base"
+          git fetch --quiet --no-tags --depth=1 origin "$BASE_SHA"
+          git worktree add --quiet --detach "$base_tree" "$BASE_SHA"
+          classifier="$base_tree/tools/repo-checks/src/tier-cli.ts"
+
+          if [ ! -f "$classifier" ]; then
+            report="### Risk tier 2: the base branch has no classifier yet"
+          elif ! report="$(node "$classifier" HEAD^1)"; then
+            echo "::warning title=Risk tier::The base branch's classifier failed; tier 2 is shown."
+            report="### Risk tier 2: the base branch's classifier failed"
+          fi
+          tier="$(printf '%s\n' "$report" | sed -n '1s/^### Risk tier \([012]\):.*/\1/p')"
+          if [ -z "$tier" ]; then
+            echo "::warning title=Risk tier::The base branch's classifier answered no tier; tier 2 is shown."
+            printf -v report '### Risk tier 2: the classifier answered no tier\n\n%s' "$report"
+            tier=2
+          fi
+
+          touches_classifier="$(git diff --name-only --no-renames HEAD^1...HEAD -- \
+            AGENTS.md package.json .github tools/repo-checks)"
+          if [ -n "$touches_classifier" ] && [ "$tier" != 2 ]; then
+            printf -v report '### Risk tier 2: the change touches what computes its tier\n\nOverruled, the classifier said:\n\n%s' "$report"
+          fi
+
+          printf '%s\n' "$report" >> "$GITHUB_STEP_SUMMARY"
+          printf '::notice title=Risk tier::%s\n' "$(printf '%s\n' "$report" | head -n 1 | sed 's/^### //')"
+
       # Fails outright when pnpm-lock.yaml disagrees with the manifests, rather
       # than quietly resolving something else than what runs locally.
       - name: Install
         run: pnpm install --frozen-lockfile
-
-      # What the owner reads before merge, computed from the paths the pull
-      # request touches against AGENTS.md (ADR-0028). It informs: whatever the
-      # tier, the step passes. A pull request alone: called from a workflow on
-      # main, there is no change to classify. HEAD^1 is the base side of the
-      # merge commit, so the diff is the pull request as it would merge.
-      - name: Risk tier
-        if: github.event_name == 'pull_request'
-        run: |
-          report="$(pnpm --silent check:tier HEAD^1)"
-          printf '%s\n' "$report" >> "$GITHUB_STEP_SUMMARY"
-          printf '::notice title=Risk tier::%s\n' "$(printf '%s\n' "$report" | head -n 1 | sed 's/^### //')"
 
       # Cheapest first: a second for the whole workspace, so a missing hook
       # dependency or an unformatted file does not wait for the compiler.
