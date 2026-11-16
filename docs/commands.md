@@ -178,7 +178,7 @@ Every merge to `main` whose CI passes deploys the site, the API and the Android 
 it happen.
 
 ```sh
-pnpm --filter @steam/api deploy      # wrangler deploy — deploy.yml does this on every merge
+pnpm --filter @steam/api deploy      # wrangler deploy — deploy.yml does this on every merge whose CI passes
 pnpm --filter @steam/alerts deploy   # the Sentry-to-Discord bridge, same thing
 ```
 
@@ -195,7 +195,7 @@ pnpm --filter @steam/alerts dev:worker
 question is about the platform and not the code. The revision it reports says `dev`.
 
 ```sh
-gh workflow run eas-build.yml   # what every merge does: build the fingerprint if it has no build
+gh workflow run eas-build.yml   # what every merge whose CI passes does: build the fingerprint if it has no build
 ```
 
 The `EAS Build` workflow runs `pnpm --filter @steam/native-build ensure`, which starts
