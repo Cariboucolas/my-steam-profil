@@ -1,5 +1,8 @@
 # Tier 0 merges itself once verify passes
 
+> Amended by [ADR-0032](0032-what-a-guardrail-cites-is-a-guardrail.md): what a tier 2
+> document cites is tier 2 too, to a fixed point.
+
 A pull request of tier 0 — `README.md` and `docs/**` outside the guardrails — merges
 without the owner once `verify` has passed on its head. `merge-tier-0.yml` does it, started by
 `workflow_run` when CI completes. Tiers 1 and 2 are merged by the owner, as before; tier 1 will
