@@ -1,0 +1,100 @@
+name: AI review
+
+# The AI reviewer of a pull request (ADR-0033): Claude Code reads the change
+# against AGENTS.md and the ADRs, and comments it inline. It blocks nothing: the
+# check is not required, and the reviewer can neither approve nor request
+# changes.
+#
+# Started by pull_request_target, this runs as main has it, never as the pull
+# request has it: a pull request cannot rewrite the workflow, the instructions
+# or the tools the reviewer gets, and so cannot hand itself the subscription
+# token. Like risk-tier.yml it never checks out, fetches or runs the pull
+# request's code; it reads the pull request through the API and gives it to
+# the reviewer as files of data. `pnpm check:workflows` refuses a step that
+# would do otherwise, and an action no commit pins.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions: {}
+
+# A second push makes the review in flight pointless: its diff is outdated.
+concurrency:
+  group: ai-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: AI review
+    # Dependabot's pull requests get no secret (ADR-0031), a draft is not ready
+    # to read.
+    if: >-
+      !github.event.pull_request.draft &&
+      github.event.pull_request.user.login != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      # main as it is, the default of pull_request_target: the reviewer reads
+      # AGENTS.md and the ADRs there. Its token stays out of .git/config.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # The pull request, read through the API and saved as data the reviewer
+      # reads: its description and the files it changes, with their patches.
+      # A fork's pull request would get main's secrets on this trigger: it
+      # stops here, before anything holds one.
+      - name: Decide
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          data="$RUNNER_TEMP/pull-request"
+          mkdir -p "$data"
+          pull="$RUNNER_TEMP/pull.json"
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$NUMBER" > "$pull"
+          if ! jq -e '.head.repo.full_name == env.GITHUB_REPOSITORY' "$pull" > /dev/null; then
+            echo "### Not reviewed: the pull request comes from another repository" >> "$GITHUB_STEP_SUMMARY"
+            echo "review=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          jq '{number, title, body, author: .user.login, base: .base.ref}' "$pull" > "$data/pull.json"
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/pulls/$NUMBER/files" \
+            | jq '[.[][] | {filename, previous_filename, status, patch}]' > "$data/files.json"
+
+          # The instructions are main's, then where the data lies. The
+          # delimiter is random so that no line of them can end the output.
+          delimiter="PROMPT_$(openssl rand -hex 16)"
+          {
+            echo "prompt<<$delimiter"
+            cat .github/ai-review.md
+            printf '\nPull request #%s. Its description is in %s/pull.json, the files it changes and their patches in %s/files.json.\n' "$NUMBER" "$data" "$data"
+            echo "$delimiter"
+          } >> "$GITHUB_OUTPUT"
+          echo "review=true" >> "$GITHUB_OUTPUT"
+
+      # The reviewer reads (Read, Glob, Grep) and comments inline; dontAsk
+      # denies every other call, and --tools leaves it no shell and no editor.
+      # .git/ is out of reach: the action writes its token in the remote's URL.
+      # The workflow's token comments as github-actions[bot] and holds only the
+      # job's two permissions; the Claude app's token would hold more.
+      - name: Review
+        if: steps.decide.outputs.review == 'true'
+        uses: anthropics/claude-code-action@9eb012b6d0900c2b9eede65ee1758cec4d2973e9 # v1.0.270
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          github_token: ${{ github.token }}
+          classify_inline_comments: "false"
+          prompt: ${{ steps.decide.outputs.prompt }}
+          claude_args: >-
+            --permission-mode dontAsk
+            --tools "Read,Glob,Grep"
+            --allowedTools "mcp__github_inline_comment__create_inline_comment"
+            --disallowedTools "Read(./.git/**)"
+            --add-dir ${{ runner.temp }}/pull-request
