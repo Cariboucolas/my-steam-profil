@@ -63,6 +63,10 @@ author found nothing.**
 - Every other path under the app, the packages and the tools: `apps/**`, `packages/**`,
   `tools/**`
 
+The AI review is `ai-review.yml`, run by `pull_request_target` as `main` has it, on the
+instructions of `.github/ai-review.md` (ADR-0033). It reads and comments inline, and blocks
+nothing while its first two weeks are observed.
+
 A change to a dependency, runtime or dev, touches the lockfile and is therefore tier 2: nothing
 yet reads a lockfile to tell a patch bump from anything else.
 
@@ -77,6 +81,8 @@ Each holds because a check fails without it. A rule nothing checks is not listed
 | Nothing leaves `main` unless CI passed on that commit (ADR-0027) | `pnpm check:workflows` |
 | The risk tiers above and the code that computes them list the same globs (ADR-0028) | `pnpm test` (`risk-tiers.test.ts`) |
 | No workflow started by `pull_request_target` or `workflow_run` checks out, fetches or names a pull request's head (ADR-0029, ADR-0030) | `pnpm check:workflows` |
+| No workflow started by `pull_request_target` or `workflow_run` runs a third-party action no commit SHA pins (ADR-0033) | `pnpm check:workflows` |
+| The AI reviewer holds its token alone, reads, comments inline and does nothing else (ADR-0033) | `pnpm test` (`ai-review.test.ts`) |
 | Lint rules and formatting hold everywhere (ADR-0024) | `pnpm lint` |
 | Every package type-checks | `pnpm typecheck` |
 | A package with tests runs them; no test file sits where Expo Router publishes it | `pnpm check:tests` |
