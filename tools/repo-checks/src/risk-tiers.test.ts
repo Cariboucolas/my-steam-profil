@@ -81,6 +81,21 @@ describe("riskTier", () => {
       expect(riskTier(["READMEXmd"]).paths[0]?.rule).toBe(LISTED_NOWHERE);
     });
 
+    /**
+     * On a case-insensitive disk, as macOS has by default, `docs/ADR/x.md` is
+     * written into `docs/adr/`: a tier 2 path spelled otherwise is still tier 2.
+     */
+    it("matches whatever the case", () => {
+      expect(
+        riskTier([
+          "docs/ADR/0031-x.md",
+          "docs/Agents/x.md",
+          "Agents.md",
+          ".GitHub/x.yml",
+        ]).paths.map((one) => one.tier),
+      ).toEqual([2, 2, 2, 2]);
+    });
+
     it("does not let a glob match a prefix of a longer name", () => {
       expect(riskTier(["package.json.bak"]).paths[0]?.rule).toBe(LISTED_NOWHERE);
     });
