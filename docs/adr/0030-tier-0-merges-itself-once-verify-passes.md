@@ -24,9 +24,15 @@ The owner's attention goes to tiers 1 and 2.
 - The job alone has `contents: write` and `pull-requests: write`; the workflow grants nothing.
 - It reads the run through the API: exactly one pull request listed, and the commit `verify`
   passed on. A fork's pull request is never listed on the run, so it stops there.
-- `main`'s classifier, run by plain `node` on the API's answers (as in `risk-tier.yml`), decides
-  who merges: automation for tier 0 only, never for a fork, a `dependabot[bot]` pull request, a
-  draft, or a pull request whose base is not `main`. A list of files GitHub cut short is tier 2.
+- The paths classified are those of the verified commit itself, from
+  `GET /repos/{owner}/{repo}/compare/{base.sha}...{verified}`, both ends SHAs. The pull request's
+  own list of files follows its head: a push of a tier 0 commit and back between that list and
+  the merge would have had a tier 2 commit merged on the tier of another. GitHub lists 300 files
+  of a comparison at most, on its first page: at 300, the tier is 2.
+- `main`'s classifier, run by plain `node` on those answers, decides who merges: automation for
+  tier 0 only, never for a fork, a `dependabot[bot]` pull request, a draft, or a pull request
+  whose base is not `main`. It ignores case: on a case-insensitive disk, as macOS has by
+  default, `docs/ADR/x.md` lands in `docs/adr/`, so it is tier 2 like it.
 - It merges through `PUT /repos/{owner}/{repo}/pulls/{number}/merge` with `sha` set to the head
   the decision was made on, and only when that head is the commit `verify` passed on: a push
   after the decision makes GitHub refuse the merge. `merge_method` is `rebase`, the only method
@@ -54,5 +60,9 @@ GitHub identity.
 ## What remains open
 - Who GitHub records as merging, and whether branch protection accepts the token's merge, are
   not stated by its documentation: the first tier 0 pull request after the merge shows it.
+- `README.md`, `CONTEXT.md` and `docs/**` outside `docs/adr/` and `docs/agents/` are tier 0,
+  and `AGENTS.md` names `CONTEXT.md`, `docs/testing.md`, `docs/deployment.md` and
+  `docs/development.md` as having authority over agents: a change to them merges unread. Whether
+  they move to tier 2 is the owner's decision; the table in `AGENTS.md` decides.
 - Native auto-merge was not used: it needs the repository's "Allow auto-merge" setting, which
   only the owner changes, and stays enabled across a later push that could raise the tier.
