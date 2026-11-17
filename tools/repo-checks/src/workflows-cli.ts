@@ -1,8 +1,8 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-
 import { ungatedWorkflows } from "./ungated-workflows";
+import { untrustedCheckouts } from "./untrusted-checkouts";
 
 /** This repository's workflows, unless a directory is named — which is how a fixture is checked. */
 const DIRECTORY = process.argv[2]
@@ -14,6 +14,7 @@ const files = readdirSync(DIRECTORY)
   .map((name) => ({ name, text: readFileSync(join(DIRECTORY, name), "utf8") }));
 
 const ungated = ungatedWorkflows(files);
+const untrusted = untrustedCheckouts(files);
 const where = relative(process.cwd(), DIRECTORY) || ".";
 
 if (ungated.length === 0) {
@@ -26,4 +27,16 @@ if (ungated.length === 0) {
   );
 }
 
-process.exit(ungated.length === 0 ? 0 : 1);
+if (untrusted.length === 0) {
+  console.log(
+    `No workflow in ${where} started by pull_request_target reaches a pull request's code.`,
+  );
+} else {
+  console.error(`These workflows in ${where} could run a pull request's code with main's rights:`);
+  for (const one of untrusted) console.error(`  ${one.workflow} — ${one.problem}`);
+  console.error(
+    "\nCheck out the base only, with persist-credentials: false, and read the pull request through the API (ADR-0029).",
+  );
+}
+
+process.exit(ungated.length + untrusted.length === 0 ? 0 : 1);
