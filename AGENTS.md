@@ -33,9 +33,10 @@ on the signals ADR-0026 lists.
 Until a check enforces the tiers and an independent review exists, the owner merges every pull
 request and an agent never merges one; a tier says only what the owner reads. A change takes
 the highest tier of any path it touches, a deleted or renamed path included, under both its
-names. A path no tier lists is tier 2. CI computes the tier of every pull request from its paths,
-with the classifier of the base branch rather than the pull request's own, and writes it in the
-job summary; it informs and blocks nothing (ADR-0028). The globs in
+names. A path no tier lists is tier 2. CI computes the tier of every pull request from the paths GitHub
+lists, in `risk-tier.yml`, which `pull_request_target` runs as `main` has it, never as the pull
+request has it; it writes the tier in the job summary, and informs and blocks nothing (ADR-0028,
+ADR-0029). The globs in
 backquotes in the bullets below are the ones `tools/repo-checks/src/risk-tiers.ts` holds, and a
 test fails when the two disagree.
 
@@ -72,6 +73,7 @@ Each holds because a check fails without it. A rule nothing checks is not listed
 | --- | --- |
 | Nothing leaves `main` unless CI passed on that commit (ADR-0027) | `pnpm check:workflows` |
 | The risk tiers above and the code that computes them list the same globs (ADR-0028) | `pnpm test` (`risk-tiers.test.ts`) |
+| No workflow started by `pull_request_target` checks out, fetches or names a pull request's head (ADR-0029) | `pnpm check:workflows` |
 | Lint rules and formatting hold everywhere (ADR-0024) | `pnpm lint` |
 | Every package type-checks | `pnpm typecheck` |
 | A package with tests runs them; no test file sits where Expo Router publishes it | `pnpm check:tests` |

@@ -11,7 +11,7 @@ ships the wrong artwork with every test green. The two are indistinguishable in 
 | | Run by |
 | --- | --- |
 | `lint`, `typecheck`, `check:tests`, `check:stories`, `check:workflows`, `test`, `build:web` | CI, on every pull request and every push to `main` |
-| `check:tier` | CI, on every pull request, to inform: it fails nothing |
+| `check:tier` | You, before opening a pull request; CI classifies the pull request itself with `risk-tier.yml` |
 | The watch modes and dev servers | You, while you work — nothing to remember |
 | `icons:build`, `icons:check`, `spike` | **Nobody.** [See below.](#the-commands-nobody-runs-for-you) |
 | `deploy`, the EAS update, and `eas build` when the fingerprint moved | The merge to `main`, or a dispatch of `eas-build.yml` |
@@ -23,7 +23,7 @@ pnpm lint           # Biome: the lint rules and the formatting, read-only
 pnpm typecheck      # every package in the workspace
 pnpm check:tests    # refuses a package whose tests would never run
 pnpm check:stories  # refuses a component without stories, bar a list that only empties
-pnpm check:workflows # refuses a workflow that publishes from main without waiting on CI
+pnpm check:workflows # refuses a workflow that publishes from main without waiting on CI, or runs a pull request's code from pull_request_target
 pnpm test           # every package that defines a test script
 pnpm build:web      # builds the web bundle, to prove that it builds
 ```
@@ -47,12 +47,15 @@ the same name — `LibraryTemplate`, `LibraryPage` — has stories under `pages/
 `pnpm check:workflows` reads every workflow a push to `main` starts, `ci.yml` aside, and refuses
 one that has no job calling `ci.yml` or a job that does not wait on that call, directly or through
 a job that does — or that waits on it with an `if:` that runs after a red CI anyway (ADR-0027).
+It also refuses a workflow started by `pull_request_target` that checks out another ref than the
+base, keeps its credentials, fetches code in a `run`, or names the pull request's head
+(ADR-0029).
 
-Beside them, on a pull request only, CI runs the base branch's `tools/repo-checks/src/tier-cli.ts`
-with `node` and writes the risk tier of the change, with the paths that decide it, in the job
-summary and a notice (ADR-0028): a pull request cannot classify itself. It is
-not part of the gate: the tier says what the owner reads, and no tier fails the job. Run it
-yourself against the branch you will merge into:
+Beside `verify`, `risk-tier.yml` writes the risk tier of every pull request, with the paths that
+decide it and who merges, in its job summary and a notice (ADR-0028, ADR-0029). It runs as
+`main` has it, on the files GitHub lists, so a pull request cannot classify itself. It is not
+part of the gate: the tier says what the owner reads, and no tier fails the job. Run the same
+classifier yourself against the branch you will merge into:
 
 ```sh
 pnpm check:tier origin/main   # the tier of what HEAD changed since it left origin/main

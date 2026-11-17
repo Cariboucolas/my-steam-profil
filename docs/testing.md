@@ -31,8 +31,9 @@ pnpm build:web      # builds the web bundle, to prove that it builds
 
 Cheapest first, so a type error does not wait behind a test run.
 
-On a pull request, CI also writes the change's risk tier in the job summary, computed from its
-paths by the base branch's `pnpm check:tier`, so a pull request cannot classify itself (ADR-0028). It informs and fails nothing; `risk-tiers.test.ts`, under
+On a pull request, `risk-tier.yml` writes the change's risk tier in its job summary, computed
+from the files GitHub lists by `main`'s classifier, so a pull request cannot classify itself
+(ADR-0028, ADR-0029). It informs and fails nothing; `risk-tiers.test.ts`, under
 `pnpm test`, fails when the tiers of `AGENTS.md` and the code that computes them disagree.
 
 Every Storybook story is rendered by `apps/mobile/src/components/stories.test.tsx`, which finds

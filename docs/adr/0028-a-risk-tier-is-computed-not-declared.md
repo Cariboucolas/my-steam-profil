@@ -1,4 +1,9 @@
 # A risk tier is computed, not declared
+
+> Amended by [ADR-0029](0029-a-pull-request-is-classified-by-main-not-by-itself.md): the tier is
+> computed by `risk-tier.yml`, started by `pull_request_target`, from the files GitHub lists; the
+> `Risk tier` step of `ci.yml` is gone.
+
 The risk tier of a pull request is computed by CI from the paths it touches, by the classifier and
 the table of the base branch, and written in the summary of its `verify` job. Neither its author
 nor its code chooses it.
