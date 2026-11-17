@@ -163,6 +163,35 @@ jobs:
     ]);
   });
 
+  /** workflow_run also runs as main has it, with a token that can write. */
+  it("holds a workflow started by workflow_run to the same rules", () => {
+    const faulty = SAFE.replace(
+      "on:\n  pull_request_target:",
+      "on:\n  workflow_run:\n    workflows: [CI]",
+    );
+
+    expect(
+      untrustedCheckouts([workflow("merge.yml", `${faulty}      - run: git fetch origin\n`)]),
+    ).toEqual([
+      { workflow: "merge.yml", problem: 'job "tier" fetches code from a run: git fetch' },
+    ]);
+  });
+
+  it.each([
+    "github.event.workflow_run.head_sha",
+    "github.event.workflow_run.head_branch",
+    "github.event.workflow_run.pull_requests[0].number",
+  ])("names an expression that reaches the triggering run's head: %s", (expression) => {
+    const faulty = withStep(
+      `      - env:\n          WHERE: \${{ ${expression} }}\n        run: echo "$WHERE"\n`,
+    );
+    const shown = expression.replace(/\[0\]\.number$/, "");
+
+    expect(untrustedCheckouts([workflow("merge.yml", faulty)])).toEqual([
+      { workflow: "merge.yml", problem: `job "tier" reaches the head: ${shown}` },
+    ]);
+  });
+
   it("reads every shape of the trigger", () => {
     const faulty = (on: string) =>
       SAFE.replace("on:\n  pull_request_target:", on).replace(
