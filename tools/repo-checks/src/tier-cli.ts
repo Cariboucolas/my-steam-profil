@@ -1,14 +1,16 @@
 import { changedPaths } from "./changed-paths.ts";
-import { LISTED_NOWHERE, riskTier } from "./risk-tiers.ts";
+import { riskTier } from "./risk-tiers.ts";
+import { quoted, tierReport } from "./tier-report.ts";
 
 /**
  * Prints, as Markdown, the risk tier of what HEAD changed since `base` and the
- * paths that decide it (ADR-0028). It informs: the exit code says only whether
- * the tier could be computed, never which tier it is.
+ * paths that decide it (ADR-0028), for a branch before it becomes a pull
+ * request. It informs: the exit code says only whether the tier could be
+ * computed, never which tier it is. CI computes the tier of a pull request
+ * otherwise, from the files GitHub lists (`pull-request-tier-cli.ts`).
  *
  * Plain `node` runs it, with no dependency installed and imports spelled with
- * their `.ts`: CI runs this file as the base branch has it, from a checkout
- * where nothing is installed, so a pull request cannot classify itself.
+ * their `.ts`.
  */
 const base = process.argv[2];
 
@@ -17,29 +19,4 @@ if (!base) {
   process.exit(2);
 }
 
-/** Enough to say why; the rest is counted rather than listed. */
-const MOST_PATHS_LISTED = 30;
-
-/**
- * A path is the change author's text. Escaped, a newline in a file name cannot
- * start a line of its own, where CI would read it as a workflow command.
- */
-const quoted = (path: string): string => JSON.stringify(path).slice(1, -1);
-
-const paths = changedPaths(base, process.cwd());
-const { tier, paths: classified } = riskTier(paths);
-const decisive = classified.filter((one) => one.tier === tier);
-
-console.log(
-  `### Risk tier ${tier}: decided by ${decisive.length} of ${paths.length} changed paths`,
-);
-console.log("");
-console.log(`Read against the risk tiers of AGENTS.md, from \`${quoted(base)}...HEAD\`.`);
-console.log("");
-for (const one of decisive.slice(0, MOST_PATHS_LISTED)) {
-  const rule = one.rule === LISTED_NOWHERE ? one.rule : `\`${one.rule}\``;
-  console.log(`- \`${quoted(one.path)}\` — ${rule}`);
-}
-if (decisive.length > MOST_PATHS_LISTED) {
-  console.log(`- and ${decisive.length - MOST_PATHS_LISTED} more`);
-}
+console.log(tierReport(riskTier(changedPaths(base, process.cwd())), `\`${quoted(base)}...HEAD\``));
