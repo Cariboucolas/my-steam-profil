@@ -1,0 +1,83 @@
+name: Merge tier 0
+
+# A pull request of tier 0, prose outside the guardrails, merges once verify
+# has passed on its head (ADR-0030). workflow_run starts this when CI
+# completes, and runs it as main has it: a pull request cannot rewrite this
+# file, the classifier or its table. Like risk-tier.yml, it never checks out,
+# fetches or runs the pull request's code, and reaches the pull request through
+# the API alone; `pnpm check:workflows` refuses a step that would do otherwise.
+#
+# Merged with GITHUB_TOKEN, the commit starts no workflow on main, so nothing is
+# deployed: tier 0 feeds nothing that is built, and the owner's next merge
+# deploys main, its CI first (ADR-0027).
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  merge:
+    name: merge tier 0
+    # CI is called from main's publishing workflows too, but those runs are
+    # named after their caller: a run of "CI" itself is a pull request's.
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      # The run names the pull request and the commit verify passed on. A fork's
+      # pull request is never listed on the run, so it stops here, as does a
+      # run listing several.
+      - name: Decide
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          run="$RUNNER_TEMP/run.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" > "$run"
+          number="$(jq -r 'if (.pull_requests | length) == 1 then .pull_requests[0].number else "" end' "$run")"
+          verified="$(jq -r '.head_sha' "$run")"
+          if ! [[ "$number" =~ ^[0-9]+$ && "$verified" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "### Not merged: the run names no single pull request of this repository" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          pull="$RUNNER_TEMP/pull.json"
+          files="$RUNNER_TEMP/files.json"
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$number" > "$pull"
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/pulls/$number/files" > "$files"
+          node tools/repo-checks/src/pull-request-tier-cli.ts "$number" "$pull" "$files" >> "$GITHUB_STEP_SUMMARY"
+          printf 'number=%s\nverified=%s\n' "$number" "$verified" >> "$GITHUB_OUTPUT"
+
+      # Only the commit verify passed on: a push since then moved the head, the
+      # decision above no longer describes it, and the API refuses the merge
+      # (`sha`). Branch protection still applies: the pull request must be up
+      # to date with main, and verify required.
+      - name: Merge
+        if: >-
+          steps.decide.outputs.merger == 'automation' &&
+          steps.decide.outputs.head == steps.decide.outputs.verified
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ steps.decide.outputs.number }}
+          HEAD: ${{ steps.decide.outputs.head }}
+        run: |
+          gh api --method PUT "repos/$GITHUB_REPOSITORY/pulls/$NUMBER/merge" \
+            -f sha="$HEAD" -f merge_method=rebase
+          printf '\nMerged automatically at `%s`.\n' "$HEAD" >> "$GITHUB_STEP_SUMMARY"
