@@ -42,9 +42,10 @@ test fails when the two disagree.
 
 **Tier 2: the owner reads it before merge.**
 - Guardrails: `AGENTS.md`, `**/AGENTS.md`, `**/CLAUDE.md`, `**/.claude/**`,
-  `docs/agents/**`, `docs/adr/**`, `tools/repo-checks/**`, and every file this contract cites:
-  `CONTEXT.md`, `docs/commands.md`, `docs/testing.md`, `docs/deployment.md`,
-  `docs/development.md` (a test fails when one it cites is not tier 2)
+  `docs/agents/**`, `docs/adr/**`, `tools/repo-checks/**`, and every file this contract cites,
+  directly or through a tier 2 document: `CONTEXT.md`, `docs/commands.md`, `docs/testing.md`,
+  `docs/deployment.md`, `docs/development.md`, `docs/images/README.md`,
+  `tools/steam-spike/FINDINGS.md` (a test fails when one it reaches is not tier 2)
 - CI and the gate: `.github/**`, `package.json` (root), `pnpm-lock.yaml`, `pnpm-workspace.yaml`,
   `.nvmrc`, `biome.jsonc`, `tsconfig.base.json`, `**/vitest.config.ts`,
   `apps/mobile/package.json` (whole, since its jest key holds the coverage thresholds and only
