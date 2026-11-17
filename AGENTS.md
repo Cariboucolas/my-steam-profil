@@ -42,7 +42,8 @@ test fails when the two disagree.
 
 **Tier 2: the owner reads it before merge.**
 - Guardrails: `AGENTS.md`, `**/AGENTS.md`, `**/CLAUDE.md`, `**/.claude/**`,
-  `docs/agents/**`, `docs/adr/**`, `tools/repo-checks/**`
+  `docs/agents/**`, `docs/adr/**`, `tools/repo-checks/**`, and what has authority above:
+  `CONTEXT.md`, `docs/testing.md`, `docs/deployment.md`, `docs/development.md`
 - CI and the gate: `.github/**`, `package.json` (root), `pnpm-lock.yaml`, `pnpm-workspace.yaml`,
   `.nvmrc`, `biome.jsonc`, `tsconfig.base.json`, `**/vitest.config.ts`,
   `apps/mobile/package.json` (whole, since its jest key holds the coverage thresholds and only
@@ -64,7 +65,7 @@ A change to a dependency, runtime or dev, touches the lockfile and is therefore 
 yet reads a lockfile to tell a patch bump from anything else.
 
 **Tier 0: merged on a green `verify`.**
-- Prose outside the guardrails: `README.md`, `CONTEXT.md`, `docs/**`
+- Prose outside the guardrails: `README.md`, `docs/**`
 
 ## Invariants
 Each holds because a check fails without it. A rule nothing checks is not listed here.

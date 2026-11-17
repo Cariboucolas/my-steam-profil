@@ -25,6 +25,10 @@ export const TIERS: readonly { readonly tier: Tier; readonly globs: readonly str
       "docs/agents/**",
       "docs/adr/**",
       "tools/repo-checks/**",
+      "CONTEXT.md",
+      "docs/testing.md",
+      "docs/deployment.md",
+      "docs/development.md",
       // CI and the gate
       ".github/**",
       "package.json",
@@ -54,7 +58,7 @@ export const TIERS: readonly { readonly tier: Tier; readonly globs: readonly str
     ],
   },
   { tier: 1, globs: ["apps/**", "packages/**", "tools/**"] },
-  { tier: 0, globs: ["README.md", "CONTEXT.md", "docs/**"] },
+  { tier: 0, globs: ["README.md", "docs/**"] },
 ];
 
 export type ClassifiedPath = { readonly path: string; readonly tier: Tier; readonly rule: string };
