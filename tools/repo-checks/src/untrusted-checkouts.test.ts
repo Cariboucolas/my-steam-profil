@@ -111,6 +111,58 @@ jobs:
     ]);
   });
 
+  /** GitHub reads an action's owner and name, and a context's names, whatever their case. */
+  it("names a checkout of another ref whatever the action's case", () => {
+    const faulty = withStep(`      - uses: Actions/Checkout@v7
+        with:
+          ref: refs/pull/\${{ github.event.number }}/merge
+          persist-credentials: false
+`);
+
+    expect(untrustedCheckouts([workflow("risk-tier.yml", faulty)])).toEqual([
+      { workflow: "risk-tier.yml", problem: 'job "tier" checks out a ref of its own: ref' },
+    ]);
+  });
+
+  it.each([
+    ["refs/pull/7/head", "refs/pull/"],
+    ["https://api.github.com/repos/x/y/tarball/abc", "/tarball/"],
+  ])("names any step that names the pull request's code: %s", (where, what) => {
+    const faulty = withStep(
+      `      - uses: some/download@v1\n        with:\n          from: ${where}\n`,
+    );
+
+    expect(untrustedCheckouts([workflow("risk-tier.yml", faulty)])).toEqual([
+      { workflow: "risk-tier.yml", problem: `job "tier" fetches code in a step: ${what}` },
+    ]);
+  });
+
+  /** A called workflow is checked nowhere, and may inherit every secret. */
+  it("names a job that calls a reusable workflow", () => {
+    const faulty = `${SAFE}  more:\n    uses: ./.github/workflows/build.yml\n    secrets: inherit\n`;
+
+    expect(untrustedCheckouts([workflow("risk-tier.yml", faulty)])).toEqual([
+      {
+        workflow: "risk-tier.yml",
+        problem: 'job "more" calls a workflow: ./.github/workflows/build.yml',
+      },
+    ]);
+  });
+
+  it.each([
+    ["toJSON(github.event.pull_request.head)", "github.event.pull_request.head"],
+    ["github.event['pull_request'].head.sha", "github.event["],
+    ["GitHub.Head_Ref", "GitHub.Head_Ref"],
+  ])("names the head reached another way: %s", (expression, shown) => {
+    const faulty = withStep(
+      `      - env:\n          WHERE: \${{ ${expression} }}\n        run: echo "$WHERE"\n`,
+    );
+
+    expect(untrustedCheckouts([workflow("risk-tier.yml", faulty)])).toEqual([
+      { workflow: "risk-tier.yml", problem: `job "tier" reaches the head: ${shown}` },
+    ]);
+  });
+
   it("reads every shape of the trigger", () => {
     const faulty = (on: string) =>
       SAFE.replace("on:\n  pull_request_target:", on).replace(
