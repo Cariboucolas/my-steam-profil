@@ -15,6 +15,17 @@ describe("riskTier", () => {
     });
   });
 
+  /**
+   * AGENTS.md names these as what has authority over an agent: rewriting them
+   * rewrites the rules, so the owner reads it before merge (ADR-0030).
+   */
+  it.each(["CONTEXT.md", "docs/testing.md", "docs/deployment.md", "docs/development.md"])(
+    "reads %s, an authority for agents, as a guardrail",
+    (path) => {
+      expect(riskTier([path]).paths).toEqual([{ path, tier: 2, rule: path }]);
+    },
+  );
+
   it("reads application code as tier 1", () => {
     expect(riskTier(["apps/mobile/src/components/atoms/Chip.tsx"]).tier).toBe(1);
   });

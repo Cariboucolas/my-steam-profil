@@ -1,6 +1,6 @@
 # Tier 0 merges itself once verify passes
 
-A pull request of tier 0 — `README.md`, `CONTEXT.md`, `docs/**` outside the guardrails — merges
+A pull request of tier 0 — `README.md` and `docs/**` outside the guardrails — merges
 without the owner once `verify` has passed on its head. `merge-tier-0.yml` does it, started by
 `workflow_run` when CI completes. Tiers 1 and 2 are merged by the owner, as before; tier 1 will
 follow once the AI reviewer's observation period has been assessed.
@@ -57,12 +57,15 @@ permissions (`actions: write`) for a deployment that changes nothing. A token of
 account would start them, at the cost of a secret; that belongs to the decision on the agents'
 GitHub identity.
 
+## What has authority leaves tier 0
+`AGENTS.md` names `CONTEXT.md`, `docs/testing.md`, `docs/deployment.md` and
+`docs/development.md` as having authority over agents. In tier 0 they would now merge unread, so
+an agent could rewrite the rules other agents follow without the owner seeing it. They move to
+the guardrails of tier 2, and ADR-0028's table changes with them. `README.md` and the rest of
+`docs/**` stay in tier 0.
+
 ## What remains open
 - Who GitHub records as merging, and whether branch protection accepts the token's merge, are
   not stated by its documentation: the first tier 0 pull request after the merge shows it.
-- `README.md`, `CONTEXT.md` and `docs/**` outside `docs/adr/` and `docs/agents/` are tier 0,
-  and `AGENTS.md` names `CONTEXT.md`, `docs/testing.md`, `docs/deployment.md` and
-  `docs/development.md` as having authority over agents: a change to them merges unread. Whether
-  they move to tier 2 is the owner's decision; the table in `AGENTS.md` decides.
 - Native auto-merge was not used: it needs the repository's "Allow auto-merge" setting, which
   only the owner changes, and stays enabled across a later push that could raise the tier.
