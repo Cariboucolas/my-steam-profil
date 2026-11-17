@@ -63,6 +63,16 @@ describe("unpinnedActions", () => {
     expect(unpinnedActions([workflow("x.yml", text)])).toEqual([]);
   });
 
+  /** A called workflow runs with the caller's rights, and may inherit its secrets. */
+  it("names a third-party reusable workflow not pinned to a commit", () => {
+    const uses = "someone/workflows/.github/workflows/review.yml@v1";
+    const text = `${privileged(`some/action@${SHA}`)}  more:\n    uses: ${uses}\n    secrets: inherit\n`;
+
+    expect(unpinnedActions([workflow("x.yml", text)])).toEqual([
+      { workflow: "x.yml", problem: `job "more" uses an action no commit pins: ${uses}` },
+    ]);
+  });
+
   it("ignores workflows that run with the pull request's own rights", () => {
     const text = privileged("some/action@v2").replace("pull_request_target:", "pull_request:");
 
