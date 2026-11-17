@@ -54,7 +54,8 @@ base, keeps its credentials, fetches code in a `run`, or names the pull request'
 Beside `verify`, `risk-tier.yml` writes the risk tier of every pull request, with the paths that
 decide it and who merges, in its job summary and a notice (ADR-0028, ADR-0029). It runs as
 `main` has it, on the files GitHub lists, so a pull request cannot classify itself. It is not
-part of the gate: the tier says what the owner reads, and no tier fails the job. Run the same
+part of the gate: no tier fails the job. When CI passes on a tier 0 pull request,
+`merge-tier-0.yml` merges it (ADR-0030). Run the same
 classifier yourself against the branch you will merge into:
 
 ```sh

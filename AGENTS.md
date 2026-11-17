@@ -30,8 +30,8 @@ the five atomic levels in front, routes → `SteamGateway` → Steam behind. Lev
 on the signals ADR-0026 lists.
 
 ## Risk tiers
-Until a check enforces the tiers and an independent review exists, the owner merges every pull
-request and an agent never merges one; a tier says only what the owner reads. A change takes
+A pull request of tier 0 from this repository merges itself once `verify` passes, through
+`merge-tier-0.yml` (ADR-0030); the owner merges every other one, and an agent never merges one. A change takes
 the highest tier of any path it touches, a deleted or renamed path included, under both its
 names. A path no tier lists is tier 2. CI computes the tier of every pull request from the paths GitHub
 lists, in `risk-tier.yml`, which `pull_request_target` runs as `main` has it, never as the pull
@@ -73,7 +73,7 @@ Each holds because a check fails without it. A rule nothing checks is not listed
 | --- | --- |
 | Nothing leaves `main` unless CI passed on that commit (ADR-0027) | `pnpm check:workflows` |
 | The risk tiers above and the code that computes them list the same globs (ADR-0028) | `pnpm test` (`risk-tiers.test.ts`) |
-| No workflow started by `pull_request_target` checks out, fetches or names a pull request's head (ADR-0029) | `pnpm check:workflows` |
+| No workflow started by `pull_request_target` or `workflow_run` checks out, fetches or names a pull request's head (ADR-0029, ADR-0030) | `pnpm check:workflows` |
 | Lint rules and formatting hold everywhere (ADR-0024) | `pnpm lint` |
 | Every package type-checks | `pnpm typecheck` |
 | A package with tests runs them; no test file sits where Expo Router publishes it | `pnpm check:tests` |
