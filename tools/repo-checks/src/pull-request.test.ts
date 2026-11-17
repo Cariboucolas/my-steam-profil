@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   mergeDecision,
   pullRequestReport,
+  readComparedPullRequest,
   readPullRequest,
   workflowOutputs,
 } from "./pull-request.ts";
@@ -177,5 +178,36 @@ describe("workflowOutputs", () => {
     expect(workflowOutputs(pullRequestReport(facts, 206), facts)).toBe(
       `tier=0\nmerger=automation\nhead=${HEAD_SHA}\n`,
     );
+  });
+});
+
+/**
+ * `GET /repos/{owner}/{repo}/compare/{base}...{verified}`: the files of one
+ * commit, which no later push can change (ADR-0030).
+ */
+describe("readComparedPullRequest", () => {
+  const comparison = (files: readonly unknown[]) => ({ files });
+
+  it("reads the paths of the compared commit, not the pull request's list", () => {
+    const facts = readComparedPullRequest(
+      pull({ changed_files: 1 }),
+      comparison([{ filename: "AGENTS.md" }, { filename: "docs/a.md", previous_filename: "b.md" }]),
+    );
+
+    expect(facts.paths).toEqual(["AGENTS.md", "docs/a.md", "b.md"]);
+    expect([facts.listed, facts.changed]).toEqual([2, 2]);
+  });
+
+  /** GitHub lists 300 files of a comparison at most: at 300, some may be missing. */
+  it("reads a comparison of 300 files as cut short", () => {
+    const files = Array.from({ length: 300 }, (_, i) => ({ filename: `docs/${i}.md` }));
+    const facts = readComparedPullRequest(pull(), comparison(files));
+
+    expect(pullRequestReport(facts, 7).tier).toBe(2);
+  });
+
+  it("refuses a comparison it cannot read", () => {
+    expect(() => readComparedPullRequest(pull(), {})).toThrow(/comparison/);
+    expect(() => readComparedPullRequest(pull(), comparison([{ name: "x" }]))).toThrow(/filename/);
   });
 });

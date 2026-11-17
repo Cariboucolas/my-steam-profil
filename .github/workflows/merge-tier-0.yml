@@ -58,16 +58,24 @@ jobs:
             exit 0
           fi
 
+          # The files are those of the verified commit, compared with the base
+          # by SHA: an answer no push can change between this decision and the
+          # merge, where the pull request's own list follows its head.
           pull="$RUNNER_TEMP/pull.json"
-          files="$RUNNER_TEMP/files.json"
+          files="$RUNNER_TEMP/comparison.json"
           gh api "repos/$GITHUB_REPOSITORY/pulls/$number" > "$pull"
-          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/pulls/$number/files" > "$files"
-          node tools/repo-checks/src/pull-request-tier-cli.ts "$number" "$pull" "$files" >> "$GITHUB_STEP_SUMMARY"
+          base="$(jq -r '.base.sha' "$pull")"
+          if ! [[ "$base" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error title=Merge tier 0::The pull request's base is not a commit SHA."
+            exit 1
+          fi
+          gh api "repos/$GITHUB_REPOSITORY/compare/$base...$verified" > "$files"
+          node tools/repo-checks/src/pull-request-tier-cli.ts "$number" "$pull" "$files" --comparison >> "$GITHUB_STEP_SUMMARY"
           printf 'number=%s\nverified=%s\n' "$number" "$verified" >> "$GITHUB_OUTPUT"
 
-      # Only the commit verify passed on: a push since then moved the head, the
-      # decision above no longer describes it, and the API refuses the merge
-      # (`sha`). Branch protection still applies: the pull request must be up
+      # Only the commit verify passed on and the decision classified, and only
+      # while it is still the head: a push since then makes the API refuse the
+      # merge (`sha`). Branch protection still applies: the pull request must be up
       # to date with main, and verify required.
       - name: Merge
         if: >-
