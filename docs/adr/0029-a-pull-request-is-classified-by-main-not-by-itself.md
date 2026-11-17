@@ -1,5 +1,8 @@
 # A pull request is classified by main, not by itself
 
+> Amended by [ADR-0030](0030-tier-0-merges-itself-once-verify-passes.md): tier 0 merges
+> automatically once `verify` passes, through `merge-tier-0.yml`, started by `workflow_run`.
+
 The risk tier of a pull request, and who merges it, are computed by `risk-tier.yml`, a workflow
 started by `pull_request_target`. GitHub runs that trigger as the default branch has it, so the
 workflow, the classifier and its table are `main`'s, whatever the pull request changes. The

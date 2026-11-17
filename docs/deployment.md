@@ -11,10 +11,12 @@ What is published, where it goes, and the switches that stop it.
 | The Android app | EAS `preview` channel | EAS Update, over the air |
 | The component gallery | https://steam-achievements-storybook.pages.dev | Cloudflare Pages |
 
-Every merge to `main` whose CI passes deploys all four and publishes a
+Every merge to `main` by the owner whose CI passes deploys all four and publishes a
 [Release](https://github.com/Cariboucolas/my-steam-profil/releases) that repeats these
 addresses. Each workflow that publishes runs CI on the merged commit first and waits for it, so a
-red `main` publishes nothing (ADR-0027). To check a merge made it all the way through:
+red `main` publishes nothing (ADR-0027). A tier 0 pull request merged automatically deploys
+nothing: its merge, made with the workflow's token, starts no workflow, and it changes nothing
+that is built; the owner's next merge deploys it with the rest (ADR-0030). To check a merge made it all the way through:
 
 ```sh
 gh release view --web                                    # the latest release
