@@ -13,23 +13,34 @@ import type { WorkflowFile } from "./ungated-workflows.ts";
 export type UntrustedCheckout = { readonly workflow: string; readonly problem: string };
 
 const TRIGGER = "pull_request_target";
-const CHECKOUT = /^actions\/checkout@/;
+/** GitHub reads an action's owner and name whatever their case. */
+const CHECKOUT = /^actions\/checkout@/i;
 /** Either of these points the checkout somewhere else than the base. */
 const ELSEWHERE = ["ref", "repository"] as const;
 
 /** Git subcommands that bring in code, after any global options such as `-C dir`. */
 const GIT_FETCHES =
   /\bgit(?:\s+-\S+(?:\s+[^\s-]\S*)?)*\s+(fetch|checkout|switch|pull|clone|worktree)\b/;
-const OTHER_FETCHES = /\bgh\s+pr\s+checkout\b|refs\/pull\//;
-/** The expressions through which a workflow learns where the head is. */
-const HEAD = /github\.head_ref|github\.event\.pull_request\.(?:head\.[\w.]+|merge_commit_sha)/;
+const OTHER_FETCHES = /\bgh\s+pr\s+checkout\b|refs\/pull\/|\/(?:tar|zip)ball\//;
+/**
+ * The expressions through which a workflow learns where the head is. Context
+ * names are read whatever their case, and a bracket reaches any property.
+ */
+const HEAD =
+  /github\.head_ref|github\.event\.pull_request\.(?:head\b[\w.]*|merge_commit_sha)|github\.event\s*\[/i;
 
 type Step = {
   readonly uses?: string;
   readonly run?: string;
   readonly with?: Record<string, unknown>;
+  readonly env?: unknown;
 };
-type Job = { readonly steps?: readonly Step[]; readonly env?: unknown; readonly if?: unknown };
+type Job = {
+  readonly uses?: string;
+  readonly steps?: readonly Step[];
+  readonly env?: unknown;
+  readonly if?: unknown;
+};
 
 const startedByTarget = (on: unknown): boolean => {
   if (on === TRIGGER) return true;
@@ -55,14 +66,18 @@ const fetchProblem = (run: string): string | undefined => {
 const stepProblems = (step: Step): readonly string[] => {
   if (step.uses && CHECKOUT.test(step.uses)) return checkoutProblems(step);
   const fetched = typeof step.run === "string" ? fetchProblem(step.run) : undefined;
+  const given = OTHER_FETCHES.exec(JSON.stringify({ with: step.with, env: step.env }))?.[0];
   const head = HEAD.exec(JSON.stringify(step))?.[0];
   return [
     ...(fetched ? [`fetches code from a run: ${fetched}`] : []),
+    ...(given ? [`fetches code in a step: ${given}`] : []),
     ...(head ? [`reaches the head: ${head}`] : []),
   ];
 };
 
 const jobProblems = (job: Job): readonly string[] => {
+  // A called workflow is read by none of these rules, and may inherit every secret.
+  if (job.uses) return [`calls a workflow: ${job.uses}`];
   const head = HEAD.exec(JSON.stringify({ env: job.env, if: job.if }))?.[0];
   return [
     ...(head ? [`reaches the head: ${head}`] : []),

@@ -39,10 +39,12 @@ or secrets". So the workflow reads data only, and a check keeps it that way.
   runs without the repository's secrets, so the AI reviewer never reads it. No tier merges
   automatically yet; the owner merges every pull request, as before.
 - `pnpm check:workflows` reads every workflow `pull_request_target` starts and refuses: an
-  `actions/checkout` with a `ref` or a `repository`, or without `persist-credentials: false`; a
-  `run` that calls `git fetch`, `checkout`, `switch`, `pull`, `clone` or `worktree`,
-  `gh pr checkout`, or names `refs/pull/`; any expression naming `github.head_ref`,
-  `github.event.pull_request.head.*` or `merge_commit_sha`. Its test runs on this repository's
+  `actions/checkout` (in any case) with a `ref` or a `repository`, or without
+  `persist-credentials: false`; a `run` that calls `git fetch`, `checkout`, `switch`, `pull`,
+  `clone` or `worktree`, or `gh pr checkout`; a `run`, `with` or `env` naming `refs/pull/`, a
+  `tarball` or a `zipball`; a job calling a reusable workflow, which none of these rules would
+  read; any expression naming `github.head_ref`, `github.event.pull_request.head`,
+  `merge_commit_sha` or `github.event[…]`, in any case. Its test runs on this repository's
   workflows too.
 - A change to any workflow stays tier 2 (`.github/**`), and is read by the owner.
 - `pnpm check:tier <base>` stays, for a branch before it is a pull request; it shares its report
