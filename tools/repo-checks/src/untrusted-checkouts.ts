@@ -1,7 +1,8 @@
 /**
- * A workflow started by `pull_request_target` runs as the base branch has it,
- * with the base's token and secrets: that is what makes the risk tier it
- * computes one a pull request cannot rewrite (ADR-0029). The same rights make
+ * A workflow started by `pull_request_target` or `workflow_run` runs as the
+ * default branch has it, with its token and secrets: that is what makes the
+ * risk tier and the merge decision ones a pull request cannot rewrite
+ * (ADR-0029, ADR-0030). The same rights make
  * the pull request's own code dangerous there, which GitHub warns against. This
  * finds such a workflow that checks out, fetches or names the pull request's
  * head, so that nothing of the pull request can run with them.
@@ -12,7 +13,7 @@ import type { WorkflowFile } from "./ungated-workflows.ts";
 
 export type UntrustedCheckout = { readonly workflow: string; readonly problem: string };
 
-const TRIGGER = "pull_request_target";
+const TRIGGERS = ["pull_request_target", "workflow_run"] as const;
 /** GitHub reads an action's owner and name whatever their case. */
 const CHECKOUT = /^actions\/checkout@/i;
 /** Either of these points the checkout somewhere else than the base. */
@@ -27,7 +28,7 @@ const OTHER_FETCHES = /\bgh\s+pr\s+checkout\b|refs\/pull\/|\/(?:tar|zip)ball\//;
  * names are read whatever their case, and a bracket reaches any property.
  */
 const HEAD =
-  /github\.head_ref|github\.event\.pull_request\.(?:head\b[\w.]*|merge_commit_sha)|github\.event\s*\[/i;
+  /github\.head_ref|github\.event\.pull_request\.(?:head\b[\w.]*|merge_commit_sha)|github\.event\.workflow_run\.(?:head_\w+|pull_requests)|github\.event\s*\[/i;
 
 type Step = {
   readonly uses?: string;
@@ -42,11 +43,12 @@ type Job = {
   readonly if?: unknown;
 };
 
-const startedByTarget = (on: unknown): boolean => {
-  if (on === TRIGGER) return true;
-  if (Array.isArray(on)) return on.includes(TRIGGER);
-  return typeof on === "object" && on !== null && TRIGGER in on;
-};
+const startedByTrusted = (on: unknown): boolean =>
+  TRIGGERS.some((trigger) => {
+    if (on === trigger) return true;
+    if (Array.isArray(on)) return on.includes(trigger);
+    return typeof on === "object" && on !== null && trigger in on;
+  });
 
 const checkoutProblems = (step: Step): readonly string[] => {
   const options = step.with ?? {};
@@ -87,7 +89,7 @@ const jobProblems = (job: Job): readonly string[] => {
 
 const findingsIn = (file: WorkflowFile): readonly UntrustedCheckout[] => {
   const definition = parse(file.text) as { on?: unknown; jobs?: Record<string, Job> } | null;
-  if (!startedByTarget(definition?.on)) return [];
+  if (!startedByTrusted(definition?.on)) return [];
   return Object.entries(definition?.jobs ?? {}).flatMap(([id, job]) =>
     jobProblems(job).map((problem) => ({ workflow: file.name, problem: `job "${id}" ${problem}` })),
   );

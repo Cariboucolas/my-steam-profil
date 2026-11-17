@@ -29,13 +29,13 @@ if (ungated.length === 0) {
 
 if (untrusted.length === 0) {
   console.log(
-    `No workflow in ${where} started by pull_request_target reaches a pull request's code.`,
+    `No workflow in ${where} started by pull_request_target or workflow_run reaches a pull request's code.`,
   );
 } else {
   console.error(`These workflows in ${where} could run a pull request's code with main's rights:`);
   for (const one of untrusted) console.error(`  ${one.workflow} — ${one.problem}`);
   console.error(
-    "\nCheck out the base only, with persist-credentials: false, and read the pull request through the API (ADR-0029).",
+    "\nCheck out the base only, with persist-credentials: false, and read the pull request through the API (ADR-0029, ADR-0030).",
   );
 }
 
