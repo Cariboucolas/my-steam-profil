@@ -6,25 +6,14 @@ import { LISTED_NOWHERE, riskTier, TIERS } from "./risk-tiers";
 
 describe("riskTier", () => {
   it("reads prose outside the guardrails as tier 0", () => {
-    expect(riskTier(["README.md", "docs/commands.md"])).toEqual({
+    expect(riskTier(["README.md", "docs/stats-page.md"])).toEqual({
       tier: 0,
       paths: [
         { path: "README.md", tier: 0, rule: "README.md" },
-        { path: "docs/commands.md", tier: 0, rule: "docs/**" },
+        { path: "docs/stats-page.md", tier: 0, rule: "docs/**" },
       ],
     });
   });
-
-  /**
-   * AGENTS.md names these as what has authority over an agent: rewriting them
-   * rewrites the rules, so the owner reads it before merge (ADR-0030).
-   */
-  it.each(["CONTEXT.md", "docs/testing.md", "docs/deployment.md", "docs/development.md"])(
-    "reads %s, an authority for agents, as a guardrail",
-    (path) => {
-      expect(riskTier([path]).paths).toEqual([{ path, tier: 2, rule: path }]);
-    },
-  );
 
   it("reads application code as tier 1", () => {
     expect(riskTier(["apps/mobile/src/components/atoms/Chip.tsx"]).tier).toBe(1);
@@ -147,4 +136,32 @@ describe("the risk tiers table in AGENTS.md", () => {
       expect([...(table[tier] ?? [])].sort()).toEqual([...globs].sort());
     },
   );
+});
+
+/**
+ * What AGENTS.md cites, an agent reads and follows: rewriting it rewrites the
+ * rules, so the owner reads it before merge (ADR-0030). Its relative links,
+ * and the Markdown files it names in backquotes, are read outside the risk
+ * tiers section, whose backquotes are globs. A document cited with no rule
+ * that makes it tier 2 fails here.
+ */
+const citedIn = (markdown: string): readonly string[] => {
+  const prose = markdown.replace(/^## Risk tiers$[\s\S]*?(?=^## )/m, "");
+  const links = [...prose.matchAll(/\]\(([^)#\s]+)(?:#[^)]*)?\)/g)]
+    .map((match) => match[1] ?? "")
+    .filter((target) => !/^[a-z]+:/i.test(target));
+  const named = [...prose.matchAll(/`([^`\s]+\.md)`/g)].map((match) => match[1] ?? "");
+  return [...new Set([...links, ...named])];
+};
+
+describe("what AGENTS.md cites", () => {
+  const cited = citedIn(readFileSync(AGENTS_MD, "utf8"));
+
+  it("is read from the links and the Markdown files it names", () => {
+    expect(cited).toEqual(expect.arrayContaining(["CONTEXT.md", "docs/commands.md"]));
+  });
+
+  it.each(cited)("is tier 2: %s", (path) => {
+    expect(riskTier([path]).tier).toBe(2);
+  });
 });

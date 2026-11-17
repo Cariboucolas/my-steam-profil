@@ -26,6 +26,7 @@ export const TIERS: readonly { readonly tier: Tier; readonly globs: readonly str
       "docs/adr/**",
       "tools/repo-checks/**",
       "CONTEXT.md",
+      "docs/commands.md",
       "docs/testing.md",
       "docs/deployment.md",
       "docs/development.md",
