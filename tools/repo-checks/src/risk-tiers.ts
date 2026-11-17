@@ -30,6 +30,8 @@ export const TIERS: readonly { readonly tier: Tier; readonly globs: readonly str
       "docs/testing.md",
       "docs/deployment.md",
       "docs/development.md",
+      "docs/images/README.md",
+      "tools/steam-spike/FINDINGS.md",
       // CI and the gate
       ".github/**",
       "package.json",

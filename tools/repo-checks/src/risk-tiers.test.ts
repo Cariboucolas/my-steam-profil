@@ -1,7 +1,9 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
+import { citedDocuments, type Documents } from "./cited-documents.ts";
 import { LISTED_NOWHERE, riskTier, TIERS } from "./risk-tiers";
 
 describe("riskTier", () => {
@@ -154,28 +156,41 @@ describe("the risk tiers table in AGENTS.md", () => {
 
 /**
  * What AGENTS.md cites, an agent reads and follows: rewriting it rewrites the
- * rules, so the owner reads it before merge (ADR-0030). Its relative links,
- * and the Markdown files it names in backquotes, are read outside the risk
- * tiers section, whose backquotes are globs. A document cited with no rule
- * that makes it tier 2 fails here.
+ * rules, so the owner reads it before merge (ADR-0030). What a tier 2 document
+ * cites is read the same way, to a fixed point (ADR-0032). A document reached
+ * with no rule that makes it tier 2 fails here, and so does a broken link.
  */
-const citedIn = (markdown: string): readonly string[] => {
-  const prose = markdown.replace(/^## Risk tiers$[\s\S]*?(?=^## )/m, "");
-  const links = [...prose.matchAll(/\]\(([^)#\s]+)(?:#[^)]*)?\)/g)]
-    .map((match) => match[1] ?? "")
-    .filter((target) => !/^[a-z]+:/i.test(target));
-  const named = [...prose.matchAll(/`([^`\s]+\.md)`/g)].map((match) => match[1] ?? "");
-  return [...new Set([...links, ...named])];
+const ROOT = fileURLToPath(new URL("../../../", import.meta.url));
+
+const onDisk: Documents = {
+  read: (path) => {
+    const absolute = join(ROOT, path);
+    return existsSync(absolute) && statSync(absolute).isFile()
+      ? readFileSync(absolute, "utf8")
+      : undefined;
+  },
+  exists: (path) => existsSync(join(ROOT, path)),
 };
 
-describe("what AGENTS.md cites", () => {
-  const cited = citedIn(readFileSync(AGENTS_MD, "utf8"));
+const readByAgents = (path: string) => path.endsWith(".md") && riskTier([path]).tier === 2;
 
-  it("is read from the links and the Markdown files it names", () => {
-    expect(cited).toEqual(expect.arrayContaining(["CONTEXT.md", "docs/commands.md"]));
+describe("what AGENTS.md cites, directly or through a tier 2 document", () => {
+  const { cited, missing } = citedDocuments("AGENTS.md", onDisk, readByAgents);
+
+  it("reaches the documents an agent is sent to", () => {
+    expect(cited.map((one) => one.path)).toEqual(
+      expect.arrayContaining(["CONTEXT.md", "docs/commands.md", "docs/adr/README.md"]),
+    );
   });
 
-  it.each(cited)("is tier 2: %s", (path) => {
-    expect(riskTier([path]).tier).toBe(2);
+  it("leads nowhere that does not exist", () => {
+    expect(missing).toEqual([]);
   });
+
+  it.each(cited.map((one) => [one.path, one.from] as const))(
+    "is tier 2: %s, cited by %s",
+    (path) => {
+      expect(riskTier([path]).tier).toBe(2);
+    },
+  );
 });
