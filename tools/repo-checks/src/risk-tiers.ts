@@ -60,7 +60,11 @@ export const TIERS: readonly { readonly tier: Tier; readonly globs: readonly str
 export type ClassifiedPath = { readonly path: string; readonly tier: Tier; readonly rule: string };
 export type RiskTier = { readonly tier: Tier; readonly paths: readonly ClassifiedPath[] };
 
-/** `**` crosses directories, `*` stays inside one; a leading dot is an ordinary character. */
+/**
+ * `**` crosses directories, `*` stays inside one; a leading dot is an ordinary
+ * character. Case is ignored: on a case-insensitive disk, as macOS has by
+ * default, `docs/ADR/x.md` lands in `docs/adr/`, so it must be tier 2 too.
+ */
 const toRegExp = (glob: string): RegExp =>
   new RegExp(
     `^${glob
@@ -72,6 +76,7 @@ const toRegExp = (glob: string): RegExp =>
         return part.replace(/[.+?^${}()|[\]\\]/g, "\\$&");
       })
       .join("")}$`,
+    "i",
   );
 
 const RULES = TIERS.flatMap(({ tier, globs }) =>
