@@ -1,13 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { mergeDecision, pullRequestReport, readPullRequest } from "./pull-request.ts";
+import {
+  mergeDecision,
+  pullRequestReport,
+  readPullRequest,
+  workflowOutputs,
+} from "./pull-request.ts";
+
+const HEAD_SHA = "09f1f5826450b59290b806b1f36c11ac9aec8753";
 
 /** What `GET /repos/{owner}/{repo}/pulls/{number}` answers, cut to what is read. */
 const pull = (overrides: Record<string, unknown> = {}) => ({
   user: { login: "Cariboucolas" },
   changed_files: 2,
-  base: { repo: { full_name: "Cariboucolas/my-steam-profil" } },
-  head: { repo: { full_name: "Cariboucolas/my-steam-profil" } },
+  base: { ref: "main", repo: { full_name: "Cariboucolas/my-steam-profil" } },
+  head: { sha: HEAD_SHA, repo: { full_name: "Cariboucolas/my-steam-profil" } },
+  draft: false,
   ...overrides,
 });
 
@@ -24,6 +32,9 @@ describe("readPullRequest", () => {
       changed: 2,
       fromFork: false,
       author: "Cariboucolas",
+      draft: false,
+      headSha: HEAD_SHA,
+      baseRef: "main",
     });
   });
 
@@ -45,14 +56,16 @@ describe("readPullRequest", () => {
   });
 
   it("reads a head in another repository as a fork", () => {
-    const fork = pull({ head: { repo: { full_name: "someone/my-steam-profil" } } });
+    const fork = pull({ head: { sha: HEAD_SHA, repo: { full_name: "someone/my-steam-profil" } } });
 
     expect(readPullRequest(fork, PAGES).fromFork).toBe(true);
   });
 
   /** A fork deleted after its pull request opened leaves no head repository. */
   it("reads a head with no repository as a fork", () => {
-    expect(readPullRequest(pull({ head: { repo: null } }), PAGES).fromFork).toBe(true);
+    expect(readPullRequest(pull({ head: { sha: HEAD_SHA, repo: null } }), PAGES).fromFork).toBe(
+      true,
+    );
   });
 
   it("refuses an answer it cannot read rather than reading it as no change", () => {
@@ -60,16 +73,41 @@ describe("readPullRequest", () => {
     expect(() => readPullRequest(pull(), { filename: "README.md" })).toThrow(/pages/);
     expect(() => readPullRequest(pull({ changed_files: "2" }), PAGES)).toThrow(/changed_files/);
     expect(() => readPullRequest(pull({ user: null }), PAGES)).toThrow(/user/);
+    expect(() => readPullRequest(pull({ draft: "no" }), PAGES)).toThrow(/draft/);
+  });
+
+  /** The head commit goes into a workflow's outputs and pins the merge: nothing but a SHA. */
+  it("refuses a head that is not a commit SHA", () => {
+    const head = { sha: "main\nmerger=automation", repo: { full_name: "x/y" } };
+
+    expect(() => readPullRequest(pull({ head }), PAGES)).toThrow(/head SHA/);
   });
 });
 
 describe("mergeDecision", () => {
   const facts = readPullRequest(pull(), PAGES);
 
-  it("leaves every tier to the owner while no tier merges automatically", () => {
-    for (const tier of [0, 1, 2] as const) {
-      expect(mergeDecision(tier, facts).merger).toBe("owner");
-    }
+  /** Tier 0 alone merges automatically; tier 1 waits on the AI reviewer's assessment (ADR-0030). */
+  it("merges tier 0 alone automatically", () => {
+    expect([0, 1, 2].map((tier) => mergeDecision(tier as 0 | 1 | 2, facts).merger)).toEqual([
+      "automation",
+      "owner",
+      "owner",
+    ]);
+  });
+
+  it("never merges automatically into another branch than main", () => {
+    expect(mergeDecision(0, { ...facts, baseRef: "release\n::error::x" })).toEqual({
+      merger: "owner",
+      reason: "it targets `release\\n::error::x`, not main",
+    });
+  });
+
+  it("never merges a draft automatically", () => {
+    expect(mergeDecision(0, { ...facts, draft: true })).toEqual({
+      merger: "owner",
+      reason: "it is a draft",
+    });
   });
 
   it("never merges a pull request from a fork automatically", () => {
@@ -108,7 +146,7 @@ describe("pullRequestReport", () => {
     const report = pullRequestReport(readPullRequest(pull(), PAGES), 206);
 
     expect(report.tier).toBe(0);
-    expect(report.merger).toBe("owner");
+    expect(report.merger).toBe("automation");
     expect(report.markdown.split("\n")).toEqual([
       "### Risk tier 0: decided by 2 of 2 changed paths",
       "",
@@ -117,7 +155,7 @@ describe("pullRequestReport", () => {
       "- `README.md` — `README.md`",
       "- `docs/commands.md` — `docs/**`",
       "",
-      "Merged by the owner: tier 0 is merged by the owner.",
+      "Merged automatically: tier 0 merges automatically once verify passes.",
     ]);
   });
 
@@ -128,6 +166,16 @@ describe("pullRequestReport", () => {
     expect(report.tier).toBe(2);
     expect(report.markdown.split("\n")[0]).toBe(
       "### Risk tier 2: GitHub listed 2 of the 3001 files changed",
+    );
+  });
+});
+
+describe("workflowOutputs", () => {
+  it("gives the tier, who merges and the head the decision was made on", () => {
+    const facts = readPullRequest(pull(), PAGES);
+
+    expect(workflowOutputs(pullRequestReport(facts, 206), facts)).toBe(
+      `tier=0\nmerger=automation\nhead=${HEAD_SHA}\n`,
     );
   });
 });
