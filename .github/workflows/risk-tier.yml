@@ -1,0 +1,58 @@
+name: Risk tier
+
+# The risk tier of a pull request and who merges it (ADR-0029). Started by
+# pull_request_target, this runs as main has it, never as the pull request has
+# it: a pull request cannot rewrite how it is classified, nor the classifier,
+# nor this file. The same trigger runs with main's token, so this never checks
+# out, fetches or runs the pull request's code: it reads the paths the pull
+# request touches through the API, and `pnpm check:workflows` refuses any step
+# that would reach its head.
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+# A second push makes the run in flight pointless: its paths are outdated.
+concurrency:
+  group: risk-tier-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  tier:
+    name: risk tier
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      # main as it is, the default of pull_request_target; its token stays out
+      # of .git/config.
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      # The classifier runs with plain node, which strips the types from 22.18.
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+
+      # Two answers of the API, saved as files: the pull request (its author,
+      # its head repository, its count of changed files) and its files, every
+      # page. The classifier reads them as data and writes the summary. It
+      # informs: whatever the tier, the step passes, and it fails only when
+      # GitHub's answers cannot be read.
+      - name: Risk tier
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          pull="$RUNNER_TEMP/pull.json"
+          files="$RUNNER_TEMP/files.json"
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$NUMBER" > "$pull"
+          gh api --paginate --slurp "repos/$GITHUB_REPOSITORY/pulls/$NUMBER/files" > "$files"
+
+          report="$(node tools/repo-checks/src/pull-request-tier-cli.ts "$NUMBER" "$pull" "$files")"
+          printf '%s\n' "$report" >> "$GITHUB_STEP_SUMMARY"
+          printf '::notice title=Risk tier::%s\n' "$(printf '%s\n' "$report" | head -n 1 | sed 's/^### //')"
