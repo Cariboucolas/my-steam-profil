@@ -1,6 +1,11 @@
 import { appendFileSync, readFileSync } from "node:fs";
 
-import { pullRequestReport, readPullRequest, workflowOutputs } from "./pull-request.ts";
+import {
+  pullRequestReport,
+  readComparedPullRequest,
+  readPullRequest,
+  workflowOutputs,
+} from "./pull-request.ts";
 
 /**
  * Prints, as Markdown, the risk tier of a pull request and who merges it, from
@@ -9,9 +14,13 @@ import { pullRequestReport, readPullRequest, workflowOutputs } from "./pull-requ
  * from `main`, where nothing of the pull request is checked out. Under Actions
  * it also writes the tier, who merges and the head SHA as step outputs.
  *
- * Usage: node pull-request-tier-cli.ts <number> <pull.json> <files.json>
+ * Usage: node pull-request-tier-cli.ts <number> <pull.json> <files.json> [--comparison]
+ *
+ * With `--comparison`, the files are a comparison of the base with one commit
+ * rather than the pull request's own list, which follows its head: what
+ * `merge-tier-0.yml` merges is the commit it classified (ADR-0030).
  */
-const [number, pullFile, filesFile] = process.argv.slice(2);
+const [number, pullFile, filesFile, mode] = process.argv.slice(2);
 
 if (!number || !pullFile || !filesFile) {
   console.error("Usage: node pull-request-tier-cli.ts <number> <pull.json> <files.json>");
@@ -20,7 +29,8 @@ if (!number || !pullFile || !filesFile) {
 
 const json = (file: string): unknown => JSON.parse(readFileSync(file, "utf8"));
 
-const facts = readPullRequest(json(pullFile), json(filesFile));
+const read = mode === "--comparison" ? readComparedPullRequest : readPullRequest;
+const facts = read(json(pullFile), json(filesFile));
 const report = pullRequestReport(facts, Number(number));
 
 console.log(report.markdown);

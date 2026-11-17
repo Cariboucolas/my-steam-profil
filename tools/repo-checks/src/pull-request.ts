@@ -61,11 +61,33 @@ export const readPullRequest = (pull: unknown, pages: unknown): PullRequestFacts
   if (!Array.isArray(pages) || !pages.every(Array.isArray)) {
     return unreadable("the files are not a list of pages");
   }
-  const files: readonly unknown[] = pages.flat();
-  if (!isFields(pull)) return unreadable("the pull request is not an object");
-
-  const changed = pull.changed_files;
+  const changed = isFields(pull) ? pull.changed_files : undefined;
   if (typeof changed !== "number") return unreadable("changed_files is not a number");
+  return readWithFiles(pull, pages.flat(), changed);
+};
+
+/** GitHub lists this many files of a comparison at most, on its first page only. */
+const COMPARISON_MOST_FILES = 300;
+
+/**
+ * `comparison` is `GET /repos/{owner}/{repo}/compare/{base}...{head}` with both
+ * ends as SHAs: the files of that commit, which no later push can change,
+ * where the pull request's own list follows its head. A comparison listing as
+ * many files as GitHub lists at most may have lost some: it counts one more.
+ */
+export const readComparedPullRequest = (pull: unknown, comparison: unknown): PullRequestFacts => {
+  const files = isFields(comparison) ? comparison.files : undefined;
+  if (!Array.isArray(files)) return unreadable("the comparison lists no files");
+  const changed = files.length >= COMPARISON_MOST_FILES ? files.length + 1 : files.length;
+  return readWithFiles(pull, files, changed);
+};
+
+const readWithFiles = (
+  pull: unknown,
+  files: readonly unknown[],
+  changed: number,
+): PullRequestFacts => {
+  if (!isFields(pull)) return unreadable("the pull request is not an object");
 
   const base = stringAt(isFields(pull.base) ? pull.base.repo : undefined, "full_name", "the base");
   const headSha = stringAt(pull.head, "sha", "the head SHA");
