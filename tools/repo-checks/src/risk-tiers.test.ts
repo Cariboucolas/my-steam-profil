@@ -47,6 +47,20 @@ describe("riskTier", () => {
     ).toEqual([2, 2]);
   });
 
+  /**
+   * What a Dependabot pull request touches: its CI runs without the
+   * repository's secrets, so the owner must read it (ADR-0031).
+   */
+  it.each([
+    [["pnpm-lock.yaml", "package.json"]],
+    [["pnpm-lock.yaml", "packages/domain/package.json"]],
+    [["pnpm-lock.yaml", "apps/api/package.json", "tools/repo-checks/package.json"]],
+    [[".github/workflows/ci.yml", ".github/workflows/deploy.yml"]],
+    [[".github/dependabot.yml"]],
+  ])("reads a dependency update as tier 2: %j", (paths) => {
+    expect(riskTier(paths).tier).toBe(2);
+  });
+
   it("reads nothing changed as tier 0", () => {
     expect(riskTier([])).toEqual({ tier: 0, paths: [] });
   });
