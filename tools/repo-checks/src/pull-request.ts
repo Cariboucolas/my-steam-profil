@@ -1,5 +1,5 @@
 import { riskTier, type Tier } from "./risk-tiers.ts";
-import { tierReport } from "./tier-report.ts";
+import { quoted, tierReport } from "./tier-report.ts";
 
 /**
  * What the risk tier and the merge decision of a pull request are read from:
@@ -14,14 +14,22 @@ export type PullRequestFacts = {
   readonly changed: number;
   readonly fromFork: boolean;
   readonly author: string;
+  readonly draft: boolean;
+  /** The commit the facts describe: a merge decided on it is pinned to it. */
+  readonly headSha: string;
+  /** The branch it would merge into. */
+  readonly baseRef: string;
 };
 
 export type MergeDecision = { readonly merger: "owner" | "automation"; readonly reason: string };
 
 const DEPENDABOT = "dependabot[bot]";
+const MAIN = "main";
 
-/** No tier merges automatically yet: the owner merges every pull request. */
-const NO_TIER: readonly Tier[] = [];
+/** Tier 0 alone; tier 1 waits on the AI reviewer's assessment (ADR-0030). */
+const AUTOMATIC_TIERS: readonly Tier[] = [0];
+
+const COMMIT_SHA = /^[0-9a-f]{40}$/;
 
 type Fields = Record<string, unknown>;
 
@@ -60,6 +68,9 @@ export const readPullRequest = (pull: unknown, pages: unknown): PullRequestFacts
   if (typeof changed !== "number") return unreadable("changed_files is not a number");
 
   const base = stringAt(isFields(pull.base) ? pull.base.repo : undefined, "full_name", "the base");
+  const headSha = stringAt(pull.head, "sha", "the head SHA");
+  if (!COMMIT_SHA.test(headSha)) return unreadable("the head SHA is not a commit SHA");
+  if (typeof pull.draft !== "boolean") return unreadable("draft is not a boolean");
   const headRepo = isFields(pull.head) ? pull.head.repo : undefined;
   // A fork deleted after its pull request opened leaves a head with no repository.
   const head = headRepo === null ? null : stringAt(headRepo, "full_name", "the head");
@@ -70,18 +81,21 @@ export const readPullRequest = (pull: unknown, pages: unknown): PullRequestFacts
     changed,
     fromFork: head !== base,
     author: stringAt(pull.user, "login", "the user's login"),
+    draft: pull.draft,
+    headSha,
+    baseRef: stringAt(pull.base, "ref", "the base ref"),
   };
 };
 
 /**
  * Who merges: the owner, unless the tier is one that merges automatically and
- * the pull request comes from this repository. A fork's or Dependabot's never
- * merges automatically, whatever its tier.
+ * the pull request comes from this repository, targets main and is not a draft. A fork's or
+ * Dependabot's never merges automatically, whatever its tier.
  */
 export const mergeDecision = (
   tier: Tier,
   facts: PullRequestFacts,
-  automaticTiers: readonly Tier[] = NO_TIER,
+  automaticTiers: readonly Tier[] = AUTOMATIC_TIERS,
 ): MergeDecision => {
   if (facts.fromFork) {
     return { merger: "owner", reason: "it comes from a fork, which is never merged automatically" };
@@ -92,6 +106,10 @@ export const mergeDecision = (
       reason: "it comes from Dependabot, which is never merged automatically",
     };
   }
+  if (facts.baseRef !== MAIN) {
+    return { merger: "owner", reason: `it targets \`${quoted(facts.baseRef)}\`, not ${MAIN}` };
+  }
+  if (facts.draft) return { merger: "owner", reason: "it is a draft" };
   return automaticTiers.includes(tier)
     ? { merger: "automation", reason: `tier ${tier} merges automatically once verify passes` }
     : { merger: "owner", reason: `tier ${tier} is merged by the owner` };
@@ -108,7 +126,7 @@ const MERGERS = { owner: "Merged by the owner", automation: "Merged automaticall
 export const pullRequestReport = (
   facts: PullRequestFacts,
   number: number,
-  automaticTiers: readonly Tier[] = NO_TIER,
+  automaticTiers: readonly Tier[] = AUTOMATIC_TIERS,
 ): PullRequestReport => {
   const complete = facts.listed >= facts.changed;
   const computed = riskTier(facts.paths);
@@ -124,3 +142,10 @@ export const pullRequestReport = (
     markdown: `${tierLines}\n\n${MERGERS[decision.merger]}: ${decision.reason}.`,
   };
 };
+
+/**
+ * The lines a workflow appends to `$GITHUB_OUTPUT`: every value is a digit, a
+ * word of this file or a checked SHA, never the pull request's text.
+ */
+export const workflowOutputs = (report: PullRequestReport, facts: PullRequestFacts): string =>
+  `tier=${report.tier}\nmerger=${report.merger}\nhead=${facts.headSha}\n`;
