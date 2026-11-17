@@ -21,10 +21,11 @@ on a phone.
 You will need a **SteamID64**: seventeen digits, from a public profile. The app asks for one on
 first launch and remembers it afterwards.
 
-**On Android**, builds are published over the air to an EAS `preview` channel, but there is no
-downloadable APK yet — building one is still a manual step
-([#115](https://github.com/Cariboucolas/my-steam-profil/issues/115)). Until then the browser is
-the way in. iOS on a real device is out of scope: it needs the Apple Developer Program.
+**On Android**, builds are published over the air to an EAS `preview` channel. When a merge
+changes something native, a workflow builds a new APK and posts its install link to a private
+channel ([#115](https://github.com/Cariboucolas/my-steam-profil/issues/115)); there is no public
+download, so the browser is the way in. iOS on a real device is out of scope: it needs the Apple
+Developer Program.
 
 ## What it shows
 
@@ -61,10 +62,7 @@ phone, the four endpoints, what to do when the phone cannot reach Metro — is i
 
 ## Roadmap
 
-- **Download an APK** rather than building one by hand — [#115](https://github.com/Cariboucolas/my-steam-profil/issues/115)
 - **Steam sign-in**, and an honest account of what it would and would not recover — [#97](https://github.com/Cariboucolas/my-steam-profil/issues/97)
-- **Forget a profile** from inside the app; the code exists and no screen reaches it — [#113](https://github.com/Cariboucolas/my-steam-profil/issues/113)
-- **Know whether the deployed site is used at all** — [#121](https://github.com/Cariboucolas/my-steam-profil/issues/121)
 
 ## The rest
 
