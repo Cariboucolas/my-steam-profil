@@ -57,12 +57,15 @@ permissions (`actions: write`) for a deployment that changes nothing. A token of
 account would start them, at the cost of a secret; that belongs to the decision on the agents'
 GitHub identity.
 
-## What has authority leaves tier 0
-`AGENTS.md` names `CONTEXT.md`, `docs/testing.md`, `docs/deployment.md` and
-`docs/development.md` as having authority over agents. In tier 0 they would now merge unread, so
-an agent could rewrite the rules other agents follow without the owner seeing it. They move to
-the guardrails of tier 2, and ADR-0028's table changes with them. `README.md` and the rest of
-`docs/**` stay in tier 0.
+## What AGENTS.md cites leaves tier 0
+An agent reads what `AGENTS.md` cites and follows it: `CONTEXT.md`, `docs/commands.md`,
+`docs/testing.md`, `docs/deployment.md` and `docs/development.md`. In tier 0 they would now
+merge unread, so an agent could rewrite the rules other agents follow without the owner seeing
+it. Every file `AGENTS.md` cites is tier 2. The test reads the list from `AGENTS.md`: its relative
+links and the Markdown files it names in backquotes, outside the risk tiers section. A document
+cited there with no rule that makes it tier 2 fails CI, so a new citation needs its rule in the
+same change. ADR-0028's table changes with it. `README.md` and the rest of `docs/**` stay in
+tier 0.
 
 ## What remains open
 - Who GitHub records as merging, and whether branch protection accepts the token's merge, are

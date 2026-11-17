@@ -21,14 +21,14 @@ const pull = (overrides: Record<string, unknown> = {}) => ({
 });
 
 /** `gh api --paginate --slurp` on the files of a pull request: one array per page. */
-const PAGES = [[{ filename: "README.md" }, { filename: "docs/commands.md" }]];
+const PAGES = [[{ filename: "README.md" }, { filename: "docs/stats-page.md" }]];
 
 describe("readPullRequest", () => {
   it("lists every changed path across pages", () => {
-    const pages = [[{ filename: "README.md" }], [{ filename: "docs/commands.md" }]];
+    const pages = [[{ filename: "README.md" }], [{ filename: "docs/stats-page.md" }]];
 
     expect(readPullRequest(pull(), pages)).toEqual({
-      paths: ["README.md", "docs/commands.md"],
+      paths: ["README.md", "docs/stats-page.md"],
       listed: 2,
       changed: 2,
       fromFork: false,
@@ -154,7 +154,7 @@ describe("pullRequestReport", () => {
       "Read against the risk tiers of AGENTS.md, from the files GitHub lists for pull request #206.",
       "",
       "- `README.md` — `README.md`",
-      "- `docs/commands.md` — `docs/**`",
+      "- `docs/stats-page.md` — `docs/**`",
       "",
       "Merged automatically: tier 0 merges automatically once verify passes.",
     ]);
