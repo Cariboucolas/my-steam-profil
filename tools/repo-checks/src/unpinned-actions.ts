@@ -17,7 +17,8 @@ const TRIGGERS = ["pull_request_target", "workflow_run"] as const;
 const TRUSTED = /^(?:actions\/|\.\/|docker:\/\/)/i;
 const PINNED = /@[0-9a-f]{40}$/;
 
-type Job = { readonly steps?: readonly { readonly uses?: string }[] };
+/** A job's `uses` calls a reusable workflow, which runs with the caller's rights. */
+type Job = { readonly uses?: string; readonly steps?: readonly { readonly uses?: string }[] };
 
 const startedByTrusted = (on: unknown): boolean =>
   TRIGGERS.some((trigger) => {
@@ -27,8 +28,7 @@ const startedByTrusted = (on: unknown): boolean =>
   });
 
 const unpinnedIn = (job: Job): readonly string[] =>
-  (job.steps ?? [])
-    .map((step) => step.uses)
+  [job.uses, ...(job.steps ?? []).map((step) => step.uses)]
     .filter((uses): uses is string => typeof uses === "string")
     .filter((uses) => !TRUSTED.test(uses) && !PINNED.test(uses));
 
