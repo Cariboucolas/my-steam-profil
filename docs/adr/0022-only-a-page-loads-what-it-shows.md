@@ -2,6 +2,9 @@
 
 > Amended by [ADR-0025](0025-the-cache-lives-above-the-routes-and-a-page-still-loads.md):
 > a page still loads, but what it loaded is kept above the routes, in one `QueryClient`.
+>
+> Amended by [ADR-0034](0034-a-template-may-pass-on-the-scroll-it-lays-out.md):
+> a template may also take the scroll and layout handlers of the container it lays out.
 
 The components follow the five levels of atomic design, and data is loaded at the last of them
 only. A page, under `src/components/pages/`, asks the `ApiClient` for what it shows and hands it
