@@ -17,7 +17,8 @@ Fix forward instead when the fix is one obvious line, when the merge moved the f
 phones already installed its APK, or when the revert itself conflicts with what came after.
 
 **Who decides**: the owner. An agent may propose a revert and prepare it, branch and pull request
-included, but the owner says go, and the owner merges it, whatever its tier (`AGENTS.md`).
+included, but the owner says go. The owner merges a revert of tier 1 or 2; a revert of tier 0
+merges itself once `verify` passes, like any tier 0 pull request (`AGENTS.md`, ADR-0030).
 
 ## What a revert republishes
 
