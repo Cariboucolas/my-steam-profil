@@ -23,6 +23,9 @@ gh release view --web                                    # the latest release
 curl -s "$(gh variable get API_URL)/health"
 ```
 
+To take a merge back out of production, revert it by pull request: [rollback.md](rollback.md)
+says when, how, how long it takes, and what it does not undo.
+
 ## Cloudflare Pages: the name is not the address
 
 The Pages project is called `steam-achievements`, but its address is
