@@ -44,7 +44,7 @@ test fails when the two disagree.
 - Guardrails: `AGENTS.md`, `**/AGENTS.md`, `**/CLAUDE.md`, `**/.claude/**`,
   `docs/agents/**`, `docs/adr/**`, `tools/repo-checks/**`, and every file this contract cites,
   directly or through a tier 2 document: `CONTEXT.md`, `docs/commands.md`, `docs/testing.md`,
-  `docs/deployment.md`, `docs/development.md`, `docs/images/README.md`,
+  `docs/deployment.md`, `docs/development.md`, `docs/rollback.md`, `docs/images/README.md`,
   `tools/steam-spike/FINDINGS.md` (a test fails when one it reaches is not tier 2)
 - CI and the gate: `.github/**`, `package.json` (root), `pnpm-lock.yaml`, `pnpm-workspace.yaml`,
   `.nvmrc`, `biome.jsonc`, `tsconfig.base.json`, `**/vitest.config.ts`,
