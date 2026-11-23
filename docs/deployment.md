@@ -37,9 +37,15 @@ mistake, and it costs a deployment.
 The component gallery (#75) is a second project, `steam-achievements-storybook`, so the app's
 bundle never carries Storybook. `deploy.yml` builds it in a job of its own, `gallery`, that waits
 on nothing — it serves fixtures, never the API — and holds nothing back when it fails. Every pull
-request gets a gallery preview beside the app's, in the same comment. Both workflows create the
-project the first time they find it missing, because Pages only offers to create one when a person
-is at the keyboard. The gallery states its Revision in the manager's title, under the app's rule
+request gets a gallery preview beside the app's, in the same comment. `deploy.yml` and
+`preview-deploy.yml` create the project the first time they find it missing, because Pages only
+offers to create one when a person is at the keyboard.
+
+A preview is built and deployed by two workflows (ADR-0035). `preview.yml` builds both bundles
+on the pull request, with no secret, and hands them over as an artifact; `preview-deploy.yml`,
+started by `workflow_run` as `main` has it, deploys them with the Cloudflare token and posts the
+links. So a Dependabot pull request, which gets no secret, has a preview too, and a change to
+`preview-deploy.yml` only shows once it is on `main`. The gallery states its Revision in the manager's title, under the app's rule
 (ADR-0016).
 
 ## Where the Steam API key lives

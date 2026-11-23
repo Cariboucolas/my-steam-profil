@@ -1,5 +1,8 @@
 # Dependency updates come weekly, grouped, and are read by the owner
 
+> Amended by [ADR-0035](0035-a-preview-is-built-by-the-pull-request-and-deployed-by-main.md): a
+> Dependabot pull request gets a preview, built without a secret and deployed by `main`.
+
 Dependabot opens version updates once a week, on Monday morning, for the pnpm workspace and for
 the GitHub Actions the workflows use, configured in `.github/dependabot.yml`. Minor and patch
 updates are grouped: one pull request for the week's development dependencies, one for the
