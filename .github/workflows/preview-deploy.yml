@@ -1,0 +1,235 @@
+name: Preview deploy
+
+# Deploys the bundles preview.yml built for a pull request, and posts the links
+# where the reviewer reads (ADR-0035). workflow_run starts this when Preview
+# completes and runs it as main has it, with the Cloudflare token: the pull
+# request's code ran in Preview, without the token, and nothing of it runs here.
+# What crosses over is the artifact — static files, deployed and never executed
+# — and what the API says of the run. Like merge-tier-0.yml, this never checks
+# out, fetches or names the pull request's head; `pnpm check:workflows` refuses
+# a step that would.
+#
+# This is also how a Dependabot pull request gets a preview: on pull_request
+# GitHub gives it no Actions secret, so the build alone runs there.
+on:
+  workflow_run:
+    workflows: [Preview]
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  deploy:
+    name: deploy preview
+    # A cancelled build is one a newer push replaced; a failed one has nothing
+    # to show.
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Checkout reads main; the artifact is read through the Actions API; the
+    # comment writes to the pull request. No `contents: write`: a preview must
+    # not be able to move the repository.
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+
+    steps:
+      # Everything the deployment needs to know of the pull request comes from
+      # the API, never from the artifact, which the pull request's code wrote.
+      # A fork's pull request is never listed on the run, so it stops here, as
+      # does a run listing several, and a run whose commit is no longer the
+      # head: a newer push has its own build coming.
+      #
+      # The branch name ends up inside a command string, so it is checked
+      # against what a branch name may contain before it gets there. Git allows
+      # `;` and `&` in a ref. `main` is refused too: Pages serves the production
+      # branch as the live site, and a preview must never land there.
+      - name: Decide
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+
+          run="$RUNNER_TEMP/run.json"
+          gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" > "$run"
+          number="$(jq -r 'if (.pull_requests | length) == 1 then .pull_requests[0].number else "" end' "$run")"
+          built="$(jq -r '.head_sha' "$run")"
+          if ! [[ "$number" =~ ^[0-9]+$ && "$built" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "### No preview: the run names no single pull request of this repository" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          pull="$RUNNER_TEMP/pull.json"
+          gh api "repos/$GITHUB_REPOSITORY/pulls/$number" > "$pull"
+          state="$(jq -r '.state' "$pull")"
+          head="$(jq -r '.head.sha' "$pull")"
+          from="$(jq -r '.head.repo.full_name' "$pull")"
+          branch="$(jq -r '.head.ref' "$pull")"
+          if [[ "$state" != open || "$head" != "$built" || "$from" != "$GITHUB_REPOSITORY" ]]; then
+            echo "### No preview: #$number is closed, from another repository, or has moved past \`${built::7}\`" >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          case "$branch" in
+            *[!A-Za-z0-9._/-]* | "" | -* | main)
+              echo "::error::Refusing to deploy a preview for branch '$branch'"
+              exit 1
+              ;;
+          esac
+
+          printf 'number=%s\nsha=%s\nbranch=%s\n' "$number" "$built" "$branch" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v7
+        if: steps.decide.outputs.number
+        with:
+          persist-credentials: false
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+        if: steps.decide.outputs.number
+
+      - uses: actions/setup-node@v7
+        if: steps.decide.outputs.number
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      # main's lockfile: the wrangler that deploys is main's, not the pull
+      # request's.
+      - if: steps.decide.outputs.number
+        run: pnpm install --frozen-lockfile
+
+      # Outside the workspace, so no file of the artifact can stand in for one
+      # of main's that a later step reads.
+      - name: Fetch the bundles Preview built
+        if: steps.decide.outputs.number
+        uses: actions/download-artifact@v8
+        with:
+          name: preview
+          path: ${{ runner.temp }}/preview
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+
+      # Pages runs a `_worker.js` it finds in the deployed directory, and reads
+      # `_routes.json` to route to it: that would be the pull request's code
+      # running at Cloudflare, under this deployment. The bundles are static
+      # files; anything else is refused rather than deployed.
+      - name: Refuse anything Pages would run
+        if: steps.decide.outputs.number
+        env:
+          BUNDLES: ${{ runner.temp }}/preview
+        run: |
+          set -euo pipefail
+          test -d "$BUNDLES/dist" && test -d "$BUNDLES/storybook-static" || {
+            echo "::error::The artifact does not hold dist and storybook-static."
+            exit 1
+          }
+          found="$(find "$BUNDLES" \( -name _worker.js -o -name _routes.json -o -type l \) -print)"
+          if [[ -n "$found" ]]; then
+            echo "::error::The artifact holds files Pages would run or follow: $found"
+            exit 1
+          fi
+
+      # --branch is what makes this a preview rather than the live site: Pages
+      # treats anything other than the production branch as one, and gives it a
+      # URL of its own. --commit-hash because the checkout is main's: without
+      # it Pages would label the preview with main's commit. workingDirectory
+      # because wrangler is installed in the app, not at the workspace root.
+      - name: Deploy a preview to Pages
+        id: preview
+        if: steps.decide.outputs.number
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/mobile
+          packageManager: pnpm
+          command: >-
+            pages deploy ${{ runner.temp }}/preview/dist
+            --project-name=steam-achievements
+            --branch=${{ steps.decide.outputs.branch }}
+            --commit-hash=${{ steps.decide.outputs.sha }}
+
+      # Pages refuses to deploy to a project that does not exist, and only asks
+      # to create one when a person is at the keyboard.
+      - name: Make sure the gallery's Pages project exists
+        if: steps.decide.outputs.number
+        working-directory: apps/mobile
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          pnpm exec wrangler pages project list | grep -qF steam-achievements-storybook ||
+            pnpm exec wrangler pages project create steam-achievements-storybook --production-branch=main
+
+      - name: Deploy a preview of the gallery to Pages
+        id: gallery
+        if: steps.decide.outputs.number
+        uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: apps/mobile
+          packageManager: pnpm
+          command: >-
+            pages deploy ${{ runner.temp }}/preview/storybook-static
+            --project-name=steam-achievements-storybook
+            --branch=${{ steps.decide.outputs.branch }}
+            --commit-hash=${{ steps.decide.outputs.sha }}
+
+      # Read from the action rather than built from the branch name. Pages
+      # slugifies a branch and truncates it, so a name like
+      # `feat/library-offers-only-the-orders-steam-publishes` does not map to a
+      # URL anyone can predict — and a link that 404s is worse than no link.
+      #
+      # The alias is the per-branch address, stable across pushes, which is the
+      # one worth keeping in a comment; the deployment URL below it is pinned to
+      # this commit, for going back to what was reviewed. The alias is empty on
+      # a production-branch deploy, so the commit URL is the fallback.
+      - name: Post the preview where the reviewer will read it
+        if: steps.decide.outputs.number
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ steps.decide.outputs.number }}
+          ALIAS: ${{ steps.preview.outputs.pages-deployment-alias-url }}
+          COMMIT_URL: ${{ steps.preview.outputs.deployment-url }}
+          GALLERY_ALIAS: ${{ steps.gallery.outputs.pages-deployment-alias-url }}
+          GALLERY_COMMIT_URL: ${{ steps.gallery.outputs.deployment-url }}
+          SHA: ${{ steps.decide.outputs.sha }}
+        run: |
+          set -euo pipefail
+
+          # Both empty means the action stopped reporting what it reports
+          # today. Better a red job saying so than a comment with a link to
+          # nowhere, which a reviewer would read as the preview being broken.
+          test -n "${ALIAS:-}${COMMIT_URL:-}" || {
+            echo "::error::wrangler-action returned no deployment URL"
+            exit 1
+          }
+          test -n "${GALLERY_ALIAS:-}${GALLERY_COMMIT_URL:-}" || {
+            echo "::error::wrangler-action returned no deployment URL for the gallery"
+            exit 1
+          }
+
+          BODY="$RUNNER_TEMP/preview.md"
+          {
+            echo "| | |"
+            echo "|---|---|"
+            echo "| Preview | ${ALIAS:-$COMMIT_URL} |"
+            echo "| This commit | $COMMIT_URL |"
+            echo "| Gallery | ${GALLERY_ALIAS:-$GALLERY_COMMIT_URL} |"
+            echo
+            echo "Built against the production API. \`${SHA::7}\`."
+          } > "$BODY"
+
+          # Edited rather than added to: a pull request pushed to six times
+          # should carry one preview link, not six, and the last one is the only
+          # one worth reading. --create-if-none covers the first push. The
+          # repository is named because nothing is checked out of it as a
+          # remote gh would read.
+          gh pr comment "$PR" --repo "$GITHUB_REPOSITORY" --body-file "$BODY" --edit-last --create-if-none

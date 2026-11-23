@@ -2,6 +2,13 @@ name: Preview
 
 # Every pull request, so a change can be looked at before it is the live site.
 # Reviewing a UI change by reading a diff is reviewing the diff, not the change.
+#
+# This workflow only builds, and holds no secret (ADR-0035). It runs as the pull
+# request has it, so its code — and that of every dependency the pull request
+# installs — runs here: a Dependabot pull request gets no secret on this trigger
+# anyway, and no other one should give that code a deploy token. The bundles
+# leave as an artifact; preview-deploy.yml, started by workflow_run as main has
+# it, deploys them and posts the links.
 on: pull_request
 
 # One preview per pull request, and the one in flight IS cancelled — unlike a
@@ -11,50 +18,21 @@ concurrency:
   group: preview-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
-# Checkout reads; the comment writes to the pull request and nothing else. No
-# `contents: write` anywhere: a preview must not be able to move the repository.
+# Checkout reads, and nothing writes: the comment is preview-deploy.yml's.
 permissions:
   contents: read
-  pull-requests: write
 
 jobs:
   web:
     name: web
-    # Same-repository pull requests only. A fork's pull request gets no secrets,
-    # so it could never deploy anyway — but its branch name reaches the deploy
-    # command below, and a fork's branch name is written by whoever opened the
-    # pull request. Refusing the event outright is the only version of this with
-    # no attacker-controlled text in it at all.
+    # Same-repository pull requests only. preview-deploy.yml deploys none from
+    # a fork — GitHub lists no pull request on such a run — so building one
+    # would spend a runner on bundles nobody gets to see.
     if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
-      # The branch name ends up inside a command string, so it is checked
-      # against what a branch name may contain before it gets there rather than
-      # trusted. Git allows `;` and `&` in a ref, and the job above is the only
-      # reason this one is not reachable by someone who picks the name — two
-      # guards, because either alone would be the whole of the protection.
-      #
-      # Through the environment, never interpolated into the script: `${{ }}` is
-      # substituted before the shell reads the line, so a quote in the value
-      # would end the string rather than sit inside it.
-      - name: Check the branch name before it reaches a command
-        id: branch
-        env:
-          HEAD_REF: ${{ github.head_ref }}
-        run: |
-          set -euo pipefail
-
-          case "$HEAD_REF" in
-            *[!A-Za-z0-9._/-]* | "" | -*)
-              echo "::error::Refusing to deploy a preview for branch '$HEAD_REF'"
-              exit 1
-              ;;
-          esac
-
-          printf 'name=%s\n' "$HEAD_REF" >> "$GITHUB_OUTPUT"
-
       - uses: actions/checkout@v7
 
       - uses: pnpm/action-setup@v6
@@ -100,28 +78,9 @@ jobs:
           # because it is not the live site (ADR-0016).
           EXPO_PUBLIC_COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
 
-      # --branch is what makes this a preview rather than the live site: Pages
-      # treats anything other than the production branch as one, and gives it a
-      # URL of its own. workingDirectory for the same reason as the deployment —
-      # wrangler is installed in the app, not at the workspace root.
-      - name: Deploy a preview to Pages
-        id: preview
-        uses: cloudflare/wrangler-action@v4
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: apps/mobile
-          packageManager: pnpm
-          command: >-
-            pages deploy dist
-            --project-name=steam-achievements
-            --branch=${{ steps.branch.outputs.name }}
-
-      # The component gallery for the same commit (#75), in its own Pages
-      # project so the app's bundle never carries Storybook. In this job rather
-      # than one of its own, so its link lands in the one comment below instead
-      # of two jobs racing to edit it. A preview states `dev` and its commit,
-      # as the app's preview does (ADR-0016).
+      # The component gallery for the same commit (#75), deployed to its own
+      # Pages project so the app's bundle never carries Storybook. A preview
+      # states `dev` and its commit, as the app's preview does (ADR-0016).
       - name: Build the gallery
         run: pnpm --filter @steam/mobile build:storybook
         env:
@@ -137,76 +96,15 @@ jobs:
             exit 1
           fi
 
-      # Pages refuses to deploy to a project that does not exist, and only asks
-      # to create one when a person is at the keyboard.
-      - name: Make sure the gallery's Pages project exists
-        working-directory: apps/mobile
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-        run: |
-          set -euo pipefail
-          pnpm exec wrangler pages project list | grep -qF steam-achievements-storybook ||
-            pnpm exec wrangler pages project create steam-achievements-storybook --production-branch=main
-
-      - name: Deploy a preview of the gallery to Pages
-        id: gallery
-        uses: cloudflare/wrangler-action@v4
+      # Data for preview-deploy.yml, which reads nothing else of this run: it
+      # deploys these files and runs none of them. Hidden files stay out, as
+      # upload-artifact leaves them by default.
+      - name: Hand the bundles to the deployment
+        uses: actions/upload-artifact@v7
         with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          workingDirectory: apps/mobile
-          packageManager: pnpm
-          command: >-
-            pages deploy storybook-static
-            --project-name=steam-achievements-storybook
-            --branch=${{ steps.branch.outputs.name }}
-
-      # Read from the action rather than built from the branch name. Pages
-      # slugifies a branch and truncates it, so a name like
-      # `feat/library-offers-only-the-orders-steam-publishes` does not map to a
-      # URL anyone can predict — and a link that 404s is worse than no link.
-      #
-      # The alias is the per-branch address, stable across pushes, which is the
-      # one worth keeping in a comment; the deployment URL below it is pinned to
-      # this commit, for going back to what was reviewed. The alias is empty on
-      # a production-branch deploy, so the commit URL is the fallback.
-      - name: Post the preview where the reviewer will read it
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ github.event.pull_request.number }}
-          ALIAS: ${{ steps.preview.outputs.pages-deployment-alias-url }}
-          COMMIT_URL: ${{ steps.preview.outputs.deployment-url }}
-          GALLERY_ALIAS: ${{ steps.gallery.outputs.pages-deployment-alias-url }}
-          GALLERY_COMMIT_URL: ${{ steps.gallery.outputs.deployment-url }}
-          SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-
-          # Both empty means the action stopped reporting what it reports
-          # today. Better a red job saying so than a comment with a link to
-          # nowhere, which a reviewer would read as the preview being broken.
-          test -n "${ALIAS:-}${COMMIT_URL:-}" || {
-            echo "::error::wrangler-action returned no deployment URL"
-            exit 1
-          }
-          test -n "${GALLERY_ALIAS:-}${GALLERY_COMMIT_URL:-}" || {
-            echo "::error::wrangler-action returned no deployment URL for the gallery"
-            exit 1
-          }
-
-          BODY="$RUNNER_TEMP/preview.md"
-          {
-            echo "| | |"
-            echo "|---|---|"
-            echo "| Preview | ${ALIAS:-$COMMIT_URL} |"
-            echo "| This commit | $COMMIT_URL |"
-            echo "| Gallery | ${GALLERY_ALIAS:-$GALLERY_COMMIT_URL} |"
-            echo
-            echo "Built against the production API. \`${SHA::7}\`."
-          } > "$BODY"
-
-          # Edited rather than added to: a pull request pushed to six times
-          # should carry one preview link, not six, and the last one is the only
-          # one worth reading. --create-if-none covers the first push.
-          gh pr comment "$PR" --body-file "$BODY" --edit-last --create-if-none
+          name: preview
+          path: |
+            apps/mobile/dist
+            apps/mobile/storybook-static
+          if-no-files-found: error
+          retention-days: 3
