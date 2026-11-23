@@ -37,6 +37,22 @@ jobs:
       pull-requests: write
 
     steps:
+      # GitHub documents its Dependabot restrictions for push, pull_request and
+      # the review events, and names none for workflow_run. Should it withhold
+      # the Actions secrets here too after a Dependabot build, the run says so
+      # and stops green, rather than turning every Dependabot pull request red
+      # again for a preview it cannot make.
+      - name: Check that the deploy token reached this run
+        id: token
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          if [[ -n "$CLOUDFLARE_API_TOKEN" ]]; then
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "### No preview: CLOUDFLARE_API_TOKEN did not reach this run" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       # Everything the deployment needs to know of the pull request comes from
       # the API, never from the artifact, which the pull request's code wrote.
       # A fork's pull request is never listed on the run, so it stops here, as
@@ -49,6 +65,7 @@ jobs:
       # branch as the live site, and a preview must never land there.
       - name: Decide
         id: decide
+        if: steps.token.outputs.present
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ github.event.workflow_run.id }}
