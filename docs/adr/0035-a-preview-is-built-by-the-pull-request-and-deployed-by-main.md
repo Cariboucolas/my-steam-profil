@@ -54,9 +54,11 @@ installs) never meets the token, and the token never meets anything but static f
   `preview-deploy.yml` gets no preview, and the split is only proven by the first pull request
   after the merge, then by the first Dependabot one.
 - GitHub documents its Dependabot restrictions for `pull_request` and the other events a
-  Dependabot pull request triggers; it lists no such restriction for `workflow_run`. That the
-  deploying run gets the token after a Dependabot build is inferred from that silence, and
-  observed only once it happens.
+  Dependabot pull request triggers (`push`, `pull_request` and the review events); it lists no
+  such restriction for `workflow_run`. That the deploying run gets the token after a Dependabot
+  build is inferred from that silence, and observed only once it happens. If it does not, the
+  run finds the token empty, says so in its summary and stops green: no preview, and no red
+  check either.
 - Two builds of the same pull request that both succeed can deploy in the wrong order: the newer
   push usually cancels the older build, and the deployment checks the head when it decides, but a
   slow deployment of the older commit can still finish last. The next push corrects it.
