@@ -9,6 +9,7 @@ without the owner once `verify` has passed on its head. `merge-tier-0.yml` does 
 follow once the AI reviewer's observation period has been assessed.
 
 ## What it amends
+
 [ADR-0029](0029-a-pull-request-is-classified-by-main-not-by-itself.md) said no tier merged
 automatically yet. Tier 0 now does. The rest of 0029 holds, and binds this workflow too: it runs
 as `main` has it, and never checks out, fetches or runs the pull request's code.
@@ -16,11 +17,13 @@ as `main` has it, and never checks out, fetches or runs the pull request's code.
 holds nothing back, but it now lets tier 0 through.
 
 ## Why
+
 A pull request that changes prose outside the guardrails cannot change what is built, deployed,
 checked or decided; reading it before merge costs the owner more than a mistake in it would.
 The owner's attention goes to tiers 1 and 2.
 
 ## How
+
 - `workflow_run` on the `CI` workflow, `completed`, when the run's event is `pull_request` and
   its conclusion `success`. CI's runs called from `main`'s publishing workflows are named after
   their caller, so they never start this one.
@@ -46,10 +49,12 @@ The owner's attention goes to tiers 1 and 2.
   `pull_requests`): the workflow reaches them through the API, by the run's id.
 
 ## What it costs: no deployment
+
 GitHub's documentation: "events triggered by the `GITHUB_TOKEN` will not create a new workflow
 run", `workflow_dispatch` and `repository_dispatch` aside. A merge made with the workflow's token
 therefore starts neither `deploy.yml`, nor `eas-update.yml`, nor `eas-build.yml`. That is
 accepted rather than worked around:
+
 - tier 0 paths feed nothing that is built, so what is live is what `main` would deploy;
 - the deployed revision (ADR-0016) lags behind `main` by those commits until the owner's next
   merge, whose workflows run CI on `main` first and deploy everything;
@@ -61,6 +66,7 @@ account would start them, at the cost of a secret; that belongs to the decision 
 GitHub identity.
 
 ## What AGENTS.md cites leaves tier 0
+
 An agent reads what `AGENTS.md` cites and follows it: `CONTEXT.md`, `docs/commands.md`,
 `docs/testing.md`, `docs/deployment.md` and `docs/development.md`. In tier 0 they would now
 merge unread, so an agent could rewrite the rules other agents follow without the owner seeing
@@ -71,6 +77,7 @@ same change. ADR-0028's table changes with it. `README.md` and the rest of `docs
 tier 0.
 
 ## What remains open
+
 - Who GitHub records as merging, and whether branch protection accepts the token's merge, are
   not stated by its documentation: the first tier 0 pull request after the merge shows it.
 - Native auto-merge was not used: it needs the repository's "Allow auto-merge" setting, which

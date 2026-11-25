@@ -9,16 +9,16 @@ re-exported one at a time.
 All of them come from the SVGs one level up, and `pnpm icons:build` rewrites
 them. `tools/icon-build/src/recipes.ts` says which source each one uses.
 
-| File | Source | What asks for it |
-| --- | --- | --- |
-| `play-store-512.png` | `icon-square.svg` | the Google Play listing: square and opaque, Play applies its own mask |
-| `icon-512.png` | `icon.svg` | the icon shown as-is, rounded corners included |
-| `icon-inverted-512.png` | `icon-inverted.svg` | the flat variant, for a light background |
-| `icon-192.png` | `icon.svg` | the web app manifest |
-| `icon-180.png` | `icon.svg` | `apple-touch-icon` |
-| `icon-64.png`, `icon-48.png`, `icon-32.png`, `icon-16.png` | `icon.svg` | browser favicons |
-| `adaptive-foreground-432.png` | `adaptive-foreground.svg` | the Android adaptive layer at its 108dp minimum |
-| `adaptive-background-432.png` | `adaptive-background.svg` | the same, for the layer behind it |
+| File                                                       | Source                    | What asks for it                                                      |
+| ---------------------------------------------------------- | ------------------------- | --------------------------------------------------------------------- |
+| `play-store-512.png`                                       | `icon-square.svg`         | the Google Play listing: square and opaque, Play applies its own mask |
+| `icon-512.png`                                             | `icon.svg`                | the icon shown as-is, rounded corners included                        |
+| `icon-inverted-512.png`                                    | `icon-inverted.svg`       | the flat variant, for a light background                              |
+| `icon-192.png`                                             | `icon.svg`                | the web app manifest                                                  |
+| `icon-180.png`                                             | `icon.svg`                | `apple-touch-icon`                                                    |
+| `icon-64.png`, `icon-48.png`, `icon-32.png`, `icon-16.png` | `icon.svg`                | browser favicons                                                      |
+| `adaptive-foreground-432.png`                              | `adaptive-foreground.svg` | the Android adaptive layer at its 108dp minimum                       |
+| `adaptive-background-432.png`                              | `adaptive-background.svg` | the same, for the layer behind it                                     |
 
 Two things are easy to get wrong and are already decided:
 

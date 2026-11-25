@@ -13,11 +13,11 @@ will face the same choice, and the reasoning is the part worth keeping.
 The headline offers three forms of the same number, most informative first, and draws the first
 one that fits:
 
-| | form | `45 500` | `123 400` |
-|---|---|---|---|
-| A | in full, grouped | `45 500` | `123 400` |
-| B | one decimal, with a unit | `45.5K` | `123.4K` |
-| C | no decimal, with a unit | `45K` | `123K` |
+|     | form                     | `45 500` | `123 400` |
+| --- | ------------------------ | -------- | --------- |
+| A   | in full, grouped         | `45 500` | `123 400` |
+| B   | one decimal, with a unit | `45.5K`  | `123.4K`  |
+| C   | no decimal, with a unit  | `45K`    | `123K`    |
 
 So the same player sees `45.5K` on a 375 px phone and `45 500` on a 430 px one. The figure's form
 is a property of the screen, not of the number.

@@ -29,7 +29,7 @@ The identifier is not incidental context here; it is the input.
 
 **What the README protects is a different thing, and this does not touch it.** `deploy.yml` forces
 `EXPO_PUBLIC_STEAM_ID` to empty so that no personal profile is baked into a public artefact and the
-deployed app asks instead. That is about what a *build* contains, not about what a *report*
+deployed app asks instead. That is about what a _build_ contains, not about what a _report_
 transmits. ADR-0001, the other document usually cited here, is about the API key and says nothing
 about SteamIDs. Neither is amended by this; both were read as forbidding something they never
 mentioned.
@@ -37,8 +37,8 @@ mentioned.
 **An IP address is of another kind, and buys nothing.** It identifies whoever is holding the phone
 rather than what they asked for, it is not published anywhere, and it has never helped reproduce a
 failure in this app. `sendDefaultPii` stays off — a decision, not an inherited default — and that
-is what makes the rule say something: *what identifies the request, not what identifies the
-reader*. A rule that admitted everything would be indistinguishable from having no rule.
+is what makes the rule say something: _what identifies the request, not what identifies the
+reader_. A rule that admitted everything would be indistinguishable from having no rule.
 
 **One line is what makes it checkable.** The alternative to a rule is a list of scrubbers, and a
 list has to be maintained against a schema nobody here controls: a new SDK integration attaches a
@@ -47,8 +47,8 @@ change can ask it of a new field and get an answer.
 
 ## What this does not say
 
-**It does not say a SteamID is harmless forever.** It says it is public *while the app asks for
-one and trusts the answer*. Steam's official OpenID sign-in would change its nature: the identifier
+**It does not say a SteamID is harmless forever.** It says it is public _while the app asks for
+one and trusts the answer_. Steam's official OpenID sign-in would change its nature: the identifier
 would stop being a string somebody typed and become the subject of an authenticated session, tied
 to a person who logged in rather than to a profile someone looked up. On the day that lands, this
 ADR is reopened, not extended by analogy.
@@ -90,7 +90,7 @@ an organisation that is not there. A choice that cannot be changed later without
 organisation, and the right default for a decision about what leaves the device.
 
 **The DSN is public, and that is the intended shape.** A client DSN ships inside the bundle by
-construction; it accepts events and reads nothing. It therefore lives in a repository *variable*,
+construction; it accepts events and reads nothing. It therefore lives in a repository _variable_,
 `EXPO_PUBLIC_SENTRY_DSN`, beside `API_URL` — not in a secret, which would imply a confidentiality
 it does not have. Emptying that variable disables reporting without touching code, the way
 `EAS_ENABLED` stops updates: one switch, no revert.

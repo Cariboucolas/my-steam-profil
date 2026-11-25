@@ -39,7 +39,7 @@ the full list filtered by unlocked or locked, each with its date.
 ## What it does not do
 
 - **There is no sign-in.** That is the point, and it is also the limit: the app sees exactly what
-  an anonymous visitor to the Steam profile sees. Signing in with Steam would say *whose* profile
+  an anonymous visitor to the Steam profile sees. Signing in with Steam would say _whose_ profile
   it is — it would not unlock anything Steam withholds
   ([#97](https://github.com/Cariboucolas/my-steam-profil/issues/97)).
 - **A private profile shows nothing.** The API answers 403 and the app says so rather than
@@ -66,14 +66,14 @@ phone, the four endpoints, what to do when the phone cannot reach Metro — is i
 
 ## The rest
 
-| | |
-| --- | --- |
-| [docs/commands.md](docs/commands.md) | Every command you can run by hand, what each is for, and which ones nobody runs for you |
-| [docs/development.md](docs/development.md) | Run it locally: backend, app, a real phone over USB, the network troubleshooting |
-| [docs/deployment.md](docs/deployment.md) | Pages, Workers, EAS Update, the switches, where the API key lives |
-| [docs/testing.md](docs/testing.md) | The commands CI runs and the `verify` gate |
-| [docs/adr/](docs/adr/) | The decisions, and what each one rejected |
-| [CONTEXT.md](CONTEXT.md) | The domain vocabulary the code uses |
+|                                            |                                                                                         |
+| ------------------------------------------ | --------------------------------------------------------------------------------------- |
+| [docs/commands.md](docs/commands.md)       | Every command you can run by hand, what each is for, and which ones nobody runs for you |
+| [docs/development.md](docs/development.md) | Run it locally: backend, app, a real phone over USB, the network troubleshooting        |
+| [docs/deployment.md](docs/deployment.md)   | Pages, Workers, EAS Update, the switches, where the API key lives                       |
+| [docs/testing.md](docs/testing.md)         | The commands CI runs and the `verify` gate                                              |
+| [docs/adr/](docs/adr/)                     | The decisions, and what each one rejected                                               |
+| [CONTEXT.md](CONTEXT.md)                   | The domain vocabulary the code uses                                                     |
 
 Expo / React Native / TypeScript, hexagonal architecture, pnpm monorepo. The design notes live in
 `docs/superpowers/`, which is local and not in the repository.

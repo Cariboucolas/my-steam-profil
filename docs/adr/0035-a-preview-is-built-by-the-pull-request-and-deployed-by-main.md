@@ -7,6 +7,7 @@ deploys those bundles to Cloudflare Pages with the token and posts the links. Th
 code runs where there is no token, and the token is used where none of that code runs.
 
 ## What it amends
+
 [ADR-0031](0031-dependency-updates-come-weekly-grouped-and-read-by-the-owner.md) made `verify`
 the only automatic judge of a Dependabot pull request. Its preview job ran and failed on every one
 of them: on `pull_request`, GitHub passes no Actions secret to a run Dependabot triggered, so
@@ -14,10 +15,12 @@ of them: on `pull_request`, GitHub passes no Actions secret to a run Dependabot 
 preview, as any other does. `verify` stays the only required check.
 
 ## Why
+
 A preview shows what CI does not: a page that builds green and draws wrong. That matters most for
 an update of the libraries the app runs on, which is what Dependabot opens every week.
 
 Two ways to give that run the token were ruled out:
+
 - Storing `CLOUDFLARE_API_TOKEN` as a Dependabot secret. The build installs the updated
   dependencies and runs their code; the run that holds the token would be the one a compromised
   release reaches first. GitHub withholds the secrets for exactly that reason.
@@ -28,6 +31,7 @@ Splitting the two keeps each side's rights apart: the code of the pull request (
 installs) never meets the token, and the token never meets anything but static files.
 
 ## What it binds
+
 - `preview.yml`: `pull_request`, `contents: read` only, same-repository pull requests, one run per
   pull request with a newer push cancelling the older. It builds both bundles as before and
   uploads `dist` and `storybook-static` as the artifact `preview`, kept three days. It no longer
@@ -50,6 +54,7 @@ installs) never meets the token, and the token never meets anything but static f
 - Like `preview.yml` before it, it publishes a preview, never `main`: ADR-0027 does not govern it.
 
 ## What remains open
+
 - `workflow_run` runs the workflow as the default branch has it: the pull request that introduces
   `preview-deploy.yml` gets no preview, and the split is only proven by the first pull request
   after the merge, then by the first Dependabot one.

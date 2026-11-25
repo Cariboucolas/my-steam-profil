@@ -11,6 +11,7 @@ touches through GitHub's API. `pnpm check:workflows` refuses any `pull_request_t
 that would reach the pull request's head.
 
 ## What it amends
+
 [ADR-0028](0028-a-risk-tier-is-computed-not-declared.md) computed the tier in the `Risk tier`
 step of `ci.yml`, with the base branch's classifier. It left one hole open: on `pull_request`,
 GitHub runs the pull request's own `ci.yml`, so a pull request could rewrite the step and show
@@ -20,14 +21,16 @@ computes its own tier. Everything else 0028 binds holds: paths only, the highest
 path no tier lists is tier 2, both names of a rename count.
 
 ## Why
+
 A tier that will one day decide whether a pull request merges without the owner must come from
 code the pull request cannot edit. `pull_request_target` is GitHub's trigger for that: "This
-event runs in the context of the default branch of the base repository" (GitHub, *Events that
-trigger workflows*). The price is GitHub's own warning: the same trigger runs with the base's
+event runs in the context of the default branch of the base repository" (GitHub, _Events that
+trigger workflows_). The price is GitHub's own warning: the same trigger runs with the base's
 token, and running a pull request's code there may grant "unintended access to write privileges
 or secrets". So the workflow reads data only, and a check keeps it that way.
 
 ## What it binds
+
 - `risk-tier.yml` runs on `opened`, `synchronize`, `reopened` and `ready_for_review`, with
   `contents: read` and `pull-requests: read`, one run per pull request at a time.
 - It checks out `main` (the trigger's default) with `persist-credentials: false`, sets up the
@@ -54,6 +57,7 @@ or secrets". So the workflow reads data only, and a check keeps it that way.
   with the workflow.
 
 ## What remains open
+
 - The check reads a workflow's text; it does not prove a workflow safe. A step that downloads
   the head by a route it does not list, or a script in `main` that does, would pass. What covers
   that is the tier: such a change is tier 2.

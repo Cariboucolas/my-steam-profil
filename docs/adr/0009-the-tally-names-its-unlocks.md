@@ -16,7 +16,7 @@ seconds and nothing else.
 
 A Rarity is published **per Achievement**, keyed by `apiName` (ADR-0008). A player's unlocks were
 carried as a bare list of instants. Crossing the two is what the rarest-unlocks ranking is — and
-there is nothing to cross on: an instant does not say *which* achievement fell on it, and Steam
+there is nothing to cross on: an instant does not say _which_ achievement fell on it, and Steam
 publishes no instants at all.
 
 The ranking cannot be moved to the backend to avoid this. ADR-0008 keeps rarity under an address
@@ -28,7 +28,7 @@ both sides of it.**
 ## The undated unlock stops being invisible
 
 ADR-0006 dropped an unlock Steam dates at the epoch — Steam saying it does not know when — and
-closed with *"`completion.unlocked` and `unlockedAt.length` are therefore allowed to disagree."*
+closed with _"`completion.unlocked` and `unlockedAt.length` are therefore allowed to disagree."_
 That was reasonable while the part existed for a calendar, which has no day to draw such an
 unlock on.
 
@@ -47,10 +47,10 @@ never received the entry — the same line, drawn one step later.
 Measured on the raw Steam responses in `fixtures/steam-raw/`, comparing the two shapes of the
 part alone:
 
-| game | unlocked | `unlockedAt` | `unlocks` | gzipped |
-|---|---|---|---|---|
-| 2066020 | 353 | 3 884 B | 19 474 B | 779 B → 2 922 B |
-| 25900, 978520, 2694490 | 0 | 2 B | 2 B | unchanged |
+| game                   | unlocked | `unlockedAt` | `unlocks` | gzipped         |
+| ---------------------- | -------- | ------------ | --------- | --------------- |
+| 2066020                | 353      | 3 884 B      | 19 474 B  | 779 B → 2 922 B |
+| 25900, 978520, 2694490 | 0        | 2 B          | 2 B       | unchanged       |
 
 Per unlock: **11 B becomes 55 B**, and about **2 B becomes 8 B** once compressed — an `apiName`
 repeats its shape on every entry, which is exactly what a compressor eats. A player with five

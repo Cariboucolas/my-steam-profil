@@ -3,6 +3,7 @@
 SteamID de test : `76561197979269357` — jeu : Halls of Torment (`2218750`), langue `&l=french`.
 
 ## GetPlayerSummaries (profil)
+
 - Chemin : `response.players[0]`
 - Champs utiles : `steamid` (string), `personaname`, `avatar` / `avatarmedium` / `avatarfull` (URLs complètes),
   `avatarhash`, `profileurl`, `communityvisibilitystate` (**3 = public**), `profilestate`,
@@ -12,6 +13,7 @@ SteamID de test : `76561197979269357` — jeu : Halls of Torment (`2218750`), la
   renvoie quand même `communityvisibilitystate: 3` ici. La seule vérité = la réponse de `GetPlayerAchievements` (403).
 
 ## GetOwnedGames (jeux)
+
 - Chemin : `response.games[]` ; total dans `response.game_count` (367 ici).
 - Champs : `appid` (number), `name`, `playtime_forever` (**minutes**), `img_icon_url` (**hash**, pas une URL),
   `has_community_visible_stats` (**boolean** — signal « ce jeu a des succès/stats »),
@@ -20,6 +22,7 @@ SteamID de test : `76561197979269357` — jeu : Halls of Torment (`2218750`), la
 - Pour le domaine `Game` (MVP) : `appid`, `name`, `playtime_forever`, `img_icon_url` (+ appid pour l'URL).
 
 ## GetSchemaForGame (définitions des succès — ce qui EXISTE)
+
 - Chemin : `game.availableGameStats.achievements[]` ; aussi `game.gameName`, `game.gameVersion`.
 - ⚠️ **`availableGameStats` contient DEUX tableaux** : `stats[]` (statistiques de jeu, à IGNORER)
   **et** `achievements[]` (les succès, à UTILISER). Attention à ne pas compter les `stats` comme des succès :
@@ -30,6 +33,7 @@ SteamID de test : `76561197979269357` — jeu : Halls of Torment (`2218750`), la
   **aucun `availableGameStats`**. C'est le marqueur fiable « ce jeu n'a pas de succès » côté schéma.
 
 ## GetPlayerAchievements (déblocages du joueur — ce que TU as)
+
 - Chemin : `playerstats.achievements[]` ; aussi `playerstats.steamID`, `playerstats.gameName`.
 - Champs par succès : `apiname` (**clé**), `achieved` (**0/1**), `unlocktime` (**epoch secondes**, 0 si verrouillé),
   `name`, `description` (localisés).
@@ -46,7 +50,9 @@ SteamID de test : `76561197979269357` — jeu : Halls of Torment (`2218750`), la
   → À distinguer du « jeu sans succès » : **403 privé** vs **400 sans-stats**, messages différents.
 
 ## GetGlobalAchievementPercentagesForApp (rareté — ce que TOUT LE MONDE a)
+
 _(mesuré le 2026-09-08, pas pendant le spike initial)_
+
 - Chemin : `achievementpercentages.achievements[]`. Paramètre : **`gameid`** (pas `appid` — seul appel à le nommer ainsi).
 - ⚠️ **Aucune clé API requise** : l'endpoint répond à `?gameid=` seul. C'est le seul appel du service dans ce cas.
 - ⚠️ **`percent` est une CHAÎNE**, pas un nombre : `{"name":"ReachExperienceLevel5","percent":"93.9"}`.
@@ -60,6 +66,7 @@ _(mesuré le 2026-09-08, pas pendant le spike initial)_
 - Poids : ~20 Ko pour 483 succès, contre 253,8 Ko pour le schéma du même jeu.
 
 ## Décisions de modélisation qui en découlent
+
 1. **Clé de jointure schéma ↔ déblocage** : `schema.name === player.apiname` (noms de champ différents !).
    Le backend fusionne et expose un seul `apiName` côté domaine.
 2. **Normalisation 0/1 → boolean** : `achieved`, `hidden` deviennent des booléens dans le domaine.
@@ -74,6 +81,7 @@ _(mesuré le 2026-09-08, pas pendant le spike initial)_
    et/ou `availableGameStats` absent (schema).
 
 ## Fixtures capturées
+
 - [x] Jeu **100 %** — Halls of Torment (2218750), 500/500.
 - [x] Jeu **partiellement complété** — Soulstone Survivors (2066020), 353/483, 130 verrouillés, 9 cachés.
 - [x] Jeu **lancé sans déblocage** — King's Bounty (25900), 0/64.

@@ -9,6 +9,7 @@ through the API as files of data. It can read and comment inline, nothing else, 
 nothing.
 
 ## Why this trigger
+
 The reviewer holds a secret, `CLAUDE_CODE_OAUTH_TOKEN`, worth the owner's subscription. Two
 triggers could start it, and each has its own way to leak it.
 
@@ -28,6 +29,7 @@ content, which tools can bound. ADR-0029 already holds this trigger to reading d
 `pnpm check:workflows` keeps it so.
 
 ## What it binds
+
 - Triggers: `opened`, `synchronize`, `reopened`, `ready_for_review`; one run per pull request at a
   time, a newer push cancelling the older run.
 - Skipped: a draft, a pull request whose author is `dependabot[bot]` (it gets no secret,
@@ -60,6 +62,7 @@ content, which tools can bound. ADR-0029 already holds this trigger to reading d
   promises goes.
 
 ## What it does not do
+
 - It blocks nothing. The check is not required by branch protection, which only the owner
   changes, and a blocking comment is a word, not a status. For two weeks from the first run on a
   pull request, the owner reads its findings without acting on them, then counts its false alarms;
@@ -69,6 +72,7 @@ content, which tools can bound. ADR-0029 already holds this trigger to reading d
 - It does not review a fork's pull request or a Dependabot one.
 
 ## What remains open
+
 - Prompt injection is bounded, not prevented. A pull request can still steer what the reviewer
   writes: a misleading comment, or silence on a real problem. It cannot make it write code, run a
   command or approve. The owner reads every tier 1 and tier 2 pull request regardless.

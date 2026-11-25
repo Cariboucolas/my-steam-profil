@@ -10,6 +10,7 @@ production ones, one for the actions. A major update keeps a pull request of its
 pull request is tier 2: the owner reads it and merges it.
 
 ## Why
+
 Dependabot alerts were turned on on 2026-11-16 and listed 134 open alerts, 12 of them critical,
 most in tools and transitive dependencies nobody upgrades by hand. Updates that arrive on their
 own keep the debt from growing back; grouped and weekly, they cost one reading a week rather than
@@ -21,6 +22,7 @@ access to code, workflows and pull requests, and it groups (`groups`), schedules
 needs.
 
 ## What it binds
+
 - Two ecosystems: `npm`, the value Dependabot uses for pnpm, from `/`; and `github-actions`,
   from `/`, which reads `.github/workflows`.
 - `schedule`: `weekly`, `monday`, `06:00`, `Europe/Paris`.
@@ -35,6 +37,7 @@ needs.
   `applies-to: security-updates` says otherwise).
 
 ## Who judges a Dependabot pull request
+
 - GitHub treats a workflow triggered by a Dependabot pull request as coming from a fork: its
   `GITHUB_TOKEN` is read-only and no Actions secret is passed to it. The AI reviewer of the
   trust harness, which needs a secret, therefore never runs on these pull requests. CI, through
@@ -45,6 +48,7 @@ needs.
   ([ADR-0029](0029-a-pull-request-is-classified-by-main-not-by-itself.md)).
 
 ## What remains open
+
 - Whether Dependabot resolves the `catalog:` protocol of pnpm workspaces was not found in
   GitHub's documentation; this workspace uses none today.
 - A grouped update that breaks the build is merged by nobody: the owner splits it, or ignores

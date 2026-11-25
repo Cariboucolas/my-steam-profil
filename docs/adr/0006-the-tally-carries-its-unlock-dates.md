@@ -33,12 +33,12 @@ existing wave over the 267 games carries it.
 Not the Worker's download — the phone's. Measured on the raw Steam responses kept in
 `fixtures/steam-raw/`:
 
-| game | achievements | unlocked | tally | envelope |
-|---|---|---|---|---|
-| 25900 | 64 | 0 | 40 B | 71 B |
-| 978520 | 24 | 0 | 40 B | 71 B |
-| 2066020 | 483 | 353 | 59 B | 3 972 B |
-| the finished one | 500 | 500 | 45 B | 5 575 B |
+| game             | achievements | unlocked | tally | envelope |
+| ---------------- | ------------ | -------- | ----- | -------- |
+| 25900            | 64           | 0        | 40 B  | 71 B     |
+| 978520           | 24           | 0        | 40 B  | 71 B     |
+| 2066020          | 483          | 353      | 59 B  | 3 972 B  |
+| the finished one | 500          | 500      | 45 B  | 5 575 B  |
 
 A cold library of 267 tallies cost about **12 KB** before this. Afterwards it costs that plus
 **eleven bytes per unlock the player has ever earned** — a ten-digit epoch and a comma. A player
@@ -57,14 +57,14 @@ downloaded on the Steam side. The burst of requests is this design's real cost (
 nothing that doubles it to save 3.9 KB per game is a saving.
 
 **Widening `GameCompletionDto`** with an `unlockedAt` field was rejected on the language, not the
-bytes. `CONTEXT.md` defines a GameCompletion as *the tally*: how many out of how many, and the
+bytes. `CONTEXT.md` defines a GameCompletion as _the tally_: how many out of how many, and the
 rate. A tally that carries 353 dates is not a tally, and every reader of one — the list rows, the
 library summary — would have been handed a payload it has no use for. Two named parts cost one
 `.completion` at each of those call sites and keep the definition intact.
 
 **Sending ISO strings**, as `AchievementDto` does, was rejected on size and on work: an ISO
 instant is 26 bytes against 11, and the calendar buckets a thousand of them on every wave of
-tallies, where a number needs no parsing. A date that is *shown* to a reader is written once, and
+tallies, where a number needs no parsing. A date that is _shown_ to a reader is written once, and
 those stay ISO.
 
 ## Consequences
