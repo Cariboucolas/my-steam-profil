@@ -97,8 +97,11 @@ jobs:
           fi
 
       # Data for preview-deploy.yml, which reads nothing else of this run: it
-      # deploys these files and runs none of them. Hidden files stay out, as
-      # upload-artifact leaves them by default.
+      # deploys these files and runs none of them. Hidden files go in too:
+      # upload-artifact leaves out by default any path with a segment starting
+      # with `.`, and the export keeps every font under
+      # `dist/assets/__node_modules/.pnpm/…`. Without them each font URL answers
+      # with index.html, and the app waits on its fonts forever (ADR-0036).
       - name: Hand the bundles to the deployment
         uses: actions/upload-artifact@v7
         with:
@@ -106,5 +109,6 @@ jobs:
           path: |
             apps/mobile/dist
             apps/mobile/storybook-static
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 3

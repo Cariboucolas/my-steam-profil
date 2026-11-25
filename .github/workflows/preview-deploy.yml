@@ -151,6 +151,33 @@ jobs:
             exit 1
           fi
 
+      # A file the bundle loads but the artifact lacks still deploys green: Pages
+      # answers its URL with index.html, and the app draws nothing while it
+      # waits on a font (ADR-0036). Every `"/assets/…"` the web bundle names
+      # must be a file of the artifact, and a bundle that names none is refused
+      # too, since the app ships fonts: an empty list means this step stopped
+      # seeing them, not that they are all there. Read with grep and test only.
+      - name: Refuse a bundle missing an asset it loads
+        if: steps.decide.outputs.number
+        env:
+          DIST: ${{ runner.temp }}/preview/dist
+        run: |
+          set -euo pipefail
+          refs="$(grep -ohE '"/assets/[^"]+"' "$DIST"/_expo/static/js/web/*.js | tr -d '"' | sort -u || true)"
+          if [[ -z "$refs" ]]; then
+            echo "::error::The web bundle names no file under /assets/, where the app's fonts live."
+            exit 1
+          fi
+          missing=""
+          while IFS= read -r ref; do
+            test -f "$DIST$ref" || missing+="  $ref"$'\n'
+          done <<< "$refs"
+          if [[ -n "$missing" ]]; then
+            printf '::error::The artifact lacks files the web bundle loads:\n%s' "$missing"
+            exit 1
+          fi
+          echo "All $(wc -l <<< "$refs") assets the web bundle names are in the artifact."
+
       # --branch is what makes this a preview rather than the live site: Pages
       # treats anything other than the production branch as one, and gives it a
       # URL of its own. --commit-hash because the checkout is main's: without
