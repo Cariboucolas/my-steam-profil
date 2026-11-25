@@ -24,8 +24,8 @@ that ADR is still true at its date, and what changes is that its stated limit is
 Cron Trigger would have been precise to the minute, would have had the Discord credential at
 hand already, and would have cost no account — and it goes silent at the exact moment its
 subject does, which is the silence-indistinguishable-from-success that #108 exists to end.
-GitHub Actions is the only candidate that is both off the watched platform and *inside the
-repository*: versioned, reviewed in a pull request, and reasoned about here. Its cron is
+GitHub Actions is the only candidate that is both off the watched platform and _inside the
+repository_: versioned, reviewed in a pull request, and reasoned about here. Its cron is
 best-effort and drifts, which is a price worth paying and is why the schedule reads
 `7,22,37,52` — a quarter-hour, off the hour, since short intervals and round hours are what
 the platform sheds first. Asking for every ten minutes to receive seventeen would make the
@@ -40,14 +40,14 @@ and a run that carries its own verdict.
 announced" both require a run to know what the previous run saw. The Actions cache would have
 held it invisibly, and its keys are immutable — the workaround is a rolling key, which is the
 sort of cleverness that rots unread. An open issue is state a human can read without a tool,
-in the register this project already keeps, and closing it *is* the recovery event. One issue
+in the register this project already keeps, and closing it _is_ the recovery event. One issue
 per target: `apps/api` and `apps/alerts` fail separately, and "the API is gone, the bridge is
 fine" has to be expressible. A recovered incident is never reopened — the next outage opens a
 new issue, so the history is a dated list rather than one unreadable thread.
 
 **The bridge is probed by its refusal.** `apps/alerts` answers 405 to every GET, by
 construction: it accepts a signed POST and nothing else. A Worker that is down cannot answer
-405, so the refusal is proof of life and costs nothing. The probe asserts *exactly* 405 rather
+405, so the refusal is proof of life and costs nothing. The probe asserts _exactly_ 405 rather
 than "some answer", and the test in `apps/alerts` that already pinned `GET → 405` now says in
 words that a monitor depends on it — otherwise the day someone adds a GET route the probe keeps
 passing for a reason nobody chose. Giving that Worker a `/health` was the alternative, and it would have widened
@@ -59,7 +59,7 @@ up and not that the app works. The failure worth catching there is not Steam bei
 a deploy that went out without `STEAM_API_KEY`, invisible until a reader asks for a profile.
 This issue set out to add that check and found it already made, one level higher and better
 placed: `createFetchHandler` reads the configuration before it routes anything, so a Worker
-without a key answers 503 `{"error":"MISCONFIGURED"}` to *every* address, `/health` among them,
+without a key answers 503 `{"error":"MISCONFIGURED"}` to _every_ address, `/health` among them,
 and `worker.test.ts` pins that on the health URL itself. Nothing was added. What changed is
 that something now reads the answer.
 
@@ -69,13 +69,13 @@ the fastest way to unlearn reading a channel.
 
 **The failure is public, the diagnosis is not.** That 503 names nothing a caller could use;
 which part of the configuration is missing goes to `console.error`, where the Worker's logging
-lives. This is the split `apps/alerts` makes too, and it is why the probe asserts the *body*
+lives. This is the split `apps/alerts` makes too, and it is why the probe asserts the _body_
 and not only the status: `{"status":"ok"}` is the one answer that means healthy, and everything
 else — including a 503 that is deliberately uninformative — is down.
 
 **A deploy-time failure is not a Discord message.** The same probe runs at the end of
 `deploy.yml`, retrying for up to a minute while a fresh Worker propagates, and then fails the
-job. It posts nothing: the workflow going red *is* the notification, and somebody merged a
+job. It posts nothing: the workflow going red _is_ the notification, and somebody merged a
 minute ago, so somebody is watching. The channel #108 bought exists for what nobody is
 watching, and the first spoonful of noise in it is an alert about something already seen.
 

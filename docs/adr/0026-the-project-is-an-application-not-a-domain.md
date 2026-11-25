@@ -1,17 +1,19 @@
 # The project is an application, not a domain
+
 Measured against a three-level scale — 1 a showcase, 2 an application, 3 a business domain — this
 codebase is at level 2, and stays there until one of the signals below appears. This records
 what the code already is; it moves no file.
 
 The scale, so the level means something:
 
-| Level | Front | Back |
-| --- | --- | --- |
-| 1 — showcase | plain components | none, or isolated functions |
-| 2 — application | the five atomic levels | layers: routes → services → repositories |
-| 3 — domain | the five atomic levels | DDD and hexagonal: domain ← use cases ← adapters |
+| Level           | Front                  | Back                                             |
+| --------------- | ---------------------- | ------------------------------------------------ |
+| 1 — showcase    | plain components       | none, or isolated functions                      |
+| 2 — application | the five atomic levels | layers: routes → services → repositories         |
+| 3 — domain      | the five atomic levels | DDD and hexagonal: domain ← use cases ← adapters |
 
 ## What the code is
+
 **The front is level 2, and already says so.** `apps/mobile/src/components/` holds `atoms/`,
 `molecules/`, `organisms/`, `templates/` and `pages/`; only a page loads what it shows
 (ADR-0022), loading lives in hooks under `src/api-client/`, and `pnpm check:stories` keeps every
@@ -32,6 +34,7 @@ several values, no workflow and no second context: what the product does is read
 and show it. The README's "hexagonal architecture" describes that one port, not a level-3 back.
 
 ## The rule
+
 - A change stays within level 2: no use-case layer, no aggregate, no bounded context added ahead
   of the need.
 - The project moves to level 3 when one of these appears, by an ADR that amends this one:
@@ -42,6 +45,7 @@ and show it. The README's "hexagonal architecture" describes that one port, not 
 - Back to level 1 is not on the table while there is an API at all.
 
 ## What this does not say
+
 It does not ask for a service layer in `apps/api`: there is no logic for one to hold, and adding
 it would be a file between two files. It does not rename the gateway a repository. And it binds
 the shape of new code, not a refactoring of the old.

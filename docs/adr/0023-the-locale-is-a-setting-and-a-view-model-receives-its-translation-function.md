@@ -1,4 +1,5 @@
 # The locale is a setting, and a view-model receives its translation function
+
 **Amends [0010](0010-the-app-chooses-its-language.md).**
 
 The app's locale is a setting the reader makes and the app persists, `en` until they choose.

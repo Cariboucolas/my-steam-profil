@@ -15,7 +15,7 @@ accepted here with its eyes open.
 
 **The free path speaks the wrong language.** Sentry's own Discord integration needs the Team
 plan, as Slack does — and so, it turned out, does the alert rule action a custom integration
-would otherwise expose. What the Developer plan does allow is a *custom internal integration*
+would otherwise expose. What the Developer plan does allow is a _custom internal integration_
 subscribed to the `issue` webhook: a POST to an address of ours every time an issue is created
 or changes state. Discord rejects any body without `content` or `embeds`. So the choice was
 never "Discord or a bridge": it was a bridge, or not Discord.
@@ -43,7 +43,7 @@ where the earlier ADRs drew it.
 must be reachable by Sentry, which is to say by anyone who finds the address. So an unsigned
 request is the ordinary case rather than the exception, and `Sentry-Hook-Signature` — HMAC-SHA256
 over the raw body with the integration's client secret — is checked before anything else is
-read. The *raw* body: Sentry's own example hashes a re-serialised object, which holds only as
+read. The _raw_ body: Sentry's own example hashes a re-serialised object, which holds only as
 long as two JSON encoders agree on key order and whitespace.
 
 ## What this does not say
@@ -80,7 +80,7 @@ has more than one reader.
 ## Consequences
 
 **Two secrets, posted by hand.** `SENTRY_CLIENT_SECRET` proves a request is Sentry's;
-`DISCORD_WEBHOOK_URL` *is* a credential, since anyone holding it can post into the channel.
+`DISCORD_WEBHOOK_URL` _is_ a credential, since anyone holding it can post into the channel.
 Neither is in `wrangler.jsonc`, and neither is a repository variable. Deploying before they
 exist is safe: the Worker answers 503 and says which one is missing.
 

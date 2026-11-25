@@ -30,7 +30,7 @@ ADR-0011 already made, one variable further. It does not work, and the arithmeti
 
 At the narrowest width the app serves the headline has 132 px. Letter spacing is applied as
 kerning and does not scale — only the font does — so a figure of `c` characters at multiplier `e`
-demands `c · 44 · 0.6 · e + (c − 1) · (−2)`. And the caption beside it is a *measured* text width,
+demands `c · 44 · 0.6 · e + (c − 1) · (−2)`. And the caption beside it is a _measured_ text width,
 so the room shrinks as the demand grows:
 
 ```
@@ -48,10 +48,10 @@ the worst band: `123K`, four characters, which is all it has for 100 000–999 9
 it reaches two or three. So the cap is the largest multiplier at which four characters still fit
 the narrowest phone:
 
-| `e` | demand | room | |
-|---|---|---|---|
-| 1.13 | 121.3 | 122.1 | fits |
-| 1.14 | 122.4 | 121.4 | does not |
+| `e`  | demand | room  |          |
+| ---- | ------ | ----- | -------- |
+| 1.13 | 121.3  | 122.1 | fits     |
+| 1.14 | 122.4  | 121.4 | does not |
 
 It is derived by search from the same constants the card is laid out and painted with, exactly as
 `headlineMaxChars` is. Widen a gap, enlarge the ring or raise the font size and the cap falls on
@@ -83,13 +83,13 @@ Nothing is lost to a reader who cannot read it: the row is one screen-reader sto
 `screenReaderLabel`, which spells the month and its total out in full, and the label itself is
 already held out of the traversal.
 
-That it overflows at four digits *before* any scaling is a separate defect, filed separately. This
+That it overflows at four digits _before_ any scaling is a separate defect, filed separately. This
 decision does not fix it and does not depend on it.
 
 ## What this does not cover
 
 The completion ring is 72 px of SVG that does not scale, holding text that does: `37%` at 19 pt
-and `LIBRARY` at 8.5 pt. Both fit under this cap, and they fit *because* of it, not because
+and `LIBRARY` at 8.5 pt. Both fit under this cap, and they fit _because_ of it, not because
 anything about the ring was measured. If the cap ever rises, that is the thing to check first.
 
 ## The one duplication that cannot be removed

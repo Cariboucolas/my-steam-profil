@@ -17,7 +17,7 @@ That rules out **fixed thresholds** (`0 / 1-2 / 3-5 / 6+`) immediately. They rea
 second player and paint the first a flat single tone for a whole year. The scale has to be
 relative to the player.
 
-## What relative to *what* costs
+## What relative to _what_ costs
 
 Three windows were weighed.
 
@@ -26,7 +26,7 @@ darkest; a week later the same day is pale. Every tone in the grid repaints on 1
 the broken case, and it is broken for a month every year.
 
 **The displayed year plus the previous calendar year.** This was the recommendation for most of
-the discussion, and it has a real elegance: the scale would read over *exactly* the two data sets
+the discussion, and it has a real elegance: the scale would read over _exactly_ the two data sets
 the header compares — one window serving both halves of the card. It survives January, because
 the previous year carries the window on its own. But it still steps: on 1 January the window
 drops the older of its two years, and half the sample is replaced overnight.

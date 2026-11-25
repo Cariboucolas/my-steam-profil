@@ -10,6 +10,7 @@ nor its code chooses it.
 While the owner merges every pull request, the tier informs and blocks nothing.
 
 ## Why
+
 A tier its author declares is only as good as the author's reading of a table, and the author
 most likely to misread it is an agent whose change would gain from a lower tier. The paths a
 change touches are a fact git can state; the tier that follows from them should be one too.
@@ -19,6 +20,7 @@ The table and the code must not become two tables. The globs live once in
 and fails when a tier lists a glob the code does not hold, or the other way round.
 
 ## What it binds
+
 - A change takes the highest tier of any path it touches; a path no tier lists is tier 2.
 - A deleted path counts, and a renamed one counts under both its names: the diff is read with
   `--no-renames`, from `base...HEAD`, so what the base gained meanwhile is not the change's.
@@ -46,12 +48,14 @@ and fails when a tier lists a glob the code does not hold, or the other way roun
   nothing and comments nothing.
 
 ## What remains open
+
 The workflow GitHub runs on `pull_request` is the pull request's own `ci.yml`, so a pull request
 can rewrite the step itself, guard included, and display any tier. Nothing technical prevents it;
 what covers it is that `.github/**` is tier 2, which the owner reads before merge. A check that
 holds once the tiers gate merges must run from a workflow the pull request cannot edit.
 
 ## What this does not say
+
 It does not enforce the tiers: no pull request is merged or held because of its tier, and the
 owner still merges every one. Enforcing them is a decision of its own, which will amend this
 one. It does not judge content: a tier 1 file can still hold something the owner would want to

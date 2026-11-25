@@ -5,8 +5,8 @@ Achievements, as Steam publishes it. Its answers are cached for **twenty-four ho
 key **every player shares**.
 
 Both halves of that read as a reversal of ADR-0005, which cached for five minutes and closed with
-*"cache keys are full request URLs, which carry the SteamId. Two players therefore never share an
-entry."* Neither is a reversal, and the reason is the same in both cases: **a Rarity does not
+_"cache keys are full request URLs, which carry the SteamId. Two players therefore never share an
+entry."_ Neither is a reversal, and the reason is the same in both cases: **a Rarity does not
 belong to the player asking.**
 
 ## The address is the mechanism
@@ -105,7 +105,7 @@ route. Neither says anything about the other, which is the point of #53.
 
 The answer carries no display name, and cannot: this call never fetches the schema — the 253 KB
 payload ADR-0005 removed from the library's hot path. An Achievement is identified here by the
-apiName it is known by within its Game. Whatever needs to *show* one of these rows has to fetch
+apiName it is known by within its Game. Whatever needs to _show_ one of these rows has to fetch
 the schema for that game, and #31 does so for the handful of games that carry the rows shown.
 
 `ApiClient.getGameRarity` is built off the api root rather than the player's root — the one
@@ -119,8 +119,8 @@ gives for a Game Steam publishes nothing about, so no screen learns to tell the 
 `GET /api/games/:appId/achievements` answers what a Game calls each of its Achievements and the
 icon it draws them with. It is cached for the same twenty-four hours, under an address carrying no
 SteamId, and it needs no argument of its own: **how a Game names an award does not belong to the
-player asking**, exactly as a Rarity does not. Everything above holds word for word with *Rarity*
-read as *the name a Game gives*.
+player asking**, exactly as a Rarity does not. Everything above holds word for word with _Rarity_
+read as _the name a Game gives_.
 
 Reusing `…/progress`, which already fetches the schema, was considered and rejected. That route is
 the 253 KB answer partitioned by player — it crosses the schema with one player's unlocks — so it
@@ -145,8 +145,8 @@ something the service stores.
 
 A cache makes the second ask free; it is the number of first asks that had to be bounded, and the
 address cannot do that. What does is **when** the question is asked: the ranking is decided on the
-published figures alone, and only then are the three to six games carrying the rows *actually
-shown* asked to name them. Which games are worth the schema is a property of the answer, not of the
+published figures alone, and only then are the three to six games carrying the rows _actually
+shown_ asked to name them. Which games are worth the schema is a property of the answer, not of the
 library — so this fetch can never precede a ranking, and never grows with the 267 games a library
 holds (#31).
 

@@ -39,7 +39,7 @@ the four states they admit are nonsense.
 ## What this does not say
 
 It does not say clients must each write their own formatter. `formatPlaytimeExact` lives in
-`@steam/domain` and is shared, as a rule; it is the *choice to apply it* that stays with the
+`@steam/domain` and is shared, as a rule; it is the _choice to apply it_ that stays with the
 screen. Sharing a formatter and shipping a formatted string are different things.
 
 It does not cover text that is data rather than rendering: a Game's `name` and an Achievement's

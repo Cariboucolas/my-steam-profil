@@ -4,12 +4,12 @@ What is published, where it goes, and the switches that stop it.
 
 ## What is live
 
-| What | Where | Deployed by |
-| --- | --- | --- |
-| The site | https://steam-achievements-czo.pages.dev | Cloudflare Pages |
-| The API | https://steam-achievements-api.cdcraft.workers.dev | Cloudflare Workers |
-| The Android app | EAS `preview` channel | EAS Update, over the air |
-| The component gallery | https://steam-achievements-storybook.pages.dev | Cloudflare Pages |
+| What                  | Where                                              | Deployed by              |
+| --------------------- | -------------------------------------------------- | ------------------------ |
+| The site              | https://steam-achievements-czo.pages.dev           | Cloudflare Pages         |
+| The API               | https://steam-achievements-api.cdcraft.workers.dev | Cloudflare Workers       |
+| The Android app       | EAS `preview` channel                              | EAS Update, over the air |
+| The component gallery | https://steam-achievements-storybook.pages.dev     | Cloudflare Pages         |
 
 Every merge to `main` by the owner whose CI passes deploys all four and publishes a
 [Release](https://github.com/Cariboucolas/my-steam-profil/releases) that repeats these
@@ -70,7 +70,7 @@ its absence — so the app asks which profile to show, which is what makes it us
 ## Error reporting
 
 What the two published targets report when they break goes to the Sentry project
-`cdcraft/steam-achievements`, under the revision they already display. The DSN is a *variable*
+`cdcraft/steam-achievements`, under the revision they already display. The DSN is a _variable_
 and not a secret — a client DSN travels in the bundle by construction — and `deploy.yml` refuses
 to build without it, because a blind production bundle looks exactly like a working one.
 Emptying it is the switch, like `EAS_ENABLED`. What goes and what does not: ADR-0017. The
@@ -104,7 +104,7 @@ there for a direct dependency. That is why `@sentry/cli` is one, pinned to the v
 
 Sentry alerts land in a dedicated Discord server through `apps/alerts` — a third Worker, which
 verifies Sentry's signature and translates its JSON into a Discord message. It exists because
-Sentry's native Discord integration requires a paid plan — as does the *alert rule action* a
+Sentry's native Discord integration requires a paid plan — as does the _alert rule action_ a
 custom integration would otherwise expose — whereas subscribing to the `issue` webhook is free
 but speaks a language Discord refuses. Only the `created` action wakes anything: `resolved`,
 `assigned` and the rest arrive at the same place and are discarded by the bridge.

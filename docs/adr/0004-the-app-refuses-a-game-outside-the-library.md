@@ -26,7 +26,7 @@ API's.
 
 ## Consequences
 
-The API's contract is narrower than it looks: it reports on a *(player, game)* pair without
+The API's contract is narrower than it looks: it reports on a _(player, game)_ pair without
 claiming the pair is real. A caller that has not checked ownership can be handed an empty
 GameProgress for an appId the player has never owned, and cannot tell that from a game that
 defines no achievements. Any second client would have to make the same check the app makes.

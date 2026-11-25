@@ -26,11 +26,11 @@ A revert is a new commit on `main`. It does not roll anything back at Cloudflare
 publishing workflow runs again on it, CI first (ADR-0027), and publishes the old content as a new
 revision.
 
-| Target | What the owner's merge of a revert does |
-| --- | --- |
-| API, alerts, site, gallery | `deploy.yml` rebuilds and redeploys all four, then publishes a Release named after the revert commit |
-| Android app, over the air | `eas-update.yml` publishes a **new** update to `preview`; the faulty one stays in the channel's history. A phone downloads it on its next launch and applies it on the one after |
-| Android build | `eas-build.yml` builds nothing if a build already serves the reverted fingerprint, which is the usual case |
+| Target                     | What the owner's merge of a revert does                                                                                                                                          |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| API, alerts, site, gallery | `deploy.yml` rebuilds and redeploys all four, then publishes a Release named after the revert commit                                                                             |
+| Android app, over the air  | `eas-update.yml` publishes a **new** update to `preview`; the faulty one stays in the channel's history. A phone downloads it on its next launch and applies it on the one after |
+| Android build              | `eas-build.yml` builds nothing if a build already serves the reverted fingerprint, which is the usual case                                                                       |
 
 A revert of a **tier 0** pull request (prose under `docs/**` or the root README) is tier 0
 itself: it merges itself and deploys nothing (ADR-0030). Nothing built was wrong, so nothing
@@ -81,19 +81,19 @@ on top of it.
 read on a local clock. Each round is timed twice: from the decision to the merge, which includes
 waiting for the owner, and from the merge to production, which does not.
 
-| Step | Revert (#218), 2026-11-18 | Elapsed | Restore (#219) | Elapsed |
-| --- | --- | --- | --- | --- |
-| Decision to revert | 10:18:48 | 0:00 | 11-18 10:28:56 | 0:00 |
-| Pull request opened | 10:19:41 | 0:53 | 11-18 10:29:35 | 0:39 |
-| `verify` green on it | 10:22:06 | 3:18 | 11-18 10:31:38 | 2:42 |
-| Merged by the owner | 10:23:29 | 4:41 | 11-19 08:47:38 | overnight |
-| *From the merge:* | | | | |
-| CI passed again on `main` | 10:25:33 | 2:04 | 08:49:54 | 2:16 |
-| API deployed | 10:26:09 | 2:40 | 08:50:29 | 2:51 |
-| Gallery deployed | 10:26:23 | 2:54 | 08:50:38 | 3:00 |
-| Site deployed | 10:27:12 | 3:43 | 08:51:42 | 4:04 |
-| Release published, Deploy finished | 10:27:24 | 3:55 | 08:51:54 | 4:16 |
-| Over-the-air update published | 10:28:15 | 4:46 | 08:51:31 | 3:53 |
+| Step                               | Revert (#218), 2026-11-18 | Elapsed | Restore (#219) | Elapsed   |
+| ---------------------------------- | ------------------------- | ------- | -------------- | --------- |
+| Decision to revert                 | 10:18:48                  | 0:00    | 11-18 10:28:56 | 0:00      |
+| Pull request opened                | 10:19:41                  | 0:53    | 11-18 10:29:35 | 0:39      |
+| `verify` green on it               | 10:22:06                  | 3:18    | 11-18 10:31:38 | 2:42      |
+| Merged by the owner                | 10:23:29                  | 4:41    | 11-19 08:47:38 | overnight |
+| _From the merge:_                  |                           |         |                |           |
+| CI passed again on `main`          | 10:25:33                  | 2:04    | 08:49:54       | 2:16      |
+| API deployed                       | 10:26:09                  | 2:40    | 08:50:29       | 2:51      |
+| Gallery deployed                   | 10:26:23                  | 2:54    | 08:50:38       | 3:00      |
+| Site deployed                      | 10:27:12                  | 3:43    | 08:51:42       | 4:04      |
+| Release published, Deploy finished | 10:27:24                  | 3:55    | 08:51:54       | 4:16      |
+| Over-the-air update published      | 10:28:15                  | 4:46    | 08:51:31       | 3:53      |
 
 In both rounds EAS Build found the fingerprint already built (`No build needed`) and started
 nothing, and the deployed gallery and site served the merged commit once Deploy finished.

@@ -40,10 +40,10 @@ The day cells have floors, measured rather than chosen: four tones cannot be tol
 about 7 px, and 9 px is the smallest that reads (`prototype/activity-grid-width`, verdict on #29).
 Those floors are pinned at two widths, and it is the wider phone that binds:
 
-| | the floor | the widest label it permits |
-|---|---|---|
-| 375 px | 9 px a cell | 50 px |
-| 402 px | 10 px a cell | **46 px** |
+|        | the floor    | the widest label it permits |
+| ------ | ------------ | --------------------------- |
+| 375 px | 9 px a cell  | 50 px                       |
+| 402 px | 10 px a cell | **46 px**                   |
 
 Eight characters demanded 49.1 px. There was no price the grid could have paid.
 

@@ -33,7 +33,7 @@ writes for a single cold library load. The Cache API has no write quota, costs n
 the right shape for what this is — an HTTP response, cached under its URL.
 
 **Caching the progress endpoint too** was rejected because user story 10 of #2 asks for the
-opposite: *"an unlock that happened minutes ago to appear when I reopen the Game"*. Opening a
+opposite: _"an unlock that happened minutes ago to appear when I reopen the Game"_. Opening a
 game is the moment a player checks whether the thing they just earned registered. A five-minute
 cache there would break the one interaction the app exists for, to save a call the player makes
 deliberately and rarely. The library tally has no such promise attached: it is a column of

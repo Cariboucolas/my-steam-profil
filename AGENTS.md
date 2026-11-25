@@ -5,6 +5,7 @@ An Expo app (`apps/mobile`, web and Android) over a Cloudflare Worker that proxi
 (`apps/api`), in a pnpm monorepo. No sign-in, no account, no database.
 
 ## Commands
+
 Node from `.nvmrc`, pnpm from `packageManager`. `verify` in `.github/workflows/ci.yml` runs, in order:
 
 ```sh
@@ -17,6 +18,7 @@ pnpm test && pnpm build:web
 runs it, is in [docs/commands.md](docs/commands.md).
 
 ## What has authority
+
 - [CONTEXT.md](CONTEXT.md): the domain vocabulary; code and prose use its words.
 - [docs/adr/README.md](docs/adr/README.md): every decision and what it amends. A change that
   contradicts an ADR says so and amends it with a new one; it never rewrites one.
@@ -25,11 +27,13 @@ runs it, is in [docs/commands.md](docs/commands.md).
 - `apps/mobile/AGENTS.md`: the Expo version whose docs are the reference.
 
 ## Architecture
+
 Level 2, an application ([ADR-0026](docs/adr/0026-the-project-is-an-application-not-a-domain.md)):
 the five atomic levels in front, routes → `SteamGateway` → Steam behind. Level 3 only by an ADR,
 on the signals ADR-0026 lists.
 
 ## Risk tiers
+
 A pull request of tier 0 from this repository merges itself once `verify` passes, through
 `merge-tier-0.yml` (ADR-0030); the owner merges every other one, and an agent never merges one. A change takes
 the highest tier of any path it touches, a deleted or renamed path included, under both its
@@ -41,6 +45,7 @@ backquotes in the bullets below are the ones `tools/repo-checks/src/risk-tiers.t
 test fails when the two disagree.
 
 **Tier 2: the owner reads it before merge.**
+
 - Guardrails: `AGENTS.md`, `**/AGENTS.md`, `**/CLAUDE.md`, `**/.claude/**`,
   `docs/agents/**`, `docs/adr/**`, `tools/repo-checks/**`, and every file this contract cites,
   directly or through a tier 2 document: `CONTEXT.md`, `docs/commands.md`, `docs/testing.md`,
@@ -60,6 +65,7 @@ test fails when the two disagree.
 **Tier 1: merged unread when `verify` is green, the change carries its proof — a test that
 failed before it, or a story or preview for what is seen — and an AI review independent of its
 author found nothing.**
+
 - Every other path under the app, the packages and the tools: `apps/**`, `packages/**`,
   `tools/**`
 
@@ -71,24 +77,26 @@ A change to a dependency, runtime or dev, touches the lockfile and is therefore 
 yet reads a lockfile to tell a patch bump from anything else.
 
 **Tier 0: merged on a green `verify`.**
+
 - Prose outside the guardrails: `README.md`, `docs/**`
 
 ## Invariants
+
 Each holds because a check fails without it. A rule nothing checks is not listed here.
 
-| Invariant | Checked by |
-| --- | --- |
-| Nothing leaves `main` unless CI passed on that commit (ADR-0027) | `pnpm check:workflows` |
-| The risk tiers above and the code that computes them list the same globs (ADR-0028) | `pnpm test` (`risk-tiers.test.ts`) |
-| No workflow started by `pull_request_target` or `workflow_run` checks out, fetches or names a pull request's head (ADR-0029, ADR-0030) | `pnpm check:workflows` |
-| No workflow started by `pull_request_target` or `workflow_run` runs a third-party action no commit SHA pins (ADR-0033) | `pnpm check:workflows` |
-| The AI reviewer holds its token alone, reads, comments inline and does nothing else (ADR-0033) | `pnpm test` (`ai-review.test.ts`) |
-| Lint rules and formatting hold everywhere (ADR-0024) | `pnpm lint` |
-| Every package type-checks | `pnpm typecheck` |
-| A package with tests runs them; no test file sits where Expo Router publishes it | `pnpm check:tests` |
-| A component below `pages/` has stories, the exception list only shrinks, a template is shown by its page | `pnpm check:stories` |
-| Coverage stays above each package's thresholds (100 % in `packages/domain`) | `pnpm test` |
-| `en` and `fr` hold the same keys and every plural form (ADR-0023) | `pnpm test` (`catalogs.test.ts`) |
-| The lockfile agrees with the manifests | `pnpm install --frozen-lockfile` |
-| The web bundle builds | `pnpm build:web` |
-| No bundle ships without its API address, its Sentry DSN, its source maps; no gallery calls `require()` | the `web` and `gallery` jobs of `deploy.yml` |
+| Invariant                                                                                                                              | Checked by                                   |
+| -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| Nothing leaves `main` unless CI passed on that commit (ADR-0027)                                                                       | `pnpm check:workflows`                       |
+| The risk tiers above and the code that computes them list the same globs (ADR-0028)                                                    | `pnpm test` (`risk-tiers.test.ts`)           |
+| No workflow started by `pull_request_target` or `workflow_run` checks out, fetches or names a pull request's head (ADR-0029, ADR-0030) | `pnpm check:workflows`                       |
+| No workflow started by `pull_request_target` or `workflow_run` runs a third-party action no commit SHA pins (ADR-0033)                 | `pnpm check:workflows`                       |
+| The AI reviewer holds its token alone, reads, comments inline and does nothing else (ADR-0033)                                         | `pnpm test` (`ai-review.test.ts`)            |
+| Lint rules and formatting hold everywhere (ADR-0024)                                                                                   | `pnpm lint`                                  |
+| Every package type-checks                                                                                                              | `pnpm typecheck`                             |
+| A package with tests runs them; no test file sits where Expo Router publishes it                                                       | `pnpm check:tests`                           |
+| A component below `pages/` has stories, the exception list only shrinks, a template is shown by its page                               | `pnpm check:stories`                         |
+| Coverage stays above each package's thresholds (100 % in `packages/domain`)                                                            | `pnpm test`                                  |
+| `en` and `fr` hold the same keys and every plural form (ADR-0023)                                                                      | `pnpm test` (`catalogs.test.ts`)             |
+| The lockfile agrees with the manifests                                                                                                 | `pnpm install --frozen-lockfile`             |
+| The web bundle builds                                                                                                                  | `pnpm build:web`                             |
+| No bundle ships without its API address, its Sentry DSN, its source maps; no gallery calls `require()`                                 | the `web` and `gallery` jobs of `deploy.yml` |

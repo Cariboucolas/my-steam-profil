@@ -3,20 +3,20 @@
 Everything needed to run the project on your own machine: the backend, the app, and the part
 that is genuinely hard — getting a real phone to talk to Metro.
 
-If you only want to *see* the app, you do not need any of this. The deployed site and the
+If you only want to _see_ the app, you do not need any of this. The deployed site and the
 `preview` channel are in [deployment.md](./deployment.md), and neither needs a shared network
 or a cable.
 
 ## Repository layout
 
-| Package | Role |
-| --- | --- |
-| `packages/domain` | The domain: SteamId, Playtime, CompletionRate, Timeline… No I/O. |
-| `packages/contracts` | The wire DTOs shared between the backend and the app. |
-| `apps/api` | The Steam proxy (ADR-0001): four endpoints, mappers and presenters. |
-| `apps/mobile` | The Expo app: the profile entry screen, then the Library and Game screens. |
-| `apps/alerts` | The bridge that carries a Sentry alert to Discord (ADR-0018). |
-| `tools/steam-spike` | Fetches Steam's raw responses into `fixtures/steam-raw/`. |
+| Package              | Role                                                                       |
+| -------------------- | -------------------------------------------------------------------------- |
+| `packages/domain`    | The domain: SteamId, Playtime, CompletionRate, Timeline… No I/O.           |
+| `packages/contracts` | The wire DTOs shared between the backend and the app.                      |
+| `apps/api`           | The Steam proxy (ADR-0001): four endpoints, mappers and presenters.        |
+| `apps/mobile`        | The Expo app: the profile entry screen, then the Library and Game screens. |
+| `apps/alerts`        | The bridge that carries a Sentry alert to Discord (ADR-0018).              |
+| `tools/steam-spike`  | Fetches Steam's raw responses into `fixtures/steam-raw/`.                  |
 
 Node comes from `.nvmrc` and pnpm from the `packageManager` field, so CI cannot run on versions
 other than yours.
@@ -34,12 +34,12 @@ same network can reach it.
 
 Four endpoints, the only ones the app calls:
 
-| Endpoint | Response |
-| --- | --- |
-| `GET /api/profile/:steamId` | `ProfileDto` — 404 if the profile cannot be found |
-| `GET /api/profile/:steamId/games` | `GameDto[]` — empty list if the account owns nothing |
-| `GET /api/profile/:steamId/games/:appId/progress` | `GameProgressDto` — 403 if the profile is private, empty 200 if the game has no achievements |
-| `GET /api/profile/:steamId/games/:appId/completion` | `GameCompletionDto` — the count alone, same failures as `progress` |
+| Endpoint                                            | Response                                                                                     |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `GET /api/profile/:steamId`                         | `ProfileDto` — 404 if the profile cannot be found                                            |
+| `GET /api/profile/:steamId/games`                   | `GameDto[]` — empty list if the account owns nothing                                         |
+| `GET /api/profile/:steamId/games/:appId/progress`   | `GameProgressDto` — 403 if the profile is private, empty 200 if the game has no achievements |
+| `GET /api/profile/:steamId/games/:appId/completion` | `GameCompletionDto` — the count alone, same failures as `progress`                           |
 
 Plus `GET /health`. A malformed SteamID gives 400 without a single call leaving for Steam; a
 Steam outage gives 502, a bug on our side gives 500.
@@ -144,7 +144,7 @@ EXPO_PACKAGER_HOSTNAME="$IP6" EXPO_PUBLIC_API_URL="http://[$IP6]:3000" \
 ```
 
 The brackets around an IPv6 in a URL are mandatory. Metro and the backend already listen on both
-address families; only the *announced* address changes. Beware that an autoconfigured IPv6 can
+address families; only the _announced_ address changes. Beware that an autoconfigured IPv6 can
 change: if the app stops reaching anything after a few days, run the command again.
 
 ### Otherwise, a workaround insensitive to network topology

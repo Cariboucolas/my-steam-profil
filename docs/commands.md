@@ -8,13 +8,13 @@ typecheck` is run again by CI on every pull request, so forgetting it costs a ro
 nothing more. `pnpm icons:build` is run by nobody and its output is committed, so forgetting it
 ships the wrong artwork with every test green. The two are indistinguishable in `package.json`.
 
-| | Run by |
-| --- | --- |
-| `lint`, `typecheck`, `check:tests`, `check:stories`, `check:workflows`, `test`, `build:web` | CI, on every pull request and every push to `main` |
-| `check:tier` | You, before opening a pull request; CI classifies the pull request itself with `risk-tier.yml` |
-| The watch modes and dev servers | You, while you work — nothing to remember |
-| `icons:build`, `icons:check`, `spike` | **Nobody.** [See below.](#the-commands-nobody-runs-for-you) |
-| `deploy`, the EAS update, and `eas build` when the fingerprint moved | The merge to `main`, or a dispatch of `eas-build.yml` |
+|                                                                                             | Run by                                                                                         |
+| ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `lint`, `typecheck`, `check:tests`, `check:stories`, `check:workflows`, `test`, `build:web` | CI, on every pull request and every push to `main`                                             |
+| `check:tier`                                                                                | You, before opening a pull request; CI classifies the pull request itself with `risk-tier.yml` |
+| The watch modes and dev servers                                                             | You, while you work — nothing to remember                                                      |
+| `icons:build`, `icons:check`, `spike`                                                       | **Nobody.** [See below.](#the-commands-nobody-runs-for-you)                                    |
+| `deploy`, the EAS update, and `eas build` when the fingerprint moved                        | The merge to `main`, or a dispatch of `eas-build.yml`                                          |
 
 ## What CI already runs for you
 
@@ -229,8 +229,8 @@ curl -s "$(gh variable get API_URL)/health"
 
 ## Elsewhere
 
-| | |
-| --- | --- |
+|                                    |                                                                   |
+| ---------------------------------- | ----------------------------------------------------------------- |
 | [development.md](./development.md) | Running it locally, and the long troubleshooting for a real phone |
-| [testing.md](./testing.md) | What CI runs and why `verify` is the gate |
-| [deployment.md](./deployment.md) | What is published where, the switches, where the API key lives |
+| [testing.md](./testing.md)         | What CI runs and why `verify` is the gate                         |
+| [deployment.md](./deployment.md)   | What is published where, the switches, where the API key lives    |

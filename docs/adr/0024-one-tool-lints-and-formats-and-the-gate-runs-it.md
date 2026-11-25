@@ -1,4 +1,5 @@
 # One tool lints and formats, and the gate runs it
+
 Biome checks the whole workspace, for lint rules and for formatting, and the `verify` job runs it
 first. Nothing is formatted by hand, and nothing reaches `main` that Biome refuses.
 
@@ -7,6 +8,7 @@ for lint to be green, and there was no lint: nothing had decided against one, it
 set up.
 
 ## What it binds
+
 - `pnpm lint` is `biome check --error-on-warnings .`, read-only, and is the first step of `verify`.
   `pnpm lint:fix` writes what Biome can fix itself.
 - `biome.jsonc` at the root is the one configuration. A rule switched off there carries its reason
@@ -16,6 +18,7 @@ set up.
 - Lines are 100 wide, because that is what the code was already written to.
 
 ## Why Biome
+
 **The compiler does not see hooks.** A missing dependency or a conditional hook type-checks. The
 move to shared queries (#162) rewrites every hook that loads, which is where that mistake is made.
 
@@ -28,6 +31,7 @@ exhaustive dependencies, floating promises and focused tests each fire on a file
 them.
 
 ## What it costs
+
 Two of the rules that matter, `noFloatingPromises` and `noMisusedPromises`, are in Biome's
 nursery: they can change or misfire between versions. Biome is pinned to an exact version for that
 reason, and they are the first to go if they turn noisy.
@@ -39,6 +43,7 @@ If a rule this project comes to need exists only as an ESLint plugin, ESLint is 
 rule alone and Biome keeps the formatting. That is a new decision, not a reason to wait.
 
 ## What this does not say
+
 It adds no pre-commit hook: the gate is `verify`, and an editor formats on save. It does not make
 the existing suppressions permanent: those on the loading effects go with the hooks they sit in,
 in #166 to #169.
