@@ -30,6 +30,12 @@
         // outside, as opposed to a field of a type it declared.
         "useLiteralKeys": "off"
       },
+      "correctness": {
+        // expo-router's Link draws its children in a <Text> unless it is
+        // given `asChild`, so text inside it is already where React Native
+        // wants it.
+        "noReactNativeRawText": { "level": "error", "options": { "skip": ["Link"] } }
+      },
       "suspicious": {
         // Switched back on for the tests below: anywhere else, a function named
         // `fit` is not a focused test, and the rule says it is.

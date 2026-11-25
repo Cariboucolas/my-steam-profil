@@ -101,9 +101,6 @@ const classify = (path: string): ClassifiedPath => {
 /** A change takes the highest tier of any path it touches; touching nothing is tier 0. */
 export const riskTier = (paths: readonly string[]): RiskTier => {
   const classified = paths.map(classify);
-  const tier = classified.reduce<Tier>(
-    (highest, one) => (one.tier > highest ? one.tier : highest),
-    0,
-  );
+  const tier = classified.reduce<Tier>((highest, one) => Math.max(highest, one.tier) as Tier, 0);
   return { tier, paths: classified };
 };

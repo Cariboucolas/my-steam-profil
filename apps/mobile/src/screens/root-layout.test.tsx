@@ -44,6 +44,13 @@ jest.mock("expo-splash-screen", () => ({
 
 const Stub = () => <Text>library screen</Text>;
 
+/** Every cache a screen under the layout reached, in the order it asked. */
+const askedCaches: unknown[] = [];
+const Asking = () => {
+  askedCaches.push(useQueryClient());
+  return <Text>asking screen</Text>;
+};
+
 const renderApp = (fontsLoaded: boolean) => {
   mockFontsLoaded = fontsLoaded;
   return renderRouter({ _layout: RootLayout, index: Stub }, { initialUrl: "/" });
@@ -99,22 +106,17 @@ describe("root layout", () => {
    * anything of its own.
    */
   it("serves every screen the one cache it keeps above the routes", async () => {
-    const caches: unknown[] = [];
-    const Asking = () => {
-      caches.push(useQueryClient());
-      return <Text>asking screen</Text>;
-    };
-
+    askedCaches.length = 0;
     const routes = { _layout: RootLayout, index: Asking, other: Asking };
     await renderRouter(routes, { initialUrl: "/" });
     await waitFor(() => expect(screen.getByText("asking screen")).toBeTruthy());
-    const [first] = caches;
+    const [first] = askedCaches;
 
     await renderRouter(routes, { initialUrl: "/other" });
     await waitFor(() => expect(screen.getAllByText("asking screen")).toBeTruthy());
 
     expect(first).toBeDefined();
-    expect(new Set(caches).size).toBe(1);
+    expect(new Set(askedCaches).size).toBe(1);
   });
 
   describe("while the branded stage is still running", () => {
