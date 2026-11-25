@@ -4,7 +4,8 @@ Every decision that shaped this codebase, oldest first, with what it settled and
 
 Each ADR states its decision and holds its own reasoning; chronology is a property of the set
 rather than of any one of them, so it lives here and the ADRs keep their current shape. A later
-decision never rewrites an earlier one — it amends it, and both say so.
+decision never rewrites an earlier one — it amends it, and both say so. The formatter that runs
+on every file may move an ADR's whitespace or markup; it changes no word, so it rewrites nothing.
 
 | #                                                                                          | Date       | Decision                                                                    | What it settled                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | ------------------------------------------------------------------------------------------ | ---------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
