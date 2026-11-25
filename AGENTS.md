@@ -21,7 +21,8 @@ runs it, is in [docs/commands.md](docs/commands.md).
 
 - [CONTEXT.md](CONTEXT.md): the domain vocabulary; code and prose use its words.
 - [docs/adr/README.md](docs/adr/README.md): every decision and what it amends. A change that
-  contradicts an ADR says so and amends it with a new one; it never rewrites one.
+  contradicts an ADR says so and amends it with a new one; it never rewrites one. A formatter
+  moving whitespace or markup without changing a word is not a rewrite.
 - [docs/testing.md](docs/testing.md), [docs/deployment.md](docs/deployment.md),
   [docs/development.md](docs/development.md), [docs/agents/](docs/agents/).
 - `apps/mobile/AGENTS.md`: the Expo version whose docs are the reference.
